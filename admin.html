@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administrador - Torneo</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; background: #eef2f5; }
+        .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #007bff; color: white; }
+        .btn-aprobar { background: #28a745; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-aprobar:hover { background: #218838; }
+        .mensaje-vacio { text-align: center; color: #777; font-style: italic; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <h2>Panel de Administrador 🛠️</h2>
+        <p>Jugadores esperando validación de pago:</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Categoría</th>
+                    <th>Ranking</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-pendientes">
+                <tr><td colspan="4" class="mensaje-vacio">Cargando datos...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://stytjtqshyupkyihurpd.supabase.co';
+        const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
+        const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // 1. Cargar solo a los que tienen "Pendiente de Pago"
+        async function cargarPendientes() {
+            const { data, error } = await clienteSupabase
+                .from('jugadores')
+                .select('*')
+                .eq('estatus_inscripcion', 'Pendiente de Pago');
+
+            const tbody = document.getElementById('tabla-pendientes');
+            tbody.innerHTML = '';
+
+            if (error) {
+                tbody.innerHTML = '<tr><td colspan="4" style="color:red;">Error de conexión.</td></tr>';
+                return;
+            }
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="mensaje-vacio">No hay jugadores pendientes de pago en este momento.</td></tr>';
+                return;
+            }
+
+            // Dibujar la tabla con los jugadores
+            data.forEach(jugador => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${jugador.nombre}</strong></td>
+                    <td>${jugador.categoria_inscrita}</td>
+                    <td>${jugador.puntos_ranking} pts</td>
+                    <td>
+                        <button class="btn-aprobar" onclick="aprobarPago(${jugador.id}, '${jugador.nombre}')">✔️ Confirmar Pago</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 2. Cambiar el estatus en la base de datos a "Pagado"
+        async function aprobarPago(idJugador, nombreJugador) {
+            const confirmar = confirm(`¿Recibiste la transferencia de ${nombreJugador} y quieres activarlo en el torneo?`);
+            if (!confirmar) return;
+
+            const { error } = await clienteSupabase
+                .from('jugadores')
+                .update({ estatus_inscripcion: 'Pagado' })
+                .eq('id', idJugador);
+
+            if (error) {
+                alert("Hubo un error al guardar.");
+                return;
+            }
+
+            alert(`¡Listo! ${nombreJugador} ya está activo en el torneo.`);
+            cargarPendientes(); // Recargamos la tabla para que el jugador desaparezca de la lista
+        }
+
+        cargarPendientes();
+    </script>
+</body>
+</html>
