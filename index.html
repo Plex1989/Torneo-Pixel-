@@ -41,28 +41,28 @@
 
         let jugadores = [];
 
-        // 1. Cargar jugadores al abrir la página (Solo los que NO están inscritos)
+        // 1. Cargar TODOS los jugadores
         async function cargarJugadores() {
-            const { data, error } = await clienteSupabase
-                .from('jugadores')
-                .select('*')
-                .eq('estatus_inscripcion', 'no inscrito'); // Filtro para no mostrar a los ya inscritos
-                
+            const { data, error } = await clienteSupabase.from('jugadores').select('*');
             if (error) return;
             
             jugadores = data;
             const select = document.getElementById('select-jugador');
             
-            if (jugadores.length === 0) {
-                select.innerHTML = '<option value="">No hay jugadores pendientes</option>';
-                return;
-            }
-
             select.innerHTML = '<option value="">-- Elige tu nombre --</option>';
+            
             jugadores.forEach(j => {
                 let opcion = document.createElement('option');
                 opcion.value = j.id; 
-                opcion.textContent = j.nombre;
+                
+                // Si el estatus es diferente de "no inscrito" (con o sin comillas), lo bloqueamos
+                if (j.estatus_inscripcion !== 'no inscrito' && j.estatus_inscripcion !== "'no inscrito'") {
+                    opcion.textContent = j.nombre + " (Ya registrado)";
+                    opcion.disabled = true; 
+                } else {
+                    opcion.textContent = j.nombre;
+                }
+                
                 select.appendChild(opcion);
             });
         }
@@ -110,15 +110,14 @@
         async function inscribirJugador() {
             const selectJugador = document.getElementById('select-jugador');
             const idSeleccionado = selectJugador.value;
-            const nombreJugador = selectJugador.options[selectJugador.selectedIndex].text;
+            // Extraer solo el nombre sin el texto adicional por si acaso
+            const nombreJugador = selectJugador.options[selectJugador.selectedIndex].text.replace(" (Ya registrado)", "");
             const categoria = document.getElementById('select-categoria').value;
             const btnInscribir = document.getElementById('btn-inscribir');
 
-            // Cambiamos el texto del botón y lo bloqueamos para evitar dobles clics
             btnInscribir.disabled = true;
             btnInscribir.innerText = "Guardando reserva...";
 
-            // Actualizamos la base de datos
             const { error } = await clienteSupabase
                 .from('jugadores')
                 .update({ 
@@ -129,16 +128,13 @@
 
             if (error) {
                 console.error(error);
-                alert("Hubo un error de conexión. Intenta de nuevo.");
+                alert("Hubo un error al guardar en la base de datos.");
                 btnInscribir.innerText = "Reservar mi lugar (Pendiente de Pago)";
                 btnInscribir.disabled = false;
                 return;
             }
 
-            // Éxito
             alert(`¡Listo! Lugar reservado para ${nombreJugador} en ${categoria}.\n\nEnvía tu comprobante de pago por WhatsApp para activar tu participación.`);
-            
-            // Recargamos la página para limpiar el formulario
             window.location.reload();
         }
 
