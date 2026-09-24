@@ -9,24 +9,30 @@
         body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: auto; background: #f9f9f9; }
         .formulario { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; }
-        select, button { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px; }
+        input[type="text"], select, button { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
+        .buscador-box { margin-bottom: 10px; }
         button { background: #007bff; color: white; border: none; margin-top: 20px; cursor: pointer; font-weight: bold; }
         button:hover { background: #0056b3; }
         button:disabled { background: #cccccc; cursor: not-allowed; }
         #info-puntos { color: #555; font-size: 14px; margin-top: 5px; font-style: italic; }
+        .ya-inscrito { color: #28a745; font-size: 13px; font-weight: bold; margin-top: 5px; }
     </style>
 </head>
 <body>
     <div class="formulario">
         <h2>Inscripción al Torneo</h2>
         
-        <label for="select-jugador">1. Selecciona tu nombre:</label>
-        <select id="select-jugador" onchange="evaluarCategorias()">
-            <option value="">Cargando jugadores...</option>
+        <label>1. Busca y selecciona tu nombre:</label>
+        <div class="buscador-box">
+            <input type="text" id="buscador" placeholder="🔎 Escribe tu nombre o apellido..." onkeyup="filtrarJugadores()">
+        </div>
+        <select id="select-jugador" onchange="evaluarCategorias()" size="4" style="margin-bottom: 10px;">
+            <option value="">Cargando base de datos...</option>
         </select>
         <div id="info-puntos"></div>
+        <div id="info-inscripciones"></div>
 
-        <label for="select-categoria">2. Categorías permitidas para tu nivel:</label>
+        <label for="select-categoria">2. Categorías disponibles para tu nivel:</label>
         <select id="select-categoria" disabled>
             <option value="">Primero selecciona tu nombre</option>
         </select>
@@ -39,39 +45,61 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        let jugadores = [];
+        let todosLosJugadores = [];
+        let todasLasCategorias = [];
+        let todasLasInscripciones = [];
 
-        // 1. Cargar TODOS los jugadores
-        async function cargarJugadores() {
-            const { data, error } = await clienteSupabase.from('jugadores').select('*');
-            if (error) return;
-            
-            jugadores = data;
-            const select = document.getElementById('select-jugador');
-            
-            select.innerHTML = '<option value="">-- Elige tu nombre --</option>';
-            
-            jugadores.forEach(j => {
-                let opcion = document.createElement('option');
-                opcion.value = j.id; 
-                
-                // Si el estatus es diferente de "no inscrito" (con o sin comillas), lo bloqueamos
-                if (j.estatus_inscripcion !== 'no inscrito' && j.estatus_inscripcion !== "'no inscrito'") {
-                    opcion.textContent = j.nombre + " (Ya registrado)";
-                    opcion.disabled = true; 
-                } else {
-                    opcion.textContent = j.nombre;
-                }
-                
-                select.appendChild(opcion);
-            });
+        // 1. Cargar todas las tablas al iniciar
+        async function inicializar() {
+            const [resJugadores, resCategorias, resInscripciones] = await Promise.all([
+                clienteSupabase.from('jugadores').select('*').order('nombre', { ascending: true }),
+                clienteSupabase.from('categorias').select('*').order('puntos_maximos', { ascending: true }),
+                clienteSupabase.from('inscripciones').select('*')
+            ]);
+
+            if (resJugadores.error || resCategorias.error) {
+                alert("Error al cargar la base de datos.");
+                return;
+            }
+
+            todosLosJugadores = resJugadores.data;
+            todasLasCategorias = resCategorias.data;
+            todasLasInscripciones = resInscripciones.data || [];
+
+            filtrarJugadores(); // Llenar la lista inicial
         }
 
-        // 2. Filtrar categorías según el ranking
+        // 2. Buscador en vivo
+        function filtrarJugadores() {
+            const textoBusqueda = document.getElementById('buscador').value.toLowerCase();
+            const selectJugador = document.getElementById('select-jugador');
+            
+            selectJugador.innerHTML = '';
+            
+            const jugadoresFiltrados = todosLosJugadores.filter(j => 
+                j.nombre.toLowerCase().includes(textoBusqueda)
+            );
+
+            if (jugadoresFiltrados.length === 0) {
+                selectJugador.innerHTML = '<option value="" disabled>No se encontraron jugadores</option>';
+            } else {
+                jugadoresFiltrados.forEach(j => {
+                    let opcion = document.createElement('option');
+                    opcion.value = j.id; 
+                    opcion.textContent = j.nombre;
+                    selectJugador.appendChild(opcion);
+                });
+            }
+            
+            evaluarCategorias();
+        }
+
+        // 3. Evaluar reglas de categorías según los puntos del jugador
         function evaluarCategorias() {
             const selectJugador = document.getElementById('select-jugador');
             const selectCategoria = document.getElementById('select-categoria');
             const infoPuntos = document.getElementById('info-puntos');
+            const infoInscripciones = document.getElementById('info-inscripciones');
             const btnInscribir = document.getElementById('btn-inscribir');
             
             const idSeleccionado = selectJugador.value;
@@ -81,22 +109,48 @@
                 selectCategoria.disabled = true;
                 btnInscribir.disabled = true;
                 infoPuntos.innerText = "";
+                infoInscripciones.innerText = "";
                 return;
             }
 
-            const jugador = jugadores.find(j => j.id == idSeleccionado);
+            const jugador = todosLosJugadores.find(j => j.id == idSeleccionado);
             const pts = jugador.puntos_ranking;
             infoPuntos.innerText = `Tienes ${pts} puntos de ranking.`;
 
+            // Buscar en qué categorías ya está inscrito este jugador
+            const misInscripciones = todasLasInscripciones
+                .filter(ins => ins.jugador_id == idSeleccionado)
+                .map(ins => ins.categoria_id);
+
+            // Mostrar aviso si ya tiene registros
+            if (misInscripciones.length > 0) {
+                const nombresCatInscritas = todasLasCategorias
+                    .filter(c => misInscripciones.includes(c.id))
+                    .map(c => c.nombre).join(', ');
+                infoInscripciones.innerHTML = `<div class="ya-inscrito">Ya estás registrado en: ${nombresCatInscritas}</div>`;
+            } else {
+                infoInscripciones.innerHTML = "";
+            }
+
             let htmlOpciones = '<option value="">-- Selecciona una categoría --</option>';
-            
-            if (pts <= 500) htmlOpciones += '<option value="Quinta Fuerza">Quinta Fuerza</option>';
-            if (pts <= 1000) htmlOpciones += '<option value="Cuarta Fuerza">Cuarta Fuerza</option>';
-            if (pts <= 1500) htmlOpciones += '<option value="Tercera Fuerza">Tercera Fuerza</option>';
-            if (pts <= 2000) htmlOpciones += '<option value="Segunda Fuerza">Segunda Fuerza</option>';
-            
-            htmlOpciones += '<option value="Primera Fuerza">Primera Fuerza</option>';
-            htmlOpciones += '<option value="Libre">Libre (Abierta)</option>';
+            let opcionesDisponibles = 0;
+
+            // Filtrar usando la tabla dinámica de categorías
+            todasLasCategorias.forEach(cat => {
+                // Si los puntos del jugador son menores o iguales al máximo de la categoría, puede entrar
+                if (pts <= cat.puntos_maximos) {
+                    if (misInscripciones.includes(cat.id)) {
+                        htmlOpciones += `<option value="${cat.id}" disabled>${cat.nombre} (Ya inscrito)</option>`;
+                    } else {
+                        htmlOpciones += `<option value="${cat.id}">${cat.nombre}</option>`;
+                        opcionesDisponibles++;
+                    }
+                }
+            });
+
+            if (opcionesDisponibles === 0) {
+                htmlOpciones = '<option value="">No hay más categorías disponibles</option>';
+            }
 
             selectCategoria.innerHTML = htmlOpciones;
             selectCategoria.disabled = false;
@@ -106,39 +160,43 @@
             };
         }
 
-        // 3. Enviar la inscripción a la base de datos
+        // 4. Guardar la inscripción en la nueva tabla
         async function inscribirJugador() {
             const selectJugador = document.getElementById('select-jugador');
-            const idSeleccionado = selectJugador.value;
-            // Extraer solo el nombre sin el texto adicional por si acaso
-            const nombreJugador = selectJugador.options[selectJugador.selectedIndex].text.replace(" (Ya registrado)", "");
-            const categoria = document.getElementById('select-categoria').value;
+            const idJugador = selectJugador.value;
+            const nombreJugador = selectJugador.options[selectJugador.selectedIndex].text;
+            
+            const selectCategoria = document.getElementById('select-categoria');
+            const idCategoria = selectCategoria.value;
+            const nombreCategoria = selectCategoria.options[selectCategoria.selectedIndex].text;
+            
             const btnInscribir = document.getElementById('btn-inscribir');
 
             btnInscribir.disabled = true;
             btnInscribir.innerText = "Guardando reserva...";
 
+            // Insertamos un nuevo registro en la tabla 'inscripciones'
             const { error } = await clienteSupabase
-                .from('jugadores')
-                .update({ 
-                    estatus_inscripcion: 'Pendiente de Pago',
-                    categoria_inscrita: categoria
-                })
-                .eq('id', idSeleccionado);
+                .from('inscripciones')
+                .insert([{ 
+                    jugador_id: idJugador, 
+                    categoria_id: idCategoria,
+                    estatus_pago: 'Pendiente de Pago'
+                }]);
 
             if (error) {
                 console.error(error);
-                alert("Hubo un error al guardar en la base de datos.");
+                alert("Hubo un error al guardar la inscripción.");
                 btnInscribir.innerText = "Reservar mi lugar (Pendiente de Pago)";
                 btnInscribir.disabled = false;
                 return;
             }
 
-            alert(`¡Listo! Lugar reservado para ${nombreJugador} en ${categoria}.\n\nEnvía tu comprobante de pago por WhatsApp para activar tu participación.`);
+            alert(`¡Listo! Lugar reservado para ${nombreJugador} en ${nombreCategoria}.\n\nEnvía tu comprobante por WhatsApp para activar esta participación.`);
             window.location.reload();
         }
 
-        cargarJugadores();
+        inicializar();
     </script>
 </body>
 </html>
