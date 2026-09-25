@@ -63,7 +63,6 @@
         let todosLosJugadores = [], todasLasCategorias = [], todasLasInscripciones = [];
 
         async function inicializar() {
-            // 1. DETECCIÓN PRIORITARIA Y FORZADA DEL PARÁMETRO EN LA URL (?torneo=ID)
             const urlParams = new URLSearchParams(window.location.search);
             const idParam = urlParams.get('torneo');
             
@@ -71,7 +70,7 @@
 
             if (idParam) {
                 idTorneoCargar = parseInt(idParam);
-                localStorage.setItem('torneo_activo_id', idTorneoCargar); // Sobrescribe la memoria local con el ID del link
+                localStorage.setItem('torneo_activo_id', idTorneoCargar);
             } else if (localStorage.getItem('torneo_activo_id')) {
                 idTorneoCargar = parseInt(localStorage.getItem('torneo_activo_id'));
             }
@@ -95,7 +94,6 @@
                 return;
             }
 
-            // 2. Cargar inscripciones asociadas a este torneo en específico
             const [resJugadores, resCategorias, resInscripciones] = await Promise.all([
                 clienteSupabase.from('jugadores').select('*').order('nombre', { ascending: true }),
                 clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true }),
@@ -120,7 +118,8 @@
             } else {
                 filtrados.forEach(j => {
                     let opt = document.createElement('option');
-                    opt.value = j.id; opt.textContent = `${j.nombre} (${j.club || 'Sin Club'})`;
+                    opt.value = j.id; 
+                    opt.textContent = `${j.nombre} (${j.club || 'Sin Club'}) - ${j.puntos_ranking} pts`;
                     selectJugador.appendChild(opt);
                 });
             }
@@ -157,10 +156,24 @@
             let opcionesDisponibles = 0;
 
             todasLasCategorias.forEach(cat => {
-                const esLibre = cat.nombre.toLowerCase() === 'libre';
-                const cumplePiso = esLibre || pts <= cat.puntos_maximos;
+                const nombreCatLower = cat.nombre.toLowerCase();
+                const esLibre = nombreCatLower === 'libre';
+                const esPrimera = nombreCatLower.includes('primera');
 
-                if (cumplePiso) {
+                let permitido = false;
+
+                if (esLibre) {
+                    // Categoría Libre: Abierta a todos
+                    permitido = true;
+                } else if (esPrimera) {
+                    // REGLA DINÁMICA: Exige tener al menos el valor de 'puntos_minimos' configurado en la BD
+                    permitido = pts >= cat.puntos_minimos;
+                } else {
+                    // Demás Fuerzas: Permite jugar en su fuerza o superiores (no puede jugar en fuerzas inferiores a sus puntos)
+                    permitido = pts <= cat.puntos_maximos;
+                }
+
+                if (permitido) {
                     if (misInscripciones.includes(cat.id)) {
                         htmlOpciones += `<option value="${cat.id}" disabled>${cat.nombre} (Ya inscrito)</option>`;
                     } else {
