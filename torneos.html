@@ -8,7 +8,7 @@
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #eef2f5; }
         
-        /* BARRA DE NAVEGACIÓN SUPERIOR UNIFICADA */
+        /* BARRA DE NAVEGACIÓN SUPERIOR */
         .navbar { background: #1a252f; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); flex-wrap: wrap; gap: 10px; }
         .nav-title { font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 8px; }
         .nav-links { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -32,7 +32,6 @@
         .btn-cian { background: #17a2b8; } .btn-cian:hover { background: #138496; }
         .btn-ws { background: #25d366; } .btn-ws:hover { background: #1ebc57; }
         
-        /* BANNER Y RESUMEN DEL TORNEO ACTIVO */
         .banner-activo { background: #d4edda; border: 2px solid #28a745; color: #155724; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
         .grid-categorias-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 15px; }
         .card-cat-resumen { background: white; border: 1px solid #c3e6cb; padding: 12px; border-radius: 6px; text-align: center; }
@@ -51,7 +50,6 @@
 </head>
 <body>
 
-    <!-- BARRA DE NAVEGACIÓN UNIVERSAL -->
     <nav class="navbar">
         <div class="nav-title">🏓 Central de Torneos</div>
         <div class="nav-links">
@@ -66,7 +64,6 @@
 
     <div class="main-content">
 
-        <!-- PANEL DE CONTROL DEL TORNEO SELECCIONADO / ACTIVO -->
         <div class="banner-activo">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
@@ -76,7 +73,6 @@
                 <button class="btn btn-ws" onclick="compartirWhatsAppInscripciones()">📲 Compartir Link por WhatsApp</button>
             </div>
 
-            <!-- DESGLOSE DE INSCRITOS POR CATEGORÍA -->
             <div style="margin-top: 15px; border-top: 1px solid #c3e6cb; padding-top: 15px;">
                 <div style="font-weight: bold; font-size: 14px; color: #155724;">📊 Jugadores Confirmados (Pagados) por Categoría:</div>
                 <div id="grid-categorias-vivo" class="grid-categorias-resumen">
@@ -85,7 +81,6 @@
             </div>
         </div>
 
-        <!-- FORMULARIO: CREAR NUEVO TORNEO -->
         <div class="container">
             <h2>➕ Crear Nuevo Torneo</h2>
             <p style="font-size: 13px; color: #666;">Al crear un torneo, la lista de inscripciones inicia vacía para el nuevo evento, pero los jugadores conservan su ranking acumulado.</p>
@@ -101,7 +96,6 @@
             </div>
         </div>
 
-        <!-- HISTORIAL COMPLETO DE TORNEOS GUARDADOS -->
         <div class="container">
             <h2>📂 Historial de Torneos Guardados</h2>
             <table>
@@ -127,11 +121,10 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        const CLAVE_ADMIN_MAESTRA = 'admin2026'; // Contraseña maestra de administración
+        const CLAVE_ADMIN_MAESTRA = 'admin2026';
         let todosLosTorneos = [];
         let torneoActivoObj = null;
 
-        // --- SISTEMA DE AUTENTICACIÓN / CANDADO ---
         function verificarAccesoAdmin() {
             if (localStorage.getItem('admin_autenticado') !== 'true') {
                 let pass = prompt("🔒 Ingrese la Contraseña Maestra de Administrador:");
@@ -162,7 +155,6 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                console.error("Error al cargar:", error);
                 document.getElementById('tabla-torneos').innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Error al conectar con la base de datos.</td></tr>`;
                 return;
             }
@@ -200,7 +192,6 @@
                 return;
             }
 
-            // Consultar categorías e inscripciones pagadas
             const [resCat, resIns] = await Promise.all([
                 clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true }),
                 clienteSupabase.from('inscripciones').select('*').eq('torneo_id', idTorneo).eq('estatus_pago', 'Pagado')
@@ -319,14 +310,17 @@
             cargarTorneos();
         }
 
+        // AQUÍ ESTÁ EL CAMBIO CLAVE: ENVÍA EL ID EN LA URL DE WHATSAPP (?torneo=ID)
         function compartirWhatsAppInscripciones() {
-            const nombre = torneoActivoObj ? torneoActivoObj.nombre : 'Torneo Oficial';
-            const urlPublica = window.location.origin + '/index.html';
+            if (!torneoActivoObj) { alert("Selecciona un torneo activo primero."); return; }
+            
+            const nombre = torneoActivoObj.nombre;
+            const urlPublicaConID = `${window.location.origin}/index.html?torneo=${torneoActivoObj.id}`;
 
             const mensaje = `🏓 *¡INSCRIPCIONES ABIERTAS!* 🏓\n\n` +
                             `Registro abierto para el torneo: *${nombre}*\n\n` +
                             `Reserva tu lugar ingresando aquí:\n` +
-                            `👉 ${urlPublica}\n\n` +
+                            `👉 ${urlPublicaConID}\n\n` +
                             `¡Te esperamos!`;
 
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`, '_blank');
