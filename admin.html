@@ -33,11 +33,12 @@
         /* Encabezado por Categoría en Ranking */
         .header-categoria-ranking { background: #e9ecef; font-weight: bold; font-size: 15px; color: #333; padding: 8px 12px; margin-top: 15px; border-left: 5px solid #007bff; }
 
-        /* Estilos de Impresión / PDF */
+        /* Estilos de Impresión / PDF (Fuerza la visualización al imprimir) */
         @media print {
             body { background: white; padding: 0; }
             .no-print, .panel:not(#seccion-print) { display: none !important; }
             #seccion-print { display: block !important; box-shadow: none; border: none; }
+            #contenedor-ranking-categorias { display: block !important; }
             table { font-size: 11pt; border: 1px solid #000; margin-bottom: 20px; }
             th { background-color: #333 !important; color: white !important; -webkit-print-color-adjust: exact; }
             td, th { border: 1px solid #999; padding: 6px; }
@@ -50,7 +51,8 @@
     <div class="panel no-print">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
             <h2 style="border: none; margin: 0;">👥 Módulo de Jugadores</h2>
-            <div style="display: flex; gap: 8px;">
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button class="btn-accion btn-cian" onclick="toggleTablaRanking()" id="btn-toggle-ranking">👁️ Mostrar Tabla de Ranking</button>
                 <button class="btn-accion btn-negro" onclick="imprimirRanking()">🖨️ PDF / Imprimir</button>
                 <button class="btn-accion btn-verde" onclick="exportarExcel()">📊 Exportar Excel</button>
                 <button class="btn-accion btn-ws" onclick="compartirRankingWhatsApp()">📲 Compartir WS</button>
@@ -79,11 +81,11 @@
         </div>
     </div>
 
-    <!-- SECCIÓN IMPRESIÓN / REPORTE DE RANKING POR CATEGORÍAS -->
+    <!-- SECCIÓN IMPRESIÓN / REPORTE DE RANKING POR CATEGORÍAS (Oculto por defecto en pantalla) -->
     <div class="panel" id="seccion-print">
         <h2 style="text-align: center;">🏓 RANKING OFICIAL DE JUGADORES 🏓</h2>
         <p style="text-align: center; font-size: 12px; color: #555;" id="fecha-impresion"></p>
-        <div id="contenedor-ranking-categorias">Cargando ranking...</div>
+        <div id="contenedor-ranking-categorias" style="display: none;">Cargando ranking...</div>
     </div>
 
     <div class="panel no-print">
@@ -155,6 +157,19 @@
 
             filtrarYAutoSeleccionarAdmin();
             generarRankingPorCategorias();
+        }
+
+        function toggleTablaRanking() {
+            const cont = document.getElementById('contenedor-ranking-categorias');
+            const btn = document.getElementById('btn-toggle-ranking');
+            
+            if (cont.style.display === 'none' || cont.style.display === '') {
+                cont.style.display = 'block';
+                btn.innerText = '🙈 Ocultar Tabla de Ranking';
+            } else {
+                cont.style.display = 'none';
+                btn.innerText = '👁️ Mostrar Tabla de Ranking';
+            }
         }
 
         function filtrarYAutoSeleccionarAdmin() {
@@ -233,7 +248,6 @@
             cargarDatosIniciales();
         }
 
-        // --- GENERACIÓN DE RANKING DIVIDIDO POR CATEGORÍAS ---
         function generarRankingPorCategorias() {
             const contenedor = document.getElementById('contenedor-ranking-categorias');
             contenedor.innerHTML = '';
@@ -244,11 +258,9 @@
                 return;
             }
 
-            // Filtrar categorías excluyendo la categoría "Libre" para no duplicar en el listado
             const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre.toLowerCase() !== 'libre');
 
             categoriasFuerza.forEach(cat => {
-                // Filtrar los jugadores que pertenezcan a este rango de puntos
                 const jugadoresCat = todosLosJugadoresAdmin.filter(j => 
                     j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos
                 );
@@ -287,14 +299,10 @@
             });
         }
 
-        // --- OPCIONES DE EXPORTACIÓN ---
-        function imprimirRanking() { 
-            window.print(); 
-        }
+        function imprimirRanking() { window.print(); }
 
         function exportarExcel() {
             let csv = 'Posicion,Jugador,Club,Puntos_Ranking,Categoria\n';
-            
             const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre.toLowerCase() !== 'libre');
 
             categoriasFuerza.forEach(cat => {
