@@ -6,7 +6,7 @@
     <title>Panel de Control - Torneo</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; max-width: 950px; margin: auto; background: #eef2f5; }
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1000px; margin: auto; background: #eef2f5; }
         .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h2, h3 { color: #333; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         .form-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
@@ -18,6 +18,7 @@
         .btn-rojo { background: #dc3545; } .btn-rojo:hover { background: #c82333; }
         .btn-gris { background: #6c757d; } .btn-gris:hover { background: #5a6268; }
         .btn-negro { background: #343a40; } .btn-negro:hover { background: #1d2124; }
+        .btn-ws { background: #25d366; } .btn-ws:hover { background: #1ebc57; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background-color: #28a745; color: white; }
@@ -29,25 +30,34 @@
         .check-bono { width: 20px; height: 20px; cursor: pointer; }
         .caja-edicion { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #ddd; margin-top: 15px; }
 
-        /* Estilos exclusivos para Impresión */
+        /* Encabezado por Categoría en Ranking */
+        .header-categoria-ranking { background: #e9ecef; font-weight: bold; font-size: 15px; color: #333; padding: 8px 12px; margin-top: 15px; border-left: 5px solid #007bff; }
+
+        /* Estilos de Impresión / PDF */
         @media print {
             body { background: white; padding: 0; }
             .no-print, .panel:not(#seccion-print) { display: none !important; }
             #seccion-print { display: block !important; box-shadow: none; border: none; }
-            table { font-size: 12pt; border: 1px solid #000; }
+            table { font-size: 11pt; border: 1px solid #000; margin-bottom: 20px; }
             th { background-color: #333 !important; color: white !important; -webkit-print-color-adjust: exact; }
-            td, th { border: 1px solid #999; padding: 8px; }
+            td, th { border: 1px solid #999; padding: 6px; }
         }
     </style>
 </head>
 <body>
     
+    <!-- Módulo de Jugadores y Exportaciones -->
     <div class="panel no-print">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
             <h2 style="border: none; margin: 0;">👥 Módulo de Jugadores</h2>
-            <button class="btn-accion btn-negro" onclick="imprimirRanking()">🖨️ Imprimir Ranking Oficial</button>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-accion btn-negro" onclick="imprimirRanking()">🖨️ PDF / Imprimir</button>
+                <button class="btn-accion btn-verde" onclick="exportarExcel()">📊 Exportar Excel</button>
+                <button class="btn-accion btn-ws" onclick="compartirRankingWhatsApp()">📲 Compartir WS</button>
+            </div>
         </div>
-        <p style="font-size: 13px; color: #666; margin-top: 10px;">Escribe para buscar y seleccionar automáticamente:</p>
+        
+        <p style="font-size: 13px; color: #666; margin-top: 10px;">Escribe un nombre para buscar y seleccionar automáticamente:</p>
         
         <div class="form-row">
             <input type="text" id="buscador-jugador" placeholder="🔎 Escribe un nombre..." onkeyup="filtrarYAutoSeleccionarAdmin()" style="max-width: 250px;">
@@ -69,21 +79,11 @@
         </div>
     </div>
 
-    <!-- SECCIÓN IMPRESIÓN (Oculta en pantalla normal, visible al imprimir) -->
+    <!-- SECCIÓN IMPRESIÓN / REPORTE DE RANKING POR CATEGORÍAS -->
     <div class="panel" id="seccion-print">
-        <h2 style="text-align: center;">🏓 TABLA OFICIAL DE RANKING 🏓</h2>
+        <h2 style="text-align: center;">🏓 RANKING OFICIAL DE JUGADORES 🏓</h2>
         <p style="text-align: center; font-size: 12px; color: #555;" id="fecha-impresion"></p>
-        <table>
-            <thead>
-                <tr>
-                    <th># Pos</th>
-                    <th>Jugador</th>
-                    <th>Club / Entidad</th>
-                    <th>Puntos Ranking</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-print-body"></tbody>
-        </table>
+        <div id="contenedor-ranking-categorias">Cargando ranking...</div>
     </div>
 
     <div class="panel no-print">
@@ -142,13 +142,19 @@
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         let todosLosJugadoresAdmin = [];
+        let todasLasCategoriasAdmin = [];
 
-        async function cargarJugadoresAdmin() {
-            const { data } = await clienteSupabase.from('jugadores').select('*').order('puntos_ranking', { ascending: false });
-            if (!data) return;
-            todosLosJugadoresAdmin = data;
+        async function cargarDatosIniciales() {
+            const [resJugadores, resCat] = await Promise.all([
+                clienteSupabase.from('jugadores').select('*').order('puntos_ranking', { ascending: false }),
+                clienteSupabase.from('categorias').select('*').order('puntos_maximos', { ascending: false })
+            ]);
+
+            todosLosJugadoresAdmin = resJugadores.data || [];
+            todasLasCategoriasAdmin = resCat.data || [];
+
             filtrarYAutoSeleccionarAdmin();
-            generarTablaImpresion();
+            generarRankingPorCategorias();
         }
 
         function filtrarYAutoSeleccionarAdmin() {
@@ -165,7 +171,6 @@
                 select.appendChild(opt);
             });
 
-            // Si hay texto de búsqueda y coincidencias, selecciona la primera automáticamente
             if (texto.length > 0 && filtrados.length > 0) {
                 select.value = filtrados[0].id;
                 cargarDatosJugadorEditar();
@@ -225,27 +230,117 @@
             }
             document.getElementById('buscador-jugador').value = '';
             resetFormularioJugador();
-            cargarJugadoresAdmin();
+            cargarDatosIniciales();
         }
 
-        function generarTablaImpresion() {
-            const tbody = document.getElementById('tabla-print-body');
-            tbody.innerHTML = '';
-            document.getElementById('fecha-impresion').innerText = "Generado el: " + new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+        // --- GENERACIÓN DE RANKING DIVIDIDO POR CATEGORÍAS ---
+        function generarRankingPorCategorias() {
+            const contenedor = document.getElementById('contenedor-ranking-categorias');
+            contenedor.innerHTML = '';
+            document.getElementById('fecha-impresion').innerText = "Actualizado al: " + new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
 
-            todosLosJugadoresAdmin.forEach((j, idx) => {
-                tbody.innerHTML += `<tr>
-                    <td style="text-align: center; font-weight: bold;">#${idx + 1}</td>
-                    <td><strong>${j.nombre}</strong></td>
-                    <td>${j.club || 'Sin Club'}</td>
-                    <td style="font-weight: bold;">${j.puntos_ranking} pts</td>
-                </tr>`;
+            if (todasLasCategoriasAdmin.length === 0) {
+                contenedor.innerHTML = '<p class="mensaje-vacio">No hay categorías configuradas.</p>';
+                return;
+            }
+
+            // Filtrar categorías excluyendo la categoría "Libre" para no duplicar en el listado
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre.toLowerCase() !== 'libre');
+
+            categoriasFuerza.forEach(cat => {
+                // Filtrar los jugadores que pertenezcan a este rango de puntos
+                const jugadoresCat = todosLosJugadoresAdmin.filter(j => 
+                    j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos
+                );
+
+                let htmlCat = `
+                    <div class="header-categoria-ranking">🏆 ${cat.nombre.toUpperCase()} (${cat.puntos_minimos} a ${cat.puntos_maximos} pts)</div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 60px; text-align: center;">Pos</th>
+                                <th>Jugador</th>
+                                <th>Club / Entidad</th>
+                                <th style="width: 120px;">Puntos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                if (jugadoresCat.length === 0) {
+                    htmlCat += `<tr><td colspan="4" class="mensaje-vacio">Sin jugadores en esta categoría.</td></tr>`;
+                } else {
+                    jugadoresCat.forEach((j, index) => {
+                        htmlCat += `
+                            <tr>
+                                <td style="text-align: center; font-weight: bold;">#${index + 1}</td>
+                                <td><strong>${j.nombre}</strong></td>
+                                <td>${j.club || 'Sin Club'}</td>
+                                <td style="font-weight: bold; color: #007bff;">${j.puntos_ranking} pts</td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                htmlCat += `</tbody></table>`;
+                contenedor.innerHTML += htmlCat;
             });
         }
 
-        function imprimirRanking() { window.print(); }
+        // --- OPCIONES DE EXPORTACIÓN ---
+        function imprimirRanking() { 
+            window.print(); 
+        }
 
-        // -- MÓDULOS DE PAGOS, CATEGORÍAS Y REGLAS --
+        function exportarExcel() {
+            let csv = 'Posicion,Jugador,Club,Puntos_Ranking,Categoria\n';
+            
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre.toLowerCase() !== 'libre');
+
+            categoriasFuerza.forEach(cat => {
+                const jugadoresCat = todosLosJugadoresAdmin.filter(j => 
+                    j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos
+                );
+
+                jugadoresCat.forEach((j, idx) => {
+                    csv += `${idx + 1},"${j.nombre}","${j.club || 'Sin Club'}",${j.puntos_ranking},"${cat.nombre}"\n`;
+                });
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Ranking_Oficial_Torneo_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function compartirRankingWhatsApp() {
+            let textoWS = `🏓 *RANKING OFICIAL DE JUGADORES* 🏓\n` +
+                          `📅 _${new Date().toLocaleDateString('es-MX')}_\n\n`;
+
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre.toLowerCase() !== 'libre');
+
+            categoriasFuerza.forEach(cat => {
+                const jugadoresCat = todosLosJugadoresAdmin.filter(j => 
+                    j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos
+                );
+
+                if (jugadoresCat.length > 0) {
+                    textoWS += `🏆 *${cat.nombre.toUpperCase()}*\n`;
+                    jugadoresCat.forEach((j, idx) => {
+                        textoWS += `${idx + 1}. *${j.nombre}* (${j.puntos_ranking} pts) - _${j.club || 'Sin Club'}_\n`;
+                    });
+                    textoWS += `\n`;
+                }
+            });
+
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWS)}`, '_blank');
+        }
+
+        // --- PAGOS, CATEGORÍAS Y REGLAS ---
         async function cargarPendientes() {
             const { data } = await clienteSupabase.from('inscripciones').select(`id, estatus_pago, jugadores ( nombre, puntos_ranking, club ), categorias ( nombre )`).eq('estatus_pago', 'Pendiente de Pago');
             const tbody = document.getElementById('tabla-pendientes'); tbody.innerHTML = '';
@@ -270,6 +365,7 @@
             const min = document.getElementById(`cat-min-${id}`).value, max = document.getElementById(`cat-max-${id}`).value;
             await clienteSupabase.from('categorias').update({ puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) }).eq('id', id);
             alert(`✅ Reglas actualizadas.`);
+            cargarDatosIniciales();
         }
 
         async function crearCategoria() {
@@ -306,7 +402,7 @@
             alert('✅ Bono guardado.');
         }
 
-        cargarJugadoresAdmin(); cargarPendientes(); cargarCategorias(); cargarReglas(); cargarBono();
+        cargarDatosIniciales(); cargarPendientes(); cargarCategorias(); cargarReglas(); cargarBono();
     </script>
 </body>
 </html>
