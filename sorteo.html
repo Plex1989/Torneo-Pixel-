@@ -9,8 +9,9 @@
         body { font-family: Arial, sans-serif; padding: 20px; background: #eef2f5; max-width: 1000px; margin: auto; }
         .container { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
         h2 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .controles { margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px; border: 1px solid #ddd; }
-        .btn-sorteo { background: #6f42c1; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; font-weight: bold; }
+        .controles { margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px; border: 1px solid #ddd; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+        select, button { padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 15px; }
+        .btn-sorteo { background: #6f42c1; color: white; border: none; cursor: pointer; font-weight: bold; }
         .btn-sorteo:hover { background: #59339d; }
         .grupos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 20px; }
         .grupo-card { background: #fff; border: 2px solid #343a40; border-radius: 8px; overflow: hidden; }
@@ -25,13 +26,20 @@
         <h2>Cerebro del Torneo: Sorteo de Grupos 🧠🏆</h2>
         
         <div class="controles">
-            <p>Jugadores confirmados (Pagados): <strong id="contador-jugadores" style="color:#28a745; font-size: 18px;">Cargando...</strong></p>
-            <label for="tamano-grupo">Formato de la fase de grupos:</label>
-            <select id="tamano-grupo" style="padding: 8px; margin: 0 15px 0 10px; border-radius: 4px;">
+            <select id="filtro-categoria">
+                <option value="">Cargando categorías...</option>
+            </select>
+            
+            <select id="tamano-grupo">
                 <option value="3">Grupos de 3 jugadores</option>
                 <option value="4">Grupos de 4 jugadores</option>
             </select>
-            <button class="btn-sorteo" onclick="generarSorteo()">🎲 Ejecutar Sorteo Serpiente</button>
+
+            <button class="btn-sorteo" onclick="prepararSorteo()">🎲 Ejecutar Sorteo Serpiente</button>
+
+            <div style="margin-left: auto; font-size: 14px;">
+                Jugadores confirmados: <strong id="contador-jugadores" style="color:#28a745; font-size: 18px;">0</strong>
+            </div>
         </div>
 
         <div id="contenedor-grupos" class="grupos-grid"></div>
@@ -42,52 +50,75 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        let jugadoresPagados = [];
+        let jugadoresListos = [];
 
-        // 1. Traer solo a los jugadores que ya pagaron, ordenados por ranking
-        async function cargarJugadores() {
-            const { data, error } = await clienteSupabase
-                .from('jugadores')
-                .select('*')
-                .eq('estatus_inscripcion', 'Pagado')
-                .order('puntos_ranking', { ascending: false }); 
-
-            if (error) {
-                document.getElementById('contador-jugadores').innerText = "Error de conexión";
-                return;
-            }
+        // 1. Cargar las categorías en el menú desplegable
+        async function inicializarSorteo() {
+            const { data, error } = await clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true });
+            const select = document.getElementById('filtro-categoria');
+            select.innerHTML = '<option value="">-- Elige la categoría a sortear --</option>';
             
-            jugadoresPagados = data;
-            document.getElementById('contador-jugadores').innerText = jugadoresPagados.length;
+            if (data) {
+                data.forEach(cat => {
+                    select.innerHTML += `<option value="${cat.id}">${cat.nombre}</option>`;
+                });
+            }
         }
 
-        // 2. Lógica Matemática del Sistema Serpiente
-        function generarSorteo() {
-            if (jugadoresPagados.length === 0) {
-                alert("No hay jugadores confirmados para realizar el sorteo.");
+        // 2. Extraer jugadores pagados de la categoría elegida
+        async function prepararSorteo() {
+            const idCategoria = document.getElementById('filtro-categoria').value;
+            const tamanoGrupo = parseInt(document.getElementById('tamano-grupo').value);
+            const contenedor = document.getElementById('contenedor-grupos');
+
+            if (!idCategoria) {
+                alert("Primero debes seleccionar una categoría para el sorteo.");
                 return;
             }
 
-            const tamanoGrupo = parseInt(document.getElementById('tamano-grupo').value);
-            // Calcula cuántos grupos se necesitan
-            const numGrupos = Math.ceil(jugadoresPagados.length / tamanoGrupo);
+            contenedor.innerHTML = '<p style="text-align:center; width: 100%;">Consultando base de datos...</p>';
+
+            // Hacemos un JOIN entre 'inscripciones' y 'jugadores'
+            const { data, error } = await clienteSupabase
+                .from('inscripciones')
+                .select(`
+                    jugadores ( id, nombre, puntos_ranking )
+                `)
+                .eq('categoria_id', idCategoria)
+                .eq('estatus_pago', 'Pagado');
+
+            if (error || !data || data.length === 0) {
+                contenedor.innerHTML = '';
+                document.getElementById('contador-jugadores').innerText = '0';
+                alert("No hay jugadores confirmados (Pagados) en esta categoría.");
+                return;
+            }
+
+            // Limpiamos los datos y los ordenamos por ranking (de mayor a menor)
+            jugadoresListos = data.map(ins => ins.jugadores);
+            jugadoresListos.sort((a, b) => b.puntos_ranking - a.puntos_ranking);
+
+            document.getElementById('contador-jugadores').innerText = jugadoresListos.length;
             
-            // Crea los grupos vacíos (Grupo A, Grupo B, etc.)
+            ejecutarSerpiente(tamanoGrupo);
+        }
+
+        // 3. Algoritmo de Serpiente
+        function ejecutarSerpiente(tamanoGrupo) {
+            const numGrupos = Math.ceil(jugadoresListos.length / tamanoGrupo);
             let grupos = [];
+            
             for (let i = 0; i < numGrupos; i++) {
                 grupos.push({ nombre: String.fromCharCode(65 + i), jugadores: [] });
             }
 
-            // Algoritmo de Serpiente
-            let direccion = 1; // 1 = Avanza (A->B->C), -1 = Retrocede (C->B->A)
+            let direccion = 1; 
             let indiceGrupo = 0;
 
-            for (let i = 0; i < jugadoresPagados.length; i++) {
-                grupos[indiceGrupo].jugadores.push(jugadoresPagados[i]);
-
+            for (let i = 0; i < jugadoresListos.length; i++) {
+                grupos[indiceGrupo].jugadores.push(jugadoresListos[i]);
                 indiceGrupo += direccion;
 
-                // Al topar con los extremos, la serpiente baja de nivel y cambia de dirección
                 if (indiceGrupo === numGrupos) {
                     direccion = -1;
                     indiceGrupo = numGrupos - 1;
@@ -100,7 +131,7 @@
             dibujarGrupos(grupos);
         }
 
-        // 3. Imprimir el resultado en la pantalla
+        // 4. Imprimir en pantalla
         function dibujarGrupos(grupos) {
             const contenedor = document.getElementById('contenedor-grupos');
             contenedor.innerHTML = '';
@@ -109,10 +140,8 @@
                 let html = `<div class="grupo-card">
                                 <div class="grupo-header">Grupo ${grupo.nombre}</div>`;
                 
-                grupo.jugadores.forEach((j, index) => {
-                    // Calculamos su posición global en el ranking (Sembrado/Seed)
-                    let seedGlobal = jugadoresPagados.findIndex(jugador => jugador.id === j.id) + 1;
-                    
+                grupo.jugadores.forEach((j) => {
+                    let seedGlobal = jugadoresListos.findIndex(jugador => jugador.id === j.id) + 1;
                     html += `<div class="jugador-item">
                                 <strong>${j.nombre}</strong>
                                 <span>${j.puntos_ranking} pts (Seed #${seedGlobal})</span>
@@ -124,7 +153,7 @@
             });
         }
 
-        cargarJugadores();
+        inicializarSorteo();
     </script>
 </body>
 </html>
