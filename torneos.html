@@ -18,7 +18,6 @@
         .btn-gris { background: #6c757d; } .btn-gris:hover { background: #5a6268; }
         .btn-cian { background: #17a2b8; } .btn-cian:hover { background: #138496; }
         
-        /* Banner de Torneo Activo */
         .banner-activo { background: #d4edda; border: 2px solid #28a745; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
@@ -32,23 +31,23 @@
 </head>
 <body>
 
-    <!-- BANNER DEL TORNEO ACTIVO ACTUALMENTE EN EL SISTEMA -->
+    <!-- BANNER DEL TORNEO ACTIVO -->
     <div id="banner-activo-box" class="banner-activo">
         <div>
             <span style="font-size: 12px; text-transform: uppercase; font-weight: bold; color: #155724;"> Torneo Activo en el Sistema:</span>
             <h3 id="nombre-torneo-activo" style="margin: 5px 0 0 0; border: none; padding: 0;">Cargando...</h3>
         </div>
-        <div id="botones-acceso-rapido" style="display: flex; gap: 8px;">
-            <a href="admin.html" class="btn btn-azul">⚙️ Inscripciones y Pagos</a>
+        <div id="botones-acceso-rapido" style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="admin.html" class="btn btn-azul">⚙️ Administrador</a>
             <a href="sorteo.html" class="btn btn-cian">🧠 Sorteo</a>
             <a href="horarios.html" class="btn btn-verde">📅 Horarios WS</a>
         </div>
     </div>
 
-    <!-- MÓDULO 1: CREAR NUEVO TORNEO -->
+    <!-- CREAR TORNEO -->
     <div class="container">
         <h2>➕ Crear Nuevo Torneo</h2>
-        <p style="font-size: 13px; color: #666;">Al crear un torneo nuevo, los jugadores conservarán su ranking actual pero iniciarán una nueva lista de inscripciones y partidos vacía.</p>
+        <p style="font-size: 13px; color: #666;">Los jugadores conservarán su ranking actual, pero el torneo iniciará con listas de inscripciones vacías.</p>
         
         <div class="form-row">
             <input type="text" id="nuevo-nombre-torneo" placeholder="Nombre del Torneo (Ej. Abierto de Otoño 2026)">
@@ -61,7 +60,7 @@
         </div>
     </div>
 
-    <!-- MÓDULO 2: HISTORIAL DE TORNEOS GUARDADOS -->
+    <!-- HISTORIAL DE TORNEOS -->
     <div class="container">
         <h2>📂 Historial de Torneos Guardados</h2>
         <table>
@@ -88,7 +87,6 @@
         let todosLosTorneos = [];
 
         async function cargarTorneos() {
-            // Establecer fecha de hoy en el input de creación
             document.getElementById('nueva-fecha-torneo').valueAsDate = new Date();
 
             const { data, error } = await clienteSupabase
@@ -96,17 +94,16 @@
                 .select('*')
                 .order('created_at', { ascending: false });
 
-            if (error || !data) {
-                document.getElementById('tabla-torneos').innerHTML = '<tr><td colspan="5" style="color:red; text-align:center;">Error al cargar torneos.</td></tr>';
+            if (error) {
+                console.error("Error al cargar:", error);
+                document.getElementById('tabla-torneos').innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Error: ${error.message}. Ejecuta el script SQL en Supabase.</td></tr>`;
                 return;
             }
 
-            todosLosTorneos = data;
+            todosLosTorneos = data || [];
 
-            // Identificar cuál es el torneo seleccionado en localStorage
             let torneoActivoId = localStorage.getItem('torneo_activo_id');
 
-            // Si no hay ninguno seleccionado en localStorage, selecciona el más reciente
             if (!torneoActivoId && todosLosTorneos.length > 0) {
                 torneoActivoId = todosLosTorneos[0].id;
                 localStorage.setItem('torneo_activo_id', torneoActivoId);
@@ -173,7 +170,7 @@
 
         function seleccionarTorneoActivo(id) {
             localStorage.setItem('torneo_activo_id', id);
-            alert("✅ Torneo seleccionado. Todo el sistema trabajará sobre este evento.");
+            alert("✅ Torneo seleccionado.");
             cargarTorneos();
         }
 
@@ -191,11 +188,14 @@
                 estado: 'en_registro'
             }]).select();
 
-            if (error || !data) { alert("Error al crear el torneo."); return; }
+            if (error || !data) {
+                console.error(error);
+                alert(`Error al crear: ${error ? error.message : 'Desconocido'}`);
+                return;
+            }
 
-            // Seleccionar automáticamente el torneo recién creado
             localStorage.setItem('torneo_activo_id', data[0].id);
-            alert(`✅ ¡Torneo "${nombre}" creado con éxito! Ahora es el torneo activo.`);
+            alert(`✅ ¡Torneo "${nombre}" creado con éxito!`);
             
             document.getElementById('nuevo-nombre-torneo').value = '';
             cargarTorneos();
@@ -206,7 +206,7 @@
             if (!confirm(`¿Estás seguro de que deseas ${accion} este torneo?`)) return;
 
             const { error } = await clienteSupabase.from('torneos').update({ estado: nuevoEstado }).eq('id', id);
-            if (error) { alert("Error al cambiar el estado."); return; }
+            if (error) { alert("Error al cambiar estado."); return; }
 
             cargarTorneos();
         }
