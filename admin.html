@@ -23,6 +23,7 @@
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background-color: #28a745; color: white; }
         .th-cat { background-color: #6c757d; }
+        .th-club { background-color: #fd7e14; }
         .th-regla { background-color: #dc3545; }
         .btn-aprobar { background: #ffc107; color: #333; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .mensaje-vacio { text-align: center; color: #777; font-style: italic; }
@@ -30,10 +31,8 @@
         .check-bono { width: 20px; height: 20px; cursor: pointer; }
         .caja-edicion { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #ddd; margin-top: 15px; }
 
-        /* Encabezado por Categoría en Ranking */
         .header-categoria-ranking { background: #e9ecef; font-weight: bold; font-size: 15px; color: #333; padding: 8px 12px; margin-top: 15px; border-left: 5px solid #007bff; }
 
-        /* Estilos de Impresión / PDF (Fuerza la visualización al imprimir) */
         @media print {
             body { background: white; padding: 0; }
             .no-print, .panel:not(#seccion-print) { display: none !important; }
@@ -47,7 +46,7 @@
 </head>
 <body>
     
-    <!-- Módulo de Jugadores y Exportaciones -->
+    <!-- Módulo de Jugadores -->
     <div class="panel no-print">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
             <h2 style="border: none; margin: 0;">👥 Módulo de Jugadores</h2>
@@ -72,7 +71,12 @@
             <div style="font-weight: bold; margin-bottom: 10px; font-size: 14px;" id="titulo-modo-jugador">➕ Registrando Nuevo Jugador:</div>
             <div class="form-row">
                 <input type="text" id="nuevo-nombre" placeholder="Nombre completo">
-                <input type="text" id="nuevo-club" placeholder="Club / Municipio" style="max-width: 180px;">
+                
+                <!-- DROPDOWN DE CLUBS EN LUGAR DE TEXTO LIBRE -->
+                <select id="nuevo-club" style="max-width: 200px;">
+                    <option value="Sin Club">Cargando clubs...</option>
+                </select>
+
                 <input type="number" id="nuevo-ranking" placeholder="Pts ranking" style="max-width: 120px;">
                 <input type="text" id="nuevo-nip" placeholder="NIP (1234)" maxlength="4" style="max-width: 100px;" value="1234">
                 <button id="btn-guardar-jugador" class="btn-accion btn-azul" onclick="guardarJugador()">➕ Crear Jugador</button>
@@ -81,11 +85,34 @@
         </div>
     </div>
 
-    <!-- SECCIÓN IMPRESIÓN / REPORTE DE RANKING POR CATEGORÍAS (Oculto por defecto en pantalla) -->
+    <!-- SECCIÓN IMPRESIÓN / REPORTE DE RANKING POR CATEGORÍAS -->
     <div class="panel" id="seccion-print">
         <h2 style="text-align: center;">🏓 RANKING OFICIAL DE JUGADORES 🏓</h2>
         <p style="text-align: center; font-size: 12px; color: #555;" id="fecha-impresion"></p>
         <div id="contenedor-ranking-categorias" style="display: none;">Cargando ranking...</div>
+    </div>
+
+    <!-- MÓDULO NUEVO: GESTIÓN DE CLUBS -->
+    <div class="panel no-print">
+        <h2 style="border-bottom-color: #fd7e14;">🏡 Gestión de Clubs / Equipos</h2>
+        <p style="font-size: 13px; color: #666;">Registra aquí los clubs oficiales para que aparezcan en la lista desplegable al agregar jugadores:</p>
+        
+        <div class="form-row" style="margin-bottom: 15px;">
+            <input type="text" id="nuevo-nombre-club" placeholder="Nombre del Club / Municipio (Ej. Halcones Xalapa)">
+            <button class="btn-accion" style="background: #fd7e14;" onclick="crearClub()">➕ Añadir Club</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th class="th-club">ID</th>
+                    <th class="th-club">Nombre del Club</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-clubs">
+                <tr><td colspan="2" class="mensaje-vacio">Cargando clubs...</td></tr>
+            </tbody>
+        </table>
     </div>
 
     <div class="panel no-print">
@@ -145,24 +172,76 @@
 
         let todosLosJugadoresAdmin = [];
         let todasLasCategoriasAdmin = [];
+        let todosLosClubsAdmin = [];
 
         async function cargarDatosIniciales() {
-            const [resJugadores, resCat] = await Promise.all([
+            const [resJugadores, resCat, resClubs] = await Promise.all([
                 clienteSupabase.from('jugadores').select('*').order('puntos_ranking', { ascending: false }),
-                clienteSupabase.from('categorias').select('*').order('puntos_maximos', { ascending: false })
+                clienteSupabase.from('categorias').select('*').order('puntos_maximos', { ascending: false }),
+                clienteSupabase.from('clubs').select('*').order('nombre', { ascending: true })
             ]);
 
             todosLosJugadoresAdmin = resJugadores.data || [];
             todasLasCategoriasAdmin = resCat.data || [];
+            todosLosClubsAdmin = resClubs.data || [];
 
+            poblarDropdownClubs();
+            dibujarTablaClubs();
             filtrarYAutoSeleccionarAdmin();
             generarRankingPorCategorias();
         }
 
+        // --- MÓDULO DE CLUBS ---
+        function poblarDropdownClubs() {
+            const select = document.getElementById('nuevo-club');
+            select.innerHTML = '';
+            
+            if (todosLosClubsAdmin.length === 0) {
+                select.innerHTML = '<option value="Sin Club">Sin Club</option>';
+                return;
+            }
+
+            todosLosClubsAdmin.forEach(club => {
+                let opt = document.createElement('option');
+                opt.value = club.nombre;
+                opt.textContent = club.nombre;
+                select.appendChild(opt);
+            });
+        }
+
+        function dibujarTablaClubs() {
+            const tbody = document.getElementById('tabla-clubs');
+            tbody.innerHTML = '';
+
+            if (todosLosClubsAdmin.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="2" class="mensaje-vacio">No hay clubs registrados.</td></tr>';
+                return;
+            }
+
+            todosLosClubsAdmin.forEach(c => {
+                tbody.innerHTML += `<tr>
+                    <td>#${c.id}</td>
+                    <td><strong>${c.nombre}</strong></td>
+                </tr>`;
+            });
+        }
+
+        async function crearClub() {
+            const nombre = document.getElementById('nuevo-nombre-club').value.trim();
+            if (!nombre) { alert("Escribe el nombre del club."); return; }
+
+            const { error } = await clienteSupabase.from('clubs').insert([{ nombre: nombre }]);
+            if (error) { alert("El club ya existe o hubo un error."); return; }
+
+            alert(`✅ Club "${nombre}" registrado correctamente.`);
+            document.getElementById('nuevo-nombre-club').value = '';
+            cargarDatosIniciales();
+        }
+
+        // --- MÓDULO DE JUGADORES ---
         function toggleTablaRanking() {
             const cont = document.getElementById('contenedor-ranking-categorias');
             const btn = document.getElementById('btn-toggle-ranking');
-            
             if (cont.style.display === 'none' || cont.style.display === '') {
                 cont.style.display = 'block';
                 btn.innerText = '🙈 Ocultar Tabla de Ranking';
@@ -201,7 +280,7 @@
             const j = todosLosJugadoresAdmin.find(item => item.id == idSel);
             if (j) {
                 document.getElementById('nuevo-nombre').value = j.nombre;
-                document.getElementById('nuevo-club').value = j.club || '';
+                document.getElementById('nuevo-club').value = j.club || 'Sin Club';
                 document.getElementById('nuevo-ranking').value = j.puntos_ranking;
                 document.getElementById('nuevo-nip').value = j.nip_seguridad || '1234';
 
@@ -216,7 +295,7 @@
         function resetFormularioJugador() {
             document.getElementById('select-jugador-admin').value = "";
             document.getElementById('nuevo-nombre').value = "";
-            document.getElementById('nuevo-club').value = "";
+            document.getElementById('nuevo-club').value = "Sin Club";
             document.getElementById('nuevo-ranking').value = "";
             document.getElementById('nuevo-nip').value = "1234";
 
@@ -230,7 +309,7 @@
         async function guardarJugador() {
             const idSel = document.getElementById('select-jugador-admin').value;
             const nombre = document.getElementById('nuevo-nombre').value.trim();
-            const club = document.getElementById('nuevo-club').value.trim() || 'Sin Club';
+            const club = document.getElementById('nuevo-club').value;
             const puntos = document.getElementById('nuevo-ranking').value;
             const nip = document.getElementById('nuevo-nip').value.trim() || '1234';
             
@@ -248,6 +327,7 @@
             cargarDatosIniciales();
         }
 
+        // --- RANKING Y EXPORTACIONES ---
         function generarRankingPorCategorias() {
             const contenedor = document.getElementById('contenedor-ranking-categorias');
             contenedor.innerHTML = '';
