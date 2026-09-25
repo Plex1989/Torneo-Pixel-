@@ -8,13 +8,15 @@
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: auto; background: #eef2f5; }
         .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h2 { color: #333; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        .form-row { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-        .form-row input[type="text"], .form-row input[type="number"] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-width: 120px; }
+        h2, h3 { color: #333; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .form-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+        .form-row input[type="text"], .form-row input[type="number"], .form-row select { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-width: 120px; box-sizing: border-box; }
         .btn-accion { color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .btn-azul { background: #007bff; } .btn-azul:hover { background: #0056b3; }
+        .btn-verde { background: #28a745; } .btn-verde:hover { background: #218838; }
         .btn-cian { background: #17a2b8; } .btn-cian:hover { background: #138496; }
         .btn-rojo { background: #dc3545; } .btn-rojo:hover { background: #c82333; }
+        .btn-gris { background: #6c757d; } .btn-gris:hover { background: #5a6268; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background-color: #28a745; color: white; }
@@ -24,17 +26,32 @@
         .mensaje-vacio { text-align: center; color: #777; font-style: italic; }
         .input-mini { width: 60px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
         .check-bono { width: 20px; height: 20px; cursor: pointer; }
+        .caja-edicion { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #ddd; margin-top: 15px; }
     </style>
 </head>
 <body>
     
+    <!-- Módulos de Administración -->
     <div class="panel">
-        <h2>👥 Módulo de Jugadores</h2>
+        <h2>👥 Módulo de Jugadores (Crear y Editar)</h2>
+        <p style="font-size: 13px; color: #666; margin-bottom: 5px;">Busca un jugador para editar sus datos, o déjalo en "Nuevo" para dar de alta a otro:</p>
+        
         <div class="form-row">
-            <input type="text" id="nuevo-nombre" placeholder="Nombre completo">
-            <input type="number" id="nuevo-ranking" placeholder="Pts ranking" style="max-width: 130px;">
-            <input type="text" id="nuevo-nip" placeholder="NIP (Ej: 1234)" maxlength="4" style="max-width: 120px;" value="1234">
-            <button class="btn-accion btn-azul" onclick="registrarJugador()">Agregar Jugador</button>
+            <input type="text" id="buscador-jugador" placeholder="🔎 Buscar por nombre..." onkeyup="filtrarJugadoresAdmin()" style="max-width: 250px;">
+            <select id="select-jugador-admin" onchange="cargarDatosJugadorEditar()">
+                <option value="">-- Nuevo Jugador (Modo Crear) --</option>
+            </select>
+        </div>
+
+        <div class="caja-edicion">
+            <div style="font-weight: bold; margin-bottom: 10px; font-size: 14px;" id="titulo-modo-jugador">➕ Registrando Nuevo Jugador:</div>
+            <div class="form-row">
+                <input type="text" id="nuevo-nombre" placeholder="Nombre completo">
+                <input type="number" id="nuevo-ranking" placeholder="Pts ranking" style="max-width: 130px;">
+                <input type="text" id="nuevo-nip" placeholder="NIP (Ej: 1234)" maxlength="4" style="max-width: 120px;" value="1234">
+                <button id="btn-guardar-jugador" class="btn-accion btn-azul" onclick="guardarJugador()">➕ Crear Jugador</button>
+                <button id="btn-cancelar-jugador" class="btn-accion btn-gris" style="display: none;" onclick="resetFormularioJugador()">❌ Cancelar</button>
+            </div>
         </div>
     </div>
 
@@ -97,24 +114,105 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // -- Jugadores --
-        async function registrarJugador() {
+        let todosLosJugadoresAdmin = [];
+
+        // -- MÓDULO JUGADORES (Creación/Edición) --
+        async function cargarJugadoresAdmin() {
+            const { data, error } = await clienteSupabase.from('jugadores').select('*').order('nombre', { ascending: true });
+            if (error || !data) return;
+            todosLosJugadoresAdmin = data;
+            filtrarJugadoresAdmin();
+        }
+
+        function filtrarJugadoresAdmin() {
+            const texto = document.getElementById('buscador-jugador').value.toLowerCase();
+            const select = document.getElementById('select-jugador-admin');
+            const idActual = select.value;
+            
+            select.innerHTML = '<option value="">-- Nuevo Jugador (Modo Crear) --</option>';
+            
+            const filtrados = todosLosJugadoresAdmin.filter(j => j.nombre.toLowerCase().includes(texto));
+            filtrados.forEach(j => {
+                let opt = document.createElement('option');
+                opt.value = j.id;
+                opt.textContent = `${j.nombre} (${j.puntos_ranking} pts - NIP: ${j.nip_seguridad || '1234'})`;
+                if (j.id == idActual) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
+
+        function cargarDatosJugadorEditar() {
+            const idSel = document.getElementById('select-jugador-admin').value;
+            const btnGuardar = document.getElementById('btn-guardar-jugador');
+            const btnCancelar = document.getElementById('btn-cancelar-jugador');
+            const tituloModo = document.getElementById('titulo-modo-jugador');
+
+            if (!idSel) {
+                resetFormularioJugador();
+                return;
+            }
+
+            const jugador = todosLosJugadoresAdmin.find(j => j.id == idSel);
+            if (jugador) {
+                document.getElementById('nuevo-nombre').value = jugador.nombre;
+                document.getElementById('nuevo-ranking').value = jugador.puntos_ranking;
+                document.getElementById('nuevo-nip').value = jugador.nip_seguridad || '1234';
+
+                tituloModo.innerText = `✏️ Editando a: ${jugador.nombre}`;
+                btnGuardar.innerText = "💾 Actualizar Cambios";
+                btnGuardar.className = "btn-accion btn-verde";
+                btnCancelar.style.display = "inline-block";
+            }
+        }
+
+        function resetFormularioJugador() {
+            document.getElementById('select-jugador-admin').value = "";
+            document.getElementById('nuevo-nombre').value = "";
+            document.getElementById('nuevo-ranking').value = "";
+            document.getElementById('nuevo-nip').value = "1234";
+
+            document.getElementById('titulo-modo-jugador').innerText = "➕ Registrando Nuevo Jugador:";
+            const btnGuardar = document.getElementById('btn-guardar-jugador');
+            btnGuardar.innerText = "➕ Crear Jugador";
+            btnGuardar.className = "btn-accion btn-azul";
+            document.getElementById('btn-cancelar-jugador').style.display = "none";
+        }
+
+        async function guardarJugador() {
+            const idSel = document.getElementById('select-jugador-admin').value;
             const nombre = document.getElementById('nuevo-nombre').value.trim();
             const puntos = document.getElementById('nuevo-ranking').value;
             const nip = document.getElementById('nuevo-nip').value.trim() || '1234';
             
-            if (!nombre || !puntos) { alert('Llena nombre y puntos.'); return; }
+            if (!nombre || !puntos) { alert('Llena el nombre y los puntos.'); return; }
             
-            await clienteSupabase.from('jugadores').insert([{ 
-                nombre: nombre, 
-                puntos_ranking: parseInt(puntos),
-                nip_seguridad: nip
-            }]);
-            
-            alert(`✅ ${nombre} registrado con NIP: ${nip}`);
-            location.reload();
+            if (idSel) {
+                // ACTUALIZAR EXISTENTE
+                const { error } = await clienteSupabase.from('jugadores').update({
+                    nombre: nombre,
+                    puntos_ranking: parseInt(puntos),
+                    nip_seguridad: nip
+                }).eq('id', idSel);
+
+                if (error) { alert("Error al actualizar."); return; }
+                alert(`✅ Datos de ${nombre} actualizados correctamente.`);
+            } else {
+                // CREAR NUEVO
+                const { error } = await clienteSupabase.from('jugadores').insert([{ 
+                    nombre: nombre, 
+                    puntos_ranking: parseInt(puntos),
+                    nip_seguridad: nip
+                }]);
+
+                if (error) { alert("Error al guardar."); return; }
+                alert(`✅ ${nombre} registrado con NIP: ${nip}`);
+            }
+
+            resetFormularioJugador();
+            cargarJugadoresAdmin();
         }
 
+        // -- MÓDULO PAGOS --
         async function cargarPendientes() {
             const { data } = await clienteSupabase.from('inscripciones').select(`id, estatus_pago, jugadores ( nombre, puntos_ranking ), categorias ( nombre )`).eq('estatus_pago', 'Pendiente de Pago');
             const tbody = document.getElementById('tabla-pendientes'); tbody.innerHTML = '';
@@ -128,7 +226,7 @@
             alert("✅ Aprobado."); cargarPendientes();
         }
 
-        // -- Categorías --
+        // -- MÓDULO CATEGORÍAS --
         async function cargarCategorias() {
             const { data } = await clienteSupabase.from('categorias').select('*').order('puntos_maximos', { ascending: true });
             const tbody = document.getElementById('tabla-categorias'); tbody.innerHTML = '';
@@ -149,7 +247,7 @@
             alert(`✅ Creada.`); location.reload();
         }
 
-        // -- Reglas de Ranking y Bono --
+        // -- MÓDULO REGLAS DE RANKING Y BONO --
         async function cargarReglas() {
             const { data } = await clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true });
             const tbody = document.getElementById('tabla-reglas'); tbody.innerHTML = '';
@@ -187,7 +285,8 @@
             alert('✅ Configuración del bono guardada correctamente.');
         }
 
-        cargarPendientes(); cargarCategorias(); cargarReglas(); cargarBono();
+        // Cargar todo al iniciar
+        cargarJugadoresAdmin(); cargarPendientes(); cargarCategorias(); cargarReglas(); cargarBono();
     </script>
 </body>
 </html>
