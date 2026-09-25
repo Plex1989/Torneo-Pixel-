@@ -10,7 +10,7 @@
         .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h2 { color: #333; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         .form-row { display: flex; gap: 10px; margin-top: 15px; }
-        .form-row input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        .form-row input[type="text"], .form-row input[type="number"] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
         .btn-accion { color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .btn-azul { background: #007bff; } .btn-azul:hover { background: #0056b3; }
         .btn-cian { background: #17a2b8; } .btn-cian:hover { background: #138496; }
@@ -23,6 +23,7 @@
         .btn-aprobar { background: #ffc107; color: #333; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .mensaje-vacio { text-align: center; color: #777; font-style: italic; }
         .input-mini { width: 60px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
+        .check-bono { width: 20px; height: 20px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -58,10 +59,9 @@
         </table>
     </div>
 
-    <!-- NUEVO MÓDULO 4: REGLAS DE RANKING -->
     <div class="panel">
         <h2 style="border-bottom-color: #dc3545;">📈 Reglas de Puntuación (Ranking)</h2>
-        <p style="font-size: 14px; color: #555;">Basado en el estándar profesional: Las victorias esperadas dan pocos puntos. Las victorias sorpresa (contra un rival de mayor nivel) dan muchos puntos.</p>
+        <p style="font-size: 14px; color: #555;">Basado en el estándar profesional: Las victorias esperadas dan pocos puntos. Las sorpresas dan muchos puntos.</p>
         <table>
             <thead>
                 <tr>
@@ -76,6 +76,20 @@
                 <tr><td colspan="5" class="mensaje-vacio">Cargando reglas...</td></tr>
             </tbody>
         </table>
+
+        <!-- NUEVO: BONO POR CLASIFICAR -->
+        <hr style="border: 0; border-top: 1px solid #ddd; margin: 25px 0;">
+        <h3 style="color: #dc3545; font-size: 16px;">🏆 Bono por Clasificar a Llaves (Bonus Fase de Grupos)</h3>
+        <div class="form-row" style="align-items: center; background: #fff8f8; padding: 15px; border-radius: 6px; border: 1px solid #f5c6cb;">
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: bold;">
+                <input type="checkbox" id="bono-activo" class="check-bono">
+                Activar bono
+            </label>
+            <span style="margin-left: 15px;">Dar</span>
+            <input type="number" id="bono-puntos" class="input-mini" placeholder="Pts">
+            <span>puntos extra a los jugadores que avancen.</span>
+            <button class="btn-accion btn-rojo" style="margin-left: auto;" onclick="guardarBono()">💾 Guardar Bono</button>
+        </div>
     </div>
 
     <script>
@@ -115,7 +129,7 @@
         async function actualizarCategoria(id) {
             const min = document.getElementById(`cat-min-${id}`).value, max = document.getElementById(`cat-max-${id}`).value;
             await clienteSupabase.from('categorias').update({ puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) }).eq('id', id);
-            alert(`✅ Reglas de categoría actualizadas.`);
+            alert(`✅ Reglas actualizadas.`);
         }
 
         async function crearCategoria() {
@@ -125,12 +139,11 @@
             alert(`✅ Creada.`); location.reload();
         }
 
-        // -- NUEVO: REGLAS DE RANKING --
+        // -- Reglas de Ranking y Bono --
         async function cargarReglas() {
             const { data } = await clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true });
             const tbody = document.getElementById('tabla-reglas'); tbody.innerHTML = '';
             if (!data) return;
-            
             data.forEach(regla => {
                 let escenario = regla.resultado_esperado === 'gana_favorito' ? 'Gana el Favorito (Ranking Mayor)' : '<strong>Gana el Retador (Upset)</strong>';
                 tbody.innerHTML += `<tr>
@@ -144,13 +157,27 @@
         }
 
         async function actualizarRegla(id) {
-            const ptsGanador = document.getElementById(`regla-ganador-${id}`).value;
-            const ptsPerdedor = document.getElementById(`regla-perdedor-${id}`).value;
+            const ptsGanador = document.getElementById(`regla-ganador-${id}`).value, ptsPerdedor = document.getElementById(`regla-perdedor-${id}`).value;
             await clienteSupabase.from('reglas_ranking').update({ puntos_ganador: parseInt(ptsGanador), puntos_perdedor: parseInt(ptsPerdedor) }).eq('id', id);
             alert(`✅ Regla de puntuación actualizada.`);
         }
 
-        cargarPendientes(); cargarCategorias(); cargarReglas();
+        async function cargarBono() {
+            const { data } = await clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').single();
+            if (data) {
+                document.getElementById('bono-activo').checked = data.activo;
+                document.getElementById('bono-puntos').value = data.valor;
+            }
+        }
+
+        async function guardarBono() {
+            const activo = document.getElementById('bono-activo').checked;
+            const valor = parseInt(document.getElementById('bono-puntos').value) || 0;
+            await clienteSupabase.from('configuracion').update({ activo: activo, valor: valor }).eq('clave', 'bono_pase_grupos');
+            alert('✅ Configuración del bono guardada correctamente.');
+        }
+
+        cargarPendientes(); cargarCategorias(); cargarReglas(); cargarBono();
     </script>
 </body>
 </html>
