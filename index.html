@@ -63,11 +63,23 @@
         let todosLosJugadores = [], todasLasCategorias = [], todasLasInscripciones = [];
 
         async function inicializar() {
-            let idStorage = localStorage.getItem('torneo_activo_id');
-            let queryTorneo = clienteSupabase.from('torneos').select('*');
+            // 1. DETECCIÓN PRIORITARIA Y FORZADA DEL PARÁMETRO EN LA URL (?torneo=ID)
+            const urlParams = new URLSearchParams(window.location.search);
+            const idParam = urlParams.get('torneo');
             
-            if (idStorage) {
-                queryTorneo = queryTorneo.eq('id', idStorage);
+            let idTorneoCargar = null;
+
+            if (idParam) {
+                idTorneoCargar = parseInt(idParam);
+                localStorage.setItem('torneo_activo_id', idTorneoCargar); // Sobrescribe la memoria local con el ID del link
+            } else if (localStorage.getItem('torneo_activo_id')) {
+                idTorneoCargar = parseInt(localStorage.getItem('torneo_activo_id'));
+            }
+
+            let queryTorneo = clienteSupabase.from('torneos').select('*');
+
+            if (idTorneoCargar) {
+                queryTorneo = queryTorneo.eq('id', idTorneoCargar);
             } else {
                 queryTorneo = queryTorneo.neq('estado', 'finalizado').order('created_at', { ascending: false }).limit(1);
             }
@@ -79,10 +91,11 @@
                 document.getElementById('nombre-torneo-header').innerText = torneoActivo.nombre;
             } else {
                 document.getElementById('nombre-torneo-header').innerText = "Sin Torneo Activo";
-                alert("No hay ningún torneo activo abierto para inscripciones en este momento.");
+                alert("No se encontró el torneo especificado.");
                 return;
             }
 
+            // 2. Cargar inscripciones asociadas a este torneo en específico
             const [resJugadores, resCategorias, resInscripciones] = await Promise.all([
                 clienteSupabase.from('jugadores').select('*').order('nombre', { ascending: true }),
                 clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true }),
@@ -145,9 +158,6 @@
 
             todasLasCategorias.forEach(cat => {
                 const esLibre = cat.nombre.toLowerCase() === 'libre';
-                
-                // Lógica de validación: Se puede jugar en su categoría y en superiores (o en Libre)
-                // Se prohíbe jugar si sus puntos exceden el máximo de una categoría inferior.
                 const cumplePiso = esLibre || pts <= cat.puntos_maximos;
 
                 if (cumplePiso) {
