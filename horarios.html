@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cronograma de Partidos y WhatsApp</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #eef2f5; max-width: 1100px; margin: auto; }
+        .container { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h2 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
+        .controles { margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px; border: 1px solid #ddd; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+        select, input, button { padding: 8px 12px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; }
+        .btn-generar { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
+        .btn-generar:hover { background: #0056b3; }
+        .btn-ws { background: #25d366; color: white; border: none; font-weight: bold; cursor: pointer; padding: 5px 10px; border-radius: 4px; font-size: 12px; }
+        .btn-ws:hover { background: #1ebc57; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #343a40; color: white; }
+        .tag-grupo { background: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>📅 Programación de Partidos y Envíos por WhatsApp</h2>
+        
+        <div class="controles">
+            <select id="filtro-categoria">
+                <option value="">Cargando categorías...</option>
+            </select>
+            
+            <label>Hora Inicio:</label>
+            <input type="time" id="hora-inicio" value="09:00">
+
+            <label>Minutos/Partido:</label>
+            <input type="number" id="duracion-partido" value="20" style="width: 60px;">
+
+            <label>Mesas Disp.:</label>
+            <input type="number" id="num-mesas" value="4" style="width: 60px;">
+
+            <button class="btn-generar" onclick="generarCronograma()">⚡ Generar Horarios</button>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Hora</th>
+                    <th>Mesa</th>
+                    <th>Grupo</th>
+                    <th>Enfrentamiento</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-partidos">
+                <tr><td colspan="5" style="text-align: center; color: #777;">Selecciona una categoría y genera los horarios.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://stytjtqshyupkyihurpd.supabase.co';
+        const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
+        const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        let partidosGenerados = [];
+
+        async function inicializar() {
+            const { data } = await clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true });
+            const select = document.getElementById('filtro-categoria');
+            select.innerHTML = '<option value="">-- Selecciona Categoría --</option>';
+            if (data) data.forEach(c => select.innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
+        }
+
+        async function generarCronograma() {
+            const idCat = document.getElementById('filtro-categoria').value;
+            if (!idCat) { alert("Selecciona una categoría."); return; }
+
+            const { data: grupos, error } = await clienteSupabase
+                .from('grupos_torneo')
+                .select(`nombre_grupo, jugador_id, jugadores ( nombre, club )`)
+                .eq('categoria_id', idCat);
+
+            if (error || !grupos || grupos.length === 0) {
+                alert("No hay grupos guardados para esta categoría. Ve a sorteo.html y guarda los grupos primero.");
+                return;
+            }
+
+            // Agrupar jugadores por su letra de grupo (A, B, C...)
+            const gruposMap = {};
+            grupos.forEach(item => {
+                if (!gruposMap[item.nombre_grupo]) gruposMap[item.nombre_grupo] = [];
+                gruposMap[item.nombre_grupo].push(item.jugadores);
+            });
+
+            // Generar todos los cruces de Round-Robin (todos contra todos)
+            let partidosRaw = [];
+            Object.keys(gruposMap).sort().forEach(letra => {
+                const lista = gruposMap[letra];
+                for (let i = 0; i < lista.length; i++) {
+                    for (let j = i + 1; j < lista.length; j++) {
+                        partidosRaw.push({
+                            grupo: letra,
+                            jugadorA: lista[i],
+                            jugadorB: lista[j]
+                        });
+                    }
+                }
+            });
+
+            // Asignar Horario y Mesa
+            const horaInicioStr = document.getElementById('hora-inicio').value;
+            const duracion = parseInt(document.getElementById('duracion-partido').value) || 20;
+            const mesas = parseInt(document.getElementById('num-mesas').value) || 1;
+
+            let [h, m] = horaInicioStr.split(':').map(Number);
+            let tiempoActual = new Date();
+            tiempoActual.setHours(h, m, 0, 0);
+
+            partidosGenerados = [];
+            let mesaActual = 1;
+
+            partidosRaw.forEach((p, idx) => {
+                const horaFormatted = tiempoActual.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                partidosGenerados.push({
+                    id: idx + 1,
+                    hora: horaFormatted,
+                    mesa: mesaActual,
+                    grupo: p.grupo,
+                    jugadorA: p.jugadorA,
+                    jugadorB: p.jugadorB
+                });
+
+                mesaActual++;
+                if (mesaActual > mesas) {
+                    mesaActual = 1;
+                    tiempoActual.setMinutes(tiempoActual.getMinutes() + duracion);
+                }
+            });
+
+            dibujarTablaPartidos();
+        }
+
+        function dibujarTablaPartidos() {
+            const tbody = document.getElementById('tabla-partidos');
+            tbody.innerHTML = '';
+
+            const catTexto = document.getElementById('filtro-categoria').options[document.getElementById('filtro-categoria').selectedIndex].text;
+
+            partidosGenerados.forEach(p => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${p.hora} hrs</strong></td>
+                        <td>Mesa ${p.mesa}</td>
+                        <td><span class="tag-grupo">Grupo ${p.grupo}</span></td>
+                        <td><strong>${p.jugadorA.nombre}</strong> <small>(${p.jugadorA.club})</small> vs <strong>${p.jugadorB.nombre}</strong> <small>(${p.jugadorB.club})</small></td>
+                        <td>
+                            <button class="btn-ws" onclick="compartirWhatsApp('${catTexto}', '${p.hora}', ${p.mesa}, '${p.grupo}', '${p.jugadorA.nombre}', '${p.jugadorB.nombre}')">
+                                📲 Enviar WS
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function compartirWhatsApp(cat, hora, mesa, grupo, jA, jB) {
+            const mensaje = `🏓 *CITACIÓN DE PARTIDO - TORNEO* 🏓\n\n` +
+                `🏆 *Categoría:* ${cat}\n` +
+                `👥 *Grupo:* ${grupo}\n` +
+                `⚔️ *Partido:* ${jA} vs ${jB}\n` +
+                `⏰ *Hora:* ${hora} hrs\n` +
+                `📍 *Lugar:* Mesa ${mesa}\n\n` +
+                `Por favor preséntate 5 minutos antes con tu raqueta lista. ¡Éxito!`;
+
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`, '_blank');
+        }
+
+        inicializar();
+    </script>
+</body>
+</html>
