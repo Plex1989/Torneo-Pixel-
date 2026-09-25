@@ -8,11 +8,14 @@
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: auto; background: #f9f9f9; }
         .formulario { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .banner-torneo { background: #007bff; color: white; padding: 12px; border-radius: 6px; text-align: center; margin-bottom: 15px; }
+        .banner-torneo h2 { margin: 0; font-size: 20px; }
+        .banner-torneo p { margin: 5px 0 0 0; font-size: 13px; opacity: 0.9; }
         label { font-weight: bold; display: block; margin-top: 15px; margin-bottom: 5px; }
         input[type="text"], input[type="password"], select, button { width: 100%; padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
         .buscador-box { margin-bottom: 10px; }
-        button { background: #007bff; color: white; border: none; margin-top: 20px; cursor: pointer; font-weight: bold; }
-        button:hover { background: #0056b3; }
+        button { background: #28a745; color: white; border: none; margin-top: 20px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #218838; }
         button:disabled { background: #cccccc; cursor: not-allowed; }
         #info-puntos { color: #555; font-size: 14px; margin-top: 5px; font-style: italic; }
         .ya-inscrito { color: #28a745; font-size: 13px; font-weight: bold; margin-top: 5px; }
@@ -21,7 +24,12 @@
 </head>
 <body>
     <div class="formulario">
-        <h2>Inscripción al Torneo</h2>
+        
+        <!-- BANNER CON NOMBRE DEL TORNEO ACTIVO -->
+        <div class="banner-torneo">
+            <p>Portal Oficial de Registro</p>
+            <h2 id="nombre-torneo-header">Cargando Torneo...</h2>
+        </div>
         
         <label>1. Busca y selecciona tu nombre:</label>
         <div class="buscador-box">
@@ -38,7 +46,6 @@
             <option value="">Primero selecciona tu nombre</option>
         </select>
 
-        <!-- Nueva Caja de Seguridad NIP -->
         <div id="caja-nip" class="caja-seguridad">
             <label for="nip-jugador" style="margin-top: 0;">🔒 3. Ingresa tu NIP de seguridad:</label>
             <input type="password" id="nip-jugador" maxlength="4" placeholder="Ej. 1234">
@@ -53,17 +60,42 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+        let torneoActivo = null;
         let todosLosJugadores = [], todasLasCategorias = [], todasLasInscripciones = [];
 
         async function inicializar() {
+            // 1. Obtener Torneo Activo
+            let idStorage = localStorage.getItem('torneo_activo_id');
+            let queryTorneo = clienteSupabase.from('torneos').select('*');
+            
+            if (idStorage) {
+                queryTorneo = queryTorneo.eq('id', idStorage);
+            } else {
+                queryTorneo = queryTorneo.neq('estado', 'finalizado').order('created_at', { ascending: false }).limit(1);
+            }
+
+            const { data: torneoData } = await queryTorneo;
+
+            if (torneoData && torneoData.length > 0) {
+                torneoActivo = torneoData[0];
+                document.getElementById('nombre-torneo-header').innerText = torneoActivo.nombre;
+            } else {
+                document.getElementById('nombre-torneo-header').innerText = "Sin Torneo Activo";
+                alert("No hay ningún torneo activo abierto para inscripciones en este momento.");
+                return;
+            }
+
+            // 2. Cargar Jugadores, Categorías e Inscripciones DEL TORNEO ACTIVO
             const [resJugadores, resCategorias, resInscripciones] = await Promise.all([
                 clienteSupabase.from('jugadores').select('*').order('nombre', { ascending: true }),
                 clienteSupabase.from('categorias').select('*').order('puntos_maximos', { ascending: true }),
-                clienteSupabase.from('inscripciones').select('*')
+                clienteSupabase.from('inscripciones').select('*').eq('torneo_id', torneoActivo.id)
             ]);
+
             todosLosJugadores = resJugadores.data || [];
             todasLasCategorias = resCategorias.data || [];
             todasLasInscripciones = resInscripciones.data || [];
+            
             filtrarJugadores();
         }
 
@@ -78,7 +110,7 @@
             } else {
                 filtrados.forEach(j => {
                     let opt = document.createElement('option');
-                    opt.value = j.id; opt.textContent = j.nombre;
+                    opt.value = j.id; opt.textContent = `${j.nombre} (${j.club || 'Sin Club'})`;
                     selectJugador.appendChild(opt);
                 });
             }
@@ -101,12 +133,12 @@
 
             const jugador = todosLosJugadores.find(j => j.id == idSeleccionado);
             const pts = jugador.puntos_ranking;
-            infoPuntos.innerText = `Tienes ${pts} puntos de ranking.`;
+            infoPuntos.innerText = `Ranking actual: ${pts} pts | Club: ${jugador.club || 'Sin Club'}`;
 
             const misInscripciones = todasLasInscripciones.filter(ins => ins.jugador_id == idSeleccionado).map(ins => ins.categoria_id);
             if (misInscripciones.length > 0) {
                 const nombres = todasLasCategorias.filter(c => misInscripciones.includes(c.id)).map(c => c.nombre).join(', ');
-                infoInscripciones.innerHTML = `<div class="ya-inscrito">Ya estás registrado en: ${nombres}</div>`;
+                infoInscripciones.innerHTML = `<div class="ya-inscrito">Inscrito en este torneo en: ${nombres}</div>`;
             } else {
                 infoInscripciones.innerHTML = "";
             }
@@ -131,7 +163,7 @@
             selectCategoria.onchange = () => {
                 const categoriaValida = selectCategoria.value !== "";
                 btnInscribir.disabled = !categoriaValida;
-                cajaNip.style.display = categoriaValida ? 'block' : 'none'; // Mostrar NIP solo si elige categoría
+                cajaNip.style.display = categoriaValida ? 'block' : 'none';
                 document.getElementById('nip-jugador').value = '';
             };
         }
@@ -142,16 +174,16 @@
             const selectCategoria = document.getElementById('select-categoria');
             const btnInscribir = document.getElementById('btn-inscribir');
 
-            // --- VALIDACIÓN DE SEGURIDAD ---
             const jugadorActual = todosLosJugadores.find(j => j.id == idJugador);
             if (nipIngresado !== jugadorActual.nip_seguridad) {
-                alert("❌ NIP incorrecto. Intenta de nuevo o contacta al administrador del torneo.");
+                alert("❌ NIP incorrecto. Intenta de nuevo.");
                 return;
             }
             
             btnInscribir.disabled = true; btnInscribir.innerText = "Guardando reserva...";
 
             const { error } = await clienteSupabase.from('inscripciones').insert([{ 
+                torneo_id: torneoActivo.id,
                 jugador_id: idJugador, 
                 categoria_id: selectCategoria.value,
                 estatus_pago: 'Pendiente de Pago'
@@ -159,7 +191,7 @@
 
             if (error) { alert("Error al guardar."); btnInscribir.innerText = "Reservar mi lugar"; btnInscribir.disabled = false; return; }
 
-            alert(`¡Listo! Reserva guardada. Envía tu comprobante para activar la participación.`);
+            alert(`¡Listo! Reserva guardada para el torneo "${torneoActivo.nombre}". Envia tu comprobante para validar el pago.`);
             window.location.reload();
         }
 
