@@ -9,15 +9,11 @@
         body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: auto; background: #eef2f5; }
         .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h2, h3 { color: #333; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-        
-        /* Formularios */
         .form-row { display: flex; gap: 10px; margin-top: 15px; }
         .form-row input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
         .btn-accion { color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .btn-azul { background: #007bff; } .btn-azul:hover { background: #0056b3; }
         .btn-cian { background: #17a2b8; } .btn-cian:hover { background: #138496; }
-
-        /* Tablas */
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background-color: #28a745; color: white; }
@@ -25,62 +21,39 @@
         .btn-aprobar { background: #ffc107; color: #333; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .btn-aprobar:hover { background: #e0a800; }
         .mensaje-vacio { text-align: center; color: #777; font-style: italic; }
+        .input-mini { width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
     </style>
 </head>
 <body>
     
-    <!-- Módulo 1: Alta de Jugadores -->
     <div class="panel">
         <h2>👥 Módulo de Jugadores</h2>
-        <p>Registra un nuevo jugador en el ranking oficial:</p>
         <div class="form-row">
             <input type="text" id="nuevo-nombre" placeholder="Nombre completo del jugador">
-            <input type="number" id="nuevo-ranking" placeholder="Puntos de ranking" style="max-width: 150px;">
+            <input type="number" id="nuevo-ranking" placeholder="Pts de ranking" style="max-width: 150px;">
             <button class="btn-accion btn-azul" onclick="registrarJugador()">Agregar Jugador</button>
         </div>
     </div>
 
-    <!-- Módulo 2: Validación de Pagos -->
     <div class="panel">
         <h2>💰 Validación de Pagos</h2>
-        <p>Inscripciones pendientes de confirmación:</p>
         <table>
-            <thead>
-                <tr>
-                    <th>Jugador</th>
-                    <th>Categoría</th>
-                    <th>Ranking</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-pendientes">
-                <tr><td colspan="4" class="mensaje-vacio">Cargando datos...</td></tr>
-            </tbody>
+            <thead><tr><th>Jugador</th><th>Categoría</th><th>Ranking</th><th>Acción</th></tr></thead>
+            <tbody id="tabla-pendientes"><tr><td colspan="4" class="mensaje-vacio">Cargando...</td></tr></tbody>
         </table>
     </div>
 
-    <!-- Módulo 3: Gestión de Categorías -->
     <div class="panel">
         <h2 style="border-bottom-color: #6c757d;">🏷️ Gestión de Categorías</h2>
-        <p>Crea nuevas fuerzas o ajusta el límite de puntos en tiempo real:</p>
-        
         <div class="form-row" style="margin-bottom: 20px;">
-            <input type="text" id="nueva-cat-nombre" placeholder="Nombre de nueva categoría (ej. Sexta Fuerza)">
-            <input type="number" id="nueva-cat-puntos" placeholder="Límite de puntos" style="max-width: 150px;">
-            <button class="btn-accion btn-cian" onclick="crearCategoria()">Añadir Categoría</button>
+            <input type="text" id="nueva-cat-nombre" placeholder="Nombre de categoría">
+            <input type="number" id="nueva-cat-min" placeholder="Pts Piso (Min)" style="max-width: 120px;">
+            <input type="number" id="nueva-cat-max" placeholder="Pts Techo (Max)" style="max-width: 120px;">
+            <button class="btn-accion btn-cian" onclick="crearCategoria()">Añadir</button>
         </div>
-
         <table>
-            <thead>
-                <tr>
-                    <th class="th-cat">Categoría</th>
-                    <th class="th-cat">Límite de Puntos</th>
-                    <th class="th-cat">Acción</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-categorias">
-                <tr><td colspan="3" class="mensaje-vacio">Cargando categorías...</td></tr>
-            </tbody>
+            <thead><tr><th class="th-cat">Categoría</th><th class="th-cat">Mínimo (Piso)</th><th class="th-cat">Máximo (Techo)</th><th class="th-cat">Acción</th></tr></thead>
+            <tbody id="tabla-categorias"><tr><td colspan="4" class="mensaje-vacio">Cargando...</td></tr></tbody>
         </table>
     </div>
 
@@ -89,93 +62,62 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // --- MÓDULO 1: JUGADORES ---
         async function registrarJugador() {
             const nombre = document.getElementById('nuevo-nombre').value.trim();
             const puntos = document.getElementById('nuevo-ranking').value;
-            if (!nombre || !puntos) { alert("Llena el nombre y los puntos."); return; }
-
-            const { error } = await clienteSupabase.from('jugadores').insert([{ nombre: nombre, puntos_ranking: parseInt(puntos) }]);
-            if (error) { alert("Error al guardar."); return; }
-
-            alert(`✅ ${nombre} registrado exitosamente.`);
-            document.getElementById('nuevo-nombre').value = '';
-            document.getElementById('nuevo-ranking').value = '';
+            if (!nombre || !puntos) return;
+            await clienteSupabase.from('jugadores').insert([{ nombre: nombre, puntos_ranking: parseInt(puntos) }]);
+            alert(`✅ Jugador registrado.`); location.reload();
         }
 
-        // --- MÓDULO 2: PAGOS ---
         async function cargarPendientes() {
-            const { data, error } = await clienteSupabase
-                .from('inscripciones')
-                .select(`id, estatus_pago, jugadores ( nombre, puntos_ranking ), categorias ( nombre )`)
-                .eq('estatus_pago', 'Pendiente de Pago');
-
+            const { data } = await clienteSupabase.from('inscripciones').select(`id, estatus_pago, jugadores ( nombre, puntos_ranking ), categorias ( nombre )`).eq('estatus_pago', 'Pendiente de Pago');
             const tbody = document.getElementById('tabla-pendientes');
             tbody.innerHTML = '';
-
-            if (error || !data) return;
-            if (data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="mensaje-vacio">No hay pagos pendientes.</td></tr>'; return; }
-
+            if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="mensaje-vacio">No hay pagos pendientes.</td></tr>'; return; }
             data.forEach(ins => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${ins.jugadores.nombre}</strong></td>
-                    <td>${ins.categorias.nombre}</td>
-                    <td>${ins.jugadores.puntos_ranking} pts</td>
-                    <td><button class="btn-aprobar" onclick="aprobarPago(${ins.id}, '${ins.jugadores.nombre}')">Validar Pago</button></td>
-                `;
-                tbody.appendChild(tr);
+                tbody.innerHTML += `<tr><td><strong>${ins.jugadores.nombre}</strong></td><td>${ins.categorias.nombre}</td><td>${ins.jugadores.puntos_ranking} pts</td><td><button class="btn-aprobar" onclick="aprobarPago(${ins.id})">Validar Pago</button></td></tr>`;
             });
         }
 
-        async function aprobarPago(id, nombre) {
-            if (!confirm(`¿Confirmas el pago de ${nombre}?`)) return;
-            const { error } = await clienteSupabase.from('inscripciones').update({ estatus_pago: 'Pagado' }).eq('id', id);
-            if (!error) { alert("✅ Pago aprobado."); cargarPendientes(); }
+        async function aprobarPago(id) {
+            if (!confirm(`¿Confirmas el pago?`)) return;
+            await clienteSupabase.from('inscripciones').update({ estatus_pago: 'Pagado' }).eq('id', id);
+            alert("✅ Aprobado."); cargarPendientes();
         }
 
-        // --- MÓDULO 3: CATEGORÍAS ---
         async function cargarCategorias() {
-            const { data, error } = await clienteSupabase.from('categorias').select('*').order('puntos_maximos', { ascending: true });
+            const { data } = await clienteSupabase.from('categorias').select('*').order('puntos_maximos', { ascending: true });
             const tbody = document.getElementById('tabla-categorias');
             tbody.innerHTML = '';
-
-            if (error || !data) return;
-
+            if (!data) return;
             data.forEach(cat => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
+                tbody.innerHTML += `<tr>
                     <td><strong>${cat.nombre}</strong></td>
-                    <td><input type="number" id="cat-pts-${cat.id}" value="${cat.puntos_maximos}" style="width: 100px; padding: 5px; border: 1px solid #ccc; border-radius: 4px;"> pts</td>
-                    <td><button class="btn-accion btn-cian" style="padding: 6px 12px;" onclick="actualizarCategoria(${cat.id}, '${cat.nombre}')">💾 Actualizar Límite</button></td>
-                `;
-                tbody.appendChild(tr);
+                    <td><input type="number" id="cat-min-${cat.id}" class="input-mini" value="${cat.puntos_minimos}"> pts</td>
+                    <td><input type="number" id="cat-max-${cat.id}" class="input-mini" value="${cat.puntos_maximos}"> pts</td>
+                    <td><button class="btn-accion btn-cian" onclick="actualizarCategoria(${cat.id}, '${cat.nombre}')">💾 Actualizar</button></td>
+                </tr>`;
             });
         }
 
         async function actualizarCategoria(id, nombre) {
-            const nuevosPuntos = document.getElementById(`cat-pts-${id}`).value;
-            const { error } = await clienteSupabase.from('categorias').update({ puntos_maximos: parseInt(nuevosPuntos) }).eq('id', id);
-            if (!error) { alert(`✅ El límite de ${nombre} ahora es de ${nuevosPuntos} puntos.`); cargarCategorias(); }
+            const min = document.getElementById(`cat-min-${id}`).value;
+            const max = document.getElementById(`cat-max-${id}`).value;
+            await clienteSupabase.from('categorias').update({ puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) }).eq('id', id);
+            alert(`✅ Reglas de ${nombre} actualizadas.`);
         }
 
         async function crearCategoria() {
             const nombre = document.getElementById('nueva-cat-nombre').value.trim();
-            const puntos = document.getElementById('nueva-cat-puntos').value;
-            if (!nombre || !puntos) { alert("Faltan datos."); return; }
-
-            const { error } = await clienteSupabase.from('categorias').insert([{ nombre: nombre, puntos_maximos: parseInt(puntos) }]);
-            if (!error) { 
-                alert(`✅ ${nombre} creada exitosamente.`); 
-                document.getElementById('nueva-cat-nombre').value = ''; 
-                document.getElementById('nueva-cat-puntos').value = ''; 
-                cargarCategorias(); 
-            }
+            const min = document.getElementById('nueva-cat-min').value;
+            const max = document.getElementById('nueva-cat-max').value;
+            if (!nombre || !min || !max) return;
+            await clienteSupabase.from('categorias').insert([{ nombre: nombre, puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) }]);
+            alert(`✅ Creada.`); location.reload();
         }
 
-        // Inicializar módulos
-        cargarPendientes();
-        cargarCategorias();
+        cargarPendientes(); cargarCategorias();
     </script>
 </body>
 </html>
