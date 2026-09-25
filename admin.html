@@ -8,20 +8,21 @@
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: auto; background: #eef2f5; }
         .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h2, h3 { color: #333; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        h2 { color: #333; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         .form-row { display: flex; gap: 10px; margin-top: 15px; }
         .form-row input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
         .btn-accion { color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         .btn-azul { background: #007bff; } .btn-azul:hover { background: #0056b3; }
         .btn-cian { background: #17a2b8; } .btn-cian:hover { background: #138496; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        .btn-rojo { background: #dc3545; } .btn-rojo:hover { background: #c82333; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background-color: #28a745; color: white; }
         .th-cat { background-color: #6c757d; }
+        .th-regla { background-color: #dc3545; }
         .btn-aprobar { background: #ffc107; color: #333; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-aprobar:hover { background: #e0a800; }
         .mensaje-vacio { text-align: center; color: #777; font-style: italic; }
-        .input-mini { width: 80px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; }
+        .input-mini { width: 60px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
     </style>
 </head>
 <body>
@@ -57,14 +58,34 @@
         </table>
     </div>
 
+    <!-- NUEVO MÓDULO 4: REGLAS DE RANKING -->
+    <div class="panel">
+        <h2 style="border-bottom-color: #dc3545;">📈 Reglas de Puntuación (Ranking)</h2>
+        <p style="font-size: 14px; color: #555;">Basado en el estándar profesional: Las victorias esperadas dan pocos puntos. Las victorias sorpresa (contra un rival de mayor nivel) dan muchos puntos.</p>
+        <table>
+            <thead>
+                <tr>
+                    <th class="th-regla">Dif. de Puntos</th>
+                    <th class="th-regla">Escenario del Partido</th>
+                    <th class="th-regla">Ganador (+)</th>
+                    <th class="th-regla">Perdedor (-)</th>
+                    <th class="th-regla">Acción</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-reglas">
+                <tr><td colspan="5" class="mensaje-vacio">Cargando reglas...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
     <script>
         const supabaseUrl = 'https://stytjtqshyupkyihurpd.supabase.co';
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+        // -- Jugadores y Pagos --
         async function registrarJugador() {
-            const nombre = document.getElementById('nuevo-nombre').value.trim();
-            const puntos = document.getElementById('nuevo-ranking').value;
+            const nombre = document.getElementById('nuevo-nombre').value.trim(), puntos = document.getElementById('nuevo-ranking').value;
             if (!nombre || !puntos) return;
             await clienteSupabase.from('jugadores').insert([{ nombre: nombre, puntos_ranking: parseInt(puntos) }]);
             alert(`✅ Jugador registrado.`); location.reload();
@@ -72,12 +93,9 @@
 
         async function cargarPendientes() {
             const { data } = await clienteSupabase.from('inscripciones').select(`id, estatus_pago, jugadores ( nombre, puntos_ranking ), categorias ( nombre )`).eq('estatus_pago', 'Pendiente de Pago');
-            const tbody = document.getElementById('tabla-pendientes');
-            tbody.innerHTML = '';
+            const tbody = document.getElementById('tabla-pendientes'); tbody.innerHTML = '';
             if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="mensaje-vacio">No hay pagos pendientes.</td></tr>'; return; }
-            data.forEach(ins => {
-                tbody.innerHTML += `<tr><td><strong>${ins.jugadores.nombre}</strong></td><td>${ins.categorias.nombre}</td><td>${ins.jugadores.puntos_ranking} pts</td><td><button class="btn-aprobar" onclick="aprobarPago(${ins.id})">Validar Pago</button></td></tr>`;
-            });
+            data.forEach(ins => tbody.innerHTML += `<tr><td><strong>${ins.jugadores.nombre}</strong></td><td>${ins.categorias.nombre}</td><td>${ins.jugadores.puntos_ranking} pts</td><td><button class="btn-aprobar" onclick="aprobarPago(${ins.id})">Validar Pago</button></td></tr>`);
         }
 
         async function aprobarPago(id) {
@@ -86,38 +104,53 @@
             alert("✅ Aprobado."); cargarPendientes();
         }
 
+        // -- Categorías --
         async function cargarCategorias() {
             const { data } = await clienteSupabase.from('categorias').select('*').order('puntos_maximos', { ascending: true });
-            const tbody = document.getElementById('tabla-categorias');
-            tbody.innerHTML = '';
+            const tbody = document.getElementById('tabla-categorias'); tbody.innerHTML = '';
             if (!data) return;
-            data.forEach(cat => {
-                tbody.innerHTML += `<tr>
-                    <td><strong>${cat.nombre}</strong></td>
-                    <td><input type="number" id="cat-min-${cat.id}" class="input-mini" value="${cat.puntos_minimos}"> pts</td>
-                    <td><input type="number" id="cat-max-${cat.id}" class="input-mini" value="${cat.puntos_maximos}"> pts</td>
-                    <td><button class="btn-accion btn-cian" onclick="actualizarCategoria(${cat.id}, '${cat.nombre}')">💾 Actualizar</button></td>
-                </tr>`;
-            });
+            data.forEach(cat => tbody.innerHTML += `<tr><td><strong>${cat.nombre}</strong></td><td><input type="number" id="cat-min-${cat.id}" class="input-mini" value="${cat.puntos_minimos}"> pts</td><td><input type="number" id="cat-max-${cat.id}" class="input-mini" value="${cat.puntos_maximos}"> pts</td><td><button class="btn-accion btn-cian" onclick="actualizarCategoria(${cat.id})">💾 Guardar</button></td></tr>`);
         }
 
-        async function actualizarCategoria(id, nombre) {
-            const min = document.getElementById(`cat-min-${id}`).value;
-            const max = document.getElementById(`cat-max-${id}`).value;
+        async function actualizarCategoria(id) {
+            const min = document.getElementById(`cat-min-${id}`).value, max = document.getElementById(`cat-max-${id}`).value;
             await clienteSupabase.from('categorias').update({ puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) }).eq('id', id);
-            alert(`✅ Reglas de ${nombre} actualizadas.`);
+            alert(`✅ Reglas de categoría actualizadas.`);
         }
 
         async function crearCategoria() {
-            const nombre = document.getElementById('nueva-cat-nombre').value.trim();
-            const min = document.getElementById('nueva-cat-min').value;
-            const max = document.getElementById('nueva-cat-max').value;
+            const nombre = document.getElementById('nueva-cat-nombre').value.trim(), min = document.getElementById('nueva-cat-min').value, max = document.getElementById('nueva-cat-max').value;
             if (!nombre || !min || !max) return;
             await clienteSupabase.from('categorias').insert([{ nombre: nombre, puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) }]);
             alert(`✅ Creada.`); location.reload();
         }
 
-        cargarPendientes(); cargarCategorias();
+        // -- NUEVO: REGLAS DE RANKING --
+        async function cargarReglas() {
+            const { data } = await clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true });
+            const tbody = document.getElementById('tabla-reglas'); tbody.innerHTML = '';
+            if (!data) return;
+            
+            data.forEach(regla => {
+                let escenario = regla.resultado_esperado === 'gana_favorito' ? 'Gana el Favorito (Ranking Mayor)' : '<strong>Gana el Retador (Upset)</strong>';
+                tbody.innerHTML += `<tr>
+                    <td>De ${regla.diferencia_min} a ${regla.diferencia_max} pts</td>
+                    <td>${escenario}</td>
+                    <td>+ <input type="number" id="regla-ganador-${regla.id}" class="input-mini" value="${regla.puntos_ganador}"></td>
+                    <td> <input type="number" id="regla-perdedor-${regla.id}" class="input-mini" value="${regla.puntos_perdedor}"></td>
+                    <td><button class="btn-accion btn-rojo" onclick="actualizarRegla(${regla.id})">💾 Guardar</button></td>
+                </tr>`;
+            });
+        }
+
+        async function actualizarRegla(id) {
+            const ptsGanador = document.getElementById(`regla-ganador-${id}`).value;
+            const ptsPerdedor = document.getElementById(`regla-perdedor-${id}`).value;
+            await clienteSupabase.from('reglas_ranking').update({ puntos_ganador: parseInt(ptsGanador), puntos_perdedor: parseInt(ptsPerdedor) }).eq('id', id);
+            alert(`✅ Regla de puntuación actualizada.`);
+        }
+
+        cargarPendientes(); cargarCategorias(); cargarReglas();
     </script>
 </body>
 </html>
