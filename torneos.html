@@ -3,26 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Torneos - Panel Principal</title>
+    <title>Gestor Principal de Torneos</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1100px; margin: auto; background: #eef2f5; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #eef2f5; }
+        
+        /* BARRA DE NAVEGACIÓN SUPERIOR UNIFICADA */
+        .navbar { background: #1a252f; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); flex-wrap: wrap; gap: 10px; }
+        .nav-title { font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; }
+        .nav-btn { color: #ecf0f1; text-decoration: none; padding: 8px 12px; border-radius: 5px; font-size: 13px; font-weight: bold; background: #2c3e50; transition: 0.2s; }
+        .nav-btn:hover { background: #34495e; color: white; }
+        .nav-btn.active { background: #007bff; color: white; }
+        .nav-btn.public { background: #28a745; }
+
+        .main-content { padding: 20px; max-width: 1100px; margin: auto; }
         .container { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h2, h3 { color: #333; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        
         .form-row { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; align-items: center; }
         .form-row input, .form-row select { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-width: 150px; box-sizing: border-box; }
-        .btn { color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; }
+        
+        .btn { color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; font-size: 14px; }
         .btn-azul { background: #007bff; } .btn-azul:hover { background: #0056b3; }
         .btn-verde { background: #28a745; } .btn-verde:hover { background: #218838; }
         .btn-rojo { background: #dc3545; } .btn-rojo:hover { background: #c82333; }
         .btn-gris { background: #6c757d; } .btn-gris:hover { background: #5a6268; }
         .btn-cian { background: #17a2b8; } .btn-cian:hover { background: #138496; }
+        .btn-ws { background: #25d366; } .btn-ws:hover { background: #1ebc57; }
         
-        .banner-activo { background: #d4edda; border: 2px solid #28a745; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; }
-        
+        /* BANNER Y RESUMEN DEL TORNEO ACTIVO */
+        .banner-activo { background: #d4edda; border: 2px solid #28a745; color: #155724; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .grid-categorias-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 15px; }
+        .card-cat-resumen { background: white; border: 1px solid #c3e6cb; padding: 12px; border-radius: 6px; text-align: center; }
+        .card-cat-resumen .num { font-size: 22px; font-weight: bold; color: #28a745; }
+        .card-cat-resumen .label { font-size: 13px; color: #555; margin-top: 3px; font-weight: bold; }
+
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background-color: #343a40; color: white; }
+        
         .badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; color: white; display: inline-block; }
         .badge-registro { background: #ffc107; color: #333; }
         .badge-curso { background: #28a745; }
@@ -31,52 +51,75 @@
 </head>
 <body>
 
-    <!-- BANNER DEL TORNEO ACTIVO -->
-    <div id="banner-activo-box" class="banner-activo">
-        <div>
-            <span style="font-size: 12px; text-transform: uppercase; font-weight: bold; color: #155724;"> Torneo Activo en el Sistema:</span>
-            <h3 id="nombre-torneo-activo" style="margin: 5px 0 0 0; border: none; padding: 0;">Cargando...</h3>
+    <!-- BARRA DE NAVEGACIÓN UNIVERSAL -->
+    <nav class="navbar">
+        <div class="nav-title">🏓 Central de Torneos</div>
+        <div class="nav-links">
+            <a href="torneos.html" class="nav-btn active">📂 Mis Torneos</a>
+            <a href="admin.html" class="nav-btn">⚙️ Administrador</a>
+            <a href="sorteo.html" class="nav-btn">🧠 Sorteo</a>
+            <a href="horarios.html" class="nav-btn">📅 Horarios WS</a>
+            <a href="index.html" target="_blank" class="nav-btn public">🌐 Portal Público</a>
+            <button onclick="cerrarSesionAdmin()" class="nav-btn" style="background:#dc3545; border:none; cursor:pointer;">🔒 Salir</button>
         </div>
-        <div id="botones-acceso-rapido" style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <a href="admin.html" class="btn btn-azul">⚙️ Administrador</a>
-            <a href="sorteo.html" class="btn btn-cian">🧠 Sorteo</a>
-            <a href="horarios.html" class="btn btn-verde">📅 Horarios WS</a>
-        </div>
-    </div>
+    </nav>
 
-    <!-- CREAR TORNEO -->
-    <div class="container">
-        <h2>➕ Crear Nuevo Torneo</h2>
-        <p style="font-size: 13px; color: #666;">Los jugadores conservarán su ranking actual, pero el torneo iniciará con listas de inscripciones vacías.</p>
-        
-        <div class="form-row">
-            <input type="text" id="nuevo-nombre-torneo" placeholder="Nombre del Torneo (Ej. Abierto de Otoño 2026)">
-            <select id="nuevo-formato-torneo" style="max-width: 220px;">
-                <option value="grupos_y_llaves">Fase de Grupos + Llaves</option>
-                <option value="round_robin">Round Robin Directo (Todos vs Todos)</option>
-            </select>
-            <input type="date" id="nueva-fecha-torneo" style="max-width: 180px;">
-            <button class="btn btn-verde" onclick="crearTorneo()">🏆 Crear Torneo</button>
-        </div>
-    </div>
+    <div class="main-content">
 
-    <!-- HISTORIAL DE TORNEOS -->
-    <div class="container">
-        <h2>📂 Historial de Torneos Guardados</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Nombre del Torneo</th>
-                    <th>Formato</th>
-                    <th>Estado</th>
-                    <th style="width: 320px;">Acciones / Controles</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-torneos">
-                <tr><td colspan="5" style="text-align: center; color: #777;">Cargando historial de torneos...</td></tr>
-            </tbody>
-        </table>
+        <!-- PANEL DE CONTROL DEL TORNEO SELECCIONADO / ACTIVO -->
+        <div class="banner-activo">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                <div>
+                    <span style="font-size: 12px; text-transform: uppercase; font-weight: bold; color: #155724;">Torneo Seleccionado en el Sistema:</span>
+                    <h2 id="nombre-torneo-activo" style="margin: 5px 0 0 0; border: none; padding: 0; color: #155724;">Cargando...</h2>
+                </div>
+                <button class="btn btn-ws" onclick="compartirWhatsAppInscripciones()">📲 Compartir Link por WhatsApp</button>
+            </div>
+
+            <!-- DESGLOSE DE INSCRITOS POR CATEGORÍA -->
+            <div style="margin-top: 15px; border-top: 1px solid #c3e6cb; padding-top: 15px;">
+                <div style="font-weight: bold; font-size: 14px; color: #155724;">📊 Jugadores Confirmados (Pagados) por Categoría:</div>
+                <div id="grid-categorias-vivo" class="grid-categorias-resumen">
+                    <div class="card-cat-resumen">Cargando desglose...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FORMULARIO: CREAR NUEVO TORNEO -->
+        <div class="container">
+            <h2>➕ Crear Nuevo Torneo</h2>
+            <p style="font-size: 13px; color: #666;">Al crear un torneo, la lista de inscripciones inicia vacía para el nuevo evento, pero los jugadores conservan su ranking acumulado.</p>
+            
+            <div class="form-row">
+                <input type="text" id="nuevo-nombre-torneo" placeholder="Nombre del Torneo (Ej. Abierto de Otoño 2026)">
+                <select id="nuevo-formato-torneo" style="max-width: 220px;">
+                    <option value="grupos_y_llaves">Fase de Grupos + Llaves</option>
+                    <option value="round_robin">Round Robin Directo (Todos vs Todos)</option>
+                </select>
+                <input type="date" id="nueva-fecha-torneo" style="max-width: 180px;">
+                <button class="btn btn-verde" onclick="crearTorneo()">🏆 Crear Torneo</button>
+            </div>
+        </div>
+
+        <!-- HISTORIAL COMPLETO DE TORNEOS GUARDADOS -->
+        <div class="container">
+            <h2>📂 Historial de Torneos Guardados</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Nombre del Torneo</th>
+                        <th>Formato</th>
+                        <th>Estado</th>
+                        <th style="width: 300px;">Acciones / Controles</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-torneos">
+                    <tr><td colspan="5" style="text-align: center; color: #777;">Cargando historial de torneos...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
     </div>
 
     <script>
@@ -84,9 +127,33 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+        const CLAVE_ADMIN_MAESTRA = 'admin2026'; // Contraseña maestra de administración
         let todosLosTorneos = [];
+        let torneoActivoObj = null;
+
+        // --- SISTEMA DE AUTENTICACIÓN / CANDADO ---
+        function verificarAccesoAdmin() {
+            if (localStorage.getItem('admin_autenticado') !== 'true') {
+                let pass = prompt("🔒 Ingrese la Contraseña Maestra de Administrador:");
+                if (pass === CLAVE_ADMIN_MAESTRA) {
+                    localStorage.setItem('admin_autenticado', 'true');
+                } else {
+                    alert("❌ Contraseña incorrecta. Acceso denegado.");
+                    document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px; color:red;'>Acceso Denegado 🔒</h2>";
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function cerrarSesionAdmin() {
+            localStorage.removeItem('admin_autenticado');
+            window.location.reload();
+        }
 
         async function cargarTorneos() {
+            if (!verificarAccesoAdmin()) return;
+
             document.getElementById('nueva-fecha-torneo').valueAsDate = new Date();
 
             const { data, error } = await clienteSupabase
@@ -96,32 +163,75 @@
 
             if (error) {
                 console.error("Error al cargar:", error);
-                document.getElementById('tabla-torneos').innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Error: ${error.message}. Ejecuta el script SQL en Supabase.</td></tr>`;
+                document.getElementById('tabla-torneos').innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Error al conectar con la base de datos.</td></tr>`;
                 return;
             }
 
             todosLosTorneos = data || [];
 
-            let torneoActivoId = localStorage.getItem('torneo_activo_id');
-
-            if (!torneoActivoId && todosLosTorneos.length > 0) {
-                torneoActivoId = todosLosTorneos[0].id;
-                localStorage.setItem('torneo_activo_id', torneoActivoId);
+            let idActivo = localStorage.getItem('torneo_activo_id');
+            if (!idActivo && todosLosTorneos.length > 0) {
+                idActivo = todosLosTorneos[0].id;
+                localStorage.setItem('torneo_activo_id', idActivo);
             }
 
-            actualizarBannerActivo(torneoActivoId);
-            dibujarTablaTorneos(torneoActivoId);
+            torneoActivoObj = todosLosTorneos.find(t => t.id == idActivo);
+
+            actualizarBannerActivo();
+            dibujarTablaTorneos(idActivo);
+            cargarDesgloseCategoriasVivo(idActivo);
         }
 
-        function actualizarBannerActivo(idActivo) {
-            const torneo = todosLosTorneos.find(t => t.id == idActivo);
+        function actualizarBannerActivo() {
             const boxNombre = document.getElementById('nombre-torneo-activo');
-
-            if (torneo) {
-                boxNombre.innerText = `${torneo.nombre} (${torneo.fecha_evento || 'Sin fecha'})`;
+            if (torneoActivoObj) {
+                boxNombre.innerText = `${torneoActivoObj.nombre} (${torneoActivoObj.fecha_evento || 'Sin fecha'})`;
             } else {
                 boxNombre.innerText = "Ningún torneo seleccionado";
             }
+        }
+
+        async function cargarDesgloseCategoriasVivo(idTorneo) {
+            const grid = document.getElementById('grid-categorias-vivo');
+            grid.innerHTML = '';
+
+            if (!idTorneo) {
+                grid.innerHTML = '<div class="card-cat-resumen">Selecciona un torneo activo.</div>';
+                return;
+            }
+
+            // Consultar categorías e inscripciones pagadas
+            const [resCat, resIns] = await Promise.all([
+                clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true }),
+                clienteSupabase.from('inscripciones').select('*').eq('torneo_id', idTorneo).eq('estatus_pago', 'Pagado')
+            ]);
+
+            const categorias = resCat.data || [];
+            const inscripciones = resIns.data || [];
+
+            if (categorias.length === 0) {
+                grid.innerHTML = '<div class="card-cat-resumen">No hay categorías configuradas.</div>';
+                return;
+            }
+
+            let totalPagados = inscripciones.length;
+
+            grid.innerHTML += `
+                <div class="card-cat-resumen" style="background: #e8f5e9; border-color: #a5d6a7;">
+                    <div class="num" style="color: #2e7d32;">${totalPagados}</div>
+                    <div class="label" style="color: #1b5e20;">TOTAL CONFIRMADOS</div>
+                </div>
+            `;
+
+            categorias.forEach(cat => {
+                let cantInscritos = inscripciones.filter(ins => ins.categoria_id === cat.id).length;
+                grid.innerHTML += `
+                    <div class="card-cat-resumen">
+                        <div class="num">${cantInscritos}</div>
+                        <div class="label">${cat.nombre}</div>
+                    </div>
+                `;
+            });
         }
 
         function dibujarTablaTorneos(idActivo) {
@@ -170,7 +280,6 @@
 
         function seleccionarTorneoActivo(id) {
             localStorage.setItem('torneo_activo_id', id);
-            alert("✅ Torneo seleccionado.");
             cargarTorneos();
         }
 
@@ -189,8 +298,7 @@
             }]).select();
 
             if (error || !data) {
-                console.error(error);
-                alert(`Error al crear: ${error ? error.message : 'Desconocido'}`);
+                alert(`Error al crear torneo.`);
                 return;
             }
 
@@ -209,6 +317,19 @@
             if (error) { alert("Error al cambiar estado."); return; }
 
             cargarTorneos();
+        }
+
+        function compartirWhatsAppInscripciones() {
+            const nombre = torneoActivoObj ? torneoActivoObj.nombre : 'Torneo Oficial';
+            const urlPublica = window.location.origin + '/index.html';
+
+            const mensaje = `🏓 *¡INSCRIPCIONES ABIERTAS!* 🏓\n\n` +
+                            `Registro abierto para el torneo: *${nombre}*\n\n` +
+                            `Reserva tu lugar ingresando aquí:\n` +
+                            `👉 ${urlPublica}\n\n` +
+                            `¡Te esperamos!`;
+
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`, '_blank');
         }
 
         cargarTorneos();
