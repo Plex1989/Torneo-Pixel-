@@ -6,7 +6,7 @@
     <title>Panel de Control - Torneo</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; max-width: 900px; margin: auto; background: #eef2f5; }
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 950px; margin: auto; background: #eef2f5; }
         .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
         h2, h3 { color: #333; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
         .form-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
@@ -17,6 +17,7 @@
         .btn-cian { background: #17a2b8; } .btn-cian:hover { background: #138496; }
         .btn-rojo { background: #dc3545; } .btn-rojo:hover { background: #c82333; }
         .btn-gris { background: #6c757d; } .btn-gris:hover { background: #5a6268; }
+        .btn-negro { background: #343a40; } .btn-negro:hover { background: #1d2124; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
         th { background-color: #28a745; color: white; }
@@ -27,17 +28,29 @@
         .input-mini { width: 60px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
         .check-bono { width: 20px; height: 20px; cursor: pointer; }
         .caja-edicion { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #ddd; margin-top: 15px; }
+
+        /* Estilos exclusivos para Impresión */
+        @media print {
+            body { background: white; padding: 0; }
+            .no-print, .panel:not(#seccion-print) { display: none !important; }
+            #seccion-print { display: block !important; box-shadow: none; border: none; }
+            table { font-size: 12pt; border: 1px solid #000; }
+            th { background-color: #333 !important; color: white !important; -webkit-print-color-adjust: exact; }
+            td, th { border: 1px solid #999; padding: 8px; }
+        }
     </style>
 </head>
 <body>
     
-    <!-- Módulos de Administración -->
-    <div class="panel">
-        <h2>👥 Módulo de Jugadores (Crear y Editar)</h2>
-        <p style="font-size: 13px; color: #666; margin-bottom: 5px;">Busca un jugador para editar sus datos, o déjalo en "Nuevo" para dar de alta a otro:</p>
+    <div class="panel no-print">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+            <h2 style="border: none; margin: 0;">👥 Módulo de Jugadores</h2>
+            <button class="btn-accion btn-negro" onclick="imprimirRanking()">🖨️ Imprimir Ranking Oficial</button>
+        </div>
+        <p style="font-size: 13px; color: #666; margin-top: 10px;">Escribe para buscar y seleccionar automáticamente:</p>
         
         <div class="form-row">
-            <input type="text" id="buscador-jugador" placeholder="🔎 Buscar por nombre..." onkeyup="filtrarJugadoresAdmin()" style="max-width: 250px;">
+            <input type="text" id="buscador-jugador" placeholder="🔎 Escribe un nombre..." onkeyup="filtrarYAutoSeleccionarAdmin()" style="max-width: 250px;">
             <select id="select-jugador-admin" onchange="cargarDatosJugadorEditar()">
                 <option value="">-- Nuevo Jugador (Modo Crear) --</option>
             </select>
@@ -47,15 +60,33 @@
             <div style="font-weight: bold; margin-bottom: 10px; font-size: 14px;" id="titulo-modo-jugador">➕ Registrando Nuevo Jugador:</div>
             <div class="form-row">
                 <input type="text" id="nuevo-nombre" placeholder="Nombre completo">
-                <input type="number" id="nuevo-ranking" placeholder="Pts ranking" style="max-width: 130px;">
-                <input type="text" id="nuevo-nip" placeholder="NIP (Ej: 1234)" maxlength="4" style="max-width: 120px;" value="1234">
+                <input type="text" id="nuevo-club" placeholder="Club / Municipio" style="max-width: 180px;">
+                <input type="number" id="nuevo-ranking" placeholder="Pts ranking" style="max-width: 120px;">
+                <input type="text" id="nuevo-nip" placeholder="NIP (1234)" maxlength="4" style="max-width: 100px;" value="1234">
                 <button id="btn-guardar-jugador" class="btn-accion btn-azul" onclick="guardarJugador()">➕ Crear Jugador</button>
                 <button id="btn-cancelar-jugador" class="btn-accion btn-gris" style="display: none;" onclick="resetFormularioJugador()">❌ Cancelar</button>
             </div>
         </div>
     </div>
 
-    <div class="panel">
+    <!-- SECCIÓN IMPRESIÓN (Oculta en pantalla normal, visible al imprimir) -->
+    <div class="panel" id="seccion-print">
+        <h2 style="text-align: center;">🏓 TABLA OFICIAL DE RANKING 🏓</h2>
+        <p style="text-align: center; font-size: 12px; color: #555;" id="fecha-impresion"></p>
+        <table>
+            <thead>
+                <tr>
+                    <th># Pos</th>
+                    <th>Jugador</th>
+                    <th>Club / Entidad</th>
+                    <th>Puntos Ranking</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-print-body"></tbody>
+        </table>
+    </div>
+
+    <div class="panel no-print">
         <h2>💰 Validación de Pagos</h2>
         <table>
             <thead><tr><th>Jugador</th><th>Categoría</th><th>Ranking</th><th>Acción</th></tr></thead>
@@ -63,7 +94,7 @@
         </table>
     </div>
 
-    <div class="panel">
+    <div class="panel no-print">
         <h2 style="border-bottom-color: #6c757d;">🏷️ Gestión de Categorías</h2>
         <div class="form-row" style="margin-bottom: 20px;">
             <input type="text" id="nueva-cat-nombre" placeholder="Nombre de categoría">
@@ -77,9 +108,8 @@
         </table>
     </div>
 
-    <div class="panel">
+    <div class="panel no-print">
         <h2 style="border-bottom-color: #dc3545;">📈 Reglas de Puntuación (Ranking)</h2>
-        <p style="font-size: 14px; color: #555;">Basado en el estándar profesional: Las victorias esperadas dan pocos puntos. Las sorpresas dan muchos puntos.</p>
         <table>
             <thead>
                 <tr>
@@ -90,17 +120,14 @@
                     <th class="th-regla">Acción</th>
                 </tr>
             </thead>
-            <tbody id="tabla-reglas">
-                <tr><td colspan="5" class="mensaje-vacio">Cargando reglas...</td></tr>
-            </tbody>
+            <tbody id="tabla-reglas"><tr><td colspan="5" class="mensaje-vacio">Cargando...</td></tr></tbody>
         </table>
 
         <hr style="border: 0; border-top: 1px solid #ddd; margin: 25px 0;">
-        <h3 style="color: #dc3545; font-size: 16px;">🏆 Bono por Clasificar a Llaves (Bonus Fase de Grupos)</h3>
+        <h3 style="color: #dc3545; font-size: 16px;">🏆 Bono por Clasificar a Llaves</h3>
         <div class="form-row" style="align-items: center; background: #fff8f8; padding: 15px; border-radius: 6px; border: 1px solid #f5c6cb;">
             <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: bold;">
-                <input type="checkbox" id="bono-activo" class="check-bono">
-                Activar bono
+                <input type="checkbox" id="bono-activo" class="check-bono"> Activar bono
             </label>
             <span style="margin-left: 15px;">Dar</span>
             <input type="number" id="bono-puntos" class="input-mini" placeholder="Pts">
@@ -116,108 +143,114 @@
 
         let todosLosJugadoresAdmin = [];
 
-        // -- MÓDULO JUGADORES (Creación/Edición) --
         async function cargarJugadoresAdmin() {
-            const { data, error } = await clienteSupabase.from('jugadores').select('*').order('nombre', { ascending: true });
-            if (error || !data) return;
+            const { data } = await clienteSupabase.from('jugadores').select('*').order('puntos_ranking', { ascending: false });
+            if (!data) return;
             todosLosJugadoresAdmin = data;
-            filtrarJugadoresAdmin();
+            filtrarYAutoSeleccionarAdmin();
+            generarTablaImpresion();
         }
 
-        function filtrarJugadoresAdmin() {
-            const texto = document.getElementById('buscador-jugador').value.toLowerCase();
+        function filtrarYAutoSeleccionarAdmin() {
+            const texto = document.getElementById('buscador-jugador').value.toLowerCase().trim();
             const select = document.getElementById('select-jugador-admin');
-            const idActual = select.value;
-            
             select.innerHTML = '<option value="">-- Nuevo Jugador (Modo Crear) --</option>';
             
             const filtrados = todosLosJugadoresAdmin.filter(j => j.nombre.toLowerCase().includes(texto));
+            
             filtrados.forEach(j => {
                 let opt = document.createElement('option');
                 opt.value = j.id;
-                opt.textContent = `${j.nombre} (${j.puntos_ranking} pts - NIP: ${j.nip_seguridad || '1234'})`;
-                if (j.id == idActual) opt.selected = true;
+                opt.textContent = `${j.nombre} [${j.club || 'Sin Club'}] (${j.puntos_ranking} pts)`;
                 select.appendChild(opt);
             });
+
+            // Si hay texto de búsqueda y coincidencias, selecciona la primera automáticamente
+            if (texto.length > 0 && filtrados.length > 0) {
+                select.value = filtrados[0].id;
+                cargarDatosJugadorEditar();
+            } else if (texto.length === 0) {
+                resetFormularioJugador();
+            }
         }
 
         function cargarDatosJugadorEditar() {
             const idSel = document.getElementById('select-jugador-admin').value;
-            const btnGuardar = document.getElementById('btn-guardar-jugador');
-            const btnCancelar = document.getElementById('btn-cancelar-jugador');
-            const tituloModo = document.getElementById('titulo-modo-jugador');
+            if (!idSel) { resetFormularioJugador(); return; }
 
-            if (!idSel) {
-                resetFormularioJugador();
-                return;
-            }
+            const j = todosLosJugadoresAdmin.find(item => item.id == idSel);
+            if (j) {
+                document.getElementById('nuevo-nombre').value = j.nombre;
+                document.getElementById('nuevo-club').value = j.club || '';
+                document.getElementById('nuevo-ranking').value = j.puntos_ranking;
+                document.getElementById('nuevo-nip').value = j.nip_seguridad || '1234';
 
-            const jugador = todosLosJugadoresAdmin.find(j => j.id == idSel);
-            if (jugador) {
-                document.getElementById('nuevo-nombre').value = jugador.nombre;
-                document.getElementById('nuevo-ranking').value = jugador.puntos_ranking;
-                document.getElementById('nuevo-nip').value = jugador.nip_seguridad || '1234';
-
-                tituloModo.innerText = `✏️ Editando a: ${jugador.nombre}`;
-                btnGuardar.innerText = "💾 Actualizar Cambios";
-                btnGuardar.className = "btn-accion btn-verde";
-                btnCancelar.style.display = "inline-block";
+                document.getElementById('titulo-modo-jugador').innerText = `✏️ Editando a: ${j.nombre}`;
+                const btn = document.getElementById('btn-guardar-jugador');
+                btn.innerText = "💾 Actualizar Cambios";
+                btn.className = "btn-accion btn-verde";
+                document.getElementById('btn-cancelar-jugador').style.display = "inline-block";
             }
         }
 
         function resetFormularioJugador() {
             document.getElementById('select-jugador-admin').value = "";
             document.getElementById('nuevo-nombre').value = "";
+            document.getElementById('nuevo-club').value = "";
             document.getElementById('nuevo-ranking').value = "";
             document.getElementById('nuevo-nip').value = "1234";
 
             document.getElementById('titulo-modo-jugador').innerText = "➕ Registrando Nuevo Jugador:";
-            const btnGuardar = document.getElementById('btn-guardar-jugador');
-            btnGuardar.innerText = "➕ Crear Jugador";
-            btnGuardar.className = "btn-accion btn-azul";
+            const btn = document.getElementById('btn-guardar-jugador');
+            btn.innerText = "➕ Crear Jugador";
+            btn.className = "btn-accion btn-azul";
             document.getElementById('btn-cancelar-jugador').style.display = "none";
         }
 
         async function guardarJugador() {
             const idSel = document.getElementById('select-jugador-admin').value;
             const nombre = document.getElementById('nuevo-nombre').value.trim();
+            const club = document.getElementById('nuevo-club').value.trim() || 'Sin Club';
             const puntos = document.getElementById('nuevo-ranking').value;
             const nip = document.getElementById('nuevo-nip').value.trim() || '1234';
             
-            if (!nombre || !puntos) { alert('Llena el nombre y los puntos.'); return; }
+            if (!nombre || !puntos) { alert('Llena nombre y puntos.'); return; }
             
             if (idSel) {
-                // ACTUALIZAR EXISTENTE
-                const { error } = await clienteSupabase.from('jugadores').update({
-                    nombre: nombre,
-                    puntos_ranking: parseInt(puntos),
-                    nip_seguridad: nip
-                }).eq('id', idSel);
-
-                if (error) { alert("Error al actualizar."); return; }
-                alert(`✅ Datos de ${nombre} actualizados correctamente.`);
+                await clienteSupabase.from('jugadores').update({ nombre: nombre, club: club, puntos_ranking: parseInt(puntos), nip_seguridad: nip }).eq('id', idSel);
+                alert(`✅ Datos de ${nombre} actualizados.`);
             } else {
-                // CREAR NUEVO
-                const { error } = await clienteSupabase.from('jugadores').insert([{ 
-                    nombre: nombre, 
-                    puntos_ranking: parseInt(puntos),
-                    nip_seguridad: nip
-                }]);
-
-                if (error) { alert("Error al guardar."); return; }
-                alert(`✅ ${nombre} registrado con NIP: ${nip}`);
+                await clienteSupabase.from('jugadores').insert([{ nombre: nombre, club: club, puntos_ranking: parseInt(puntos), nip_seguridad: nip }]);
+                alert(`✅ ${nombre} registrado.`);
             }
-
+            document.getElementById('buscador-jugador').value = '';
             resetFormularioJugador();
             cargarJugadoresAdmin();
         }
 
-        // -- MÓDULO PAGOS --
+        function generarTablaImpresion() {
+            const tbody = document.getElementById('tabla-print-body');
+            tbody.innerHTML = '';
+            document.getElementById('fecha-impresion').innerText = "Generado el: " + new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            todosLosJugadoresAdmin.forEach((j, idx) => {
+                tbody.innerHTML += `<tr>
+                    <td style="text-align: center; font-weight: bold;">#${idx + 1}</td>
+                    <td><strong>${j.nombre}</strong></td>
+                    <td>${j.club || 'Sin Club'}</td>
+                    <td style="font-weight: bold;">${j.puntos_ranking} pts</td>
+                </tr>`;
+            });
+        }
+
+        function imprimirRanking() { window.print(); }
+
+        // -- MÓDULOS DE PAGOS, CATEGORÍAS Y REGLAS --
         async function cargarPendientes() {
-            const { data } = await clienteSupabase.from('inscripciones').select(`id, estatus_pago, jugadores ( nombre, puntos_ranking ), categorias ( nombre )`).eq('estatus_pago', 'Pendiente de Pago');
+            const { data } = await clienteSupabase.from('inscripciones').select(`id, estatus_pago, jugadores ( nombre, puntos_ranking, club ), categorias ( nombre )`).eq('estatus_pago', 'Pendiente de Pago');
             const tbody = document.getElementById('tabla-pendientes'); tbody.innerHTML = '';
             if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="mensaje-vacio">No hay pagos pendientes.</td></tr>'; return; }
-            data.forEach(ins => tbody.innerHTML += `<tr><td><strong>${ins.jugadores.nombre}</strong></td><td>${ins.categorias.nombre}</td><td>${ins.jugadores.puntos_ranking} pts</td><td><button class="btn-aprobar" onclick="aprobarPago(${ins.id})">Validar Pago</button></td></tr>`);
+            data.forEach(ins => tbody.innerHTML += `<tr><td><strong>${ins.jugadores.nombre}</strong> <small>(${ins.jugadores.club})</small></td><td>${ins.categorias.nombre}</td><td>${ins.jugadores.puntos_ranking} pts</td><td><button class="btn-aprobar" onclick="aprobarPago(${ins.id})">Validar Pago</button></td></tr>`);
         }
 
         async function aprobarPago(id) {
@@ -226,7 +259,6 @@
             alert("✅ Aprobado."); cargarPendientes();
         }
 
-        // -- MÓDULO CATEGORÍAS --
         async function cargarCategorias() {
             const { data } = await clienteSupabase.from('categorias').select('*').order('puntos_maximos', { ascending: true });
             const tbody = document.getElementById('tabla-categorias'); tbody.innerHTML = '';
@@ -247,45 +279,33 @@
             alert(`✅ Creada.`); location.reload();
         }
 
-        // -- MÓDULO REGLAS DE RANKING Y BONO --
         async function cargarReglas() {
             const { data } = await clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true });
             const tbody = document.getElementById('tabla-reglas'); tbody.innerHTML = '';
             if (!data) return;
             data.forEach(regla => {
-                let escenario = regla.resultado_esperado === 'gana_favorito' ? 'Gana el Favorito (Ranking Mayor)' : '<strong>Gana el Retador (Upset)</strong>';
-                tbody.innerHTML += `<tr>
-                    <td>De ${regla.diferencia_min} a ${regla.diferencia_max} pts</td>
-                    <td>${escenario}</td>
-                    <td>+ <input type="number" id="regla-ganador-${regla.id}" class="input-mini" value="${regla.puntos_ganador}"></td>
-                    <td> <input type="number" id="regla-perdedor-${regla.id}" class="input-mini" value="${regla.puntos_perdedor}"></td>
-                    <td><button class="btn-accion btn-rojo" onclick="actualizarRegla(${regla.id})">💾 Guardar</button></td>
-                </tr>`;
+                let escenario = regla.resultado_esperado === 'gana_favorito' ? 'Gana Favorito' : '<strong>Gana Retador (Upset)</strong>';
+                tbody.innerHTML += `<tr><td>De ${regla.diferencia_min} a ${regla.diferencia_max} pts</td><td>${escenario}</td><td>+ <input type="number" id="regla-ganador-${regla.id}" class="input-mini" value="${regla.puntos_ganador}"></td><td> <input type="number" id="regla-perdedor-${regla.id}" class="input-mini" value="${regla.puntos_perdedor}"></td><td><button class="btn-accion btn-rojo" onclick="actualizarRegla(${regla.id})">💾 Guardar</button></td></tr>`;
             });
         }
 
         async function actualizarRegla(id) {
             const ptsGanador = document.getElementById(`regla-ganador-${id}`).value, ptsPerdedor = document.getElementById(`regla-perdedor-${id}`).value;
             await clienteSupabase.from('reglas_ranking').update({ puntos_ganador: parseInt(ptsGanador), puntos_perdedor: parseInt(ptsPerdedor) }).eq('id', id);
-            alert(`✅ Regla de puntuación actualizada.`);
+            alert(`✅ Regla actualizada.`);
         }
 
         async function cargarBono() {
             const { data } = await clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').single();
-            if (data) {
-                document.getElementById('bono-activo').checked = data.activo;
-                document.getElementById('bono-puntos').value = data.valor;
-            }
+            if (data) { document.getElementById('bono-activo').checked = data.activo; document.getElementById('bono-puntos').value = data.valor; }
         }
 
         async function guardarBono() {
-            const activo = document.getElementById('bono-activo').checked;
-            const valor = parseInt(document.getElementById('bono-puntos').value) || 0;
+            const activo = document.getElementById('bono-activo').checked, valor = parseInt(document.getElementById('bono-puntos').value) || 0;
             await clienteSupabase.from('configuracion').update({ activo: activo, valor: valor }).eq('clave', 'bono_pase_grupos');
-            alert('✅ Configuración del bono guardada correctamente.');
+            alert('✅ Bono guardado.');
         }
 
-        // Cargar todo al iniciar
         cargarJugadoresAdmin(); cargarPendientes(); cargarCategorias(); cargarReglas(); cargarBono();
     </script>
 </body>
