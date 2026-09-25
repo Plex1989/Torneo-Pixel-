@@ -71,12 +71,9 @@
             <div style="font-weight: bold; margin-bottom: 10px; font-size: 14px;" id="titulo-modo-jugador">➕ Registrando Nuevo Jugador:</div>
             <div class="form-row">
                 <input type="text" id="nuevo-nombre" placeholder="Nombre completo">
-                
-                <!-- DROPDOWN DE CLUBS EN LUGAR DE TEXTO LIBRE -->
                 <select id="nuevo-club" style="max-width: 200px;">
                     <option value="Sin Club">Cargando clubs...</option>
                 </select>
-
                 <input type="number" id="nuevo-ranking" placeholder="Pts ranking" style="max-width: 120px;">
                 <input type="text" id="nuevo-nip" placeholder="NIP (1234)" maxlength="4" style="max-width: 100px;" value="1234">
                 <button id="btn-guardar-jugador" class="btn-accion btn-azul" onclick="guardarJugador()">➕ Crear Jugador</button>
@@ -92,10 +89,10 @@
         <div id="contenedor-ranking-categorias" style="display: none;">Cargando ranking...</div>
     </div>
 
-    <!-- MÓDULO NUEVO: GESTIÓN DE CLUBS -->
+    <!-- MÓDULO DE CLUBS (Con Edición y Eliminación) -->
     <div class="panel no-print">
         <h2 style="border-bottom-color: #fd7e14;">🏡 Gestión de Clubs / Equipos</h2>
-        <p style="font-size: 13px; color: #666;">Registra aquí los clubs oficiales para que aparezcan en la lista desplegable al agregar jugadores:</p>
+        <p style="font-size: 13px; color: #666;">Registra, edita o elimina los clubs oficiales de tu liga:</p>
         
         <div class="form-row" style="margin-bottom: 15px;">
             <input type="text" id="nuevo-nombre-club" placeholder="Nombre del Club / Municipio (Ej. Halcones Xalapa)">
@@ -105,12 +102,13 @@
         <table>
             <thead>
                 <tr>
-                    <th class="th-club">ID</th>
+                    <th class="th-club" style="width: 60px;">ID</th>
                     <th class="th-club">Nombre del Club</th>
+                    <th class="th-club" style="width: 220px;">Acciones</th>
                 </tr>
             </thead>
             <tbody id="tabla-clubs">
-                <tr><td colspan="2" class="mensaje-vacio">Cargando clubs...</td></tr>
+                <tr><td colspan="3" class="mensaje-vacio">Cargando clubs...</td></tr>
             </tbody>
         </table>
     </div>
@@ -214,14 +212,23 @@
             tbody.innerHTML = '';
 
             if (todosLosClubsAdmin.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="2" class="mensaje-vacio">No hay clubs registrados.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="3" class="mensaje-vacio">No hay clubs registrados.</td></tr>';
                 return;
             }
 
             todosLosClubsAdmin.forEach(c => {
+                const esDefault = c.nombre === 'Sin Club';
                 tbody.innerHTML += `<tr>
                     <td>#${c.id}</td>
-                    <td><strong>${c.nombre}</strong></td>
+                    <td>
+                        <input type="text" id="club-nombre-${c.id}" value="${c.nombre}" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; width: 90%; font-weight: bold;" ${esDefault ? 'disabled' : ''}>
+                    </td>
+                    <td>
+                        ${!esDefault ? `
+                            <button class="btn-accion btn-cian" style="padding: 6px 10px; font-size: 12px; margin-right: 5px;" onclick="actualizarClub(${c.id}, '${c.nombre}')">💾 Guardar</button>
+                            <button class="btn-accion btn-rojo" style="padding: 6px 10px; font-size: 12px;" onclick="eliminarClub(${c.id}, '${c.nombre}')">🗑️ Eliminar</button>
+                        ` : '<small style="color:#777; font-style:italic;">Default (No editable)</small>'}
+                    </td>
                 </tr>`;
             });
         }
@@ -235,6 +242,41 @@
 
             alert(`✅ Club "${nombre}" registrado correctamente.`);
             document.getElementById('nuevo-nombre-club').value = '';
+            cargarDatosIniciales();
+        }
+
+        async function actualizarClub(id, nombreAntiguo) {
+            const nuevoNombre = document.getElementById(`club-nombre-${id}`).value.trim();
+            if (!nuevoNombre) { alert("El nombre del club no puede estar vacío."); return; }
+            if (nuevoNombre === nombreAntiguo) return;
+
+            // 1. Actualizar en la tabla 'clubs'
+            const { error } = await clienteSupabase.from('clubs').update({ nombre: nuevoNombre }).eq('id', id);
+            if (error) { alert("Error al actualizar el nombre del club."); return; }
+
+            // 2. Actualizar automáticamente a todos los jugadores asignados a este club
+            await clienteSupabase.from('jugadores').update({ club: nuevoNombre }).eq('club', nombreAntiguo);
+
+            alert(`✅ Club actualizado de "${nombreAntiguo}" a "${nuevoNombre}".`);
+            cargarDatosIniciales();
+        }
+
+        async function eliminarClub(id, nombreClub) {
+            if (nombreClub === 'Sin Club') {
+                alert("No puedes eliminar el club por defecto ('Sin Club').");
+                return;
+            }
+
+            if (!confirm(`¿Deseas eliminar el club "${nombreClub}"?\n\nLos jugadores asignados a este club pasarán a tener 'Sin Club'.`)) return;
+
+            // 1. Cambiar los jugadores de este club a 'Sin Club'
+            await clienteSupabase.from('jugadores').update({ club: 'Sin Club' }).eq('club', nombreClub);
+
+            // 2. Eliminar el club de la tabla 'clubs'
+            const { error } = await clienteSupabase.from('clubs').delete().eq('id', id);
+            if (error) { alert("Error al eliminar el club."); return; }
+
+            alert(`✅ Club "${nombreClub}" eliminado.`);
             cargarDatosIniciales();
         }
 
