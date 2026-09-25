@@ -25,7 +25,6 @@
 <body>
     <div class="formulario">
         
-        <!-- BANNER CON NOMBRE DEL TORNEO ACTIVO -->
         <div class="banner-torneo">
             <p>Portal Oficial de Registro</p>
             <h2 id="nombre-torneo-header">Cargando Torneo...</h2>
@@ -64,7 +63,6 @@
         let todosLosJugadores = [], todasLasCategorias = [], todasLasInscripciones = [];
 
         async function inicializar() {
-            // 1. Obtener Torneo Activo
             let idStorage = localStorage.getItem('torneo_activo_id');
             let queryTorneo = clienteSupabase.from('torneos').select('*');
             
@@ -85,10 +83,9 @@
                 return;
             }
 
-            // 2. Cargar Jugadores, Categorías e Inscripciones DEL TORNEO ACTIVO
             const [resJugadores, resCategorias, resInscripciones] = await Promise.all([
                 clienteSupabase.from('jugadores').select('*').order('nombre', { ascending: true }),
-                clienteSupabase.from('categorias').select('*').order('puntos_maximos', { ascending: true }),
+                clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true }),
                 clienteSupabase.from('inscripciones').select('*').eq('torneo_id', torneoActivo.id)
             ]);
 
@@ -147,7 +144,13 @@
             let opcionesDisponibles = 0;
 
             todasLasCategorias.forEach(cat => {
-                if (pts >= cat.puntos_minimos && pts <= cat.puntos_maximos) {
+                const esLibre = cat.nombre.toLowerCase() === 'libre';
+                
+                // Lógica de validación: Se puede jugar en su categoría y en superiores (o en Libre)
+                // Se prohíbe jugar si sus puntos exceden el máximo de una categoría inferior.
+                const cumplePiso = esLibre || pts <= cat.puntos_maximos;
+
+                if (cumplePiso) {
                     if (misInscripciones.includes(cat.id)) {
                         htmlOpciones += `<option value="${cat.id}" disabled>${cat.nombre} (Ya inscrito)</option>`;
                     } else {
