@@ -76,14 +76,14 @@
 
         h2, h3 { color: #ffffff; margin-top: 0; padding-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 20px; transition: all 0.3s ease; }
         
-        .form-row input[type="text"], .form-row input[type="number"], .form-row select, select { 
+        .form-row input[type="text"], .form-row input[type="number"], .form-row input[type="date"], .form-row input[type="time"], .form-row select, select { 
             flex: 1; 
             padding: 10px 14px; 
             border: 1px solid rgba(255, 255, 255, 0.18) !important; 
             background: rgba(10, 15, 26, 0.85) !important; 
             color: #ffffff !important; 
             border-radius: 10px; 
-            min-width: 130px; 
+            min-width: 120px; 
             font-size: 12px; 
             font-family: 'Sora', sans-serif; 
             font-weight: 600;
@@ -92,11 +92,7 @@
         
         select option { background-color: #0a0b10 !important; color: #ffffff !important; padding: 10px; }
 
-        .form-row input:focus, .form-row select:focus, select:focus { 
-            border-color: #38bdf8 !important; 
-            outline: none; 
-            box-shadow: 0 0 16px rgba(56, 189, 248, 0.55); 
-        }
+        .form-row input:focus, .form-row select:focus, select:focus { border-color: #38bdf8 !important; outline: none; box-shadow: 0 0 16px rgba(56, 189, 248, 0.55); }
         
         .btn-console { 
             display: inline-flex;
@@ -116,14 +112,7 @@
             font-family: 'Sora', sans-serif; 
         }
 
-        .btn-console:hover { 
-            background: #06b6d4; 
-            color: #000000; 
-            border-color: #38bdf8; 
-            box-shadow: 0 0 25px rgba(6, 182, 212, 0.85); 
-            transform: translateY(-2px); 
-        }
-        
+        .btn-console:hover { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 25px rgba(6, 182, 212, 0.85); transform: translateY(-2px); }
         .btn-gold:hover { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 25px rgba(245, 158, 11, 0.85); }
         .btn-purple:hover { background: #8b5cf6; color: #ffffff; border-color: #c084fc; box-shadow: 0 0 25px rgba(139, 92, 246, 0.85); }
         .btn-pink:hover { background: #ec4899; color: #ffffff; border-color: #f472b6; box-shadow: 0 0 25px rgba(236, 72, 153, 0.85); }
@@ -134,7 +123,7 @@
         .btn-ws-style:hover { background: #22c55e; color: #000000; border-color: #22c55e; box-shadow: 0 0 25px rgba(34, 197, 94, 0.85); }
         
         table { width: 100%; border-collapse: separate; border-spacing: 0 6px; margin-top: 10px; font-size: 12px; }
-        th { color: #94a3b8; text-transform: uppercase; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; padding: 0 12px 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+        th { color: #94a3b8; text-transform: uppercase; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; padding: 0 12px 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-align: left; }
         
         td { padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border-top: 1px solid rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02); color: #ffffff; transition: all 0.25s ease; }
         td:first-child { border-left: 1px solid rgba(255,255,255,0.02); border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
@@ -188,6 +177,27 @@
                 <h3 id="nombre-torneo-banner" style="margin: 4px 0 0 0; border: none; padding: 0; color:#ffffff; font-size:18px; letter-spacing: 1px;">Cargando...</h3>
             </div>
             <button class="btn-console btn-ws-style" onclick="compartirLinkInscripcionWS()">📲 LINK DE INSCRIPCIÓN</button>
+        </div>
+
+        <!-- MÓDULO DE FECHAS, HORARIOS Y LUGARES POR CATEGORÍA -->
+        <div class="panel-3d panel-cyan no-print">
+            <h2>📅 Programación de Fechas y Horarios por Categoría</h2>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px; font-weight: 600;">Configura qué día, a qué hora y en qué mesas/sede compite cada categoría en este torneo:</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Categoría</th>
+                        <th>Fecha Específica</th>
+                        <th>Hora Llamada</th>
+                        <th>Lugar / Mesas</th>
+                        <th style="width: 100px;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-programacion-categorias">
+                    <tr><td colspan="5" class="mensaje-vacio">Cargando categorías...</td></tr>
+                </tbody>
+            </table>
         </div>
 
         <div class="panel-3d panel-emerald no-print">
@@ -317,6 +327,7 @@
         let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
         let torneoActivoObj = null;
         let todosLosJugadoresAdmin = [], todasLasCategoriasAdmin = [], todosLosClubsAdmin = [];
+        let horariosCategoriasObj = {};
 
         function cerrarSesionAdmin() {
             localStorage.removeItem('admin_autenticado');
@@ -346,11 +357,52 @@
             todasLasCategoriasAdmin = resCat.data || [];
             todosLosClubsAdmin = resClubs.data || [];
 
+            horariosCategoriasObj = JSON.parse(localStorage.getItem(`horarios_torneo_${idTorneoActivo}`)) || {};
+
             poblarDropdownClubs();
             dibujarTablaClubs();
             filtrarYAutoSeleccionarAdmin();
             generarRankingPorCategorias();
             cargarInscritosEnVivo();
+            dibujarTablaProgramacionCategorias();
+        }
+
+        function dibujarTablaProgramacionCategorias() {
+            const tbody = document.getElementById('tabla-programacion-categorias');
+            tbody.innerHTML = '';
+
+            if (todasLasCategoriasAdmin.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="mensaje-vacio">No hay categorías configuradas.</td></tr>';
+                return;
+            }
+
+            todasLasCategoriasAdmin.forEach(cat => {
+                const config = horariosCategoriasObj[cat.id] || { 
+                    fecha: torneoActivoObj ? torneoActivoObj.fecha_evento || '' : '', 
+                    hora: '09:00', 
+                    lugar: torneoActivoObj ? torneoActivoObj.lugar_evento || 'Sede Principal' : 'Sede Principal' 
+                };
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong style="color:#ffffff; font-size:12px;">${cat.nombre}</strong></td>
+                        <td><input type="date" id="cat-fecha-${cat.id}" value="${config.fecha}"></td>
+                        <td><input type="time" id="cat-hora-${cat.id}" value="${config.hora}"></td>
+                        <td><input type="text" id="cat-lugar-${cat.id}" value="${config.lugar}" placeholder="Lugar / Mesas"></td>
+                        <td><button class="btn-console btn-gold" style="padding: 4px 10px; font-size: 9px;" onclick="guardarHorarioCat(${cat.id})">💾 Guardar</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function guardarHorarioCat(catId) {
+            const fecha = document.getElementById(`cat-fecha-${catId}`).value;
+            const hora = document.getElementById(`cat-hora-${catId}`).value;
+            const lugar = document.getElementById(`cat-lugar-${catId}`).value.trim();
+
+            horariosCategoriasObj[catId] = { fecha, hora, lugar };
+            localStorage.setItem(`horarios_torneo_${idTorneoActivo}`, JSON.stringify(horariosCategoriasObj));
+            alert("✅ Horario guardado para la categoría.");
         }
 
         async function cargarInscritosEnVivo() {
@@ -434,19 +486,41 @@
             if (!torneoActivoObj) { alert("Selecciona un torneo activo primero."); return; }
             
             const nombre = torneoActivoObj.nombre;
-            const fecha = torneoActivoObj.fecha_evento || 'Por confirmar';
-            const lugar = torneoActivoObj.lugar_evento || 'Por definir';
             const urlPublicaConID = `${window.location.origin}/index.html?torneo=${torneoActivoObj.id}`;
 
-            const mensaje = `🏓 *¡INSCRIPCIONES ABIERTAS!* 🏓\n\n` +
-                            `🏆 Torneo: *${nombre}*\n` +
-                            `📅 Fecha: _${fecha}_\n` +
-                            `📍 Lugar: _${lugar}_\n\n` +
-                            `Reserva tu lugar en línea ingresando aquí:\n` +
-                            `👉 ${urlPublicaConID}\n\n` +
-                            `¡Te esperamos! 🏆`;
+            let textoWS = `🏓 *¡INSCRIPCIONES ABIERTAS!* 🏓\n\n` +
+                          `🏆 Torneo: *${nombre}*\n\n` +
+                          `📅 *PROGRAMACIÓN POR CATEGORÍA:* \n` +
+                          `────────────────────────────\n`;
 
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`, '_blank');
+            todasLasCategoriasAdmin.forEach(cat => {
+                const conf = horariosCategoriasObj[cat.id] || { 
+                    fecha: torneoActivoObj.fecha_evento || 'Por confirmar', 
+                    hora: '09:00', 
+                    lugar: torneoActivoObj.lugar_evento || 'Sede Principal' 
+                };
+
+                let horaFormateada = conf.hora;
+                if (conf.hora.includes(':')) {
+                    let [hrs, mins] = conf.hora.split(':');
+                    let hNum = parseInt(hrs);
+                    let ampm = hNum >= 12 ? 'PM' : 'AM';
+                    hNum = hNum % 12 || 12;
+                    horaFormateada = `${hNum}:${mins} ${ampm}`;
+                }
+
+                textoWS += `🏆 *${cat.nombre.toUpperCase()}*\n` +
+                           `   📅 Fecha: _${conf.fecha}_\n` +
+                           `   ⏰ Hora: _${horaFormateada}_\n` +
+                           `   📍 Lugar: _${conf.lugar}_\n\n`;
+            });
+
+            textoWS += `────────────────────────────\n` +
+                       `Reserva tu lugar en línea ingresando aquí:\n` +
+                       `👉 ${urlPublicaConID}\n\n` +
+                       `¡Te esperamos! 🏆`;
+
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWS)}`, '_blank');
         }
 
         function poblarDropdownClubs() {
