@@ -83,7 +83,7 @@
             background: rgba(10, 15, 26, 0.85) !important; 
             color: #ffffff !important; 
             border-radius: 10px; 
-            min-width: 120px; 
+            min-width: 110px; 
             font-size: 12px; 
             font-family: 'Sora', sans-serif; 
             font-weight: 600;
@@ -179,10 +179,10 @@
             <button class="btn-console btn-ws-style" onclick="compartirLinkInscripcionWS()">📲 LINK DE INSCRIPCIÓN</button>
         </div>
 
-        <!-- MÓDULO DE FECHAS, HORARIOS Y LUGARES POR CATEGORÍA -->
+        <!-- MÓDULO DE FECHAS, HORARIOS, LUGARES E INSCRIPCIÓN POR CATEGORÍA -->
         <div class="panel-3d panel-cyan no-print">
-            <h2>📅 Programación de Fechas y Horarios por Categoría</h2>
-            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px; font-weight: 600;">Configura qué día, a qué hora y en qué mesas/sede compite cada categoría en este torneo:</p>
+            <h2>📅 Programación de Fechas, Horarios e Inscripción por Categoría</h2>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px; font-weight: 600;">Configura el día, hora de llamada, mesas/sede y cuota de inscripción ($) para cada categoría:</p>
             
             <table>
                 <thead>
@@ -191,11 +191,12 @@
                         <th>Fecha Específica</th>
                         <th>Hora Llamada</th>
                         <th>Lugar / Mesas</th>
+                        <th style="width: 110px;">Inscripción ($)</th>
                         <th style="width: 100px;">Acción</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-programacion-categorias">
-                    <tr><td colspan="5" class="mensaje-vacio">Cargando categorías...</td></tr>
+                    <tr><td colspan="6" class="mensaje-vacio">Cargando categorías...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -288,11 +289,12 @@
                 <input type="text" id="nueva-cat-nombre" placeholder="Nombre de categoría">
                 <input type="number" id="nueva-cat-min" placeholder="Pts Min" style="max-width: 100px;">
                 <input type="number" id="nueva-cat-max" placeholder="Pts Max" style="max-width: 100px;">
+                <input type="number" id="nueva-cat-precio" placeholder="Inscripción $" style="max-width: 110px;" value="200">
                 <button class="btn-console btn-pink" onclick="crearCategoria()">Añadir Categoría</button>
             </div>
             <table>
-                <thead><tr><th>Categoría</th><th>Mínimo (Piso)</th><th>Máximo (Techo)</th><th>Acción</th></tr></thead>
-                <tbody id="tabla-categorias"><tr><td colspan="4" class="mensaje-vacio">Cargando...</td></tr></tbody>
+                <thead><tr><th>Categoría</th><th>Mínimo (Piso)</th><th>Máximo (Techo)</th><th>Inscripción Base ($)</th><th>Acción</th></tr></thead>
+                <tbody id="tabla-categorias"><tr><td colspan="5" class="mensaje-vacio">Cargando...</td></tr></tbody>
             </table>
         </div>
 
@@ -372,7 +374,7 @@
             tbody.innerHTML = '';
 
             if (todasLasCategoriasAdmin.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="mensaje-vacio">No hay categorías configuradas.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="mensaje-vacio">No hay categorías configuradas.</td></tr>';
                 return;
             }
 
@@ -380,7 +382,8 @@
                 const config = horariosCategoriasObj[cat.id] || { 
                     fecha: torneoActivoObj ? torneoActivoObj.fecha_evento || '' : '', 
                     hora: '09:00', 
-                    lugar: torneoActivoObj ? torneoActivoObj.lugar_evento || 'Sede Principal' : 'Sede Principal' 
+                    lugar: torneoActivoObj ? torneoActivoObj.lugar_evento || 'Sede Principal' : 'Sede Principal',
+                    inscripcion: cat.costo_inscripcion || 200
                 };
 
                 tbody.innerHTML += `
@@ -389,6 +392,7 @@
                         <td><input type="date" id="cat-fecha-${cat.id}" value="${config.fecha}"></td>
                         <td><input type="time" id="cat-hora-${cat.id}" value="${config.hora}"></td>
                         <td><input type="text" id="cat-lugar-${cat.id}" value="${config.lugar}" placeholder="Lugar / Mesas"></td>
+                        <td><input type="number" id="cat-inscripcion-${cat.id}" value="${config.inscripcion || cat.costo_inscripcion || 200}" style="width:80px;" placeholder="$"></td>
                         <td><button class="btn-console btn-gold" style="padding: 4px 10px; font-size: 9px;" onclick="guardarHorarioCat(${cat.id})">💾 Guardar</button></td>
                     </tr>
                 `;
@@ -399,10 +403,11 @@
             const fecha = document.getElementById(`cat-fecha-${catId}`).value;
             const hora = document.getElementById(`cat-hora-${catId}`).value;
             const lugar = document.getElementById(`cat-lugar-${catId}`).value.trim();
+            const inscripcion = parseInt(document.getElementById(`cat-inscripcion-${catId}`).value) || 200;
 
-            horariosCategoriasObj[catId] = { fecha, hora, lugar };
+            horariosCategoriasObj[catId] = { fecha, hora, lugar, inscripcion };
             localStorage.setItem(`horarios_torneo_${idTorneoActivo}`, JSON.stringify(horariosCategoriasObj));
-            alert("✅ Horario guardado para la categoría.");
+            alert("✅ Horario y cuota de inscripción guardados.");
         }
 
         async function cargarInscritosEnVivo() {
@@ -490,18 +495,19 @@
 
             let textoWS = `🏓 *¡INSCRIPCIONES ABIERTAS!* 🏓\n\n` +
                           `🏆 Torneo: *${nombre}*\n\n` +
-                          `📅 *PROGRAMACIÓN POR CATEGORÍA:* \n` +
+                          `📅 *PROGRAMACIÓN Y CUOTAS DE INSCRIPCIÓN:* \n` +
                           `────────────────────────────\n`;
 
             todasLasCategoriasAdmin.forEach(cat => {
                 const conf = horariosCategoriasObj[cat.id] || { 
                     fecha: torneoActivoObj.fecha_evento || 'Por confirmar', 
                     hora: '09:00', 
-                    lugar: torneoActivoObj.lugar_evento || 'Sede Principal' 
+                    lugar: torneoActivoObj.lugar_evento || 'Sede Principal',
+                    inscripcion: cat.costo_inscripcion || 200
                 };
 
                 let horaFormateada = conf.hora;
-                if (conf.hora.includes(':')) {
+                if (conf.hora && conf.hora.includes(':')) {
                     let [hrs, mins] = conf.hora.split(':');
                     let hNum = parseInt(hrs);
                     let ampm = hNum >= 12 ? 'PM' : 'AM';
@@ -512,7 +518,8 @@
                 textoWS += `🏆 *${cat.nombre.toUpperCase()}*\n` +
                            `   📅 Fecha: _${conf.fecha}_\n` +
                            `   ⏰ Hora: _${horaFormateada}_\n` +
-                           `   📍 Lugar: _${conf.lugar}_\n\n`;
+                           `   📍 Lugar: _${conf.lugar}_\n` +
+                           `   💵 Inscripción: *$${conf.inscripcion}*\n\n`;
             });
 
             textoWS += `────────────────────────────\n` +
@@ -731,19 +738,33 @@
             const { data } = await clienteSupabase.from('categorias').select('*').order('puntos_maximos', { ascending: true });
             const tbody = document.getElementById('tabla-categorias'); tbody.innerHTML = '';
             if (!data) return;
-            data.forEach(cat => tbody.innerHTML += `<tr><td><strong style="color:#ffffff; font-size:12px;">${cat.nombre}</strong></td><td><input type="number" id="cat-min-${cat.id}" style="width:60px; text-align:center; padding: 6px;" value="${cat.puntos_minimos}"> pts</td><td><input type="number" id="cat-max-${cat.id}" style="width:60px; text-align:center; padding: 6px;" value="${cat.puntos_maximos}"> pts</td><td><button class="btn-console btn-pink" style="padding:4px 10px; font-size:9px;" onclick="actualizarCategoria(${cat.id})">Guardar</button></td></tr>`);
+            data.forEach(cat => tbody.innerHTML += `<tr><td><strong style="color:#ffffff; font-size:12px;">${cat.nombre}</strong></td><td><input type="number" id="cat-min-${cat.id}" style="width:60px; text-align:center; padding: 6px;" value="${cat.puntos_minimos}"> pts</td><td><input type="number" id="cat-max-${cat.id}" style="width:60px; text-align:center; padding: 6px;" value="${cat.puntos_maximos}"> pts</td><td>$<input type="number" id="cat-precio-${cat.id}" style="width:60px; text-align:center; padding: 6px;" value="${cat.costo_inscripcion || 200}"></td><td><button class="btn-console btn-pink" style="padding:4px 10px; font-size:9px;" onclick="actualizarCategoria(${cat.id})">Guardar</button></td></tr>`);
         }
 
         async function actualizarCategoria(id) {
-            const min = document.getElementById(`cat-min-${id}`).value, max = document.getElementById(`cat-max-${id}`).value;
-            await clienteSupabase.from('categorias').update({ puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) }).eq('id', id);
+            const min = document.getElementById(`cat-min-${id}`).value;
+            const max = document.getElementById(`cat-max-${id}`).value;
+            const costo = document.getElementById(`cat-precio-${id}`).value;
+            
+            let objUpdate = { puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) };
+            if (costo) objUpdate.costo_inscripcion = parseFloat(costo);
+
+            await clienteSupabase.from('categorias').update(objUpdate).eq('id', id);
             cargarDatosIniciales();
         }
 
         async function crearCategoria() {
-            const nombre = document.getElementById('nueva-cat-nombre').value.trim(), min = document.getElementById('nueva-cat-min').value, max = document.getElementById('nueva-cat-max').value;
+            const nombre = document.getElementById('nueva-cat-nombre').value.trim();
+            const min = document.getElementById('nueva-cat-min').value;
+            const max = document.getElementById('nueva-cat-max').value;
+            const costo = document.getElementById('nueva-cat-precio').value;
+
             if (!nombre || !min || !max) return;
-            await clienteSupabase.from('categorias').insert([{ nombre: nombre, puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) }]);
+
+            let objInsert = { nombre: nombre, puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) };
+            if (costo) objInsert.costo_inscripcion = parseFloat(costo);
+
+            await clienteSupabase.from('categorias').insert([objInsert]);
             location.reload();
         }
 
