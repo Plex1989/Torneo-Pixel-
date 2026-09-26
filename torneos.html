@@ -112,6 +112,7 @@
         .badge-registro { background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4); color: #fbbf24; }
         .badge-curso { background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #34d399; }
         .badge-finalizado { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.15); color: #94a3b8; }
+        .badge-oculto { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); color: #f87171; }
     </style>
 </head>
 <body>
@@ -163,7 +164,11 @@
         </div>
 
         <div class="panel-3d panel-emerald">
-            <h2>📂 Historial de Torneos Guardados</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                <h2 style="border: none; margin: 0; padding: 0;">📂 Historial de Torneos Guardados</h2>
+                <button id="btn-toggle-ocultos" class="btn-console" onclick="toggleVerOcultos()">👁️ Mostrar Archivados/Ocultos</button>
+            </div>
+            
             <table>
                 <thead>
                     <tr>
@@ -172,7 +177,7 @@
                         <th>Sede / Lugar</th>
                         <th>Formato</th>
                         <th>Estado</th>
-                        <th style="width: 250px;">Acciones / Controles</th>
+                        <th style="width: 320px;">Acciones / Controles</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-torneos">
@@ -191,6 +196,7 @@
         const CLAVE_ADMIN_MAESTRA = 'admin2026';
         let todosLosTorneos = [];
         let torneoActivoObj = null;
+        let mostrarTorneosOcultos = false;
 
         function verificarAccesoAdmin() {
             if (localStorage.getItem('admin_autenticado') !== 'true') {
@@ -296,27 +302,39 @@
             });
         }
 
+        function toggleVerOcultos() {
+            mostrarTorneosOcultos = !mostrarTorneosOcultos;
+            const btn = document.getElementById('btn-toggle-ocultos');
+            btn.innerText = mostrarTorneosOcultos ? "🙈 Ocultar Archivados" : "👁️ Mostrar Archivados/Ocultos";
+            dibujarTablaTorneos(localStorage.getItem('torneo_activo_id'));
+        }
+
         function dibujarTablaTorneos(idActivo) {
             const tbody = document.getElementById('tabla-torneos');
             tbody.innerHTML = '';
 
-            if (todosLosTorneos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay torneos registrados. Crea el primero arriba.</td></tr>';
+            // Filtrar torneos visibles vs ocultos
+            const torneosFiltrados = todosLosTorneos.filter(t => mostrarTorneosOcultos || t.visible !== false);
+
+            if (torneosFiltrados.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#64748b;">${mostrarTorneosOcultos ? 'No hay torneos ocultos o archivados.' : 'No hay torneos visibles.'}</td></tr>`;
                 return;
             }
 
-            todosLosTorneos.forEach(t => {
+            torneosFiltrados.forEach(t => {
                 const esElActivo = t.id == idActivo;
+                const esOculto = t.visible === false;
                 let badgeEstado = '';
 
-                if (t.estado === 'en_registro') badgeEstado = '<span class="badge badge-registro">🟡 En Registro</span>';
+                if (esOculto) badgeEstado = '<span class="badge badge-oculto">🔒 Oculto</span>';
+                else if (t.estado === 'en_registro') badgeEstado = '<span class="badge badge-registro">🟡 En Registro</span>';
                 else if (t.estado === 'en_curso') badgeEstado = '<span class="badge badge-curso">🟢 En Curso</span>';
                 else badgeEstado = '<span class="badge badge-finalizado">🔴 Finalizado</span>';
 
                 let formatoTexto = t.formato === 'grupos_y_llaves' ? 'Grupos + Eliminatoria' : 'Round Robin Directo';
 
                 tbody.innerHTML += `
-                    <tr>
+                    <tr style="${esOculto ? 'opacity:0.6;' : ''}">
                         <td style="color:#94a3b8;">${t.fecha_evento || 'S/F'}</td>
                         <td>
                             <strong style="color:${esElActivo ? '#34d399' : '#ffffff'}; font-size:13px;">${t.nombre}</strong>
@@ -327,14 +345,20 @@
                         <td>${badgeEstado}</td>
                         <td>
                             ${!esElActivo ? `
-                                <button class="btn-console btn-gold" style="padding: 6px 12px; font-size: 9px;" onclick="seleccionarTorneoActivo(${t.id})">⚙️ Trabajar en Este</button>
-                            ` : '<span style="color:#34d399; font-size:10px; font-weight:800; text-transform:uppercase; margin-right:10px;">✅ Seleccionado</span>'}
+                                <button class="btn-console btn-gold" style="padding: 5px 10px; font-size: 9px;" onclick="seleccionarTorneoActivo(${t.id})">⚙️ Activar</button>
+                            ` : '<span style="color:#34d399; font-size:10px; font-weight:800; text-transform:uppercase; margin-right:6px;">✅ Activo</span>'}
                             
+                            <button class="btn-console" style="padding: 5px 10px; font-size: 9px;" onclick="toggleVisibilidadTorneo(${t.id}, ${!esOculto})">
+                                ${esOculto ? '👁️ Mostrar' : '🙈 Ocultar'}
+                            </button>
+
                             ${t.estado !== 'finalizado' ? `
-                                <button class="btn-console btn-red" style="padding: 6px 12px; font-size: 9px;" onclick="cambiarEstadoTorneo(${t.id}, 'finalizado')">🏁 Finalizar</button>
+                                <button class="btn-console btn-green" style="padding: 5px 10px; font-size: 9px;" onclick="cambiarEstadoTorneo(${t.id}, 'finalizado')">🏁 Finalizar</button>
                             ` : `
-                                <button class="btn-console btn-green" style="padding: 6px 12px; font-size: 9px;" onclick="cambiarEstadoTorneo(${t.id}, 'en_curso')">🔄 Reabrir</button>
+                                <button class="btn-console" style="padding: 5px 10px; font-size: 9px;" onclick="cambiarEstadoTorneo(${t.id}, 'en_curso')">🔄 Reabrir</button>
                             `}
+
+                            <button class="btn-console btn-red" style="padding: 5px 10px; font-size: 9px;" onclick="eliminarTorneo(${t.id}, '${t.nombre}')">🗑️ Borrar</button>
                         </td>
                     </tr>
                 `;
@@ -346,6 +370,39 @@
             cargarTorneos();
         }
 
+        async function toggleVisibilidadTorneo(id, ocultar) {
+            const { error } = await clienteSupabase.from('torneos').update({ visible: !ocultar }).eq('id', id);
+            if (error) {
+                // Fallback si la columna visible no existía
+                alert("Si no se actualiza, ejecuta en Supabase: ALTER TABLE torneos ADD COLUMN IF NOT EXISTS visible boolean DEFAULT true;");
+                return;
+            }
+            cargarTorneos();
+        }
+
+        async function eliminarTorneo(id, nombre) {
+            if (!confirm(`⚠️ ¿Estás completamente seguro de que deseas ELIMINAR el torneo "${nombre}"?\n\nEsta acción borra todas las inscripciones y registros de grupos de este torneo y no se puede deshacer.`)) return;
+
+            // Borrar referencias en cascada
+            await clienteSupabase.from('inscripciones').delete().eq('torneo_id', id);
+            await clienteSupabase.from('grupos_torneo').delete().eq('torneo_id', id);
+            
+            const { error } = await clienteSupabase.from('torneos').delete().eq('id', id);
+
+            if (error) {
+                alert("Error al borrar el torneo: " + error.message);
+                return;
+            }
+
+            alert(`✅ Torneo "${nombre}" eliminado correctamente.`);
+
+            if (localStorage.getItem('torneo_activo_id') == id) {
+                localStorage.removeItem('torneo_activo_id');
+            }
+
+            cargarTorneos();
+        }
+
         async function crearTorneo() {
             const nombre = document.getElementById('nuevo-nombre-torneo').value.trim();
             const lugar = document.getElementById('nuevo-lugar-torneo').value.trim();
@@ -354,13 +411,26 @@
 
             if (!nombre) { alert("Ingresa el nombre del torneo."); return; }
 
-            const { data, error } = await clienteSupabase.from('torneos').insert([{
+            // Objeto de inserción tolerante a esquema
+            let datosTorneo = {
                 nombre: nombre,
                 lugar_evento: lugar || 'Sede Principal',
                 formato: formato,
                 fecha_evento: fecha,
-                estado: 'en_registro'
-            }]).select();
+                estado: 'en_registro',
+                visible: true
+            };
+
+            let { data, error } = await clienteSupabase.from('torneos').insert([datosTorneo]).select();
+
+            // Si falla por columna no existente, reintentar sin 'lugar_evento' o 'visible' temporalmente
+            if (error) {
+                delete datosTorneo.lugar_evento;
+                delete datosTorneo.visible;
+                const retry = await clienteSupabase.from('torneos').insert([datosTorneo]).select();
+                data = retry.data;
+                error = retry.error;
+            }
 
             if (error || !data) { alert(`Error al crear torneo: ${error ? error.message : ''}`); return; }
 
