@@ -90,11 +90,7 @@
             transition: all 0.2s ease; 
         }
         
-        select option {
-            background-color: #0a0b10 !important;
-            color: #ffffff !important;
-            padding: 10px;
-        }
+        select option { background-color: #0a0b10 !important; color: #ffffff !important; padding: 10px; }
 
         .form-row input:focus, .form-row select:focus, select:focus { 
             border-color: #38bdf8 !important; 
@@ -331,7 +327,11 @@
             const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
             if (torneoData) {
                 torneoActivoObj = torneoData;
-                document.getElementById('nombre-torneo-banner').innerText = `${torneoData.nombre}`;
+                let infoExtra = [];
+                if (torneoData.fecha_evento) infoExtra.push(`📅 ${torneoData.fecha_evento}`);
+                if (torneoData.lugar_evento) infoExtra.push(`📍 ${torneoData.lugar_evento}`);
+                let strExtra = infoExtra.length > 0 ? ` (${infoExtra.join(' - ')})` : '';
+                document.getElementById('nombre-torneo-banner').innerText = `${torneoData.nombre}${strExtra}`;
             } else {
                 document.getElementById('nombre-torneo-banner').innerText = "Sin torneo activo seleccionado";
             }
@@ -432,13 +432,19 @@
 
         function compartirLinkInscripcionWS() {
             if (!torneoActivoObj) { alert("Selecciona un torneo activo primero."); return; }
+            
+            const nombre = torneoActivoObj.nombre;
+            const fecha = torneoActivoObj.fecha_evento || 'Por confirmar';
+            const lugar = torneoActivoObj.lugar_evento || 'Por definir';
             const urlPublicaConID = `${window.location.origin}/index.html?torneo=${torneoActivoObj.id}`;
 
             const mensaje = `🏓 *¡INSCRIPCIONES ABIERTAS!* 🏓\n\n` +
-                            `Te invitamos a registrarte al torneo: *${torneoActivoObj.nombre}*\n\n` +
-                            `Ingresa al siguiente enlace para reservar tu lugar:\n` +
+                            `🏆 Torneo: *${nombre}*\n` +
+                            `📅 Fecha: _${fecha}_\n` +
+                            `📍 Lugar: _${lugar}_\n\n` +
+                            `Reserva tu lugar en línea ingresando aquí:\n` +
                             `👉 ${urlPublicaConID}\n\n` +
-                            `*Recuerda:* Selecciona tu nombre e ingresa tu NIP de seguridad.`;
+                            `¡Te esperamos! 🏆`;
 
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`, '_blank');
         }
