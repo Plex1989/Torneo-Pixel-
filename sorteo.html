@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -36,6 +37,7 @@
         .btn-sorteo:hover { background: #d98c18; }
         .btn-verde { background: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; } .btn-verde:hover { background: #218838; }
         .btn-negro { background: #232630; color: #f5a623; border: 1px solid #323644; cursor: pointer; font-weight: bold; } .btn-negro:hover { background: #323644; }
+        .btn-ws { background: #25d366; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; } .btn-ws:hover { background: #1ebc57; }
         .btn-guardar { background: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; padding: 14px 20px; font-size: 15px; margin-top: 20px; width: 100%; border-radius: 8px; }
         .btn-guardar:hover { background: #218838; }
         
@@ -58,7 +60,6 @@
         .badge-ronda { background: #323644; color: #f5a623; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
         .badge-mesa { background: #28a745; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
 
-        /* ESTILOS EXCLUSIVOS PARA IMPRESIÓN / PDF PRO */
         @media print {
             body { background: white !important; color: black !important; padding: 0; }
             .navbar, .controles, #panel-config-horarios, .btn-sorteo, .btn-guardar, .no-print, #contenedor-grupos { display: none !important; }
@@ -107,18 +108,18 @@
                 </div>
             </div>
 
-            <!-- MÓDULO CONFIGURACIÓN DE HORARIOS, MESAS Y JUECES OBLIGATORIOS -->
+            <!-- MÓDULO CONFIGURACIÓN DE HORARIOS Y MESAS CON JUECES EXTERNOS -->
             <div id="panel-config-horarios" style="display: none; background: #0e0f12; border: 1px solid #323644; padding: 18px; border-radius: 10px; margin-top: 15px;">
-                <h3 style="margin-top:0; font-size:15px; color:#f5a623;">⚙️ Configuración de Horarios y Jueces por Mesa</h3>
+                <h3 style="margin-top:0; font-size:15px; color:#f5a623;">⚙️ Configuración de Horarios y Jueces Externos</h3>
                 
                 <div class="controles" style="margin-bottom:10px; padding:10px; border:none; background:transparent;">
                     <div>
-                        <label style="font-size:12px; color:#a0a5b1; display:block; margin-bottom:4px;">⏰ Hora de Inicio:</label>
+                        <label style="font-size:12px; color:#a0a5b1; display:block; margin-bottom:4px;">⏰ Hora Inicio:</label>
                         <input type="time" id="rr-hora-inicio" value="09:00">
                     </div>
                     <div>
-                        <label style="font-size:12px; color:#a0a5b1; display:block; margin-bottom:4px;">🏓 N° de Mesas:</label>
-                        <input type="number" id="rr-num-mesas" value="3" min="1" max="10" style="width:70px;" onchange="actualizarCamposJueces()">
+                        <label style="font-size:12px; color:#a0a5b1; display:block; margin-bottom:4px;">🏓 N° Mesas:</label>
+                        <input type="number" id="rr-num-mesas" value="3" min="1" max="10" style="width:70px;" onchange="actualizarCamposJuecesExternos()">
                     </div>
                     <div>
                         <label style="font-size:12px; color:#a0a5b1; display:block; margin-bottom:4px;">☕ Hora Break:</label>
@@ -134,10 +135,11 @@
                     </div>
                 </div>
 
-                <!-- CONTENEDOR DINÁMICO DE JUECES OBLIGATORIOS POR MESA -->
+                <!-- JUECES EXTERNOS PARA MESAS SECUNDARIAS -->
                 <div style="border-top:1px solid #323644; padding-top:12px; margin-top:5px;">
-                    <div style="font-size:12px; font-weight:bold; color:#f5a623; margin-bottom:8px;">👨‍⚖️ Nombres de los Jueces Oficiales (Obligatorio 1 por Mesa):</div>
-                    <div id="contenedor-jueces-mesas" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+                    <div style="font-size:12px; font-weight:bold; color:#f5a623; margin-bottom:8px;">👨‍⚖️ Asignación de Jueces para Mesas Adicionales:</div>
+                    <div id="contenedor-jueces-externos" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
+                    <p style="font-size:11px; color:#a0a5b1; margin:8px 0 0 0;">* Mesa 1 tomará automáticamente al jugador que descansa en cada ronda. Para las demás mesas se usarán los nombres externos configurados arriba.</p>
                 </div>
 
                 <button class="btn-sorteo" onclick="recalcularRolPartidos()" style="margin-top:15px; width:100%;">⚡ Generar Rol de Partidos con Horarios y Jueces</button>
@@ -148,12 +150,13 @@
             <button id="btn-guardar-grupos" class="btn-guardar" style="display:none;" onclick="guardarGruposBD()">💾 Guardar Acomodo Definitivo en Base de Datos</button>
         </div>
 
-        <!-- SECCIÓN ROL DE PARTIDOS Y BOTONES DE EXPORTACIÓN PRO -->
+        <!-- SECCIÓN ROL DE PARTIDOS Y EXPORTACIÓN (WHATSAPP, PDF, EXCEL) -->
         <div class="container" id="seccion-partidos-rr" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2d37; padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                 <h2 style="border:none; margin:0;">📋 Rol Oficial de Partidos</h2>
                 
                 <div class="no-print" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <button class="btn-ws" onclick="compartirRolWhatsApp()">📲 Enviar por WhatsApp</button>
                     <button class="btn-negro" onclick="imprimirRolPDF()">🖨️ PDF / Imprimir</button>
                     <button class="btn-verde" onclick="exportarRolExcel()">📊 Exportar a Excel</button>
                     
@@ -163,7 +166,7 @@
                 </div>
             </div>
 
-            <p class="no-print" style="font-size:13px; color:#a0a5b1; margin-top:10px;">Haz clic sobre cualquier jugador en la lista de arriba para ver exclusivamente sus partidos asignados.</p>
+            <p class="no-print" style="font-size:13px; color:#a0a5b1; margin-top:10px;">Haz clic sobre cualquier jugador en la lista para ver exclusivamente sus partidos asignados.</p>
 
             <table>
                 <thead>
@@ -207,7 +210,7 @@
                     document.getElementById('tamano-grupo').style.display = 'none';
                     document.getElementById('btn-ejecutar-sorteo').innerText = '🎲 Generar Tabla Round Robin';
                     document.getElementById('panel-config-horarios').style.display = 'block';
-                    actualizarCamposJueces();
+                    actualizarCamposJuecesExternos();
                 } else {
                     document.getElementById('tamano-grupo').style.display = 'inline-block';
                     document.getElementById('btn-ejecutar-sorteo').innerText = '🎲 Generar Sorteo Serpiente';
@@ -221,17 +224,24 @@
             if (data) data.forEach(cat => select.innerHTML += `<option value="${cat.id}">${cat.nombre}</option>`);
         }
 
-        // GENERACIÓN DINÁMICA DE CAMPOS DE JUECES SEGÚN EL NÚMERO DE MESAS
-        function actualizarCamposJueces() {
+        function actualizarCamposJuecesExternos() {
             const numMesas = parseInt(document.getElementById('rr-num-mesas').value) || 1;
-            const container = document.getElementById('contenedor-jueces-mesas');
+            const container = document.getElementById('contenedor-jueces-externos');
             container.innerHTML = '';
 
-            for (let i = 1; i <= numMesas; i++) {
+            // La Mesa 1 usa al jugador que descansa automáticamente
+            container.innerHTML += `
+                <div style="flex:1; min-width:140px;">
+                    <label style="font-size:11px; color:#28a745; display:block; margin-bottom:3px; font-weight:bold;">Mesa 1:</label>
+                    <input type="text" value="Automático (Jugador Descansa)" disabled style="width:100%; box-sizing:border-box; font-size:12px; color:#a0a5b1; background:#181a20;">
+                </div>
+            `;
+
+            for (let i = 2; i <= numMesas; i++) {
                 container.innerHTML += `
                     <div style="flex:1; min-width:140px;">
-                        <label style="font-size:11px; color:#a0a5b1; display:block; margin-bottom:3px;">Mesa ${i}:</label>
-                        <input type="text" id="juez-mesa-${i}" placeholder="Nombre Juez ${i}" style="width:100%; box-sizing:border-box; font-size:12px;">
+                        <label style="font-size:11px; color:#f5a623; display:block; margin-bottom:3px; font-weight:bold;">Mesa ${i} (Juez Externo):</label>
+                        <input type="text" id="juez-ext-mesa-${i}" value="Comité / Juez ${i}" placeholder="Nombre o Comité" style="width:100%; box-sizing:border-box; font-size:12px;">
                     </div>
                 `;
             }
@@ -364,21 +374,8 @@
 
             if (numJugadores < 2) return;
 
-            // VALIDACIÓN OBLIGATORIA DE NOMBRES DE JUECES POR MESA
-            const numMesas = parseInt(document.getElementById('rr-num-mesas').value) || 1;
-            let listaJueces = [];
-
-            for (let i = 1; i <= numMesas; i++) {
-                let nombreJuez = document.getElementById(`juez-mesa-${i}`).value.trim();
-                if (!nombreJuez) {
-                    alert(`⚠️ Por favor, ingresa el nombre del Juez para la Mesa ${i}.`);
-                    document.getElementById(`juez-mesa-${i}`).focus();
-                    return;
-                }
-                listaJueces.push(nombreJuez);
-            }
-
-            if (numJugadores % 2 !== 0) {
+            let esImpar = numJugadores % 2 !== 0;
+            if (esImpar) {
                 arrJugadores.push(null);
             }
 
@@ -389,18 +386,24 @@
             let RondasRaw = [];
             for (let r = 0; r < numRondas; r++) {
                 let rondaPartidos = [];
+                let libreEnEstaRonda = null;
+
                 for (let i = 0; i < partidosPorRonda; i++) {
                     let j1 = arrJugadores[i];
                     let j2 = arrJugadores[n - 1 - i];
-                    if (j1 !== null && j2 !== null) {
+                    
+                    if (j1 === null) libreEnEstaRonda = j2;
+                    else if (j2 === null) libreEnEstaRonda = j1;
+                    else {
                         rondaPartidos.push({ j1, j2, ronda: r + 1 });
                     }
                 }
-                RondasRaw.push(rondaPartidos);
+                RondasRaw.push({ partidos: rondaPartidos, jugadorLibre: libreEnEstaRonda });
                 arrJugadores.splice(1, 0, arrJugadores.pop());
             }
 
             const horaInicioStr = document.getElementById('rr-hora-inicio').value || '09:00';
+            const numMesas = parseInt(document.getElementById('rr-num-mesas').value) || 3;
             const horaBreakStr = document.getElementById('rr-hora-break').value || '14:00';
             const duracionBreak = parseInt(document.getElementById('rr-duracion-break').value) || 30;
             const duracionPartido = parseInt(document.getElementById('rr-duracion-partido').value) || 30;
@@ -412,8 +415,10 @@
             let mesaActual = 1;
             let breakAplicado = false;
 
-            RondasRaw.forEach((ronda) => {
-                ronda.forEach((match) => {
+            RondasRaw.forEach((rondaObj) => {
+                let descansando = rondaObj.jugadorLibre;
+
+                rondaObj.partidos.forEach((match) => {
                     if (mesaActual > numMesas) {
                         mesaActual = 1;
                         tiempoActual += duracionPartido;
@@ -424,6 +429,20 @@
                         breakAplicado = true;
                     }
 
+                    // ASIGNACIÓN LÓGICA DE JUEZ:
+                    // Mesa 1: Usa al jugador descansando de esa ronda si existe.
+                    // Mesas >= 2: Lee el campo del Juez Externo configurado arriba.
+                    let nombreJuez = 'Comité / Auto-arbitraje';
+
+                    if (mesaActual === 1 && descansando) {
+                        nombreJuez = `👤 ${descansando.nombre} (Descansa)`;
+                    } else {
+                        let inputExt = document.getElementById(`juez-ext-mesa-${mesaActual}`);
+                        if (inputExt && inputExt.value.trim() !== '') {
+                            nombreJuez = inputExt.value.trim();
+                        }
+                    }
+
                     partidosGeneradosRR.push({
                         id: `${match.j1.id}-${match.j2.id}`,
                         ronda: match.ronda,
@@ -431,7 +450,7 @@
                         j2: match.j2,
                         hora: minutesToTimeStr(tiempoActual),
                         mesa: mesaActual,
-                        juez: listaJueces[mesaActual - 1] // ASIGNACIÓN AUTOMÁTICA DEL JUEZ SEGÚN MESA
+                        juez: nombreJuez
                     });
 
                     mesaActual++;
@@ -456,7 +475,7 @@
                 return;
             }
 
-            listaPartidos.forEach((p) => {
+            listaPartidos.forEach((p, idx) => {
                 tbody.innerHTML += `
                     <tr>
                         <td><strong style="color:#f5a623;">⏰ ${p.hora}</strong></td>
@@ -465,7 +484,10 @@
                         <td><strong style="color:#fff;">${p.j1.nombre}</strong> <small style="color:#a0a5b1;">(${p.j1.club || 'S/C'})</small></td>
                         <td style="text-align:center; font-weight:bold; color:#f5a623;">VS</td>
                         <td><strong style="color:#fff;">${p.j2.nombre}</strong> <small style="color:#a0a5b1;">(${p.j2.club || 'S/C'})</small></td>
-                        <td><strong style="color:#25d366;">👨‍⚖️ ${p.juez}</strong></td>
+                        <td>
+                            <input type="text" value="${p.juez}" onchange="partidosGeneradosRR[${idx}].juez = this.value" 
+                                   style="padding:4px 8px; border:1px solid #323644; background:#0e0f12; color:#25d366; font-weight:bold; font-size:12px; border-radius:4px; width:90%;">
+                        </td>
                     </tr>
                 `;
             });
@@ -488,7 +510,30 @@
             }
         }
 
-        // FUNCIONES DE EXPORTACIÓN
+        function compartirRolWhatsApp() {
+            if (partidosGeneradosRR.length === 0) { alert("No hay partidos generados para enviar."); return; }
+
+            const nombreTorneo = torneoActivoObj ? torneoActivoObj.nombre : 'Torneo Oficial';
+            const fechaTorneo = torneoActivoObj ? (torneoActivoObj.fecha_evento || '') : '';
+
+            let texto = `🏓 *ROL OFICIAL DE PARTIDOS* 🏓\n` +
+                        `🏆 *${nombreTorneo}*\n` +
+                        `📅 Fecha: _${fechaTorneo}_\n\n` +
+                        `📋 *PROGRAMACIÓN DE PARTIDOS:* \n` +
+                        `────────────────────────────\n`;
+
+            partidosGeneradosRR.forEach(p => {
+                texto += `⏰ *${p.hora}* | 🏓 *Mesa ${p.mesa}* (Rda ${p.ronda})\n`;
+                texto += `   👤 *${p.j1.nombre}* vs *${p.j2.nombre}*\n`;
+                texto += `   👨‍⚖️ Juez: _${p.juez}_\n\n`;
+            });
+
+            texto += `────────────────────────────\n` +
+                     `📌 *Nota:* Se solicita puntualidad a los competidores.`;
+
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+
         function imprimirRolPDF() {
             window.print();
         }
