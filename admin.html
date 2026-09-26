@@ -12,56 +12,59 @@
         }
     </script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #0a0b10; color: #ffffff; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #0a0b10; color: #e2e8f0; }
         
-        /* BARRA DE NAVEGACIÓN CON EFECTO NEÓN */
         .navbar { background: #12141d; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #232738; flex-wrap: wrap; gap: 10px; }
-        .nav-title { font-weight: 800; font-size: 18px; color: #f5a623; letter-spacing: 1px; text-shadow: 0 0 10px rgba(245, 166, 35, 0.4); }
+        .nav-title { font-weight: 800; font-size: 18px; color: #ffffff; letter-spacing: 1px; transition: all 0.3s ease; }
+        .nav-title:hover { text-shadow: 0 0 15px rgba(0, 242, 254, 0.8); color: #00f2fe; }
+        
         .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
-        .nav-btn { color: #a0a5b1; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: bold; background: #1a1d2a; border: 1px solid #2a2f42; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
-        .nav-btn:hover { background: #f5a623; color: #000; border-color: #f5a623; box-shadow: 0 0 15px rgba(245, 166, 35, 0.6); transform: translateY(-2px); }
-        .nav-btn.active { background: #f5a623; color: #000000; border-color: #f5a623; box-shadow: 0 0 12px rgba(245, 166, 35, 0.5); }
-        .nav-btn.public { background: #00f2fe; color: #000; border-color: #00f2fe; font-weight: bold; }
-        .nav-btn.public:hover { box-shadow: 0 0 15px rgba(0, 242, 254, 0.7); }
+        .nav-btn { color: #ffffff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: bold; background: #1a1d2a; border: 1px solid #2a2f42; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .nav-btn:hover { background: #12141d; border-color: #00f2fe; box-shadow: 0 0 15px rgba(0, 242, 254, 0.6); transform: translateY(-2px); color: #00f2fe; }
+        .nav-btn.active { border-color: #a100ff; box-shadow: 0 0 12px rgba(161, 0, 255, 0.5); color: #a100ff; }
+        .nav-btn.public { border-color: #28a745; color: #28a745; }
+        .nav-btn.public:hover { box-shadow: 0 0 15px rgba(40, 167, 69, 0.6); color: #34ce57; border-color: #34ce57; }
 
         .main-content { padding: 25px; max-width: 1100px; margin: auto; }
         
-        /* PANELES TARJETA CON EFECTO GLOW BACKLIGHT EN HOVER Y TOUCH */
         .panel { background: #131520; padding: 25px; border-radius: 14px; border: 1px solid #232738; margin-bottom: 25px; transition: all 0.3s ease; }
-        .panel:hover { border-color: rgba(0, 242, 254, 0.6); box-shadow: 0 0 25px rgba(0, 242, 254, 0.25), inset 0 0 15px rgba(0, 242, 254, 0.05); }
+        .panel:hover { border-color: rgba(0, 242, 254, 0.4); box-shadow: 0 0 25px rgba(0, 242, 254, 0.15), inset 0 0 15px rgba(0, 242, 254, 0.05); }
         
-        h2, h3 { color: #f5a623; margin-top: 0; border-bottom: 1px solid #232738; padding-bottom: 12px; font-size: 18px; text-transform: uppercase; text-shadow: 0 0 8px rgba(245, 166, 35, 0.3); }
+        h2, h3 { color: #ffffff; margin-top: 0; border-bottom: 1px solid #232738; padding-bottom: 12px; font-size: 18px; text-transform: uppercase; transition: all 0.3s ease; }
+        .panel:hover h2 { text-shadow: 0 0 10px rgba(0, 242, 254, 0.4); color: #00f2fe; border-bottom-color: #00f2fe; }
         
         .banner-torneo { background: linear-gradient(135deg, #131520 0%, #1a1d2a 100%); border: 1px solid #a100ff; color: #ffffff; padding: 18px 20px; border-radius: 12px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(161, 0, 255, 0.2); }
-        .banner-torneo:hover { border-color: #a100ff; box-shadow: 0 0 25px rgba(161, 0, 255, 0.5), inset 0 0 10px rgba(161, 0, 255, 0.2); }
+        .banner-torneo:hover { border-color: #00f2fe; box-shadow: 0 0 25px rgba(0, 242, 254, 0.4), inset 0 0 10px rgba(0, 242, 254, 0.2); }
 
         .form-row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
-        .form-row input[type="text"], .form-row input[type="number"], .form-row select { flex: 1; padding: 10px 12px; border: 1px solid #2a2f42; background: #0a0b10; color: #fff; border-radius: 8px; min-width: 120px; box-sizing: border-box; font-size: 14px; transition: all 0.3s ease; }
+        .form-row input[type="text"], .form-row input[type="number"], .form-row select { flex: 1; padding: 10px 12px; border: 1px solid #2a2f42; background: #0a0b10; color: #ffffff; border-radius: 8px; min-width: 120px; box-sizing: border-box; font-size: 14px; transition: all 0.3s ease; }
         .form-row input:focus, .form-row select:focus { border-color: #00f2fe; outline: none; box-shadow: 0 0 12px rgba(0, 242, 254, 0.5); }
         
-        .btn-accion { color: #000; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.3s ease; }
-        .btn-dorado { background: #f5a623; color: #000; } .btn-dorado:hover { background: #ffb703; box-shadow: 0 0 15px rgba(245, 166, 35, 0.6); }
-        .btn-verde { background: #28a745; color: white; } .btn-verde:hover { background: #34ce57; box-shadow: 0 0 15px rgba(40, 167, 69, 0.6); }
-        .btn-cian { background: #00f2fe; color: #000; } .btn-cian:hover { background: #4facfe; box-shadow: 0 0 15px rgba(0, 242, 254, 0.7); }
-        .btn-rojo { background: #dc3545; color: white; } .btn-rojo:hover { background: #ff4d5e; box-shadow: 0 0 15px rgba(220, 53, 69, 0.6); }
-        .btn-gris { background: #2a2f42; color: white; } .btn-gris:hover { background: #3c435e; }
-        .btn-negro { background: #1a1d2a; color: #f5a623; border: 1px solid #2a2f42; } .btn-negro:hover { border-color: #f5a623; box-shadow: 0 0 15px rgba(245, 166, 35, 0.4); }
-        .btn-ws { background: #25d366; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s ease; } .btn-ws:hover { background: #1ebc57; box-shadow: 0 0 15px rgba(37, 211, 102, 0.6); }
+        .btn-accion { color: #ffffff; background: #1a1d2a; border: 1px solid #2a2f42; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.3s ease; }
+        .btn-accion:hover { border-color: #00f2fe; color: #00f2fe; box-shadow: 0 0 15px rgba(0, 242, 254, 0.5); transform: translateY(-2px); }
+        
+        .btn-dorado { border-color: #eab308; color: #eab308; } .btn-dorado:hover { border-color: #fde047; color: #fde047; box-shadow: 0 0 15px rgba(234, 179, 8, 0.5); }
+        .btn-rojo { border-color: #dc3545; color: #dc3545; } .btn-rojo:hover { border-color: #ff4d5e; color: #ff4d5e; box-shadow: 0 0 15px rgba(220, 53, 69, 0.5); }
+        .btn-verde { border-color: #28a745; color: #28a745; } .btn-verde:hover { border-color: #34ce57; color: #34ce57; box-shadow: 0 0 15px rgba(40, 167, 69, 0.5); }
+        .btn-ws { border-color: #25d366; color: #25d366; } .btn-ws:hover { border-color: #1ebc57; color: #1ebc57; box-shadow: 0 0 15px rgba(37, 211, 102, 0.5); }
         
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
         th, td { padding: 12px; text-align: left; border-bottom: 1px solid #232738; }
-        th { background-color: #1a1d2a; color: #f5a623; text-transform: uppercase; font-size: 12px; font-weight: bold; }
+        th { background-color: #1a1d2a; color: #a0a5b1; text-transform: uppercase; font-size: 12px; font-weight: bold; letter-spacing: 0.5px; }
         tr { transition: all 0.2s ease; }
         tr:hover { background-color: rgba(0, 242, 254, 0.05); }
         
-        .badge-pago { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; color: white; }
-        .pago-ok { background: #28a745; box-shadow: 0 0 8px rgba(40, 167, 69, 0.4); }
-        .pago-pend { background: #ffc107; color: #000; box-shadow: 0 0 8px rgba(255, 193, 7, 0.4); }
+        .badge-pago { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; color: white; border: 1px solid transparent; }
+        .pago-ok { background: transparent; border-color: #28a745; color: #28a745; box-shadow: inset 0 0 8px rgba(40, 167, 69, 0.2); }
+        .pago-pend { background: transparent; border-color: #eab308; color: #eab308; box-shadow: inset 0 0 8px rgba(234, 179, 8, 0.2); }
 
         .caja-edicion { background: #0a0b10; padding: 18px; border-radius: 10px; border: 1px solid #2a2f42; margin-top: 15px; transition: all 0.3s ease; }
-        .caja-edicion:hover { border-color: #f5a623; box-shadow: 0 0 15px rgba(245, 166, 35, 0.25); }
+        .caja-edicion:hover { border-color: #a100ff; box-shadow: 0 0 15px rgba(161, 0, 255, 0.25); }
 
-        .header-categoria-ranking { background: #1a1d2a; font-weight: bold; font-size: 14px; color: #00f2fe; padding: 10px 14px; margin-top: 18px; border-left: 4px solid #00f2fe; text-transform: uppercase; text-shadow: 0 0 8px rgba(0, 242, 254, 0.4); border-radius: 0 8px 8px 0; }
+        .header-categoria-ranking { background: #1a1d2a; font-weight: bold; font-size: 14px; color: #ffffff; padding: 10px 14px; margin-top: 18px; border-left: 4px solid #a100ff; text-transform: uppercase; transition: all 0.3s ease; border-radius: 0 8px 8px 0; }
+        .panel:hover .header-categoria-ranking { color: #a100ff; text-shadow: 0 0 8px rgba(161, 0, 255, 0.5); }
+
+        .mensaje-vacio { text-align: center; color: #64748b; font-style: italic; }
 
         @media print {
             body { background: white !important; color: black !important; padding: 0; }
@@ -85,7 +88,7 @@
             <a href="sorteo.html" class="nav-btn">🧠 Sorteo y Rol</a>
             <a href="horarios.html" class="nav-btn">📅 Horarios WS</a>
             <a href="index.html" target="_blank" class="nav-btn public">🌐 Portal Público</a>
-            <button onclick="cerrarSesionAdmin()" class="nav-btn" style="background:#dc3545; color:white; border:none; cursor:pointer;">🔒 Salir</button>
+            <button onclick="cerrarSesionAdmin()" class="nav-btn" style="border-color:#dc3545; color:#dc3545; cursor:pointer;">🔒 Salir</button>
         </div>
     </nav>
 
@@ -93,17 +96,17 @@
         
         <div class="banner-torneo no-print">
             <div>
-                <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; color:#00f2fe; letter-spacing: 1px;">Torneo Seleccionado:</span>
-                <h3 id="nombre-torneo-banner" style="margin: 3px 0 0 0; border: none; padding: 0; color:#fff; font-size:22px;">Cargando...</h3>
+                <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; color:#a100ff; letter-spacing: 1px;">Torneo Seleccionado:</span>
+                <h3 id="nombre-torneo-banner" style="margin: 3px 0 0 0; border: none; padding: 0; color:#ffffff; font-size:22px;">Cargando...</h3>
             </div>
-            <button class="btn-ws" onclick="compartirLinkInscripcionWS()">📲 Compartir Link de Inscripción (WhatsApp)</button>
+            <button class="btn-accion btn-ws" onclick="compartirLinkInscripcionWS()">📲 Compartir Link de Inscripción</button>
         </div>
 
         <div class="panel no-print">
             <h2>📋 Inscritos en el Torneo Activo (En Vivo)</h2>
-            <div style="display: flex; gap: 25px; margin-bottom: 15px; font-size: 15px; color:#a0a5b1;">
-                <div>Total Registrados: <strong id="cant-registrados" style="color:#f5a623; font-size: 20px;">0</strong></div>
-                <div>Pagos Confirmados: <strong id="cant-pagados" style="color:#00f2fe; font-size: 20px;">0</strong></div>
+            <div style="display: flex; gap: 25px; margin-bottom: 15px; font-size: 14px; color:#a0a5b1;">
+                <div>Total Registrados: <strong id="cant-registrados" style="color:#ffffff; font-size: 18px;">0</strong></div>
+                <div>Pagos Confirmados: <strong id="cant-pagados" style="color:#00f2fe; font-size: 18px;">0</strong></div>
             </div>
             <table>
                 <thead>
@@ -112,7 +115,7 @@
                         <th>Club</th>
                         <th>Categoría Registrada</th>
                         <th>Estatus Pago</th>
-                        <th style="width: 220px;">Modificar Categoría / Acción</th>
+                        <th style="width: 200px;">Acción</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-inscritos-vivo">
@@ -134,7 +137,7 @@
                 <h2 style="border: none; margin: 0;">👥 Módulo de Jugadores (Global)</h2>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <button class="btn-accion btn-cian" onclick="toggleTablaRanking()" id="btn-toggle-ranking">👁️ Mostrar Tabla de Ranking</button>
-                    <button class="btn-accion btn-negro" onclick="imprimirRanking()">🖨️ PDF / Imprimir</button>
+                    <button class="btn-accion" onclick="imprimirRanking()">🖨️ PDF / Imprimir</button>
                     <button class="btn-accion btn-verde" onclick="exportarExcel()">📊 Exportar Excel</button>
                     <button class="btn-accion btn-ws" onclick="compartirRankingWhatsApp()">📲 Compartir Ranking WS</button>
                 </div>
@@ -150,7 +153,7 @@
             </div>
 
             <div class="caja-edicion">
-                <div style="font-weight: bold; margin-bottom: 10px; font-size: 14px; color:#f5a623;" id="titulo-modo-jugador">➕ Registrando Nuevo Jugador:</div>
+                <div style="font-weight: bold; margin-bottom: 10px; font-size: 14px; color:#ffffff;" id="titulo-modo-jugador">➕ Registrando Nuevo Jugador:</div>
                 <div class="form-row">
                     <input type="text" id="nuevo-nombre" placeholder="Nombre completo">
                     <select id="nuevo-club" style="max-width: 200px;"><option value="Sin Club">Cargando clubs...</option></select>
@@ -158,13 +161,13 @@
                     <input type="text" id="nuevo-nip" placeholder="NIP (1234)" maxlength="4" style="max-width: 100px;" value="1234">
                     <button id="btn-guardar-jugador" class="btn-accion btn-dorado" onclick="guardarJugador()">➕ Crear Jugador</button>
                     <button id="btn-eliminar-jugador" class="btn-accion btn-rojo" style="display: none;" onclick="eliminarJugador()">🗑️ Borrar Jugador</button>
-                    <button id="btn-cancelar-jugador" class="btn-accion btn-gris" style="display: none;" onclick="resetFormularioJugador()">❌ Cancelar</button>
+                    <button id="btn-cancelar-jugador" class="btn-accion" style="display: none;" onclick="resetFormularioJugador()">❌ Cancelar</button>
                 </div>
             </div>
         </div>
 
         <div class="panel" id="seccion-print">
-            <h2 style="text-align: center; color:#00f2fe;">🏓 RANKING OFICIAL DE JUGADORES 🏓</h2>
+            <h2 style="text-align: center; color:#ffffff;">🏓 RANKING OFICIAL DE JUGADORES 🏓</h2>
             <p style="text-align: center; font-size: 12px; color: #a0a5b1;" id="fecha-impresion"></p>
             <div id="contenedor-ranking-categorias" style="display: none;">Cargando ranking...</div>
         </div>
@@ -202,7 +205,7 @@
                 <tbody id="tabla-reglas"><tr><td colspan="5" class="mensaje-vacio">Cargando...</td></tr></tbody>
             </table>
             <hr style="border: 0; border-top: 1px solid #232738; margin: 25px 0;">
-            <h3 style="color: #f5a623; font-size: 16px;">🏆 Bono por Clasificar a Llaves</h3>
+            <h3 style="color: #ffffff; font-size: 16px;">🏆 Bono por Clasificar a Llaves</h3>
             <div class="form-row" style="align-items: center; background: #0a0b10; padding: 15px; border-radius: 8px; border: 1px solid #2a2f42;">
                 <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: bold; color:#ffffff;">
                     <input type="checkbox" id="bono-activo" style="width:18px; height:18px; accent-color:#00f2fe;"> Activar bono
@@ -241,7 +244,6 @@
 
             const [resJugadores, resCat, resClubs] = await Promise.all([
                 clienteSupabase.from('jugadores').select('*').order('puntos_ranking', { ascending: false }),
-                // Ordenar por puntos mínimos descendente para que PRIMERA FUERZA salga arriba
                 clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: false }),
                 clienteSupabase.from('clubs').select('*').order('nombre', { ascending: true })
             ]);
@@ -257,10 +259,11 @@
             cargarInscritosEnVivo();
         }
 
+        // ORDENAMIENTO DE INSCRITOS POR CATEGORÍA Y RANKING
         async function cargarInscritosEnVivo() {
             const { data, error } = await clienteSupabase
                 .from('inscripciones')
-                .select(`id, categoria_id, estatus_pago, jugadores ( id, nombre, club ), categorias ( id, nombre )`)
+                .select(`id, categoria_id, estatus_pago, jugadores ( id, nombre, club, puntos_ranking ), categorias ( id, nombre )`)
                 .eq('torneo_id', idTorneoActivo);
 
             const tbody = document.getElementById('tabla-inscritos-vivo');
@@ -275,14 +278,24 @@
                 return;
             }
 
+            // Filtrar data válida
+            let validData = data.filter(ins => ins.categorias && ins.jugadores);
+
+            // Ordenamiento: Por Categoría Alfabéticamente -> Luego por Puntos (Descendente)
+            validData.sort((a, b) => {
+                if (a.categorias.nombre < b.categorias.nombre) return -1;
+                if (a.categorias.nombre > b.categorias.nombre) return 1;
+                return b.jugadores.puntos_ranking - a.jugadores.puntos_ranking;
+            });
+
             cantReg.innerText = data.length;
             const pagados = data.filter(i => i.estatus_pago === 'Pagado');
             cantPag.innerText = pagados.length;
 
-            data.forEach(ins => {
+            validData.forEach(ins => {
                 const esPagado = ins.estatus_pago === 'Pagado';
                 
-                let selectCatHtml = `<select id="select-cambiar-cat-${ins.id}" style="padding: 4px; border: 1px solid #2a2f42; background: #0a0b10; color: #fff; border-radius: 6px; font-size: 12px; margin-right: 5px;">`;
+                let selectCatHtml = `<select id="select-cambiar-cat-${ins.id}" style="padding: 4px; border: 1px solid #2a2f42; background: #0a0b10; color: #fff; border-radius: 6px; font-size: 11px; margin-right: 5px; width: 120px;">`;
                 todasLasCategoriasAdmin.forEach(c => {
                     selectCatHtml += `<option value="${c.id}" ${c.id === ins.categoria_id ? 'selected' : ''}>${c.nombre}</option>`;
                 });
@@ -290,14 +303,16 @@
 
                 tbody.innerHTML += `
                     <tr>
-                        <td><strong style="color:#fff;">${ins.jugadores ? ins.jugadores.nombre : 'Jugador Eliminado'}</strong></td>
-                        <td>${ins.jugadores ? (ins.jugadores.club || 'Sin Club') : 'N/A'}</td>
-                        <td style="color:#f5a623; font-weight:bold;">${ins.categorias ? ins.categorias.nombre : 'N/A'}</td>
+                        <td><strong style="color:#ffffff;">${ins.jugadores.nombre}</strong> <span style="color:#64748b; font-size:11px; margin-left:5px;">(${ins.jugadores.puntos_ranking} pts)</span></td>
+                        <td style="color:#e2e8f0; font-size:13px;">${ins.jugadores.club || 'Sin Club'}</td>
+                        <td style="color:#00f2fe; font-weight:bold; font-size:13px;">${ins.categorias.nombre}</td>
                         <td><span class="badge-pago ${esPagado ? 'pago-ok' : 'pago-pend'}">${ins.estatus_pago}</span></td>
                         <td>
-                            ${selectCatHtml}
-                            <button class="btn-accion btn-dorado" style="padding: 4px 8px; font-size: 11px;" onclick="cambiarCategoriaInscripcion(${ins.id})">💾</button>
-                            <button class="btn-accion btn-rojo" style="padding: 4px 8px; font-size: 11px; margin-left: 3px;" onclick="eliminarInscripcion(${ins.id}, '${ins.jugadores ? ins.jugadores.nombre : ''}')">🗑️</button>
+                            <div style="display:flex; align-items:center;">
+                                ${selectCatHtml}
+                                <button class="btn-accion btn-dorado" style="padding: 4px; font-size: 11px;" onclick="cambiarCategoriaInscripcion(${ins.id})">💾</button>
+                                <button class="btn-accion btn-rojo" style="padding: 4px; font-size: 11px; margin-left: 3px;" onclick="eliminarInscripcion(${ins.id}, '${ins.jugadores.nombre}')">🗑️</button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -354,7 +369,7 @@
                 tbody.innerHTML += `<tr>
                     <td>#${c.id}</td>
                     <td><input type="text" id="club-nombre-${c.id}" value="${c.nombre}" style="padding: 6px; border: 1px solid #2a2f42; background:#0a0b10; color:#fff; border-radius: 6px; width: 90%; font-weight: bold;" ${esDefault ? 'disabled' : ''}></td>
-                    <td>${!esDefault ? `<button class="btn-accion btn-cian" style="padding: 6px 10px; font-size: 12px; margin-right: 5px;" onclick="actualizarClub(${c.id}, '${c.nombre}')">💾 Guardar</button><button class="btn-accion btn-rojo" style="padding: 6px 10px; font-size: 12px;" onclick="eliminarClub(${c.id}, '${c.nombre}')">🗑️ Eliminar</button>` : '<small style="color:#a0a5b1;">Default</small>'}</td>
+                    <td>${!esDefault ? `<button class="btn-accion btn-cian" style="padding: 4px 8px; font-size: 11px; margin-right: 5px;" onclick="actualizarClub(${c.id}, '${c.nombre}')">💾 Guardar</button><button class="btn-accion btn-rojo" style="padding: 4px 8px; font-size: 11px;" onclick="eliminarClub(${c.id}, '${c.nombre}')">🗑️ Eliminar</button>` : '<small style="color:#64748b;">Default</small>'}</td>
                 </tr>`;
             });
         }
@@ -477,21 +492,19 @@
             cargarDatosIniciales();
         }
 
-        // GENERACIÓN DEL RANKING: DESDE PRIMERA FUERZA HASTA QUINTA FUERZA
         function generarRankingPorCategorias() {
             const contenedor = document.getElementById('contenedor-ranking-categorias'); contenedor.innerHTML = '';
             document.getElementById('fecha-impresion').innerText = "Actualizado al: " + new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
             
-            // Ordenamiento explicito de categorías de MAYOR A MENOR PUNTUACIÓN (Primera Fuerza primero)
             const categoriasFuerza = todasLasCategoriasAdmin
                 .filter(c => c.nombre.toLowerCase() !== 'libre')
                 .sort((a, b) => b.puntos_minimos - a.puntos_minimos);
 
             categoriasFuerza.forEach(cat => {
                 const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos);
-                let htmlCat = `<div class="header-categoria-ranking">🏆 ${cat.nombre.toUpperCase()} (${cat.puntos_minimos} a ${cat.puntos_maximos} pts)</div><table><thead><tr><th style="width: 60px; text-align: center;">Pos</th><th>Jugador</th><th>Club / Entidad</th><th style="width: 120px;">Puntos</th></tr></thead><tbody>`;
+                let htmlCat = `<div class="header-categoria-ranking">🏆 ${cat.nombre} (${cat.puntos_minimos} a ${cat.puntos_maximos} pts)</div><table><thead><tr><th style="width: 60px; text-align: center;">Pos</th><th>Jugador</th><th>Club / Entidad</th><th style="width: 120px;">Puntos</th></tr></thead><tbody>`;
                 if (jugadoresCat.length === 0) { htmlCat += `<tr><td colspan="4" class="mensaje-vacio">Sin jugadores en esta fuerza.</td></tr>`; } 
-                else { jugadoresCat.forEach((j, index) => { htmlCat += `<tr><td style="text-align: center; font-weight: bold;">#${index + 1}</td><td><strong>${j.nombre}</strong></td><td>${j.club || 'Sin Club'}</td><td style="font-weight: bold; color: #00f2fe;">${j.puntos_ranking} pts</td></tr>`; }); }
+                else { jugadoresCat.forEach((j, index) => { htmlCat += `<tr><td style="text-align: center; font-weight: bold;">#${index + 1}</td><td><strong style="color:#ffffff;">${j.nombre}</strong></td><td style="color:#e2e8f0;">${j.club || 'Sin Club'}</td><td style="font-weight: bold; color: #a100ff;">${j.puntos_ranking} pts</td></tr>`; }); }
                 contenedor.innerHTML += htmlCat + `</tbody></table>`;
             });
         }
@@ -534,7 +547,7 @@
             const { data } = await clienteSupabase.from('inscripciones').select(`id, estatus_pago, jugadores ( nombre, puntos_ranking, club ), categorias ( nombre )`).eq('torneo_id', idTorneoActivo).eq('estatus_pago', 'Pendiente de Pago');
             const tbody = document.getElementById('tabla-pendientes'); tbody.innerHTML = '';
             if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="mensaje-vacio">No hay pagos pendientes en este torneo.</td></tr>'; return; }
-            data.forEach(ins => tbody.innerHTML += `<tr><td><strong>${ins.jugadores ? ins.jugadores.nombre : 'Jugador Desconocido'}</strong> <small>(${ins.jugadores ? ins.jugadores.club : 'S/C'})</small></td><td>${ins.categorias ? ins.categorias.nombre : 'N/A'}</td><td>${ins.jugadores ? ins.jugadores.puntos_ranking : 0} pts</td><td><button class="btn-aprobar" onclick="aprobarPago(${ins.id})">Validar Pago</button></td></tr>`);
+            data.forEach(ins => tbody.innerHTML += `<tr><td><strong style="color:#ffffff;">${ins.jugadores ? ins.jugadores.nombre : 'Jugador Desconocido'}</strong> <small style="color:#64748b;">(${ins.jugadores ? ins.jugadores.club : 'S/C'})</small></td><td style="color:#00f2fe;">${ins.categorias ? ins.categorias.nombre : 'N/A'}</td><td style="color:#eab308;">${ins.jugadores ? ins.jugadores.puntos_ranking : 0} pts</td><td><button class="btn-accion btn-verde" onclick="aprobarPago(${ins.id})">Validar Pago</button></td></tr>`);
         }
 
         async function aprobarPago(id) {
@@ -547,7 +560,7 @@
             const { data } = await clienteSupabase.from('categorias').select('*').order('puntos_maximos', { ascending: true });
             const tbody = document.getElementById('tabla-categorias'); tbody.innerHTML = '';
             if (!data) return;
-            data.forEach(cat => tbody.innerHTML += `<tr><td><strong>${cat.nombre}</strong></td><td><input type="number" id="cat-min-${cat.id}" style="width:60px; padding:4px; text-align:center;" value="${cat.puntos_minimos}"> pts</td><td><input type="number" id="cat-max-${cat.id}" style="width:60px; padding:4px; text-align:center;" value="${cat.puntos_maximos}"> pts</td><td><button class="btn-accion btn-cian" onclick="actualizarCategoria(${cat.id})">💾 Guardar</button></td></tr>`);
+            data.forEach(cat => tbody.innerHTML += `<tr><td><strong style="color:#ffffff;">${cat.nombre}</strong></td><td><input type="number" id="cat-min-${cat.id}" style="width:60px; padding:6px; text-align:center;" value="${cat.puntos_minimos}"> pts</td><td><input type="number" id="cat-max-${cat.id}" style="width:60px; padding:6px; text-align:center;" value="${cat.puntos_maximos}"> pts</td><td><button class="btn-accion btn-cian" style="padding:6px 10px; font-size:11px;" onclick="actualizarCategoria(${cat.id})">💾 Guardar</button></td></tr>`);
         }
 
         async function actualizarCategoria(id) {
@@ -569,7 +582,7 @@
             if (!data) return;
             data.forEach(regla => {
                 let escenario = regla.resultado_esperado === 'gana_favorito' ? 'Gana Favorito' : '<strong>Gana Retador (Upset)</strong>';
-                tbody.innerHTML += `<tr><td>De ${regla.diferencia_min} a ${regla.diferencia_max} pts</td><td>${escenario}</td><td>+ <input type="number" id="regla-ganador-${regla.id}" style="width:50px; text-align:center;" value="${regla.puntos_ganador}"></td><td> <input type="number" id="regla-perdedor-${regla.id}" style="width:50px; text-align:center;" value="${regla.puntos_perdedor}"></td><td><button class="btn-accion btn-rojo" onclick="actualizarRegla(${regla.id})">💾 Guardar</button></td></tr>`;
+                tbody.innerHTML += `<tr><td style="color:#e2e8f0;">De ${regla.diferencia_min} a ${regla.diferencia_max} pts</td><td style="color:#ffffff;">${escenario}</td><td>+ <input type="number" id="regla-ganador-${regla.id}" style="width:50px; text-align:center;" value="${regla.puntos_ganador}"></td><td> <input type="number" id="regla-perdedor-${regla.id}" style="width:50px; text-align:center;" value="${regla.puntos_perdedor}"></td><td><button class="btn-accion btn-rojo" style="padding:6px 10px; font-size:11px;" onclick="actualizarRegla(${regla.id})">💾 Guardar</button></td></tr>`;
             });
         }
 
