@@ -363,6 +363,7 @@
             document.getElementById('btn-guardar-grupos').style.display = 'block';
         }
 
+        // ALGORITMO CON AISLAMIENTO DE RONDAS Y CERO EMPALMES
         function generarYCalcularPartidosRoundRobin() {
             partidosGeneradosRR = [];
 
@@ -409,21 +410,27 @@
             let minsBreak = timeToMinutes(horaBreakStr);
 
             let tiempoActual = minsInicio;
-            let mesaActual = 1;
             let breakAplicado = false;
 
+            // REGLA CLAVE: PROGRAMACIÓN RONDA POR RONDA
             RondasRaw.forEach((rondaObj) => {
                 let descansando = rondaObj.jugadorLibre;
+                let mesaActual = 1;
+
+                if (!breakAplicado && tiempoActual >= minsBreak) {
+                    tiempoActual += duracionBreak;
+                    breakAplicado = true;
+                }
 
                 rondaObj.partidos.forEach((match) => {
                     if (mesaActual > numMesas) {
                         mesaActual = 1;
                         tiempoActual += duracionPartido;
-                    }
 
-                    if (!breakAplicado && tiempoActual >= minsBreak) {
-                        tiempoActual += duracionBreak;
-                        breakAplicado = true;
+                        if (!breakAplicado && tiempoActual >= minsBreak) {
+                            tiempoActual += duracionBreak;
+                            breakAplicado = true;
+                        }
                     }
 
                     let nombreJuez = 'Comité / Auto-arbitraje';
@@ -449,6 +456,9 @@
 
                     mesaActual++;
                 });
+
+                // AVANZAR EL TIEMPO PARA LA SIGUIENTE RONDA SÓLO CUANDO LA ACTUAL FINALIZA
+                tiempoActual += duracionPartido;
             });
 
             document.getElementById('seccion-partidos-rr').style.display = 'block';
@@ -504,7 +514,7 @@
             }
         }
 
-        // ENVÍO INTELIGENTE POR WHATSAPP (GENERAL O INDIVIDUAL CON ALERTA DE JUEZ)
+        // ENVÍO DE WHATSAPP CON FILTRADO EXACTO Y ALERTA DE ARBITRAJE
         function compartirRolWhatsApp() {
             if (partidosGeneradosRR.length === 0) { alert("No hay partidos generados para enviar."); return; }
 
@@ -515,7 +525,6 @@
             let texto = '';
 
             if (idJugadorSel !== 'TODOS') {
-                // MODALIDAD 1: AGENDA PERSONAL DE UN JUGADOR
                 const jugador = jugadoresListos.find(j => j.id == idJugadorSel);
                 const nombreJugador = jugador ? jugador.nombre : 'Jugador';
 
@@ -546,7 +555,6 @@
                          `📌 *Nota:* ¡Por favor preséntate 10 minutos antes a tus partidos y turnos de juez!`;
 
             } else {
-                // MODALIDAD 2: ROL GENERAL DE TODO EL TORNEO
                 texto = `🏓 *ROL OFICIAL DE PARTIDOS* 🏓\n` +
                         `🏆 *${nombreTorneo}*\n` +
                         `📅 Fecha: _${fechaTorneo}_\n\n` +
