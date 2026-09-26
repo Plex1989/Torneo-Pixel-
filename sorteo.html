@@ -60,6 +60,15 @@
         .badge-mesa { background: #28a745; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
         .badge-grupo { background: #17a2b8; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
 
+        /* DISEÑO DE LLAVES DE ELIMINATORIA DIRECTA */
+        .bracket-container { display: flex; gap: 20px; overflow-x: auto; padding: 15px 0; }
+        .bracket-column { flex: 1; min-width: 220px; display: flex; flex-direction: column; justify-content: space-around; }
+        .bracket-header { text-align: center; font-weight: bold; color: #f5a623; margin-bottom: 15px; text-transform: uppercase; font-size: 13px; border-bottom: 1px solid #323644; padding-bottom: 8px; }
+        .match-box { background: #0e0f12; border: 1px solid #323644; border-radius: 8px; padding: 10px; margin-bottom: 15px; position: relative; }
+        .match-slot { padding: 6px 8px; font-size: 12px; border-radius: 4px; background: #181a20; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #2a2d37; }
+        .match-slot.winner { border-color: #28a745; color: #28a745; font-weight: bold; }
+        .match-slot .seed { color: #f5a623; font-weight: bold; font-size: 11px; }
+
         @media print {
             body { background: white !important; color: black !important; padding: 0; }
             .navbar, .controles, #panel-config-horarios, .btn-sorteo, .btn-guardar, .no-print, #contenedor-grupos { display: none !important; }
@@ -69,6 +78,8 @@
             th { background-color: #f2f2f2 !important; color: black !important; border: 1px solid #000; font-size: 9pt; }
             td { border: 1px solid #666; color: black !important; padding: 6px; }
             .badge-mesa, .badge-ronda, .badge-grupo { background: #fff !important; color: black !important; border: 1px solid #000; }
+            .match-box { background: white !important; border: 1px solid #000 !important; color: black !important; }
+            .match-slot { background: #f9f9f9 !important; border: 1px solid #ccc !important; color: black !important; }
         }
     </style>
 </head>
@@ -99,6 +110,8 @@
                 <select id="tamano-grupo">
                     <option value="3">Grupos de 3 jugadores</option>
                     <option value="4">Grupos de 4 jugadores</option>
+                    <option value="5">Grupos de 5 jugadores</option>
+                    <option value="6">Grupos de 6 jugadores</option>
                 </select>
 
                 <button class="btn-sorteo" id="btn-ejecutar-sorteo" onclick="prepararSorteo()">🎲 Generar Acomodo</button>
@@ -108,7 +121,7 @@
                 </div>
             </div>
 
-            <!-- MÓDULO CONFIGURACIÓN DE HORARIOS, VUELTAS Y JUECES EXTERNOS (PARA AMBOS FORMATOS) -->
+            <!-- MÓDULO CONFIGURACIÓN DE HORARIOS, VUELTAS Y JUECES EXTERNOS -->
             <div id="panel-config-horarios" style="display: none; background: #0e0f12; border: 1px solid #323644; padding: 18px; border-radius: 10px; margin-top: 15px;">
                 <h3 style="margin-top:0; font-size:15px; color:#f5a623;">⚙️ Configuración de Horarios, Vueltas y Jueces</h3>
                 
@@ -156,7 +169,7 @@
             <button id="btn-guardar-grupos" class="btn-guardar" style="display:none;" onclick="guardarGruposBD()">💾 Guardar Acomodo Definitivo en Base de Datos</button>
         </div>
 
-        <!-- SECCIÓN ROL DE PARTIDOS Y EXPORTACIÓN (WHATSAPP, PDF, EXCEL) -->
+        <!-- SECCIÓN ROL DE PARTIDOS Y EXPORTACIÓN -->
         <div class="container" id="seccion-partidos-rr" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2d37; padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                 <h2 style="border:none; margin:0;">📋 Rol Oficial de Partidos</h2>
@@ -190,6 +203,14 @@
                     <tr><td colspan="7" style="text-align:center; color:#a0a5b1;">Genera la tabla para ver el rol de partidos.</td></tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- SECCIÓN LLAVES DE ELIMINATORIA DIRECTA (SEMBRADOS DE FASE DE GRUPOS) -->
+        <div class="container" id="seccion-llaves-eliminatoria" style="display: none;">
+            <h2>🏆 Llaves de Eliminatoria Directa (Cuadro Final)</h2>
+            <p style="font-size:13px; color:#a0a5b1; margin-bottom:20px;">Clasifican los <strong>2 mejores jugadores de cada grupo</strong>. Sembrado automático de llaves cruzadas:</p>
+            
+            <div class="bracket-container" id="contenedor-grafico-llaves"></div>
         </div>
 
     </div>
@@ -248,6 +269,7 @@
             document.getElementById('contenedor-grupos').innerHTML = '';
             document.getElementById('panel-config-horarios').style.display = 'none';
             document.getElementById('seccion-partidos-rr').style.display = 'none';
+            document.getElementById('seccion-llaves-eliminatoria').style.display = 'none';
             document.getElementById('btn-guardar-grupos').style.display = 'none';
 
             if (!idCat) { contador.innerText = '0'; return; }
@@ -302,6 +324,7 @@
             }];
             dibujarGrupos();
             generarYCalcularPartidosGeneral();
+            document.getElementById('seccion-llaves-eliminatoria').style.display = 'none';
         }
 
         function ejecutarSerpiente(tamanoGrupo) {
@@ -325,6 +348,7 @@
 
             dibujarGrupos();
             generarYCalcularPartidosGeneral();
+            generarLlavesEliminatoria();
         }
 
         function dibujarGrupos() {
@@ -374,29 +398,27 @@
             gruposGlobal[grupoDestinoIdx].jugadores.push(jugador);
             dibujarGrupos();
             generarYCalcularPartidosGeneral();
+            generarLlavesEliminatoria();
         }
 
-        // ALGORITMO UNIFICADO DE PROGRAMACIÓN PARA ROUND ROBIN Y GRUPOS (SOPORTA 1 Y 2 VUELTAS)
         function generarYCalcularPartidosGeneral() {
             partidosGeneradosRR = [];
 
             const numVueltas = parseInt(document.getElementById('rr-num-vueltas').value) || 1;
             let listaRondasGlobales = [];
 
-            // 1. Generar los partidos para CADA grupo (Round Robin o Grupos A, B, C...)
             gruposGlobal.forEach((grupo) => {
                 let arrJugadores = [...grupo.jugadores];
                 let numJ = arrJugadores.length;
 
                 if (numJ < 2) return;
 
-                if (numJ % 2 !== 0) arrJugadores.push(null); // Comodín para descansos
+                if (numJ % 2 !== 0) arrJugadores.push(null);
 
                 let n = arrJugadores.length;
                 let numRondasGrupo = n - 1;
                 let partidosPorRonda = n / 2;
 
-                // VUELTA 1 (Ida)
                 for (let v = 1; v <= numVueltas; v++) {
                     let arrCopia = [...arrJugadores];
 
@@ -412,7 +434,6 @@
                             if (j1 === null) libreEnRonda = j2;
                             else if (j2 === null) libreEnRonda = j1;
                             else {
-                                // En vuelta 2 se invierten locales y visitantes
                                 if (v === 2) partidosRonda.push({ j1: j2, j2: j1, ronda: rondaNum, grupoNombre: grupo.nombre, descansando: libreEnRonda });
                                 else partidosRonda.push({ j1: j1, j2: j2, ronda: rondaNum, grupoNombre: grupo.nombre, descansando: libreEnRonda });
                             }
@@ -425,12 +446,11 @@
                             descansando: libreEnRonda
                         });
 
-                        arrCopia.splice(1, 0, arrCopia.pop()); // Rotación Berger
+                        arrCopia.splice(1, 0, arrCopia.pop());
                     }
                 }
             });
 
-            // 2. Scheduler de Tiempos, Mesas y Jueces
             const horaInicioStr = document.getElementById('rr-hora-inicio').value || '09:00';
             const numMesas = parseInt(document.getElementById('rr-num-mesas').value) || 3;
             const horaBreakStr = document.getElementById('rr-hora-break').value || '14:00';
@@ -443,7 +463,6 @@
             let tiempoActual = minsInicio;
             let breakAplicado = false;
 
-            // Agrupar por rondas consecutivas
             let rondasAgrupadas = {};
             listaRondasGlobales.forEach(rg => {
                 let clave = `R${rg.rondaNum}_G${rg.grupoNombre}`;
@@ -472,7 +491,6 @@
 
                     let nombreJuez = 'Comité / Auto-arbitraje';
 
-                    // Si hay alguien descansando en ese grupo, asignarlo a la Mesa 1
                     if (mesaActual === 1 && descansando) {
                         nombreJuez = `👤 ${descansando.nombre} (Descansa)`;
                     } else {
@@ -503,9 +521,108 @@
             dibujarTablaPartidosRR(partidosGeneradosRR);
         }
 
+        // GENERADOR GRÁFICO DE LLAVES DE ELIMINATORIA DIRECTA
+        function generarLlavesEliminatoria() {
+            const container = document.getElementById('contenedor-grafico-llaves');
+            container.innerHTML = '';
+
+            const numGrupos = gruposGlobal.length;
+            if (numGrupos === 0) return;
+
+            document.getElementById('seccion-llaves-eliminatoria').style.display = 'block';
+
+            let html = '';
+
+            if (numGrupos === 1) {
+                // Final Directa
+                html += `
+                    <div class="bracket-column">
+                        <div class="bracket-header">🏆 Gran Final</div>
+                        <div class="match-box">
+                            <div class="match-slot"><span class="seed">1º Gpo A</span> Por Definir</div>
+                            <div class="match-slot"><span class="seed">2º Gpo A</span> Por Definir</div>
+                        </div>
+                    </div>
+                `;
+            } else if (numGrupos === 2) {
+                // Semifinales + Final
+                html += `
+                    <div class="bracket-column">
+                        <div class="bracket-header">🥇 Semifinales</div>
+                        <div class="match-box">
+                            <div class="match-slot"><span class="seed">1º Gpo A</span> Por Definir</div>
+                            <div class="match-slot"><span class="seed">2º Gpo B</span> Por Definir</div>
+                        </div>
+                        <div class="match-box">
+                            <div class="match-slot"><span class="seed">1º Gpo B</span> Por Definir</div>
+                            <div class="match-slot"><span class="seed">2º Gpo A</span> Por Definir</div>
+                        </div>
+                    </div>
+                    <div class="bracket-column">
+                        <div class="bracket-header">🏆 Gran Final</div>
+                        <div class="match-box">
+                            <div class="match-slot">Ganador Semifinal 1</div>
+                            <div class="match-slot">Ganador Semifinal 2</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Cuartos + Semis + Final (3 o 4 grupos)
+                let gA = gruposGlobal[0] ? gruposGlobal[0].nombre : 'A';
+                let gB = gruposGlobal[1] ? gruposGlobal[1].nombre : 'B';
+                let gC = gruposGlobal[2] ? gruposGlobal[2].nombre : 'C';
+                let gD = gruposGlobal[3] ? gruposGlobal[3].nombre : 'D';
+
+                html += `
+                    <div class="bracket-column">
+                        <div class="bracket-header">⚔️ Cuartos de Final</div>
+                        <div class="match-box">
+                            <div class="match-slot"><span class="seed">1º Gpo ${gA}</span> Por Definir</div>
+                            <div class="match-slot"><span class="seed">2º Gpo ${gB}</span> Por Definir</div>
+                        </div>
+                        <div class="match-box">
+                            <div class="match-slot"><span class="seed">1º Gpo ${gC}</span> Por Definir</div>
+                            <div class="match-slot"><span class="seed">2º Gpo ${gD}</span> Por Definir</div>
+                        </div>
+                        <div class="match-box">
+                            <div class="match-slot"><span class="seed">1º Gpo ${gB}</span> Por Definir</div>
+                            <div class="match-slot"><span class="seed">2º Gpo ${gA}</span> Por Definir</div>
+                        </div>
+                        <div class="match-box">
+                            <div class="match-slot"><span class="seed">1º Gpo ${gD}</span> Por Definir</div>
+                            <div class="match-slot"><span class="seed">2º Gpo ${gC}</span> Por Definir</div>
+                        </div>
+                    </div>
+                    <div class="bracket-column">
+                        <div class="bracket-header">🥇 Semifinales</div>
+                        <div class="match-box">
+                            <div class="match-slot">Ganador Llave 1</div>
+                            <div class="match-slot">Ganador Llave 2</div>
+                        </div>
+                        <div class="match-box">
+                            <div class="match-slot">Ganador Llave 3</div>
+                            <div class="match-slot">Ganador Llave 4</div>
+                        </div>
+                    </div>
+                    <div class="bracket-column">
+                        <div class="bracket-header">🏆 Gran Final</div>
+                        <div class="match-box">
+                            <div class="match-slot">Ganador Semifinal 1</div>
+                            <div class="match-slot">Ganador Semifinal 2</div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+        }
+
         function recalcularRolPartidos() {
             if (jugadoresListos.length === 0) return;
             generarYCalcularPartidosGeneral();
+            if (torneoActivoObj && torneoActivoObj.formato !== 'round_robin') {
+                generarLlavesEliminatoria();
+            }
         }
 
         function dibujarTablaPartidosRR(listaPartidos) {
