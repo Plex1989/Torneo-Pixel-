@@ -6,7 +6,6 @@
     <title>Panel de Control - Torneo Activo</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // GUARDIA DE SEGURIDAD GLOBAL
         if (localStorage.getItem('admin_autenticado') !== 'true') {
             alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
             window.location.href = "torneos.html";
@@ -14,8 +13,6 @@
     </script>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #0e0f12; color: #ffffff; }
-        
-        /* BARRA DE NAVEGACIÓN SUPERIOR UNIFICADA */
         .navbar { background: #181a20; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2d37; flex-wrap: wrap; gap: 10px; }
         .nav-title { font-weight: 800; font-size: 18px; color: #f5a623; letter-spacing: 1px; }
         .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -72,7 +69,6 @@
 </head>
 <body>
 
-    <!-- BARRA DE NAVEGACIÓN SUPERIOR -->
     <nav class="navbar no-print">
         <div class="nav-title">🏆 CENTRAL DE TORNEOS</div>
         <div class="nav-links">
@@ -87,7 +83,6 @@
 
     <div class="main-content">
         
-        <!-- BANNER DEL TORNEO ACTIVO -->
         <div class="banner-torneo no-print">
             <div>
                 <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; color:#f5a623;">Torneo Seleccionado:</span>
@@ -96,7 +91,7 @@
             <button class="btn-ws" onclick="compartirLinkInscripcionWS()">📲 Compartir Link de Inscripción (WhatsApp)</button>
         </div>
 
-        <!-- MÓDULO RESUMEN DE INSCRITOS Y CONFIRMADOS (EN VIVO) -->
+        <!-- MÓDULO INSCRITOS EN VIVO CON EDICIÓN DE CATEGORÍA -->
         <div class="panel no-print">
             <h2>📋 Inscritos en el Torneo Activo (En Vivo)</h2>
             <div style="display: flex; gap: 25px; margin-bottom: 15px; font-size: 15px; color:#a0a5b1;">
@@ -108,17 +103,17 @@
                     <tr>
                         <th>Jugador</th>
                         <th>Club</th>
-                        <th>Categoría</th>
+                        <th>Categoría Registrada</th>
                         <th>Estatus Pago</th>
+                        <th style="width: 250px;">Modificar Categoría / Acción</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-inscritos-vivo">
-                    <tr><td colspan="4" class="mensaje-vacio">Cargando inscritos del torneo...</td></tr>
+                    <tr><td colspan="5" class="mensaje-vacio">Cargando inscritos del torneo...</td></tr>
                 </tbody>
             </table>
         </div>
 
-        <!-- MÓDULO DE PAGOS PENDIENTES -->
         <div class="panel no-print">
             <h2>💰 Validación de Pagos Pendientes</h2>
             <table>
@@ -127,7 +122,6 @@
             </table>
         </div>
 
-        <!-- MÓDULO DE JUGADORES -->
         <div class="panel no-print">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2d37; padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                 <h2 style="border: none; margin: 0;">👥 Módulo de Jugadores (Global)</h2>
@@ -162,14 +156,12 @@
             </div>
         </div>
 
-        <!-- REPORTE DE RANKING GENERAL -->
         <div class="panel" id="seccion-print">
             <h2 style="text-align: center; color:#f5a623;">🏓 RANKING OFICIAL DE JUGADORES 🏓</h2>
             <p style="text-align: center; font-size: 12px; color: #a0a5b1;" id="fecha-impresion"></p>
             <div id="contenedor-ranking-categorias" style="display: none;">Cargando ranking...</div>
         </div>
 
-        <!-- MÓDULO DE CLUBS -->
         <div class="panel no-print">
             <h2>🏡 Gestión de Clubs / Equipos</h2>
             <div class="form-row" style="margin-bottom: 15px;">
@@ -182,7 +174,6 @@
             </table>
         </div>
 
-        <!-- MÓDULO DE CATEGORÍAS -->
         <div class="panel no-print">
             <h2>🏷️ Gestión de Categorías</h2>
             <div class="form-row" style="margin-bottom: 20px;">
@@ -197,7 +188,6 @@
             </table>
         </div>
 
-        <!-- REGLAS DE RANKING -->
         <div class="panel no-print">
             <h2>📈 Reglas de Puntuación (Ranking)</h2>
             <table>
@@ -244,7 +234,7 @@
 
             const [resJugadores, resCat, resClubs] = await Promise.all([
                 clienteSupabase.from('jugadores').select('*').order('puntos_ranking', { ascending: false }),
-                clienteSupabase.from('categorias').select('*').order('puntos_maximos', { ascending: false }),
+                clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true }),
                 clienteSupabase.from('clubs').select('*').order('nombre', { ascending: true })
             ]);
 
@@ -259,10 +249,11 @@
             cargarInscritosEnVivo();
         }
 
+        // --- CÁRGA Y EDICIÓN DE INSCRITOS EN VIVO ---
         async function cargarInscritosEnVivo() {
             const { data, error } = await clienteSupabase
                 .from('inscripciones')
-                .select(`id, estatus_pago, jugadores ( nombre, club ), categorias ( nombre )`)
+                .select(`id, categoria_id, estatus_pago, jugadores ( id, nombre, club ), categorias ( id, nombre )`)
                 .eq('torneo_id', idTorneoActivo);
 
             const tbody = document.getElementById('tabla-inscritos-vivo');
@@ -272,7 +263,7 @@
             tbody.innerHTML = '';
 
             if (error || !data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="mensaje-vacio">Aún no hay inscritos en este torneo.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="5" class="mensaje-vacio">Aún no hay inscritos en este torneo.</td></tr>';
                 cantReg.innerText = '0'; cantPag.innerText = '0';
                 return;
             }
@@ -283,15 +274,48 @@
 
             data.forEach(ins => {
                 const esPagado = ins.estatus_pago === 'Pagado';
+                
+                // Generar dropdown de categorías para editar al jugador
+                let selectCatHtml = `<select id="select-cambiar-cat-${ins.id}" style="padding: 4px; border: 1px solid #323644; background: #0e0f12; color: #fff; border-radius: 4px; font-size: 12px; margin-right: 5px;">`;
+                todasLasCategoriasAdmin.forEach(c => {
+                    selectCatHtml += `<option value="${c.id}" ${c.id === ins.categoria_id ? 'selected' : ''}>${c.nombre}</option>`;
+                });
+                selectCatHtml += `</select>`;
+
                 tbody.innerHTML += `
                     <tr>
                         <td><strong style="color:#fff;">${ins.jugadores ? ins.jugadores.nombre : 'Jugador Eliminado'}</strong></td>
                         <td>${ins.jugadores ? (ins.jugadores.club || 'Sin Club') : 'N/A'}</td>
-                        <td style="color:#f5a623;">${ins.categorias ? ins.categorias.nombre : 'N/A'}</td>
+                        <td style="color:#f5a623; font-weight:bold;">${ins.categorias ? ins.categorias.nombre : 'N/A'}</td>
                         <td><span class="badge-pago ${esPagado ? 'pago-ok' : 'pago-pend'}">${ins.estatus_pago}</span></td>
+                        <td>
+                            ${selectCatHtml}
+                            <button class="btn-accion btn-dorado" style="padding: 4px 8px; font-size: 11px;" onclick="cambiarCategoriaInscripcion(${ins.id})">💾</button>
+                            <button class="btn-accion btn-rojo" style="padding: 4px 8px; font-size: 11px; margin-left: 3px;" onclick="eliminarInscripcion(${ins.id}, '${ins.jugadores ? ins.jugadores.nombre : ''}')">🗑️</button>
+                        </td>
                     </tr>
                 `;
             });
+        }
+
+        async function cambiarCategoriaInscripcion(idInscripcion) {
+            const nuevaCatId = document.getElementById(`select-cambiar-cat-${idInscripcion}`).value;
+            const { error } = await clienteSupabase.from('inscripciones').update({ categoria_id: parseInt(nuevaCatId) }).eq('id', idInscripcion);
+            
+            if (error) { alert("Error al cambiar categoría."); return; }
+            
+            alert("✅ Categoría cambiada correctamente.");
+            cargarDatosIniciales();
+        }
+
+        async function eliminarInscripcion(idInscripcion, nombreJugador) {
+            if (!confirm(`¿Eliminar la inscripción de "${nombreJugador}" para este torneo?`)) return;
+
+            const { error } = await clienteSupabase.from('inscripciones').delete().eq('id', idInscripcion);
+            if (error) { alert("Error al eliminar la inscripción."); return; }
+
+            alert("✅ Inscripción eliminada.");
+            cargarDatosIniciales();
         }
 
         function compartirLinkInscripcionWS() {
@@ -352,7 +376,6 @@
             cargarDatosIniciales();
         }
 
-        // --- MÓDULO JUGADORES ---
         function toggleTablaRanking() {
             const cont = document.getElementById('contenedor-ranking-categorias');
             const btn = document.getElementById('btn-toggle-ranking');
@@ -424,7 +447,6 @@
             document.getElementById('buscador-jugador').value = ''; resetFormularioJugador(); cargarDatosIniciales();
         }
 
-        // --- FUNCIÓN NUEVA: ELIMINAR JUGADOR ---
         async function eliminarJugador() {
             const idSel = document.getElementById('select-jugador-admin').value;
             if (!idSel) return;
@@ -434,10 +456,8 @@
 
             if (!confirm(`⚠️ ¿Estás seguro de que deseas eliminar a "${j.nombre}" de la base de datos?\n\nEsta acción borrará su historial de inscripciones y no se podrá deshacer.`)) return;
 
-            // 1. Eliminar inscripciones asociadas para evitar conflictos de llave foránea
             await clienteSupabase.from('inscripciones').delete().eq('jugador_id', idSel);
 
-            // 2. Eliminar jugador de la tabla principal
             const { error } = await clienteSupabase.from('jugadores').delete().eq('id', idSel);
 
             if (error) {
