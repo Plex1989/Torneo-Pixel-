@@ -12,82 +12,80 @@
         }
     </script>
     <style>
-        /* IMPORTACIÓN DE FUENTE PREMIUM (SORA) */
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
 
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 0; background-color: #04060a; color: #f8fafc; min-height: 100vh; position: relative; overflow-x: hidden; }
         
-        /* ORBES DE LUZ ATMOSFÉRICA DE FONDO */
-        body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(140px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 10s infinite alternate; }
-        body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #9333ea; border-radius: 50%; filter: blur(140px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
-        @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
+        /* ORBES ATMOSFÉRICOS ESTÁTICOS DE FONDO */
+        body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(140px); opacity: 0.10; pointer-events: none; z-index: -1; }
+        body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #9333ea; border-radius: 50%; filter: blur(140px); opacity: 0.10; pointer-events: none; z-index: -1; }
 
         /* BARRA DE NAVEGACIÓN - GLASSMORPHISM */
-        .navbar { background: rgba(10, 15, 26, 0.6); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 50; box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5); }
-        .nav-title { font-weight: 800; font-size: 18px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; position: relative; }
-        .nav-title::after { content: ""; position: absolute; bottom: -4px; left: 0; width: 40px; height: 2px; background: linear-gradient(90deg, #06b6d4, #a855f7, #f59e0b); border-radius: 2px; }
+        .navbar { background: rgba(10, 15, 26, 0.65); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 50; }
+        .nav-title { font-weight: 800; font-size: 17px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
         
-        .nav-links { display: flex; gap: 12px; flex-wrap: wrap; }
-        .nav-btn { color: #94a3b8; text-decoration: none; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
-        .nav-btn:hover { color: #ffffff; background: rgba(255, 255, 255, 0.1); border-color: rgba(245, 158, 11, 0.4); box-shadow: 0 0 15px rgba(245, 158, 11, 0.2); transform: translateY(-1px); }
-        .nav-btn.active { color: #ffffff; border-color: rgba(168, 85, 247, 0.6); background: rgba(168, 85, 247, 0.1); box-shadow: inset 0 0 10px rgba(168, 85, 247, 0.2); }
+        .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
+        .nav-btn { color: #94a3b8; text-decoration: none; padding: 8px 16px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-btn:hover { color: #ffffff; background: rgba(255, 255, 255, 0.1); border-color: rgba(245, 158, 11, 0.5); box-shadow: 0 0 15px rgba(245, 158, 11, 0.3); }
+        .nav-btn.active { color: #ffffff; border-color: #a855f7; background: rgba(168, 85, 247, 0.15); box-shadow: 0 0 12px rgba(168, 85, 247, 0.3); }
         .nav-btn.public { border-color: rgba(16, 185, 129, 0.4); color: #34d399; }
-        .nav-btn.public:hover { background: rgba(16, 185, 129, 0.1); border-color: #10b981; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); color: #ffffff; }
+        .nav-btn.public:hover { background: #10b981; color: #04060a; border-color: #10b981; box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
 
         .main-content { padding: 30px; max-width: 1200px; margin: auto; position: relative; z-index: 10; }
         
-        /* PANELES - GLASSMORPHISM CON HALO DE LUZ (HOVER) */
-        .panel { position: relative; background: rgba(10, 15, 26, 0.45); backdrop-filter: blur(20px); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.03); padding: 30px; margin-bottom: 30px; transition: all 0.4s ease; border-bottom: 4px solid transparent; }
-        .panel::before { content: ""; position: absolute; inset: 0; border-radius: 24px; background: transparent; filter: blur(20px); z-index: -1; transition: all 0.4s ease; opacity: 0; }
-        .panel:hover { border-bottom: 4px solid rgba(6, 182, 212, 0.6); transform: translateY(-2px); }
-        .panel:hover::before { background: rgba(6, 182, 212, 0.15); opacity: 1; }
+        /* PANELES CONTENEDORES - ESTÁTICOS, SOBRIOS Y SIN ILUMINAR TODO EL CUADRO */
+        .panel { background: rgba(10, 15, 26, 0.45); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.04); padding: 28px; margin-bottom: 28px; }
         
-        h2, h3 { color: #ffffff; margin-top: 0; padding-bottom: 12px; font-size: 16px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; border-bottom: 1px solid rgba(255, 255, 255, 0.05); margin-bottom: 20px; }
+        h2, h3 { color: #ffffff; margin-top: 0; padding-bottom: 12px; font-size: 15px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 700; border-bottom: 1px solid rgba(255, 255, 255, 0.06); margin-bottom: 20px; }
         
-        /* INPUTS Y SELECTS PREMIUM */
+        /* BANNER TORNEO ACTIVO */
+        .banner-torneo { background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(168, 85, 247, 0.3); color: #ffffff; padding: 18px 24px; border-radius: 16px; margin-bottom: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+
+        /* INPUTS Y SELECTS */
         .form-row { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
-        .form-row input[type="text"], .form-row input[type="number"], .form-row select { flex: 1; padding: 12px 16px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0, 0, 0, 0.3); color: #ffffff; border-radius: 12px; min-width: 140px; font-size: 13px; font-family: 'Sora', sans-serif; transition: all 0.3s ease; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
-        .form-row input:focus, .form-row select:focus { border-color: rgba(6, 182, 212, 0.6); outline: none; background: rgba(0, 0, 0, 0.5); box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.2); }
+        .form-row input[type="text"], .form-row input[type="number"], .form-row select { flex: 1; padding: 11px 16px; border: 1px solid rgba(255, 255, 255, 0.1); background: rgba(0, 0, 0, 0.4); color: #ffffff; border-radius: 12px; min-width: 140px; font-size: 13px; font-family: 'Sora', sans-serif; transition: all 0.3s ease; }
+        .form-row input:focus, .form-row select:focus { border-color: #22d3ee; outline: none; box-shadow: 0 0 12px rgba(34, 211, 238, 0.3); }
         
-        /* BOTONES DE ACCIÓN */
-        .btn-accion { background: rgba(255, 255, 255, 0.05); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 18px; border-radius: 12px; cursor: pointer; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s ease; font-family: 'Sora', sans-serif; }
-        .btn-accion:hover { transform: translateY(-2px); color: #ffffff; }
+        /* BOTONES ESTILO CONSOLA (PILL / REDONDEADOS COMO EN LA IMAGEN) */
+        .btn-accion { background: rgba(255, 255, 255, 0.05); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.12); padding: 8px 18px; border-radius: 9999px; cursor: pointer; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s ease; font-family: 'Sora', sans-serif; }
+        .btn-accion:hover { background: #22d3ee; color: #04060a; border-color: #22d3ee; box-shadow: 0 0 20px rgba(34, 211, 238, 0.6); transform: translateY(-2px); }
         
-        .btn-dorado { border-color: rgba(245, 158, 11, 0.4); color: #fbbf24; } 
-        .btn-dorado:hover { background: rgba(245, 158, 11, 0.15); border-color: #f59e0b; box-shadow: 0 0 20px rgba(245, 158, 11, 0.3); }
+        .btn-dorado { border-color: rgba(245, 158, 11, 0.4); color: #ffffff; } 
+        .btn-dorado:hover { background: #f59e0b; color: #04060a; border-color: #f59e0b; box-shadow: 0 0 20px rgba(245, 158, 11, 0.6); }
         
-        .btn-cian { border-color: rgba(6, 182, 212, 0.4); color: #22d3ee; } 
-        .btn-cian:hover { background: rgba(6, 182, 212, 0.15); border-color: #06b6d4; box-shadow: 0 0 20px rgba(6, 182, 212, 0.3); }
+        .btn-cian { border-color: rgba(6, 182, 212, 0.4); color: #ffffff; } 
+        .btn-cian:hover { background: #06b6d4; color: #04060a; border-color: #06b6d4; box-shadow: 0 0 20px rgba(6, 182, 212, 0.6); }
         
-        .btn-rojo { border-color: rgba(239, 68, 68, 0.4); color: #f87171; } 
-        .btn-rojo:hover { background: rgba(239, 68, 68, 0.15); border-color: #ef4444; box-shadow: 0 0 20px rgba(239, 68, 68, 0.3); }
+        .btn-rojo { border-color: rgba(239, 68, 68, 0.4); color: #ffffff; } 
+        .btn-rojo:hover { background: #ef4444; color: #ffffff; border-color: #ef4444; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
 
-        .btn-verde { border-color: rgba(16, 185, 129, 0.4); color: #34d399; } 
-        .btn-verde:hover { background: rgba(16, 185, 129, 0.15); border-color: #10b981; box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
+        .btn-verde { border-color: rgba(16, 185, 129, 0.4); color: #ffffff; } 
+        .btn-verde:hover { background: #10b981; color: #04060a; border-color: #10b981; box-shadow: 0 0 20px rgba(16, 185, 129, 0.6); }
 
-        .btn-ws { border-color: rgba(34, 197, 94, 0.5); background: rgba(34, 197, 94, 0.1); color: #4ade80; } 
-        .btn-ws:hover { background: rgba(34, 197, 94, 0.2); border-color: #22c55e; box-shadow: 0 0 20px rgba(34, 197, 94, 0.3); color: #ffffff; }
+        .btn-ws { border-color: rgba(34, 197, 94, 0.4); color: #ffffff; background: rgba(34, 197, 94, 0.1); } 
+        .btn-ws:hover { background: #22c55e; color: #04060a; border-color: #22c55e; box-shadow: 0 0 20px rgba(34, 197, 94, 0.6); }
         
-        /* TABLAS MODERNAS */
-        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 10px; font-size: 13px; }
-        th { color: #64748b; text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: 1px; padding: 0 16px 8px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-        td { padding: 16px; background: rgba(0, 0, 0, 0.2); border-top: 1px solid rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02); color: #cbd5e1; transition: all 0.2s ease; }
-        td:first-child { border-left: 1px solid rgba(255,255,255,0.02); border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
-        td:last-child { border-right: 1px solid rgba(255,255,255,0.02); border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+        /* TABLAS CON EFECTO DE ILUMINACIÓN EXCLUSIVO POR JUGADOR / FILA */
+        table { width: 100%; border-collapse: separate; border-spacing: 0 6px; margin-top: 10px; font-size: 13px; }
+        th { color: #64748b; text-transform: uppercase; font-size: 10px; font-weight: 700; letter-spacing: 1px; padding: 0 16px 8px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
         
-        tr:hover td { background: rgba(255, 255, 255, 0.03); color: #ffffff; border-color: rgba(255, 255, 255, 0.08); }
+        td { padding: 14px 16px; background: rgba(0, 0, 0, 0.25); border-top: 1px solid rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02); color: #ffffff; transition: all 0.25s ease; }
+        td:first-child { border-left: 1px solid rgba(255,255,255,0.02); border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
+        td:last-child { border-right: 1px solid rgba(255,255,255,0.02); border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
         
-        /* ETIQUETAS Y BADGES */
-        .badge-pago { padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-        .pago-ok { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; }
-        .pago-pend { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; }
+        /* EFECTO NEÓN POR FILA/JUGADOR (IGUAL AL LOGO PLEX DE TU IMAGEN) */
+        tr { cursor: pointer; transition: all 0.25s ease; }
+        tr:hover td { background: rgba(6, 182, 212, 0.08) !important; border-color: rgba(6, 182, 212, 0.3); }
+        tr:hover td strong { color: #22d3ee !important; text-shadow: 0 0 12px rgba(34, 211, 238, 0.8); }
+        tr:hover td:first-child { border-left: 3px solid #22d3ee; }
+        
+        .badge-pago { padding: 4px 10px; border-radius: 9999px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .pago-ok { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; }
+        .pago-pend { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; }
 
-        .caja-edicion { background: rgba(0, 0, 0, 0.2); padding: 20px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.05); margin-top: 20px; position: relative; transition: all 0.4s ease; border-bottom: 4px solid transparent; }
-        .caja-edicion::before { content: ""; position: absolute; inset: 0; border-radius: 16px; background: transparent; filter: blur(15px); z-index: -1; transition: all 0.4s ease; opacity: 0; }
-        .caja-edicion:hover { border-bottom: 4px solid rgba(168, 85, 247, 0.6); transform: translateY(-2px); }
-        .caja-edicion:hover::before { background: rgba(168, 85, 247, 0.15); opacity: 1; }
+        .caja-edicion { background: rgba(0, 0, 0, 0.3); padding: 18px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.05); margin-top: 15px; }
 
-        .header-categoria-ranking { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.05); font-weight: 700; font-size: 12px; color: #ffffff; padding: 12px 20px; margin-top: 25px; border-left: 4px solid rgba(168, 85, 247, 0.8); text-transform: uppercase; border-radius: 8px; letter-spacing: 2px; }
+        .header-categoria-ranking { background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.05); font-weight: 700; font-size: 12px; color: #ffffff; padding: 12px 18px; margin-top: 22px; border-left: 4px solid #a855f7; text-transform: uppercase; border-radius: 8px; letter-spacing: 1.5px; }
 
         .mensaje-vacio { text-align: center; color: #475569; font-style: italic; background: transparent !important; border: none !important; }
 
@@ -119,19 +117,19 @@
 
     <div class="main-content">
         
-        <div class="panel no-print" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 30px; border-bottom-color: rgba(168,85,247,0.6);">
+        <div class="banner-torneo no-print">
             <div>
                 <span style="font-size: 10px; font-weight: 700; text-transform: uppercase; color:#a855f7; letter-spacing: 2px;">Torneo Activo en el Sistema</span>
-                <h3 id="nombre-torneo-banner" style="margin: 5px 0 0 0; border: none; padding: 0; color:#ffffff; font-size:20px; letter-spacing: 1px;">Cargando...</h3>
+                <h3 id="nombre-torneo-banner" style="margin: 4px 0 0 0; border: none; padding: 0; color:#ffffff; font-size:20px; letter-spacing: 1px;">Cargando...</h3>
             </div>
             <button class="btn-accion btn-ws" onclick="compartirLinkInscripcionWS()">📲 Link de Inscripción</button>
         </div>
 
         <div class="panel no-print">
             <h2>📋 Inscritos en el Torneo Activo (En Vivo)</h2>
-            <div style="display: flex; gap: 30px; margin-bottom: 20px; font-size: 13px; color:#94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
-                <div>Total Registrados: <strong id="cant-registrados" style="color:#ffffff; font-size: 18px; margin-left: 5px;">0</strong></div>
-                <div>Confirmados: <strong id="cant-pagados" style="color:#22d3ee; font-size: 18px; margin-left: 5px;">0</strong></div>
+            <div style="display: flex; gap: 30px; margin-bottom: 18px; font-size: 13px; color:#94a3b8; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                <div>Total Registrados: <strong id="cant-registrados" style="color:#ffffff; font-size: 18px; margin-left: 6px;">0</strong></div>
+                <div>Confirmados: <strong id="cant-pagados" style="color:#22d3ee; font-size: 18px; margin-left: 6px;">0</strong></div>
             </div>
             <table>
                 <thead>
@@ -158,7 +156,7 @@
         </div>
 
         <div class="panel no-print">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px; flex-wrap: wrap; gap: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 14px; flex-wrap: wrap; gap: 12px;">
                 <h2 style="border: none; margin: 0; padding: 0;">👥 Base de Datos de Jugadores</h2>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                     <button class="btn-accion btn-cian" onclick="toggleTablaRanking()" id="btn-toggle-ranking">Mostrar Ranking</button>
@@ -168,22 +166,22 @@
                 </div>
             </div>
             
-            <p style="font-size: 12px; color: #64748b; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Escribe un nombre para buscar y editar:</p>
+            <p style="font-size: 11px; color: #64748b; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;">Escribe un nombre para buscar y editar:</p>
             
             <div class="form-row">
-                <input type="text" id="buscador-jugador" placeholder="🔎 Buscar por nombre..." onkeyup="filtrarYAutoSeleccionarAdmin()" style="max-width: 300px;">
+                <input type="text" id="buscador-jugador" placeholder="🔎 Buscar por nombre..." onkeyup="filtrarYAutoSeleccionarAdmin()" style="max-width: 280px;">
                 <select id="select-jugador-admin" onchange="cargarDatosJugadorEditar()">
                     <option value="">-- Nuevo Jugador (Modo Crear) --</option>
                 </select>
             </div>
 
             <div class="caja-edicion">
-                <div style="font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color:#ffffff; margin-bottom: 15px;" id="titulo-modo-jugador">➕ Registrando Nuevo Jugador</div>
+                <div style="font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color:#ffffff; margin-bottom: 12px;" id="titulo-modo-jugador">➕ Registrando Nuevo Jugador</div>
                 <div class="form-row">
                     <input type="text" id="nuevo-nombre" placeholder="Nombre completo">
-                    <select id="nuevo-club" style="max-width: 200px;"><option value="Sin Club">Cargando clubs...</option></select>
+                    <select id="nuevo-club" style="max-width: 180px;"><option value="Sin Club">Cargando clubs...</option></select>
                     <input type="number" id="nuevo-ranking" placeholder="Puntos" style="max-width: 100px;">
-                    <input type="text" id="nuevo-nip" placeholder="NIP (1234)" maxlength="4" style="max-width: 100px;" value="1234">
+                    <input type="text" id="nuevo-nip" placeholder="NIP (1234)" maxlength="4" style="max-width: 90px;" value="1234">
                     <button id="btn-guardar-jugador" class="btn-accion btn-dorado" onclick="guardarJugador()">Crear Jugador</button>
                     <button id="btn-eliminar-jugador" class="btn-accion btn-rojo" style="display: none;" onclick="eliminarJugador()">Borrar</button>
                     <button id="btn-cancelar-jugador" class="btn-accion" style="display: none;" onclick="resetFormularioJugador()">Cancelar</button>
@@ -192,26 +190,26 @@
         </div>
 
         <div class="panel" id="seccion-print" style="display: none;">
-            <h2 style="text-align: center; color:#ffffff; font-size: 20px; letter-spacing: 2px;">RANKING OFICIAL DE JUGADORES</h2>
+            <h2 style="text-align: center; color:#ffffff; font-size: 18px; letter-spacing: 2px;">RANKING OFICIAL DE JUGADORES</h2>
             <p style="text-align: center; font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;" id="fecha-impresion"></p>
             <div id="contenedor-ranking-categorias">Cargando ranking...</div>
         </div>
 
         <div class="panel no-print">
             <h2>🏡 Gestión de Clubs / Equipos</h2>
-            <div class="form-row" style="margin-bottom: 20px;">
+            <div class="form-row" style="margin-bottom: 18px;">
                 <input type="text" id="nuevo-nombre-club" placeholder="Nombre del Club (Ej. Halcones Xalapa)">
                 <button class="btn-accion btn-dorado" onclick="crearClub()">Añadir Club</button>
             </div>
             <table>
-                <thead><tr><th style="width: 60px;">ID</th><th>Nombre del Club</th><th style="width: 200px;">Acciones</th></tr></thead>
+                <thead><tr><th style="width: 60px;">ID</th><th>Nombre del Club</th><th style="width: 180px;">Acciones</th></tr></thead>
                 <tbody id="tabla-clubs"><tr><td colspan="3" class="mensaje-vacio">Cargando clubs...</td></tr></tbody>
             </table>
         </div>
 
         <div class="panel no-print">
             <h2>🏷️ Gestión de Categorías</h2>
-            <div class="form-row" style="margin-bottom: 20px;">
+            <div class="form-row" style="margin-bottom: 18px;">
                 <input type="text" id="nueva-cat-nombre" placeholder="Nombre de categoría">
                 <input type="number" id="nueva-cat-min" placeholder="Pts Min" style="max-width: 100px;">
                 <input type="number" id="nueva-cat-max" placeholder="Pts Max" style="max-width: 100px;">
@@ -230,9 +228,9 @@
                 <tbody id="tabla-reglas"><tr><td colspan="5" class="mensaje-vacio">Cargando...</td></tr></tbody>
             </table>
             
-            <div style="margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px;">
-                <h3 style="color: #ffffff; font-size: 14px;">🏆 Bono por Clasificar a Llaves</h3>
-                <div class="form-row" style="align-items: center; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+            <div style="margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px;">
+                <h3 style="color: #ffffff; font-size: 13px;">🏆 Bono por Clasificar a Llaves</h3>
+                <div class="form-row" style="align-items: center; background: rgba(0,0,0,0.25); padding: 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
                     <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; color:#ffffff; font-size: 13px;">
                         <input type="checkbox" id="bono-activo" style="width:18px; height:18px; accent-color:#06b6d4;"> Activar bono
                     </label>
@@ -286,7 +284,6 @@
             cargarInscritosEnVivo();
         }
 
-        // ORDENAMIENTO DE INSCRITOS POR CATEGORÍA Y RANKING DESCENDENTE
         async function cargarInscritosEnVivo() {
             const { data, error } = await clienteSupabase
                 .from('inscripciones')
@@ -307,7 +304,7 @@
 
             let validData = data.filter(ins => ins.categorias && ins.jugadores);
 
-            // Ordenar: Categoría Alfabéticamente -> Luego por Puntos (De Mayor a Menor)
+            // ORDENAR POR CATEGORÍA Y LUEGO POR RANKING DESCENDENTE
             validData.sort((a, b) => {
                 if (a.categorias.nombre < b.categorias.nombre) return -1;
                 if (a.categorias.nombre > b.categorias.nombre) return 1;
@@ -321,7 +318,7 @@
             validData.forEach(ins => {
                 const esPagado = ins.estatus_pago === 'Pagado';
                 
-                let selectCatHtml = `<select id="select-cambiar-cat-${ins.id}" style="padding: 6px; font-size: 11px; margin-right: 8px; width: 130px; font-weight: 600;">`;
+                let selectCatHtml = `<select id="select-cambiar-cat-${ins.id}" style="padding: 5px; font-size: 11px; margin-right: 6px; width: 120px; font-weight: 600;">`;
                 todasLasCategoriasAdmin.forEach(c => {
                     selectCatHtml += `<option value="${c.id}" ${c.id === ins.categoria_id ? 'selected' : ''}>${c.nombre}</option>`;
                 });
@@ -329,15 +326,15 @@
 
                 tbody.innerHTML += `
                     <tr>
-                        <td><strong style="color:#ffffff; font-size:14px;">${ins.jugadores.nombre}</strong> <span style="color:#64748b; font-size:11px; margin-left:6px; font-weight:600;">(${ins.jugadores.puntos_ranking} pts)</span></td>
-                        <td style="color:#cbd5e1; font-size:13px;">${ins.jugadores.club || 'Sin Club'}</td>
-                        <td style="color:#22d3ee; font-weight:700; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">${ins.categorias.nombre}</td>
+                        <td><strong style="color:#ffffff; font-size:13px;">${ins.jugadores.nombre}</strong> <span style="color:#64748b; font-size:11px; margin-left:6px; font-weight:600;">(${ins.jugadores.puntos_ranking} pts)</span></td>
+                        <td style="color:#94a3b8; font-size:12px;">${ins.jugadores.club || 'Sin Club'}</td>
+                        <td style="color:#22d3ee; font-weight:700; font-size:12px; text-transform:uppercase;">${ins.categorias.nombre}</td>
                         <td><span class="badge-pago ${esPagado ? 'pago-ok' : 'pago-pend'}">${ins.estatus_pago}</span></td>
                         <td>
                             <div style="display:flex; align-items:center;">
                                 ${selectCatHtml}
-                                <button class="btn-accion btn-dorado" style="padding: 6px 10px; font-size: 11px;" onclick="cambiarCategoriaInscripcion(${ins.id})">💾</button>
-                                <button class="btn-accion btn-rojo" style="padding: 6px 10px; font-size: 11px; margin-left: 5px;" onclick="eliminarInscripcion(${ins.id}, '${ins.jugadores.nombre}')">🗑️</button>
+                                <button class="btn-accion btn-dorado" style="padding: 5px 8px; font-size: 10px;" onclick="cambiarCategoriaInscripcion(${ins.id})">💾</button>
+                                <button class="btn-accion btn-rojo" style="padding: 5px 8px; font-size: 10px; margin-left: 4px;" onclick="eliminarInscripcion(${ins.id}, '${ins.jugadores.nombre}')">🗑️</button>
                             </div>
                         </td>
                     </tr>
@@ -394,8 +391,8 @@
                 const esDefault = c.nombre === 'Sin Club';
                 tbody.innerHTML += `<tr>
                     <td style="color:#64748b; font-weight:700;">#${c.id}</td>
-                    <td><input type="text" id="club-nombre-${c.id}" value="${c.nombre}" style="padding: 8px 12px; font-weight: 600;" ${esDefault ? 'disabled' : ''}></td>
-                    <td>${!esDefault ? `<button class="btn-accion btn-cian" style="padding: 6px 12px; font-size: 11px; margin-right: 8px;" onclick="actualizarClub(${c.id}, '${c.nombre}')">Guardar</button><button class="btn-accion btn-rojo" style="padding: 6px 12px; font-size: 11px;" onclick="eliminarClub(${c.id}, '${c.nombre}')">Eliminar</button>` : '<small style="color:#64748b; font-weight:600; text-transform:uppercase;">Sistema</small>'}</td>
+                    <td><input type="text" id="club-nombre-${c.id}" value="${c.nombre}" style="padding: 6px 10px; font-weight: 600;" ${esDefault ? 'disabled' : ''}></td>
+                    <td>${!esDefault ? `<button class="btn-accion btn-cian" style="padding: 5px 10px; font-size: 10px; margin-right: 6px;" onclick="actualizarClub(${c.id}, '${c.nombre}')">Guardar</button><button class="btn-accion btn-rojo" style="padding: 5px 10px; font-size: 10px;" onclick="eliminarClub(${c.id}, '${c.nombre}')">Eliminar</button>` : '<small style="color:#64748b; font-weight:600; text-transform:uppercase;">Sistema</small>'}</td>
                 </tr>`;
             });
         }
@@ -528,9 +525,9 @@
 
             categoriasFuerza.forEach(cat => {
                 const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos);
-                let htmlCat = `<div class="header-categoria-ranking">${cat.nombre} <span style="color:#94a3b8; font-size:10px; font-weight:600; margin-left:10px;">(${cat.puntos_minimos} a ${cat.puntos_maximos} pts)</span></div><table><thead><tr><th style="width: 60px; text-align: center;">Pos</th><th>Jugador</th><th>Club / Entidad</th><th style="width: 120px;">Puntos</th></tr></thead><tbody>`;
+                let htmlCat = `<div class="header-categoria-ranking">${cat.nombre} <span style="color:#64748b; font-size:10px; font-weight:600; margin-left:10px;">(${cat.puntos_minimos} a ${cat.puntos_maximos} pts)</span></div><table><thead><tr><th style="width: 60px; text-align: center;">Pos</th><th>Jugador</th><th>Club / Entidad</th><th style="width: 120px;">Puntos</th></tr></thead><tbody>`;
                 if (jugadoresCat.length === 0) { htmlCat += `<tr><td colspan="4" class="mensaje-vacio">Sin jugadores en esta fuerza.</td></tr>`; } 
-                else { jugadoresCat.forEach((j, index) => { htmlCat += `<tr><td style="text-align: center; font-weight: 800; color:#64748b; font-size:12px;">#${index + 1}</td><td><strong style="color:#ffffff; font-size:14px;">${j.nombre}</strong></td><td style="color:#94a3b8; font-size:13px;">${j.club || 'Sin Club'}</td><td style="font-weight: 800; color: #a855f7;">${j.puntos_ranking} pts</td></tr>`; }); }
+                else { jugadoresCat.forEach((j, index) => { htmlCat += `<tr><td style="text-align: center; font-weight: 800; color:#64748b; font-size:12px;">#${index + 1}</td><td><strong style="color:#ffffff; font-size:13px;">${j.nombre}</strong></td><td style="color:#94a3b8; font-size:12px;">${j.club || 'Sin Club'}</td><td style="font-weight: 800; color: #a855f7;">${j.puntos_ranking} pts</td></tr>`; }); }
                 contenedor.innerHTML += htmlCat + `</tbody></table>`;
             });
         }
@@ -573,7 +570,7 @@
             const { data } = await clienteSupabase.from('inscripciones').select(`id, estatus_pago, jugadores ( nombre, puntos_ranking, club ), categorias ( nombre )`).eq('torneo_id', idTorneoActivo).eq('estatus_pago', 'Pendiente de Pago');
             const tbody = document.getElementById('tabla-pendientes'); tbody.innerHTML = '';
             if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="mensaje-vacio">No hay pagos pendientes en este torneo.</td></tr>'; return; }
-            data.forEach(ins => tbody.innerHTML += `<tr><td><strong style="color:#ffffff; font-size:14px;">${ins.jugadores ? ins.jugadores.nombre : 'Desconocido'}</strong> <small style="color:#64748b; font-weight:600; margin-left:6px;">(${ins.jugadores ? ins.jugadores.club : 'S/C'})</small></td><td style="color:#22d3ee; font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:0.5px;">${ins.categorias ? ins.categorias.nombre : 'N/A'}</td><td style="color:#fbbf24; font-weight:bold;">${ins.jugadores ? ins.jugadores.puntos_ranking : 0} pts</td><td><button class="btn-accion btn-verde" style="padding:6px 12px; font-size:11px;" onclick="aprobarPago(${ins.id})">Validar Pago</button></td></tr>`);
+            data.forEach(ins => tbody.innerHTML += `<tr><td><strong style="color:#ffffff; font-size:13px;">${ins.jugadores ? ins.jugadores.nombre : 'Desconocido'}</strong> <small style="color:#64748b; font-weight:600; margin-left:6px;">(${ins.jugadores ? ins.jugadores.club : 'S/C'})</small></td><td style="color:#22d3ee; font-weight:600; font-size:12px; text-transform:uppercase;">${ins.categorias ? ins.categorias.nombre : 'N/A'}</td><td style="color:#fbbf24; font-weight:bold;">${ins.jugadores ? ins.jugadores.puntos_ranking : 0} pts</td><td><button class="btn-accion btn-verde" style="padding:5px 12px; font-size:10px;" onclick="aprobarPago(${ins.id})">Validar Pago</button></td></tr>`);
         }
 
         async function aprobarPago(id) {
@@ -586,7 +583,7 @@
             const { data } = await clienteSupabase.from('categorias').select('*').order('puntos_maximos', { ascending: true });
             const tbody = document.getElementById('tabla-categorias'); tbody.innerHTML = '';
             if (!data) return;
-            data.forEach(cat => tbody.innerHTML += `<tr><td><strong style="color:#ffffff;">${cat.nombre}</strong></td><td><input type="number" id="cat-min-${cat.id}" style="width:70px; text-align:center;" value="${cat.puntos_minimos}"> pts</td><td><input type="number" id="cat-max-${cat.id}" style="width:70px; text-align:center;" value="${cat.puntos_maximos}"> pts</td><td><button class="btn-accion btn-cian" style="padding:6px 12px; font-size:11px;" onclick="actualizarCategoria(${cat.id})">Guardar</button></td></tr>`);
+            data.forEach(cat => tbody.innerHTML += `<tr><td><strong style="color:#ffffff;">${cat.nombre}</strong></td><td><input type="number" id="cat-min-${cat.id}" style="width:70px; text-align:center;" value="${cat.puntos_minimos}"> pts</td><td><input type="number" id="cat-max-${cat.id}" style="width:70px; text-align:center;" value="${cat.puntos_maximos}"> pts</td><td><button class="btn-accion btn-cian" style="padding:5px 10px; font-size:10px;" onclick="actualizarCategoria(${cat.id})">Guardar</button></td></tr>`);
         }
 
         async function actualizarCategoria(id) {
@@ -608,7 +605,7 @@
             if (!data) return;
             data.forEach(regla => {
                 let escenario = regla.resultado_esperado === 'gana_favorito' ? 'Gana Favorito' : '<strong style="color:#f87171;">Gana Retador (Upset)</strong>';
-                tbody.innerHTML += `<tr><td style="color:#cbd5e1; font-size:13px;">De ${regla.diferencia_min} a ${regla.diferencia_max} pts</td><td style="color:#ffffff;">${escenario}</td><td>+ <input type="number" id="regla-ganador-${regla.id}" style="width:60px; text-align:center;" value="${regla.puntos_ganador}"></td><td> <input type="number" id="regla-perdedor-${regla.id}" style="width:60px; text-align:center;" value="${regla.puntos_perdedor}"></td><td><button class="btn-accion btn-rojo" style="padding:6px 12px; font-size:11px;" onclick="actualizarRegla(${regla.id})">Guardar</button></td></tr>`;
+                tbody.innerHTML += `<tr><td style="color:#94a3b8; font-size:12px;">De ${regla.diferencia_min} a ${regla.diferencia_max} pts</td><td style="color:#ffffff;">${escenario}</td><td>+ <input type="number" id="regla-ganador-${regla.id}" style="width:50px; text-align:center;" value="${regla.puntos_ganador}"></td><td> <input type="number" id="regla-perdedor-${regla.id}" style="width:50px; text-align:center;" value="${regla.puntos_perdedor}"></td><td><button class="btn-accion btn-rojo" style="padding:5px 10px; font-size:10px;" onclick="actualizarRegla(${regla.id})">Guardar</button></td></tr>`;
             });
         }
 
