@@ -5,62 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control - Torneo Activo</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // GUARDIA DE SEGURIDAD GLOBAL
+        if (localStorage.getItem('admin_autenticado') !== 'true') {
+            alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
+            window.location.href = "torneos.html";
+        }
+    </script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #eef2f5; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #0e0f12; color: #ffffff; }
         
         /* BARRA DE NAVEGACIÓN SUPERIOR UNIFICADA */
-        .navbar { background: #1a252f; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); flex-wrap: wrap; gap: 10px; }
-        .nav-title { font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 8px; }
-        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; }
-        .nav-btn { color: #ecf0f1; text-decoration: none; padding: 8px 12px; border-radius: 5px; font-size: 13px; font-weight: bold; background: #2c3e50; transition: 0.2s; }
-        .nav-btn:hover { background: #34495e; color: white; }
-        .nav-btn.active { background: #007bff; color: white; }
-        .nav-btn.public { background: #28a745; }
+        .navbar { background: #181a20; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2d37; flex-wrap: wrap; gap: 10px; }
+        .nav-title { font-weight: 800; font-size: 18px; color: #f5a623; letter-spacing: 1px; }
+        .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
+        .nav-btn { color: #a0a5b1; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; background: #232630; border: 1px solid #323644; transition: 0.2s; }
+        .nav-btn:hover { background: #f5a623; color: #000; border-color: #f5a623; }
+        .nav-btn.active { background: #f5a623; color: #000000; border-color: #f5a623; }
+        .nav-btn.public { background: #28a745; color: white; border-color: #28a745; }
 
-        .main-content { padding: 20px; max-width: 1050px; margin: auto; }
-        .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        h2, h3 { color: #333; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .main-content { padding: 25px; max-width: 1100px; margin: auto; }
+        .panel { background: #181a20; padding: 25px; border-radius: 12px; border: 1px solid #2a2d37; margin-bottom: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        h2, h3 { color: #f5a623; margin-top: 0; border-bottom: 1px solid #2a2d37; padding-bottom: 12px; font-size: 18px; text-transform: uppercase; }
         
-        .banner-torneo { background: #d1ecf1; border-left: 5px solid #17a2b8; color: #0c5460; padding: 12px 15px; border-radius: 4px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .banner-torneo { background: linear-gradient(135deg, #181a20 0%, #232630 100%); border: 1px solid #f5a623; color: #ffffff; padding: 18px 20px; border-radius: 10px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
 
-        .form-row { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
-        .form-row input[type="text"], .form-row input[type="number"], .form-row select { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; min-width: 120px; box-sizing: border-box; }
+        .form-row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+        .form-row input[type="text"], .form-row input[type="number"], .form-row select { flex: 1; padding: 10px 12px; border: 1px solid #323644; background: #0e0f12; color: #fff; border-radius: 6px; min-width: 120px; box-sizing: border-box; font-size: 14px; }
+        .form-row input:focus, .form-row select:focus { border-color: #f5a623; outline: none; }
         
-        .btn-accion { color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .btn-azul { background: #007bff; } .btn-azul:hover { background: #0056b3; }
-        .btn-verde { background: #28a745; } .btn-verde:hover { background: #218838; }
-        .btn-cian { background: #17a2b8; } .btn-cian:hover { background: #138496; }
-        .btn-rojo { background: #dc3545; } .btn-rojo:hover { background: #c82333; }
-        .btn-gris { background: #6c757d; } .btn-gris:hover { background: #5a6268; }
-        .btn-negro { background: #343a40; } .btn-negro:hover { background: #1d2124; }
-        .btn-ws { background: #25d366; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; font-weight: bold; } .btn-ws:hover { background: #1ebc57; }
+        .btn-accion { color: #000; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; }
+        .btn-dorado { background: #f5a623; color: #000; } .btn-dorado:hover { background: #d98c18; }
+        .btn-verde { background: #28a745; color: white; } .btn-verde:hover { background: #218838; }
+        .btn-cian { background: #17a2b8; color: white; } .btn-cian:hover { background: #138496; }
+        .btn-rojo { background: #dc3545; color: white; } .btn-rojo:hover { background: #c82333; }
+        .btn-gris { background: #323644; color: white; } .btn-gris:hover { background: #454a5a; }
+        .btn-negro { background: #232630; color: #f5a623; border: 1px solid #323644; } .btn-negro:hover { background: #323644; }
+        .btn-ws { background: #25d366; color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; } .btn-ws:hover { background: #1ebc57; }
         
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background-color: #28a745; color: white; }
-        .th-cat { background-color: #6c757d; }
-        .th-club { background-color: #fd7e14; }
-        .th-regla { background-color: #dc3545; }
-        .th-inscrito { background-color: #17a2b8; }
-        .btn-aprobar { background: #ffc107; color: #333; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .mensaje-vacio { text-align: center; color: #777; font-style: italic; }
-        .input-mini { width: 60px; padding: 5px; border: 1px solid #ccc; border-radius: 4px; text-align: center; }
-        .check-bono { width: 20px; height: 20px; cursor: pointer; }
-        .caja-edicion { background: #f8f9fa; padding: 15px; border-radius: 6px; border: 1px solid #ddd; margin-top: 15px; }
-        .badge-pago { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #2a2d37; }
+        th { background-color: #232630; color: #f5a623; text-transform: uppercase; font-size: 12px; font-weight: bold; }
+        
+        .btn-aprobar { background: #f5a623; color: #000; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .mensaje-vacio { text-align: center; color: #a0a5b1; font-style: italic; }
+        .input-mini { width: 60px; padding: 6px; border: 1px solid #323644; background: #0e0f12; color: #fff; border-radius: 4px; text-align: center; }
+        .check-bono { width: 20px; height: 20px; cursor: pointer; accent-color: #f5a623; }
+        .caja-edicion { background: #0e0f12; padding: 15px; border-radius: 8px; border: 1px solid #323644; margin-top: 15px; }
+        .badge-pago { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; }
         .pago-ok { background: #28a745; }
-        .pago-pend { background: #ffc107; color: #333; }
+        .pago-pend { background: #ffc107; color: #000; }
 
-        .header-categoria-ranking { background: #e9ecef; font-weight: bold; font-size: 15px; color: #333; padding: 8px 12px; margin-top: 15px; border-left: 5px solid #007bff; }
+        .header-categoria-ranking { background: #232630; font-weight: bold; font-size: 14px; color: #f5a623; padding: 10px 14px; margin-top: 18px; border-left: 4px solid #f5a623; text-transform: uppercase; }
 
         @media print {
-            body { background: white; padding: 0; }
+            body { background: white !important; color: black !important; padding: 0; }
             .no-print, .panel:not(#seccion-print) { display: none !important; }
-            #seccion-print { display: block !important; box-shadow: none; border: none; }
+            #seccion-print { display: block !important; box-shadow: none; border: none; background: white !important; color: black !important; }
             #contenedor-ranking-categorias { display: block !important; }
-            table { font-size: 11pt; border: 1px solid #000; margin-bottom: 20px; }
+            table { font-size: 11pt; border: 1px solid #000; margin-bottom: 20px; color: black !important; }
             th { background-color: #333 !important; color: white !important; -webkit-print-color-adjust: exact; }
-            td, th { border: 1px solid #999; padding: 6px; }
+            td, th { border: 1px solid #999; padding: 6px; color: black !important; }
+            .header-categoria-ranking { background: #eee !important; color: black !important; border-left-color: #000 !important; }
         }
     </style>
 </head>
@@ -68,14 +74,14 @@
 
     <!-- BARRA DE NAVEGACIÓN SUPERIOR -->
     <nav class="navbar no-print">
-        <div class="nav-title">🏓 Control de Torneos</div>
+        <div class="nav-title">🏆 CENTRAL DE TORNEOS</div>
         <div class="nav-links">
             <a href="torneos.html" class="nav-btn">📂 Mis Torneos</a>
             <a href="admin.html" class="nav-btn active">⚙️ Administrador</a>
             <a href="sorteo.html" class="nav-btn">🧠 Sorteo</a>
             <a href="horarios.html" class="nav-btn">📅 Horarios WS</a>
             <a href="index.html" target="_blank" class="nav-btn public">🌐 Portal Público</a>
-            <button onclick="cerrarSesionAdmin()" class="nav-btn" style="background:#dc3545; border:none; cursor:pointer;">🔒 Salir</button>
+            <button onclick="cerrarSesionAdmin()" class="nav-btn" style="background:#dc3545; color:white; border:none; cursor:pointer;">🔒 Salir</button>
         </div>
     </nav>
 
@@ -84,26 +90,26 @@
         <!-- BANNER DEL TORNEO ACTIVO -->
         <div class="banner-torneo no-print">
             <div>
-                <span style="font-size: 12px; font-weight: bold; text-transform: uppercase;">Torneo Seleccionado:</span>
-                <h3 id="nombre-torneo-banner" style="margin: 2px 0 0 0; border: none; padding: 0;">Cargando...</h3>
+                <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; color:#f5a623;">Torneo Seleccionado:</span>
+                <h3 id="nombre-torneo-banner" style="margin: 3px 0 0 0; border: none; padding: 0; color:#fff; font-size:22px;">Cargando...</h3>
             </div>
             <button class="btn-ws" onclick="compartirLinkInscripcionWS()">📲 Compartir Link de Inscripción (WhatsApp)</button>
         </div>
 
         <!-- MÓDULO RESUMEN DE INSCRITOS Y CONFIRMADOS (EN VIVO) -->
         <div class="panel no-print">
-            <h2 style="border-bottom-color: #17a2b8;">📋 Inscritos en el Torneo Activo (En Vivo)</h2>
-            <div style="display: flex; gap: 20px; margin-bottom: 15px; font-size: 15px;">
-                <div>Total Registrados: <strong id="cant-registrados" style="color:#007bff; font-size: 18px;">0</strong></div>
-                <div>Pagos Confirmados: <strong id="cant-pagados" style="color:#28a745; font-size: 18px;">0</strong></div>
+            <h2>📋 Inscritos en el Torneo Activo (En Vivo)</h2>
+            <div style="display: flex; gap: 25px; margin-bottom: 15px; font-size: 15px; color:#a0a5b1;">
+                <div>Total Registrados: <strong id="cant-registrados" style="color:#f5a623; font-size: 20px;">0</strong></div>
+                <div>Pagos Confirmados: <strong id="cant-pagados" style="color:#28a745; font-size: 20px;">0</strong></div>
             </div>
             <table>
                 <thead>
                     <tr>
-                        <th class="th-inscrito">Jugador</th>
-                        <th class="th-inscrito">Club</th>
-                        <th class="th-inscrito">Categoría</th>
-                        <th class="th-inscrito">Estatus Pago</th>
+                        <th>Jugador</th>
+                        <th>Club</th>
+                        <th>Categoría</th>
+                        <th>Estatus Pago</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-inscritos-vivo">
@@ -123,7 +129,7 @@
 
         <!-- MÓDULO DE JUGADORES -->
         <div class="panel no-print">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2d37; padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                 <h2 style="border: none; margin: 0;">👥 Módulo de Jugadores (Global)</h2>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <button class="btn-accion btn-cian" onclick="toggleTablaRanking()" id="btn-toggle-ranking">👁️ Mostrar Tabla de Ranking</button>
@@ -133,7 +139,7 @@
                 </div>
             </div>
             
-            <p style="font-size: 13px; color: #666; margin-top: 10px;">Escribe un nombre para buscar y seleccionar automáticamente:</p>
+            <p style="font-size: 13px; color: #a0a5b1; margin-top: 10px;">Escribe un nombre para buscar y seleccionar automáticamente:</p>
             
             <div class="form-row">
                 <input type="text" id="buscador-jugador" placeholder="🔎 Escribe un nombre..." onkeyup="filtrarYAutoSeleccionarAdmin()" style="max-width: 250px;">
@@ -143,13 +149,13 @@
             </div>
 
             <div class="caja-edicion">
-                <div style="font-weight: bold; margin-bottom: 10px; font-size: 14px;" id="titulo-modo-jugador">➕ Registrando Nuevo Jugador:</div>
+                <div style="font-weight: bold; margin-bottom: 10px; font-size: 14px; color:#f5a623;" id="titulo-modo-jugador">➕ Registrando Nuevo Jugador:</div>
                 <div class="form-row">
                     <input type="text" id="nuevo-nombre" placeholder="Nombre completo">
                     <select id="nuevo-club" style="max-width: 200px;"><option value="Sin Club">Cargando clubs...</option></select>
                     <input type="number" id="nuevo-ranking" placeholder="Pts ranking" style="max-width: 120px;">
                     <input type="text" id="nuevo-nip" placeholder="NIP (1234)" maxlength="4" style="max-width: 100px;" value="1234">
-                    <button id="btn-guardar-jugador" class="btn-accion btn-azul" onclick="guardarJugador()">➕ Crear Jugador</button>
+                    <button id="btn-guardar-jugador" class="btn-accion btn-dorado" onclick="guardarJugador()">➕ Crear Jugador</button>
                     <button id="btn-cancelar-jugador" class="btn-accion btn-gris" style="display: none;" onclick="resetFormularioJugador()">❌ Cancelar</button>
                 </div>
             </div>
@@ -157,27 +163,27 @@
 
         <!-- REPORTE DE RANKING GENERAL -->
         <div class="panel" id="seccion-print">
-            <h2 style="text-align: center;">🏓 RANKING OFICIAL DE JUGADORES 🏓</h2>
-            <p style="text-align: center; font-size: 12px; color: #555;" id="fecha-impresion"></p>
+            <h2 style="text-align: center; color:#f5a623;">🏓 RANKING OFICIAL DE JUGADORES 🏓</h2>
+            <p style="text-align: center; font-size: 12px; color: #a0a5b1;" id="fecha-impresion"></p>
             <div id="contenedor-ranking-categorias" style="display: none;">Cargando ranking...</div>
         </div>
 
         <!-- MÓDULO DE CLUBS -->
         <div class="panel no-print">
-            <h2 style="border-bottom-color: #fd7e14;">🏡 Gestión de Clubs / Equipos</h2>
+            <h2>🏡 Gestión de Clubs / Equipos</h2>
             <div class="form-row" style="margin-bottom: 15px;">
                 <input type="text" id="nuevo-nombre-club" placeholder="Nombre del Club / Municipio (Ej. Halcones Xalapa)">
-                <button class="btn-accion" style="background: #fd7e14;" onclick="crearClub()">➕ Añadir Club</button>
+                <button class="btn-accion btn-dorado" onclick="crearClub()">➕ Añadir Club</button>
             </div>
             <table>
-                <thead><tr><th class="th-club" style="width: 60px;">ID</th><th class="th-club">Nombre del Club</th><th class="th-club" style="width: 220px;">Acciones</th></tr></thead>
+                <thead><tr><th style="width: 60px;">ID</th><th>Nombre del Club</th><th style="width: 220px;">Acciones</th></tr></thead>
                 <tbody id="tabla-clubs"><tr><td colspan="3" class="mensaje-vacio">Cargando clubs...</td></tr></tbody>
             </table>
         </div>
 
         <!-- MÓDULO DE CATEGORÍAS -->
         <div class="panel no-print">
-            <h2 style="border-bottom-color: #6c757d;">🏷️ Gestión de Categorías</h2>
+            <h2>🏷️ Gestión de Categorías</h2>
             <div class="form-row" style="margin-bottom: 20px;">
                 <input type="text" id="nueva-cat-nombre" placeholder="Nombre de categoría">
                 <input type="number" id="nueva-cat-min" placeholder="Pts Piso (Min)" style="max-width: 120px;">
@@ -185,27 +191,27 @@
                 <button class="btn-accion btn-cian" onclick="crearCategoria()">Añadir</button>
             </div>
             <table>
-                <thead><tr><th class="th-cat">Categoría</th><th class="th-cat">Mínimo (Piso)</th><th class="th-cat">Máximo (Techo)</th><th class="th-cat">Acción</th></tr></thead>
+                <thead><tr><th>Categoría</th><th>Mínimo (Piso)</th><th>Máximo (Techo)</th><th>Acción</th></tr></thead>
                 <tbody id="tabla-categorias"><tr><td colspan="4" class="mensaje-vacio">Cargando...</td></tr></tbody>
             </table>
         </div>
 
         <!-- REGLAS DE RANKING -->
         <div class="panel no-print">
-            <h2 style="border-bottom-color: #dc3545;">📈 Reglas de Puntuación (Ranking)</h2>
+            <h2>📈 Reglas de Puntuación (Ranking)</h2>
             <table>
-                <thead><tr><th class="th-regla">Dif. de Puntos</th><th class="th-regla">Escenario del Partido</th><th class="th-regla">Ganador (+)</th><th class="th-regla">Perdedor (-)</th><th class="th-regla">Acción</th></tr></thead>
+                <thead><tr><th>Dif. de Puntos</th><th>Escenario del Partido</th><th>Ganador (+)</th><th>Perdedor (-)</th><th>Acción</th></tr></thead>
                 <tbody id="tabla-reglas"><tr><td colspan="5" class="mensaje-vacio">Cargando...</td></tr></tbody>
             </table>
-            <hr style="border: 0; border-top: 1px solid #ddd; margin: 25px 0;">
-            <h3 style="color: #dc3545; font-size: 16px;">🏆 Bono por Clasificar a Llaves</h3>
-            <div class="form-row" style="align-items: center; background: #fff8f8; padding: 15px; border-radius: 6px; border: 1px solid #f5c6cb;">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: bold;">
+            <hr style="border: 0; border-top: 1px solid #323644; margin: 25px 0;">
+            <h3 style="color: #f5a623; font-size: 16px;">🏆 Bono por Clasificar a Llaves</h3>
+            <div class="form-row" style="align-items: center; background: #0e0f12; padding: 15px; border-radius: 8px; border: 1px solid #323644;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: bold; color:#ffffff;">
                     <input type="checkbox" id="bono-activo" class="check-bono"> Activar bono
                 </label>
-                <span style="margin-left: 15px;">Dar</span>
+                <span style="margin-left: 15px; color:#a0a5b1;">Dar</span>
                 <input type="number" id="bono-puntos" class="input-mini" placeholder="Pts">
-                <span>puntos extra a los jugadores que avancen.</span>
+                <span style="color:#a0a5b1;">puntos extra a los jugadores que avancen.</span>
                 <button class="btn-accion btn-rojo" style="margin-left: auto;" onclick="guardarBono()">💾 Guardar Bono</button>
             </div>
         </div>
@@ -217,24 +223,9 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        const CLAVE_ADMIN_MAESTRA = 'admin2026';
         let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
         let torneoActivoObj = null;
         let todosLosJugadoresAdmin = [], todasLasCategoriasAdmin = [], todosLosClubsAdmin = [];
-
-        function verificarAccesoAdmin() {
-            if (localStorage.getItem('admin_autenticado') !== 'true') {
-                let pass = prompt("🔒 Ingrese la Contraseña Maestra de Administrador:");
-                if (pass === CLAVE_ADMIN_MAESTRA) {
-                    localStorage.setItem('admin_autenticado', 'true');
-                } else {
-                    alert("❌ Contraseña incorrecta. Acceso denegado.");
-                    document.body.innerHTML = "<h2 style='text-align:center; margin-top:50px; color:red;'>Acceso Denegado 🔒</h2>";
-                    return false;
-                }
-            }
-            return true;
-        }
 
         function cerrarSesionAdmin() {
             localStorage.removeItem('admin_autenticado');
@@ -242,9 +233,6 @@
         }
 
         async function cargarDatosIniciales() {
-            if (!verificarAccesoAdmin()) return;
-
-            // Cargar Torneo Activo
             const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
             if (torneoData) {
                 torneoActivoObj = torneoData;
@@ -270,7 +258,6 @@
             cargarInscritosEnVivo();
         }
 
-        // --- MÓDULO INSCRITOS EN VIVO DEL TORNEO ACTIVO ---
         async function cargarInscritosEnVivo() {
             const { data, error } = await clienteSupabase
                 .from('inscripciones')
@@ -297,9 +284,9 @@
                 const esPagado = ins.estatus_pago === 'Pagado';
                 tbody.innerHTML += `
                     <tr>
-                        <td><strong>${ins.jugadores.nombre}</strong></td>
+                        <td><strong style="color:#fff;">${ins.jugadores.nombre}</strong></td>
                         <td>${ins.jugadores.club || 'Sin Club'}</td>
-                        <td>${ins.categorias.nombre}</td>
+                        <td style="color:#f5a623;">${ins.categorias.nombre}</td>
                         <td><span class="badge-pago ${esPagado ? 'pago-ok' : 'pago-pend'}">${ins.estatus_pago}</span></td>
                     </tr>
                 `;
@@ -319,7 +306,6 @@
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`, '_blank');
         }
 
-        // --- MÓDULO DE CLUBS ---
         function poblarDropdownClubs() {
             const select = document.getElementById('nuevo-club');
             select.innerHTML = '';
@@ -336,8 +322,8 @@
                 const esDefault = c.nombre === 'Sin Club';
                 tbody.innerHTML += `<tr>
                     <td>#${c.id}</td>
-                    <td><input type="text" id="club-nombre-${c.id}" value="${c.nombre}" style="padding: 6px; border: 1px solid #ccc; border-radius: 4px; width: 90%; font-weight: bold;" ${esDefault ? 'disabled' : ''}></td>
-                    <td>${!esDefault ? `<button class="btn-accion btn-cian" style="padding: 6px 10px; font-size: 12px; margin-right: 5px;" onclick="actualizarClub(${c.id}, '${c.nombre}')">💾 Guardar</button><button class="btn-accion btn-rojo" style="padding: 6px 10px; font-size: 12px;" onclick="eliminarClub(${c.id}, '${c.nombre}')">🗑️ Eliminar</button>` : '<small style="color:#777;">Default</small>'}</td>
+                    <td><input type="text" id="club-nombre-${c.id}" value="${c.nombre}" style="padding: 6px; border: 1px solid #323644; background:#0e0f12; color:#fff; border-radius: 4px; width: 90%; font-weight: bold;" ${esDefault ? 'disabled' : ''}></td>
+                    <td>${!esDefault ? `<button class="btn-accion btn-cian" style="padding: 6px 10px; font-size: 12px; margin-right: 5px;" onclick="actualizarClub(${c.id}, '${c.nombre}')">💾 Guardar</button><button class="btn-accion btn-rojo" style="padding: 6px 10px; font-size: 12px;" onclick="eliminarClub(${c.id}, '${c.nombre}')">🗑️ Eliminar</button>` : '<small style="color:#a0a5b1;">Default</small>'}</td>
                 </tr>`;
             });
         }
@@ -365,7 +351,6 @@
             cargarDatosIniciales();
         }
 
-        // --- MÓDULO JUGADORES ---
         function toggleTablaRanking() {
             const cont = document.getElementById('contenedor-ranking-categorias');
             const btn = document.getElementById('btn-toggle-ranking');
@@ -408,7 +393,7 @@
             document.getElementById('nuevo-nombre').value = ""; document.getElementById('nuevo-club').value = "Sin Club";
             document.getElementById('nuevo-ranking').value = ""; document.getElementById('nuevo-nip').value = "1234";
             document.getElementById('titulo-modo-jugador').innerText = "➕ Registrando Nuevo Jugador:";
-            const btn = document.getElementById('btn-guardar-jugador'); btn.innerText = "➕ Crear Jugador"; btn.className = "btn-accion btn-azul";
+            const btn = document.getElementById('btn-guardar-jugador'); btn.innerText = "➕ Crear Jugador"; btn.className = "btn-accion btn-dorado";
             document.getElementById('btn-cancelar-jugador').style.display = "none";
         }
 
@@ -435,7 +420,7 @@
                 const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos);
                 let htmlCat = `<div class="header-categoria-ranking">🏆 ${cat.nombre.toUpperCase()} (${cat.puntos_minimos} a ${cat.puntos_maximos} pts)</div><table><thead><tr><th style="width: 60px; text-align: center;">Pos</th><th>Jugador</th><th>Club / Entidad</th><th style="width: 120px;">Puntos</th></tr></thead><tbody>`;
                 if (jugadoresCat.length === 0) { htmlCat += `<tr><td colspan="4" class="mensaje-vacio">Sin jugadores.</td></tr>`; } 
-                else { jugadoresCat.forEach((j, index) => { htmlCat += `<tr><td style="text-align: center; font-weight: bold;">#${index + 1}</td><td><strong>${j.nombre}</strong></td><td>${j.club || 'Sin Club'}</td><td style="font-weight: bold; color: #007bff;">${j.puntos_ranking} pts</td></tr>`; }); }
+                else { jugadoresCat.forEach((j, index) => { htmlCat += `<tr><td style="text-align: center; font-weight: bold;">#${index + 1}</td><td><strong>${j.nombre}</strong></td><td>${j.club || 'Sin Club'}</td><td style="font-weight: bold; color: #f5a623;">${j.puntos_ranking} pts</td></tr>`; }); }
                 contenedor.innerHTML += htmlCat + `</tbody></table>`;
             });
         }
@@ -468,7 +453,6 @@
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWS)}`, '_blank');
         }
 
-        // --- PAGOS, CATEGORÍAS Y REGLAS ---
         async function cargarPendientes() {
             const { data } = await clienteSupabase.from('inscripciones').select(`id, estatus_pago, jugadores ( nombre, puntos_ranking, club ), categorias ( nombre )`).eq('torneo_id', idTorneoActivo).eq('estatus_pago', 'Pendiente de Pago');
             const tbody = document.getElementById('tabla-pendientes'); tbody.innerHTML = '';
