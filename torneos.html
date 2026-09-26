@@ -3,47 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Central de Torneos - Panel Principal</title>
+    <title>Central de Torneos - Pixel Studio</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #0e0f12; color: #ffffff; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #0a0b10; color: #ffffff; }
         
-        .navbar { background: #181a20; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2d37; flex-wrap: wrap; gap: 10px; }
-        .nav-title { font-weight: 800; font-size: 18px; color: #f5a623; letter-spacing: 1px; }
+        /* BARRA DE NAVEGACIÓN CON EFECTO NEÓN */
+        .navbar { background: #12141d; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #232738; flex-wrap: wrap; gap: 10px; }
+        .nav-title { font-weight: 800; font-size: 18px; color: #f5a623; letter-spacing: 1px; text-shadow: 0 0 10px rgba(245, 166, 35, 0.4); }
         .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
-        .nav-btn { color: #a0a5b1; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; background: #232630; border: 1px solid #323644; transition: 0.2s; }
-        .nav-btn:hover { background: #f5a623; color: #000; border-color: #f5a623; }
-        .nav-btn.active { background: #f5a623; color: #000000; border-color: #f5a623; }
-        .nav-btn.public { background: #28a745; color: white; border-color: #28a745; }
+        .nav-btn { color: #a0a5b1; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: bold; background: #1a1d2a; border: 1px solid #2a2f42; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .nav-btn:hover { background: #f5a623; color: #000; border-color: #f5a623; box-shadow: 0 0 15px rgba(245, 166, 35, 0.6); transform: translateY(-2px); }
+        .nav-btn.active { background: #f5a623; color: #000000; border-color: #f5a623; box-shadow: 0 0 12px rgba(245, 166, 35, 0.5); }
+        .nav-btn.public { background: #00f2fe; color: #000; border-color: #00f2fe; font-weight: bold; }
+        .nav-btn.public:hover { box-shadow: 0 0 15px rgba(0, 242, 254, 0.7); }
 
         .main-content { padding: 25px; max-width: 1100px; margin: auto; }
-        .container { background: #181a20; padding: 25px; border-radius: 12px; border: 1px solid #2a2d37; margin-bottom: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        h2 { color: #f5a623; border-bottom: 1px solid #2a2d37; padding-bottom: 12px; margin-top: 0; font-size: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        /* PANELES CON LUZ TRASERA */
+        .container { background: #131520; padding: 25px; border-radius: 14px; border: 1px solid #232738; margin-bottom: 25px; transition: all 0.3s ease; }
+        .container:hover { border-color: rgba(0, 242, 254, 0.5); box-shadow: 0 0 25px rgba(0, 242, 254, 0.2); }
+        
+        h2 { color: #f5a623; border-bottom: 1px solid #232738; padding-bottom: 12px; margin-top: 0; font-size: 18px; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 0 0 8px rgba(245, 166, 35, 0.3); }
         
         .form-row { display: flex; gap: 12px; margin-top: 15px; flex-wrap: wrap; align-items: center; }
-        .form-row input, .form-row select { flex: 1; padding: 12px; border: 1px solid #323644; background: #0e0f12; color: #fff; border-radius: 6px; min-width: 150px; font-size: 14px; }
-        .form-row input:focus, .form-row select:focus { border-color: #f5a623; outline: none; }
+        .form-row input, .form-row select { flex: 1; padding: 12px; border: 1px solid #2a2f42; background: #0a0b10; color: #fff; border-radius: 8px; min-width: 150px; font-size: 14px; transition: all 0.3s ease; }
+        .form-row input:focus, .form-row select:focus { border-color: #00f2fe; outline: none; box-shadow: 0 0 12px rgba(0, 242, 254, 0.5); }
         
-        .btn { color: #000; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; font-size: 14px; transition: 0.2s; }
-        .btn-dorado { background: #f5a623; } .btn-dorado:hover { background: #d98c18; }
-        .btn-verde { background: #28a745; color: white; } .btn-verde:hover { background: #218838; }
-        .btn-rojo { background: #dc3545; color: white; } .btn-rojo:hover { background: #c82333; }
-        .btn-gris { background: #323644; color: white; } .btn-gris:hover { background: #454a5a; }
-        .btn-ws { background: #25d366; color: white; } .btn-ws:hover { background: #1ebc57; }
+        .btn { color: #000; border: none; padding: 12px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; font-size: 14px; transition: all 0.3s ease; }
+        .btn-dorado { background: #f5a623; color: #000; } .btn-dorado:hover { background: #ffb703; box-shadow: 0 0 15px rgba(245, 166, 35, 0.6); }
+        .btn-verde { background: #28a745; color: white; } .btn-verde:hover { background: #34ce57; box-shadow: 0 0 15px rgba(40, 167, 69, 0.6); }
+        .btn-rojo { background: #dc3545; color: white; } .btn-rojo:hover { background: #ff4d5e; box-shadow: 0 0 15px rgba(220, 53, 69, 0.6); }
+        .btn-gris { background: #2a2f42; color: white; } .btn-gris:hover { background: #3c435e; }
+        .btn-ws { background: #25d366; color: white; } .btn-ws:hover { background: #1ebc57; box-shadow: 0 0 15px rgba(37, 211, 102, 0.6); }
         
-        .banner-activo { background: linear-gradient(135deg, #181a20 0%, #232630 100%); border: 1px solid #f5a623; padding: 22px; border-radius: 12px; margin-bottom: 25px; box-shadow: 0 0 15px rgba(245, 166, 35, 0.15); }
+        .banner-activo { background: linear-gradient(135deg, #131520 0%, #1a1d2a 100%); border: 1px solid #a100ff; padding: 22px; border-radius: 14px; margin-bottom: 25px; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(161, 0, 255, 0.2); }
+        .banner-activo:hover { border-color: #a100ff; box-shadow: 0 0 25px rgba(161, 0, 255, 0.5), inset 0 0 10px rgba(161, 0, 255, 0.2); }
+
         .grid-categorias-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 15px; }
-        .card-cat-resumen { background: #0e0f12; border: 1px solid #323644; padding: 14px; border-radius: 8px; text-align: center; }
+        .card-cat-resumen { background: #0a0b10; border: 1px solid #2a2f42; padding: 14px; border-radius: 10px; text-align: center; transition: all 0.3s ease; }
+        .card-cat-resumen:hover { border-color: #00f2fe; box-shadow: 0 0 12px rgba(0, 242, 254, 0.3); }
         .card-cat-resumen .num { font-size: 24px; font-weight: bold; color: #f5a623; }
         .card-cat-resumen .label { font-size: 12px; color: #a0a5b1; margin-top: 4px; font-weight: bold; text-transform: uppercase; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #2a2d37; }
-        th { background-color: #232630; color: #f5a623; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #232738; }
+        th { background-color: #1a1d2a; color: #f5a623; font-weight: bold; text-transform: uppercase; font-size: 12px; }
+        tr { transition: all 0.2s ease; }
+        tr:hover { background-color: rgba(0, 242, 254, 0.05); }
         
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color: white; display: inline-block; }
-        .badge-registro { background: #ffc107; color: #000; }
-        .badge-curso { background: #28a745; }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; color: white; display: inline-block; }
+        .badge-registro { background: #ffc107; color: #000; box-shadow: 0 0 8px rgba(255, 193, 7, 0.4); }
+        .badge-curso { background: #28a745; box-shadow: 0 0 8px rgba(40, 167, 69, 0.4); }
         .badge-finalizado { background: #6c757d; }
     </style>
 </head>
@@ -54,7 +65,7 @@
         <div class="nav-links">
             <a href="torneos.html" class="nav-btn active">📂 Mis Torneos</a>
             <a href="admin.html" class="nav-btn">⚙️ Administrador</a>
-            <a href="sorteo.html" class="nav-btn">🧠 Sorteo</a>
+            <a href="sorteo.html" class="nav-btn">🧠 Sorteo y Rol</a>
             <a href="horarios.html" class="nav-btn">📅 Horarios WS</a>
             <a href="index.html" target="_blank" class="nav-btn public">🌐 Portal Público</a>
             <button onclick="cerrarSesionAdmin()" class="nav-btn" style="background:#dc3545; color:white; border:none; cursor:pointer;">🔒 Salir</button>
@@ -66,13 +77,13 @@
         <div class="banner-activo">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                 <div>
-                    <span style="font-size: 11px; text-transform: uppercase; font-weight: bold; color: #f5a623; letter-spacing: 1px;">Torneo Activo en el Sistema:</span>
+                    <span style="font-size: 11px; text-transform: uppercase; font-weight: bold; color: #00f2fe; letter-spacing: 1px;">Torneo Activo en el Sistema:</span>
                     <h2 id="nombre-torneo-activo" style="margin: 5px 0 0 0; border: none; padding: 0; color: #ffffff; font-size: 24px;">Cargando...</h2>
                 </div>
                 <button class="btn btn-ws" onclick="compartirWhatsAppInscripciones()">📲 Compartir Link por WhatsApp</button>
             </div>
 
-            <div style="margin-top: 20px; border-top: 1px solid #323644; padding-top: 15px;">
+            <div style="margin-top: 20px; border-top: 1px solid #232738; padding-top: 15px;">
                 <div style="font-weight: bold; font-size: 13px; color: #a0a5b1; text-transform: uppercase;">📊 Jugadores Confirmados (Pagados) por Categoría:</div>
                 <div id="grid-categorias-vivo" class="grid-categorias-resumen">
                     <div class="card-cat-resumen">Cargando desglose...</div>
@@ -192,7 +203,7 @@
             }
 
             const [resCat, resIns] = await Promise.all([
-                clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true }),
+                clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: false }),
                 clienteSupabase.from('inscripciones').select('*').eq('torneo_id', idTorneo).eq('estatus_pago', 'Pagado')
             ]);
 
@@ -207,7 +218,7 @@
             let totalPagados = inscripciones.length;
 
             grid.innerHTML += `
-                <div class="card-cat-resumen" style="border-color: #f5a623;">
+                <div class="card-cat-resumen" style="border-color: #f5a623; box-shadow: 0 0 10px rgba(245, 166, 35, 0.3);">
                     <div class="num">${totalPagados}</div>
                     <div class="label" style="color: #f5a623;">TOTAL CONFIRMADOS</div>
                 </div>
@@ -217,7 +228,7 @@
                 let cantInscritos = inscripciones.filter(ins => ins.categoria_id === cat.id).length;
                 grid.innerHTML += `
                     <div class="card-cat-resumen">
-                        <div class="num" style="color:#ffffff;">${cantInscritos}</div>
+                        <div class="num" style="color:#00f2fe;">${cantInscritos}</div>
                         <div class="label">${cat.nombre}</div>
                     </div>
                 `;
@@ -244,7 +255,7 @@
                 let formatoTexto = t.formato === 'grupos_y_llaves' ? 'Grupos + Eliminatoria' : 'Round Robin Directo';
 
                 tbody.innerHTML += `
-                    <tr style="${esElActivo ? 'background-color: #232630;' : ''}">
+                    <tr style="${esElActivo ? 'background-color: rgba(245, 166, 35, 0.1);' : ''}">
                         <td>${t.fecha_evento || 'S/F'}</td>
                         <td>
                             <strong style="color:${esElActivo ? '#f5a623' : '#ffffff'};">${t.nombre}</strong>
