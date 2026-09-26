@@ -21,6 +21,7 @@
         body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
         @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
 
+        /* NAVEGACIÓN */
         .navbar { background: rgba(10, 15, 26, 0.65); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 50; }
         .nav-title { font-weight: 800; font-size: 15px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
         
@@ -33,6 +34,7 @@
 
         .main-content { padding: 30px; max-width: 1100px; margin: auto; position: relative; z-index: 10; }
 
+        /* BASE DE PANEL 3D CON CRISTAL */
         .panel-3d { 
             position: relative; 
             background: rgba(10, 15, 26, 0.45); 
@@ -190,13 +192,35 @@
 
         .mensaje-vacio { text-align: center; color: #475569; font-style: italic; background: transparent !important; border: none !important; }
 
+        /* IMPRESIÓN Y GENERACIÓN DE PDF IMPECABLE */
         @media print {
-            body { background: white !important; color: black !important; padding: 0; }
-            .no-print, .panel-3d:not(#seccion-print) { display: none !important; }
-            #seccion-print { display: block !important; box-shadow: none; border: none; background: white !important; color: black !important; }
-            table { font-size: 10pt; border: 1px solid #000; width: 100%; color: black !important; }
-            th { background-color: #333 !important; color: white !important; -webkit-print-color-adjust: exact; }
-            td, th { border: 1px solid #999; padding: 6px; color: black !important; background: white !important; }
+            body * { visibility: hidden !important; background: transparent !important; }
+            body { background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
+            .no-print, .navbar, .form-row, .controles, button, select, input { display: none !important; }
+            
+            #seccion-partidos-rr, #seccion-partidos-rr *, #seccion-llaves-eliminatoria, #seccion-llaves-eliminatoria * { 
+                visibility: visible !important; 
+            }
+            
+            #seccion-partidos-rr { 
+                position: absolute !important; 
+                left: 0 !important; 
+                top: 0 !important; 
+                width: 100% !important; 
+                display: block !important; 
+                background: white !important; 
+                color: black !important;
+                border: none !important;
+                box-shadow: none !important;
+            }
+
+            #seccion-partidos-rr h2 { color: black !important; border-bottom: 2px solid #000 !important; font-size: 14pt !important; }
+            #seccion-partidos-rr table { width: 100% !important; border-collapse: collapse !important; margin-top: 10px !important; }
+            #seccion-partidos-rr th { background-color: #eaeaea !important; color: black !important; border: 1px solid #000 !important; font-size: 9pt !important; padding: 6px !important; }
+            #seccion-partidos-rr td { border: 1px solid #666 !important; color: black !important; background: white !important; font-size: 9pt !important; padding: 6px !important; }
+            #seccion-partidos-rr td strong { color: black !important; text-shadow: none !important; }
+            #seccion-partidos-rr input { border: none !important; background: transparent !important; color: black !important; font-weight: bold !important; font-size: 9pt !important; }
+            .badge-mesa, .badge-ronda, .badge-grupo { background: none !important; color: black !important; border: 1px solid #000 !important; }
         }
     </style>
 </head>
@@ -208,7 +232,6 @@
             <a href="torneos.html" class="nav-btn">Mis Torneos</a>
             <a href="admin.html" class="nav-btn">Administrador</a>
             <a href="sorteo.html" class="nav-btn active">Sorteo y Rol</a>
-            <a href="horarios.html" class="nav-btn">Horarios WS</a>
             <a href="index.html" target="_blank" class="nav-btn public">Portal Público</a>
         </div>
     </nav>
@@ -317,7 +340,7 @@
                     </tr>
                 </thead>
                 <tbody id="tabla-partidos-rr">
-                    <tr><td colspan="7" class="mensaje-vacio">Genera la tabla para ver el rol de partidos.</td>处</tr>
+                    <tr><td colspan="7" class="mensaje-vacio">Genera la tabla para ver el rol de partidos.</td></tr>
                 </tbody>
             </table>
         </div>
@@ -343,7 +366,6 @@
         let gruposGlobal = [];
         let partidosGeneradosRR = [];
 
-        // Clases de color dinámicas para cada grupo
         const clasesColoresGrupo = ['gpo-cyan', 'gpo-purple', 'gpo-emerald', 'gpo-amber', 'gpo-pink', 'gpo-blue', 'gpo-red'];
 
         async function inicializarSorteo() {
@@ -478,7 +500,6 @@
             generarLlavesEliminatoria();
         }
 
-        /* ASIGNACIÓN DINÁMICA DE COLOR ÚNICO POR GRUPO */
         function dibujarGrupos() {
             const contenedor = document.getElementById('contenedor-grupos');
             contenedor.innerHTML = '';
