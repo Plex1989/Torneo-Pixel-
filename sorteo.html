@@ -6,7 +6,6 @@
     <title>Sorteo Inteligente - Central</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // GUARDIA DE SEGURIDAD GLOBAL: Revisa si inició sesión en torneos.html
         if (localStorage.getItem('admin_autenticado') !== 'true') {
             alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
             window.location.href = "torneos.html";
@@ -78,7 +77,7 @@
                     <option value="4">Grupos de 4 jugadores</option>
                 </select>
 
-                <button class="btn-sorteo" onclick="prepararSorteo()">🎲 Generar Sorteo Serpiente</button>
+                <button class="btn-sorteo" id="btn-ejecutar-sorteo" onclick="prepararSorteo()">🎲 Generar Sorteo Serpiente</button>
 
                 <div style="margin-left: auto; font-size: 14px; color:#a0a5b1;">
                     Jugadores confirmados: <strong id="contador-jugadores" style="color:#f5a623; font-size: 18px;">0</strong>
@@ -97,13 +96,25 @@
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
+        let torneoActivoObj = null;
         let jugadoresListos = [];
         let gruposGlobal = [];
 
         async function inicializarSorteo() {
             const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
             if (torneoData) {
-                document.getElementById('banner-torneo-info').innerText = `📌 Torneo Seleccionado: ${torneoData.nombre} (${torneoData.fecha_evento || 'Sin fecha'})`;
+                torneoActivoObj = torneoData;
+                let textoFormato = torneoData.formato === 'round_robin' ? 'Round Robin Directo (Todos vs Todos)' : 'Fase de Grupos + Eliminatoria';
+                document.getElementById('banner-torneo-info').innerText = `📌 Torneo Seleccionado: ${torneoData.nombre} (${textoFormato})`;
+
+                // Adaptación de interfaz según el formato
+                if (torneoData.formato === 'round_robin') {
+                    document.getElementById('tamano-grupo').style.display = 'none';
+                    document.getElementById('btn-ejecutar-sorteo').innerText = '🎲 Generar Tabla Round Robin';
+                } else {
+                    document.getElementById('tamano-grupo').style.display = 'inline-block';
+                    document.getElementById('btn-ejecutar-sorteo').innerText = '🎲 Generar Sorteo Serpiente';
+                }
             } else {
                 document.getElementById('banner-torneo-info').innerText = `⚠️ No hay ningún torneo seleccionado. Ve a 'Mis Torneos' para elegir uno.`;
             }
@@ -135,12 +146,11 @@
 
         async function prepararSorteo() {
             const idCategoria = document.getElementById('filtro-categoria').value;
-            const tamanoGrupo = parseInt(document.getElementById('tamano-grupo').value);
             const contenedor = document.getElementById('contenedor-grupos');
 
             if (!idCategoria) { alert("Selecciona una categoría."); return; }
 
-            contenedor.innerHTML = '<p style="text-align:center; width: 100%; color:#a0a5b1;">Generando grupos...</p>';
+            contenedor.innerHTML = '<p style="text-align:center; width: 100%; color:#a0a5b1;">Generando acomodo...</p>';
 
             const { data } = await clienteSupabase.from('inscripciones')
                 .select(`jugadores ( id, nombre, puntos_ranking, club )`)
@@ -155,7 +165,22 @@
             }
 
             jugadoresListos = data.map(ins => ins.jugadores).sort((a, b) => b.puntos_ranking - a.puntos_ranking);
-            ejecutarSerpiente(tamanoGrupo);
+
+            if (torneoActivoObj && torneoActivoObj.formato === 'round_robin') {
+                ejecutarRoundRobinUnico();
+            } else {
+                const tamanoGrupo = parseInt(document.getElementById('tamano-grupo').value);
+                ejecutarSerpiente(tamanoGrupo);
+            }
+        }
+
+        function ejecutarRoundRobinUnico() {
+            // Un solo grupo gigante donde se enfrentan todos
+            gruposGlobal = [{
+                nombre: 'Único (Todos contra Todos)',
+                jugadores: jugadoresListos.map((j, i) => ({ ...j, seedOriginal: i + 1 }))
+            }];
+            dibujarGrupos();
         }
 
         function ejecutarSerpiente(tamanoGrupo) {
@@ -184,6 +209,8 @@
             const contenedor = document.getElementById('contenedor-grupos');
             contenedor.innerHTML = '';
 
+            const esRoundRobin = torneoActivoObj && torneoActivoObj.formato === 'round_robin';
+
             gruposGlobal.forEach((grupo, idxGrupo) => {
                 let html = `<div class="grupo-card"><div class="grupo-header">Grupo ${grupo.nombre}</div>`;
                 
@@ -195,9 +222,11 @@
                                 <div><span class="tag-club">🏠 ${j.club || 'Sin Club'}</span></div>
                                 <span>${j.puntos_ranking} pts (Seed #${j.seedOriginal})</span>
                             </div>
-                            <select class="select-mover" onchange="moverJugador(${j.id}, ${idxGrupo}, this.value)">
-                                ${gruposGlobal.map((g, index) => `<option value="${index}" ${index === idxGrupo ? 'selected' : ''}>Grupo ${g.nombre}</option>`).join('')}
-                            </select>
+                            ${!esRoundRobin ? `
+                                <select class="select-mover" onchange="moverJugador(${j.id},${idxGrupo}, this.value)">
+                                    ${gruposGlobal.map((g, index) => `<option value="${index}" ${index === idxGrupo ? 'selected' : ''}>Grupo ${g.nombre}</option>`).join('')}
+                                </select>
+                            ` : ''}
                         </div>
                     `;
                 });
@@ -254,7 +283,7 @@
                 return;
             }
 
-            alert("✅ ¡Grupos guardados con éxito para el torneo activo!");
+            alert("✅ ¡Acomodo guardado con éxito para el torneo activo!");
             btn.disabled = false;
             btn.innerText = "💾 Guardar Grupos Definitivos en Base de Datos";
         }
