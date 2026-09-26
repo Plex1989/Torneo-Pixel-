@@ -3,48 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sorteo Inteligente - Torneo Activo</title>
+    <title>Sorteo Inteligente - Central</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // GUARDIA DE SEGURIDAD GLOBAL: Revisa si inició sesión en torneos.html
+        if (localStorage.getItem('admin_autenticado') !== 'true') {
+            alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
+            window.location.href = "torneos.html";
+        }
+    </script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #eef2f5; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #0e0f12; color: #ffffff; }
         
-        /* BARRA DE NAVEGACIÓN SUPERIOR */
-        .navbar { background: #1a252f; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; color: white; box-shadow: 0 2px 5px rgba(0,0,0,0.2); flex-wrap: wrap; gap: 10px; }
-        .nav-title { font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 8px; }
-        .nav-links { display: flex; gap: 8px; flex-wrap: wrap; }
-        .nav-btn { color: #ecf0f1; text-decoration: none; padding: 8px 12px; border-radius: 5px; font-size: 13px; font-weight: bold; background: #2c3e50; transition: 0.2s; }
-        .nav-btn:hover { background: #34495e; color: white; }
-        .nav-btn.active { background: #6f42c1; color: white; }
-        .nav-btn.public { background: #28a745; }
+        .navbar { background: #181a20; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2d37; flex-wrap: wrap; gap: 10px; }
+        .nav-title { font-weight: 800; font-size: 18px; color: #f5a623; letter-spacing: 1px; }
+        .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
+        .nav-btn { color: #a0a5b1; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; background: #232630; border: 1px solid #323644; transition: 0.2s; }
+        .nav-btn:hover { background: #f5a623; color: #000; border-color: #f5a623; }
+        .nav-btn.active { background: #f5a623; color: #000000; border-color: #f5a623; }
+        .nav-btn.public { background: #28a745; color: white; border-color: #28a745; }
 
-        .main-content { padding: 20px; max-width: 1100px; margin: auto; }
-        .container { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h2 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
+        .main-content { padding: 25px; max-width: 1100px; margin: auto; }
+        .container { background: #181a20; padding: 25px; border-radius: 12px; border: 1px solid #2a2d37; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        h2 { color: #f5a623; border-bottom: 1px solid #2a2d37; padding-bottom: 12px; margin-top: 0; font-size: 20px; text-transform: uppercase; }
         
-        .banner-torneo { background: #e8f4f8; border-left: 5px solid #17a2b8; padding: 10px 15px; margin-bottom: 20px; border-radius: 4px; font-size: 14px; color: #117a8b; font-weight: bold; }
+        .banner-torneo { background: #232630; border-left: 4px solid #f5a623; padding: 12px 15px; margin-bottom: 20px; border-radius: 4px; font-size: 14px; color: #ffffff; font-weight: bold; }
         
-        .controles { margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px; border: 1px solid #ddd; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
-        select, button { padding: 10px; border-radius: 5px; border: 1px solid #ccc; font-size: 15px; }
-        .btn-sorteo { background: #6f42c1; color: white; border: none; cursor: pointer; font-weight: bold; }
-        .btn-sorteo:hover { background: #59339d; }
-        .btn-guardar { background: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; padding: 12px 20px; font-size: 16px; margin-top: 20px; width: 100%; border-radius: 6px; display: none; }
+        .controles { margin-bottom: 20px; padding: 15px; background: #0e0f12; border-radius: 8px; border: 1px solid #323644; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
+        select, button { padding: 10px 14px; border-radius: 6px; border: 1px solid #323644; background: #181a20; color: #fff; font-size: 14px; }
+        select:focus { border-color: #f5a623; outline: none; }
+        
+        .btn-sorteo { background: #f5a623; color: #000; border: none; cursor: pointer; font-weight: bold; }
+        .btn-sorteo:hover { background: #d98c18; }
+        .btn-guardar { background: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; padding: 14px 20px; font-size: 16px; margin-top: 25px; width: 100%; border-radius: 8px; display: none; }
         .btn-guardar:hover { background: #218838; }
-        .grupos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; margin-top: 20px; }
-        .grupo-card { background: #fff; border: 2px solid #343a40; border-radius: 8px; overflow: hidden; }
-        .grupo-header { background: #343a40; color: white; font-weight: bold; font-size: 18px; padding: 10px; text-align: center; }
-        .jugador-item { padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
+        
+        .grupos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 18px; margin-top: 20px; }
+        .grupo-card { background: #232630; border: 1px solid #323644; border-radius: 10px; overflow: hidden; }
+        .grupo-header { background: #0e0f12; color: #f5a623; font-weight: bold; font-size: 16px; padding: 12px; text-align: center; border-bottom: 1px solid #323644; text-transform: uppercase; letter-spacing: 1px; }
+        .jugador-item { padding: 12px; border-bottom: 1px solid #2a2d37; font-size: 14px; display: flex; justify-content: space-between; align-items: center; }
         .jugador-item:last-child { border-bottom: none; }
         .jugador-info { flex: 1; }
-        .jugador-item span { display: block; color: #666; font-size: 12px; margin-top: 2px; }
-        .tag-club { background: #e9ecef; color: #495057; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; display: inline-block; margin-top: 2px; }
-        .select-mover { padding: 4px 6px; font-size: 12px; border-radius: 4px; border: 1px solid #bbb; background: #fff; }
+        .jugador-item span { display: block; color: #a0a5b1; font-size: 12px; margin-top: 3px; }
+        .tag-club { background: #0e0f12; color: #f5a623; border: 1px solid #323644; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; display: inline-block; margin-top: 3px; }
+        .select-mover { padding: 5px 8px; font-size: 12px; border-radius: 4px; border: 1px solid #323644; background: #0e0f12; color: #fff; }
     </style>
 </head>
 <body>
 
-    <!-- MENÚ DE NAVEGACIÓN PRINCIPAL -->
     <nav class="navbar">
-        <div class="nav-title">🏓 Control de Torneos</div>
+        <div class="nav-title">🏆 CENTRAL DE TORNEOS</div>
         <div class="nav-links">
             <a href="torneos.html" class="nav-btn">📂 Mis Torneos</a>
             <a href="admin.html" class="nav-btn">⚙️ Administrador</a>
@@ -72,8 +80,8 @@
 
                 <button class="btn-sorteo" onclick="prepararSorteo()">🎲 Generar Sorteo Serpiente</button>
 
-                <div style="margin-left: auto; font-size: 14px;">
-                    Jugadores confirmados: <strong id="contador-jugadores" style="color:#28a745; font-size: 18px;">0</strong>
+                <div style="margin-left: auto; font-size: 14px; color:#a0a5b1;">
+                    Jugadores confirmados: <strong id="contador-jugadores" style="color:#f5a623; font-size: 18px;">0</strong>
                 </div>
             </div>
 
@@ -93,10 +101,9 @@
         let gruposGlobal = [];
 
         async function inicializarSorteo() {
-            // Cargar nombre del torneo activo
             const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
             if (torneoData) {
-                document.getElementById('banner-torneo-info').innerText = `📌 Torneo seleccionado: ${torneoData.nombre} (${torneoData.fecha_evento || 'Sin fecha'})`;
+                document.getElementById('banner-torneo-info').innerText = `📌 Torneo Seleccionado: ${torneoData.nombre} (${torneoData.fecha_evento || 'Sin fecha'})`;
             } else {
                 document.getElementById('banner-torneo-info').innerText = `⚠️ No hay ningún torneo seleccionado. Ve a 'Mis Torneos' para elegir uno.`;
             }
@@ -117,7 +124,6 @@
             
             contador.innerText = '...';
             
-            // FILTRADO CLAVE: torneo_id = idTorneoActivo
             const { count, error } = await clienteSupabase.from('inscripciones')
                 .select('*', { count: 'exact', head: true })
                 .eq('categoria_id', idCat)
@@ -134,9 +140,8 @@
 
             if (!idCategoria) { alert("Selecciona una categoría."); return; }
 
-            contenedor.innerHTML = '<p style="text-align:center; width: 100%;">Generando grupos...</p>';
+            contenedor.innerHTML = '<p style="text-align:center; width: 100%; color:#a0a5b1;">Generando grupos...</p>';
 
-            // FILTRADO CLAVE: torneo_id = idTorneoActivo
             const { data } = await clienteSupabase.from('inscripciones')
                 .select(`jugadores ( id, nombre, puntos_ranking, club )`)
                 .eq('categoria_id', idCategoria)
@@ -186,7 +191,7 @@
                     html += `
                         <div class="jugador-item">
                             <div class="jugador-info">
-                                <strong>${j.nombre}</strong>
+                                <strong style="color:#ffffff;">${j.nombre}</strong>
                                 <div><span class="tag-club">🏠 ${j.club || 'Sin Club'}</span></div>
                                 <span>${j.puntos_ranking} pts (Seed #${j.seedOriginal})</span>
                             </div>
@@ -222,7 +227,6 @@
             btn.disabled = true;
             btn.innerText = "Guardando en base de datos...";
 
-            // Limpiar sorteos anteriores de esta categoría EN ESTE TORNEO ESPECÍFICO
             await clienteSupabase.from('grupos_torneo')
                 .delete()
                 .eq('categoria_id', idCategoria)
