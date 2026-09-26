@@ -12,192 +12,267 @@
         }
     </script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #0a0b10; color: #ffffff; }
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
+
+        body { font-family: 'Sora', sans-serif; margin: 0; padding: 0; background-color: #04060a; color: #f8fafc; min-height: 100vh; position: relative; overflow-x: hidden; }
         
-        .navbar { background: #12141d; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #232738; flex-wrap: wrap; gap: 10px; }
-        .nav-title { font-weight: 800; font-size: 18px; color: #f5a623; letter-spacing: 1px; text-shadow: 0 0 10px rgba(245, 166, 35, 0.4); }
+        /* ORBES ATMOSFÉRICOS DE FONDO */
+        body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 10s infinite alternate; }
+        body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
+        @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
+
+        /* NAVEGACIÓN */
+        .navbar { background: rgba(10, 15, 26, 0.65); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 50; }
+        .nav-title { font-weight: 800; font-size: 15px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
+        
         .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
-        .nav-btn { color: #a0a5b1; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: bold; background: #1a1d2a; border: 1px solid #2a2f42; transition: all 0.3s ease; }
-        .nav-btn:hover { background: #f5a623; color: #000; border-color: #f5a623; box-shadow: 0 0 15px rgba(245, 166, 35, 0.6); }
-        .nav-btn.active { background: #f5a623; color: #000000; border-color: #f5a623; box-shadow: 0 0 12px rgba(245, 166, 35, 0.5); }
-        .nav-btn.public { background: #00f2fe; color: #000; border-color: #00f2fe; font-weight: bold; }
-        .nav-btn.public:hover { box-shadow: 0 0 15px rgba(0, 242, 254, 0.7); }
+        .nav-btn { color: #94a3b8; text-decoration: none; padding: 8px 18px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-btn:hover { color: #000000; background: #f5a623; border-color: #f5a623; box-shadow: 0 0 25px rgba(245, 166, 35, 0.8); transform: translateY(-2px); }
+        .nav-btn.active { color: #ffffff; border-color: #8b5cf6; background: rgba(139, 92, 246, 0.3); box-shadow: 0 0 15px rgba(139, 92, 246, 0.4); }
+        .nav-btn.public { color: #34d399; border-color: rgba(16, 185, 129, 0.5); }
+        .nav-btn.public:hover { color: #000000; background: #10b981; border-color: #10b981; box-shadow: 0 0 25px rgba(16, 185, 129, 0.8); }
 
-        .main-content { padding: 25px; max-width: 1100px; margin: auto; }
+        .main-content { padding: 30px; max-width: 1100px; margin: auto; position: relative; z-index: 10; }
+
+        /* BASE DE PANEL 3D CON CRISTAL */
+        .panel-3d { 
+            position: relative; 
+            background: rgba(10, 15, 26, 0.45); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px); 
+            border-radius: 20px; 
+            border: 1px solid rgba(255, 255, 255, 0.06); 
+            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.03); 
+            padding: 26px; 
+            margin-bottom: 26px; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .panel-cyan { border-bottom: 5px solid #0e7490; }
+        .panel-cyan:hover { transform: translateY(-3px); border-bottom-color: #06b6d4; box-shadow: 0 18px 40px -5px rgba(6, 182, 212, 0.5); }
+        .panel-cyan:hover h2 { color: #38bdf8 !important; text-shadow: 0 0 16px rgba(56, 189, 248, 0.9); }
+
+        .panel-purple { border-bottom: 5px solid #2e1065; }
+        .panel-purple:hover { transform: translateY(-3px); border-bottom-color: #8b5cf6; box-shadow: 0 18px 40px -5px rgba(139, 92, 246, 0.5); }
+        .panel-purple:hover h2 { color: #c084fc !important; text-shadow: 0 0 16px rgba(192, 132, 252, 0.9); }
+
+        .panel-amber { border-bottom: 5px solid #451a03; }
+        .panel-amber:hover { transform: translateY(-3px); border-bottom-color: #f59e0b; box-shadow: 0 18px 40px -5px rgba(245, 158, 11, 0.5); }
+        .panel-amber:hover h2 { color: #fbbf24 !important; text-shadow: 0 0 16px rgba(251, 191, 36, 0.9); }
+
+        h2, h3 { color: #ffffff; margin-top: 0; padding-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 20px; transition: all 0.3s ease; }
+
+        /* INPUTS Y SELECTS CON TEXTO BLANCO VISIBLE */
+        .form-row input[type="text"], .form-row input[type="number"], .form-row input[type="time"], .form-row select, select { 
+            padding: 10px 14px; 
+            border: 1px solid rgba(255, 255, 255, 0.18) !important; 
+            background: rgba(10, 15, 26, 0.85) !important; 
+            color: #ffffff !important; 
+            border-radius: 10px; 
+            font-size: 12px; 
+            font-family: 'Sora', sans-serif; 
+            font-weight: 600;
+            transition: all 0.2s ease; 
+        }
         
-        /* PANELES CON LUZ TRASERA */
-        .container { background: #131520; padding: 25px; border-radius: 14px; border: 1px solid #232738; margin-bottom: 25px; transition: all 0.3s ease; }
-        .container:hover { border-color: rgba(0, 242, 254, 0.5); box-shadow: 0 0 25px rgba(0, 242, 254, 0.2); }
+        select option {
+            background-color: #0a0b10 !important;
+            color: #ffffff !important;
+            padding: 10px;
+        }
+
+        .form-row input:focus, .form-row select:focus, select:focus { 
+            border-color: #38bdf8 !important; 
+            outline: none; 
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.55); 
+        }
+
+        /* BOTONES PÍLDORA */
+        .btn-console { 
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 20px; 
+            background: rgba(255, 255, 255, 0.06); 
+            border: 1px solid rgba(255, 255, 255, 0.18); 
+            border-radius: 9999px; 
+            color: #f1f5f9; 
+            font-size: 11px; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            font-family: 'Sora', sans-serif; 
+        }
+
+        .btn-console:hover { 
+            background: #06b6d4; 
+            color: #000000; 
+            border-color: #38bdf8; 
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.85); 
+            transform: translateY(-2px); 
+        }
         
-        h2, h3 { color: #f5a623; border-bottom: 1px solid #232738; padding-bottom: 12px; margin-top: 0; font-size: 18px; text-transform: uppercase; text-shadow: 0 0 8px rgba(245, 166, 35, 0.3); }
-        
-        .banner-torneo { background: #1a1d2a; border-left: 4px solid #00f2fe; padding: 12px 15px; margin-bottom: 20px; border-radius: 6px; font-size: 14px; color: #ffffff; font-weight: bold; box-shadow: 0 0 12px rgba(0, 242, 254, 0.25); }
-        
-        .controles { margin-bottom: 20px; padding: 15px; background: #0a0b10; border-radius: 10px; border: 1px solid #2a2f42; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; transition: all 0.3s ease; }
-        .controles:hover { border-color: #f5a623; box-shadow: 0 0 15px rgba(245, 166, 35, 0.2); }
-        
-        select, input[type="text"], input[type="number"], input[type="time"], button { padding: 10px 12px; border-radius: 8px; border: 1px solid #2a2f42; background: #181a20; color: #fff; font-size: 14px; transition: all 0.3s ease; }
-        select:focus, input:focus { border-color: #00f2fe; outline: none; box-shadow: 0 0 12px rgba(0, 242, 254, 0.5); }
-        
-        .btn-sorteo { background: #f5a623; color: #000; border: none; cursor: pointer; font-weight: bold; transition: all 0.3s ease; }
-        .btn-sorteo:hover { background: #ffb703; box-shadow: 0 0 15px rgba(245, 166, 35, 0.6); }
-        .btn-verde { background: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; transition: all 0.3s ease; } .btn-verde:hover { background: #34ce57; box-shadow: 0 0 15px rgba(40, 167, 69, 0.6); }
-        .btn-negro { background: #1a1d2a; color: #f5a623; border: 1px solid #2a2f42; cursor: pointer; font-weight: bold; transition: all 0.3s ease; } .btn-negro:hover { border-color: #f5a623; box-shadow: 0 0 15px rgba(245, 166, 35, 0.4); }
-        .btn-ws { background: #25d366; color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.3s ease; } .btn-ws:hover { background: #1ebc57; box-shadow: 0 0 15px rgba(37, 211, 102, 0.6); }
-        .btn-guardar { background: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; padding: 14px 20px; font-size: 15px; margin-top: 20px; width: 100%; border-radius: 10px; transition: all 0.3s ease; }
-        .btn-guardar:hover { background: #34ce57; box-shadow: 0 0 20px rgba(40, 167, 69, 0.6); }
-        
-        .grupos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 20px; }
-        
-        /* TARJETAS DE GRUPOS CON LUZ NEÓN BACKLIGHT */
-        .grupo-card { background: #1a1d2a; border: 1px solid #2a2f42; border-radius: 12px; overflow: hidden; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
-        .grupo-card:hover { border-color: #00f2fe; box-shadow: 0 0 20px rgba(0, 242, 254, 0.35); transform: translateY(-3px); }
-        
-        .grupo-header { background: #0a0b10; color: #f5a623; font-weight: bold; font-size: 15px; padding: 12px; text-align: center; border-bottom: 1px solid #2a2f42; text-transform: uppercase; letter-spacing: 1px; }
-        
-        .jugador-item { padding: 12px; border-bottom: 1px solid #232738; font-size: 14px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.2s ease; }
-        .jugador-item:hover { background: #232738; }
-        .jugador-item.seleccionado { background: #f5a623 !important; color: #000 !important; box-shadow: 0 0 15px rgba(245, 166, 35, 0.6); }
-        .jugador-item.seleccionado span, .jugador-item.seleccionado strong { color: #000 !important; }
-        
+        .btn-gold:hover { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 25px rgba(245, 158, 11, 0.85); }
+        .btn-purple:hover { background: #8b5cf6; color: #ffffff; border-color: #c084fc; box-shadow: 0 0 25px rgba(139, 92, 246, 0.85); }
+        .btn-green:hover { background: #10b981; color: #000000; border-color: #34d399; box-shadow: 0 0 25px rgba(16, 185, 129, 0.85); }
+        .btn-ws-style { border-color: rgba(34, 197, 94, 0.5); color: #4ade80; }
+        .btn-ws-style:hover { background: #22c55e; color: #000000; border-color: #22c55e; box-shadow: 0 0 25px rgba(34, 197, 94, 0.85); }
+
+        /* TARJETAS DE GRUPOS */
+        .grupos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-top: 20px; }
+        .grupo-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 5px solid #2e1065; border-radius: 16px; overflow: hidden; transition: all 0.3s ease; }
+        .grupo-card:hover { transform: translateY(-3px); border-bottom-color: #8b5cf6; box-shadow: 0 15px 35px -5px rgba(139, 92, 246, 0.4); }
+        .grupo-header { background: rgba(0, 0, 0, 0.3); color: #ffffff; font-weight: 800; font-size: 13px; padding: 12px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.06); text-transform: uppercase; letter-spacing: 1px; }
+
+        .jugador-item { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.25s ease; }
+        .jugador-item:hover { background: rgba(6, 182, 212, 0.12); }
+        .jugador-item.seleccionado { background: rgba(245, 158, 11, 0.2) !important; border-left: 4px solid #f59e0b; }
         .jugador-info { flex: 1; }
-        .jugador-item span { display: block; color: #a0a5b1; font-size: 12px; margin-top: 3px; }
-        .tag-club { background: #0a0b10; color: #f5a623; border: 1px solid #2a2f42; padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 11px; display: inline-block; margin-top: 3px; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #232738; }
-        th { background-color: #1a1d2a; color: #f5a623; text-transform: uppercase; font-size: 12px; font-weight: bold; }
-        tr:hover { background-color: rgba(0, 242, 254, 0.05); }
-        
-        .badge-ronda { background: #2a2f42; color: #f5a623; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; }
-        .badge-mesa { background: #28a745; color: #fff; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; box-shadow: 0 0 6px rgba(40, 167, 69, 0.4); }
-        .badge-grupo { background: #00f2fe; color: #000; padding: 3px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; box-shadow: 0 0 6px rgba(0, 242, 254, 0.4); }
+        .jugador-item span { display: block; color: #94a3b8; font-size: 10px; margin-top: 3px; font-weight: 700; }
+        .tag-club { background: rgba(0,0,0,0.3); color: #f5a623; border: 1px solid rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 9px; display: inline-block; margin-top: 3px; }
 
-        /* BRACKET LLAVES GLOW */
+        /* TABLAS Y BADGES */
+        table { width: 100%; border-collapse: separate; border-spacing: 0 6px; margin-top: 10px; font-size: 12px; }
+        th { color: #94a3b8; text-transform: uppercase; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; padding: 0 12px 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+        td { padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border-top: 1px solid rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02); color: #ffffff; transition: all 0.25s ease; }
+        td:first-child { border-left: 1px solid rgba(255,255,255,0.02); border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
+        td:last-child { border-right: 1px solid rgba(255,255,255,0.02); border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
+        
+        tr { cursor: pointer; transition: all 0.25s ease; }
+        tr:hover td { background: rgba(6, 182, 212, 0.16) !important; border-color: rgba(6, 182, 212, 0.45); }
+        tr:hover td strong { color: #38bdf8 !important; text-shadow: 0 0 16px rgba(56, 189, 248, 1); }
+        tr:hover td:first-child { border-left: 4px solid #38bdf8; box-shadow: -4px 0 12px rgba(56, 189, 248, 0.5); }
+
+        .badge-ronda { background: rgba(255,255,255,0.06); color: #fbbf24; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(245,158,11,0.3); }
+        .badge-mesa { background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(16,185,129,0.3); }
+        .badge-grupo { background: rgba(6, 182, 212, 0.15); color: #38bdf8; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(6,182,212,0.3); }
+
+        /* BRACKETS DE LLAVES */
         .bracket-container { display: flex; gap: 20px; overflow-x: auto; padding: 15px 0; }
         .bracket-column { flex: 1; min-width: 220px; display: flex; flex-direction: column; justify-content: space-around; }
-        .bracket-header { text-align: center; font-weight: bold; color: #f5a623; margin-bottom: 15px; text-transform: uppercase; font-size: 13px; border-bottom: 1px solid #232738; padding-bottom: 8px; text-shadow: 0 0 8px rgba(245, 166, 35, 0.4); }
-        
-        .match-box { background: #0a0b10; border: 1px solid #2a2f42; border-radius: 10px; padding: 10px; margin-bottom: 15px; position: relative; transition: all 0.3s ease; }
-        .match-box:hover { border-color: #a100ff; box-shadow: 0 0 15px rgba(161, 0, 255, 0.4); }
-        .match-slot { padding: 6px 8px; font-size: 12px; border-radius: 6px; background: #181a20; margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #232738; }
-        .match-slot .seed { color: #f5a623; font-weight: bold; font-size: 11px; }
+        .bracket-header { text-align: center; font-weight: 800; color: #38bdf8; margin-bottom: 15px; text-transform: uppercase; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px; letter-spacing: 1.5px; }
+        .match-box { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 10px; margin-bottom: 15px; transition: all 0.3s ease; }
+        .match-box:hover { border-color: #8b5cf6; box-shadow: 0 0 20px rgba(139, 92, 246, 0.4); }
+        .match-slot { padding: 6px 10px; font-size: 11px; border-radius: 6px; background: rgba(0,0,0,0.3); margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.03); color: #ffffff; font-weight: 600; }
+        .match-slot .seed { color: #fbbf24; font-weight: 800; font-size: 10px; }
+
+        .mensaje-vacio { text-align: center; color: #475569; font-style: italic; background: transparent !important; border: none !important; }
 
         @media print {
             body { background: white !important; color: black !important; padding: 0; }
-            .navbar, .controles, #panel-config-horarios, .btn-sorteo, .btn-guardar, .no-print, #contenedor-grupos { display: none !important; }
-            .container { border: none !important; box-shadow: none !important; background: white !important; color: black !important; padding: 0 !important; margin: 0 !important; }
-            h2, h3 { color: black !important; border-bottom: 2px solid #000 !important; font-size: 16pt !important; }
+            .no-print, .panel-3d:not(#seccion-print) { display: none !important; }
+            #seccion-print { display: block !important; box-shadow: none; border: none; background: white !important; color: black !important; }
             table { font-size: 10pt; border: 1px solid #000; width: 100%; color: black !important; }
-            th { background-color: #f2f2f2 !important; color: black !important; border: 1px solid #000; font-size: 9pt; }
-            td { border: 1px solid #666; color: black !important; padding: 6px; }
-            .badge-mesa, .badge-ronda, .badge-grupo { background: #fff !important; color: black !important; border: 1px solid #000; }
-            .match-box { background: white !important; border: 1px solid #000 !important; color: black !important; }
-            .match-slot { background: #f9f9f9 !important; border: 1px solid #ccc !important; color: black !important; }
+            th { background-color: #333 !important; color: white !important; -webkit-print-color-adjust: exact; }
+            td, th { border: 1px solid #999; padding: 6px; color: black !important; background: white !important; }
         }
     </style>
 </head>
 <body>
 
     <nav class="navbar no-print">
-        <div class="nav-title">🏆 CENTRAL DE TORNEOS</div>
+        <div class="nav-title">CENTRAL DE TORNEOS</div>
         <div class="nav-links">
-            <a href="torneos.html" class="nav-btn">📂 Mis Torneos</a>
-            <a href="admin.html" class="nav-btn">⚙️ Administrador</a>
-            <a href="sorteo.html" class="nav-btn active">🧠 Sorteo y Rol</a>
-            <a href="horarios.html" class="nav-btn">📅 Horarios WS</a>
-            <a href="index.html" target="_blank" class="nav-btn public">🌐 Portal Público</a>
+            <a href="torneos.html" class="nav-btn">Mis Torneos</a>
+            <a href="admin.html" class="nav-btn">Administrador</a>
+            <a href="sorteo.html" class="nav-btn active">Sorteo y Rol</a>
+            <a href="horarios.html" class="nav-btn">Horarios WS</a>
+            <a href="index.html" target="_blank" class="nav-btn public">Portal Público</a>
         </div>
     </nav>
 
     <div class="main-content">
         
-        <div class="container no-print">
+        <div class="panel-3d panel-cyan no-print">
             <h2>Cerebro del Torneo: Sorteo y Rol de Partidos 🧠🏆</h2>
-            <div id="banner-torneo-info" class="banner-torneo">Cargando torneo activo...</div>
+            <div id="banner-torneo-info" style="font-size: 12px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 18px;">Cargando torneo activo...</div>
             
-            <div class="controles">
+            <div class="form-row" style="background: rgba(15,23,42,0.5); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); margin-bottom: 20px;">
                 <select id="filtro-categoria" onchange="contarJugadores()">
                     <option value="">Cargando categorías...</option>
                 </select>
 
-                <select id="tamano-grupo">
+                <select id="tamano-grupo" style="max-width: 200px;">
                     <option value="3">Grupos de 3 jugadores</option>
                     <option value="4">Grupos de 4 jugadores</option>
                     <option value="5">Grupos de 5 jugadores</option>
                     <option value="6">Grupos de 6 jugadores</option>
                 </select>
 
-                <button class="btn-sorteo" id="btn-ejecutar-sorteo" onclick="prepararSorteo()">🎲 Generar Acomodo</button>
+                <button class="btn-console btn-gold" id="btn-ejecutar-sorteo" onclick="prepararSorteo()">🎲 Generar Acomodo</button>
 
-                <div style="margin-left: auto; font-size: 14px; color:#a0a5b1;">
-                    Jugadores confirmados: <strong id="contador-jugadores" style="color:#f5a623; font-size: 18px;">0</strong>
+                <div style="margin-left: auto; font-size: 11px; color:#94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
+                    Confirmados: <strong id="contador-jugadores" style="color:#ffffff; font-size: 15px; margin-left: 4px;">0</strong>
                 </div>
             </div>
 
-            <div id="panel-config-horarios" style="display: none; background: #0a0b10; border: 1px solid #2a2f42; padding: 18px; border-radius: 12px; margin-top: 15px;">
-                <h3 style="margin-top:0; font-size:15px; color:#f5a623;">⚙️ Configuración de Horarios, Vueltas y Jueces</h3>
+            <!-- PARÁMETROS DE HORARIOS Y JUECES -->
+            <div id="panel-config-horarios" style="display: none; background: rgba(15,23,42,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 18px; border-radius: 14px; margin-top: 15px;">
+                <h3 style="margin-top:0; font-size:12px; color:#ffffff;">⚙️ Parámetros de Horarios y Jueces Auxiliares</h3>
                 
-                <div class="controles" style="margin-bottom:10px; padding:10px; border:none; background:transparent;">
+                <div class="form-row" style="margin-bottom:15px;">
                     <div>
-                        <label style="font-size:12px; color:#a0a5b1; display:block; margin-bottom:4px;">🔄 Formato Vueltas:</label>
-                        <select id="rr-num-vueltas" style="font-weight:bold; color:#f5a623;">
+                        <label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Vueltas</label>
+                        <select id="rr-num-vueltas" style="font-weight:700; color:#34d399;">
                             <option value="1">1 Vuelta (Sencilla)</option>
                             <option value="2">2 Vueltas (Ida y Vuelta)</option>
                         </select>
                     </div>
                     <div>
-                        <label style="font-size:12px; color:#a0a5b1; display:block; margin-bottom:4px;">⏰ Hora Inicio:</label>
+                        <label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Hora Inicio</label>
                         <input type="time" id="rr-hora-inicio" value="09:00">
                     </div>
                     <div>
-                        <label style="font-size:12px; color:#a0a5b1; display:block; margin-bottom:4px;">🏓 N° Mesas:</label>
+                        <label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">N° Mesas</label>
                         <input type="number" id="rr-num-mesas" value="3" min="1" max="10" style="width:70px;" onchange="actualizarCamposJuecesExternos()">
                     </div>
                     <div>
-                        <label style="font-size:12px; color:#a0a5b1; display:block; margin-bottom:4px;">☕ Hora Break:</label>
+                        <label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Hora Break</label>
                         <input type="time" id="rr-hora-break" value="14:00">
                     </div>
                     <div>
-                        <label style="font-size:12px; color:#a0a5b1; display:block; margin-bottom:4px;">⏱️ Min Break:</label>
+                        <label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Min Break</label>
                         <input type="number" id="rr-duracion-break" value="30" min="0" style="width:70px;">
                     </div>
                     <div>
-                        <label style="font-size:12px; color:#a0a5b1; display:block; margin-bottom:4px;">⏳ Min/Partido:</label>
+                        <label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Min/Partido</label>
                         <input type="number" id="rr-duracion-partido" value="30" min="10" style="width:70px;">
                     </div>
                 </div>
 
-                <div style="border-top:1px solid #232738; padding-top:12px; margin-top:5px;">
-                    <div style="font-size:12px; font-weight:bold; color:#f5a623; margin-bottom:8px;">👨‍⚖️ Asignación de Jueces Externos / Auxiliares:</div>
+                <div style="border-top:1px solid rgba(255,255,255,0.06); padding-top:14px; margin-top:10px;">
+                    <div style="font-size:10px; font-weight:800; color:#cbd5e1; margin-bottom:10px; text-transform:uppercase;">👨‍⚖️ Jueces Auxiliares (Mesas Adicionales):</div>
                     <div id="contenedor-jueces-externos" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
-                    <p style="font-size:11px; color:#a0a5b1; margin:8px 0 0 0;">* El sistema asignará automáticamente como Juez al jugador que descansa en cada grupo o ronda. Si faltan jueces, usará los nombres configurados arriba.</p>
+                    <p style="font-size:10px; color:#64748b; margin:10px 0 0 0; font-weight:600; text-transform:uppercase;">* Mesa 1 asignará automáticamente al jugador libre en descanso.</p>
                 </div>
 
-                <button class="btn-sorteo" onclick="recalcularRolPartidos()" style="margin-top:15px; width:100%;">⚡ Calcular Rol de Partidos con Horarios y Jueces</button>
+                <button class="btn-console btn-green" onclick="recalcularRolPartidos()" style="margin-top:18px; width:100%; justify-content:center;">⚡ Calcular Rol de Partidos Completo</button>
             </div>
 
             <div id="contenedor-grupos" class="grupos-grid"></div>
 
-            <button id="btn-guardar-grupos" class="btn-guardar" style="display:none;" onclick="guardarGruposBD()">💾 Guardar Acomodo Definitivo en Base de Datos</button>
+            <button id="btn-guardar-grupos" class="btn-console btn-green" style="display:none; width:100%; justify-content:center; margin-top:20px; padding:14px;" onclick="guardarGruposBD()">💾 Guardar Acomodo en Base de Datos</button>
         </div>
 
-        <div class="container" id="seccion-partidos-rr" style="display: none;">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #232738; padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
-                <h2 style="border:none; margin:0;">📋 Rol Oficial de Partidos</h2>
+        <!-- SECCIÓN ROL DE PARTIDOS Y EXPORTACIÓN -->
+        <div class="panel-3d panel-purple" id="seccion-partidos-rr" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 14px; flex-wrap: wrap; gap: 12px;">
+                <h2 style="border:none; margin:0; padding:0;">📋 Rol Oficial de Partidos</h2>
                 
                 <div class="no-print" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <button class="btn-ws" onclick="compartirRolWhatsApp()">📲 Enviar por WhatsApp</button>
-                    <button class="btn-negro" onclick="imprimirRolPDF()">🖨️ PDF / Imprimir</button>
-                    <button class="btn-verde" onclick="exportarRolExcel()">📊 Exportar a Excel</button>
+                    <button class="btn-console btn-ws-style" onclick="compartirRolWhatsApp()">📲 Enviar por WhatsApp</button>
+                    <button class="btn-console" onclick="imprimirRolPDF()">🖨️ PDF / Imprimir</button>
+                    <button class="btn-console btn-green" onclick="exportarRolExcel()">📊 Excel</button>
                     
-                    <select id="select-filtro-jugador-partidos" onchange="filtrarPartidosPorJugador(this.value)" style="margin-left:10px;">
+                    <select id="select-filtro-jugador-partidos" onchange="filtrarPartidosPorJugador(this.value)" style="margin-left:8px; min-width: 180px;">
                         <option value="TODOS">-- Todos los Jugadores --</option>
                     </select>
                 </div>
             </div>
 
-            <p class="no-print" style="font-size:13px; color:#a0a5b1; margin-top:10px;">Haz clic sobre cualquier jugador arriba para filtrar sus partidos y enviar su agenda individual por WhatsApp.</p>
+            <p class="no-print" style="font-size:10px; color:#64748b; margin-top:12px; font-weight:700; text-transform:uppercase;">Filtra un jugador arriba para enviar su agenda individual por WhatsApp.</p>
 
             <table>
                 <thead>
@@ -212,14 +287,15 @@
                     </tr>
                 </thead>
                 <tbody id="tabla-partidos-rr">
-                    <tr><td colspan="7" style="text-align:center; color:#a0a5b1;">Genera la tabla para ver el rol de partidos.</td></tr>
+                    <tr><td colspan="7" class="mensaje-vacio">Genera la tabla para ver el rol de partidos.</td></tr>
                 </tbody>
             </table>
         </div>
 
-        <div class="container" id="seccion-llaves-eliminatoria" style="display: none;">
-            <h2>🏆 Llaves de Eliminatoria Directa (Cuadro Final)</h2>
-            <p style="font-size:13px; color:#a0a5b1; margin-bottom:20px;">Clasifican los <strong>2 mejores jugadores de cada grupo</strong>. Sembrado automático de llaves cruzadas:</p>
+        <!-- LLAVES DE ELIMINATORIA DIRECTA -->
+        <div class="panel-3d panel-amber" id="seccion-llaves-eliminatoria" style="display: none;">
+            <h2>🏆 Llaves de Eliminatoria (Cuadro Final)</h2>
+            <p style="font-size:11px; color:#94a3b8; margin-bottom:20px; font-weight:600;">Clasifican los <strong>2 mejores jugadores de cada grupo</strong>. Sembrado proyectado:</p>
             
             <div class="bracket-container" id="contenedor-grafico-llaves"></div>
         </div>
@@ -242,14 +318,14 @@
             if (torneoData) {
                 torneoActivoObj = torneoData;
                 let textoFormato = torneoData.formato === 'round_robin' ? 'Round Robin Directo (Todos vs Todos)' : 'Fase de Grupos + Eliminatoria';
-                document.getElementById('banner-torneo-info').innerText = `📌 Torneo Seleccionado: ${torneoData.nombre} (${textoFormato})`;
+                document.getElementById('banner-torneo-info').innerText = `📌 Torneo Activo: ${torneoData.nombre} — Formato: ${textoFormato}`;
 
                 if (torneoData.formato === 'round_robin') {
                     document.getElementById('tamano-grupo').style.display = 'none';
-                    document.getElementById('btn-ejecutar-sorteo').innerText = '🎲 Generar Tabla Round Robin';
+                    document.getElementById('btn-ejecutar-sorteo').innerText = 'Generar Tabla Round Robin';
                 } else {
                     document.getElementById('tamano-grupo').style.display = 'inline-block';
-                    document.getElementById('btn-ejecutar-sorteo').innerText = '🎲 Generar Sorteo Serpiente';
+                    document.getElementById('btn-ejecutar-sorteo').innerText = 'Generar Sorteo Serpiente';
                 }
             }
 
@@ -264,11 +340,18 @@
             const container = document.getElementById('contenedor-jueces-externos');
             container.innerHTML = '';
 
-            for (let i = 1; i <= numMesas; i++) {
+            container.innerHTML += `
+                <div style="flex:1; min-width:150px;">
+                    <label style="font-size:9px; color:#34d399; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Mesa 1</label>
+                    <input type="text" value="Auto: Jugador Libre" disabled style="width:100%; font-size:11px; color:#64748b; background:rgba(0,0,0,0.5);">
+                </div>
+            `;
+
+            for (let i = 2; i <= numMesas; i++) {
                 container.innerHTML += `
-                    <div style="flex:1; min-width:140px;">
-                        <label style="font-size:11px; color:#f5a623; display:block; margin-bottom:3px; font-weight:bold;">Mesa ${i} (Juez Auxiliar):</label>
-                        <input type="text" id="juez-ext-mesa-${i}" value="Comité / Juez ${i}" placeholder="Nombre o Comité" style="width:100%; box-sizing:border-box; font-size:12px;">
+                    <div style="flex:1; min-width:150px;">
+                        <label style="font-size:9px; color:#38bdf8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Mesa ${i} (Juez Auxiliar)</label>
+                        <input type="text" id="juez-ext-mesa-${i}" value="Comité / Juez ${i}" style="width:100%;">
                     </div>
                 `;
             }
@@ -301,7 +384,7 @@
 
             if (!idCategoria) { alert("Selecciona una categoría."); return; }
 
-            contenedor.innerHTML = '<p style="text-align:center; width: 100%; color:#a0a5b1;">Generando acomodo...</p>';
+            contenedor.innerHTML = '<p class="mensaje-vacio">Generando acomodo...</p>';
 
             const { data } = await clienteSupabase.from('inscripciones')
                 .select(`jugadores ( id, nombre, puntos_ranking, club )`)
@@ -381,12 +464,12 @@
                     html += `
                         <div class="jugador-item" id="card-jugador-${j.id}" onclick="filtrarPartidosPorJugador(${j.id})">
                             <div class="jugador-info">
-                                <strong style="color:#ffffff;">${j.nombre}</strong>
-                                <div><span class="tag-club">🏠 ${j.club || 'Sin Club'}</span></div>
-                                <span>${j.puntos_ranking} pts (Seed #${j.seedOriginal})</span>
+                                <strong style="color:#ffffff; font-size:12px;">${j.nombre}</strong>
+                                <div><span class="tag-club">${j.club || 'Sin Club'}</span></div>
+                                <span style="color:#c084fc;">${j.puntos_ranking} pts <small style="color:#64748b;">(Seed #${j.seedOriginal})</small></span>
                             </div>
                             ${!esRoundRobin ? `
-                                <select class="select-mover" onclick="event.stopPropagation()" onchange="moverJugador(${j.id},${idxGrupo}, this.value)">
+                                <select class="select-mover" style="padding: 4px 6px; font-size: 10px; width:100px;" onclick="event.stopPropagation()" onchange="moverJugador(${j.id}, ${idxGrupo}, this.value)">
                                     ${gruposGlobal.map((g, index) => `<option value="${index}" ${index === idxGrupo ? 'selected' : ''}>Grupo ${g.nombre}</option>`).join('')}
                                 </select>
                             ` : ''}
@@ -637,22 +720,22 @@
             tbody.innerHTML = '';
 
             if (listaPartidos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:#a0a5b1;">Sin partidos generados.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" class="mensaje-vacio">Sin partidos generados.</td></tr>';
                 return;
             }
 
             listaPartidos.forEach((p, idx) => {
                 tbody.innerHTML += `
                     <tr>
-                        <td><strong style="color:#f5a623;">⏰ ${p.hora}</strong></td>
-                        <td><span class="badge-mesa">🏓 Mesa ${p.mesa}</span></td>
+                        <td><strong style="color:#ffffff;">⏰ ${p.hora}</strong></td>
+                        <td><span class="badge-mesa">Mesa ${p.mesa}</span></td>
                         <td><span class="badge-grupo">Gpo ${p.grupoNombre}</span> <span class="badge-ronda">Rda ${p.ronda}</span></td>
-                        <td><strong style="color:#fff;">${p.j1.nombre}</strong> <small style="color:#a0a5b1;">(${p.j1.club || 'S/C'})</small></td>
-                        <td style="text-align:center; font-weight:bold; color:#f5a623;">VS</td>
-                        <td><strong style="color:#fff;">${p.j2.nombre}</strong> <small style="color:#a0a5b1;">(${p.j2.club || 'S/C'})</small></td>
+                        <td><strong style="color:#ffffff;">${p.j1.nombre}</strong> <small style="color:#64748b;">(${p.j1.club || 'S/C'})</small></td>
+                        <td style="text-align:center; font-weight:800; color:#475569;">VS</td>
+                        <td><strong style="color:#ffffff;">${p.j2.nombre}</strong> <small style="color:#64748b;">(${p.j2.club || 'S/C'})</small></td>
                         <td>
                             <input type="text" value="${p.juez}" onchange="partidosGeneradosRR[${idx}].juez = this.value" 
-                                   style="padding:4px 8px; border:1px solid #323644; background:#0a0b10; color:#25d366; font-weight:bold; font-size:12px; border-radius:6px; width:90%;">
+                                   style="padding:5px 10px; border:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.4); color:#34d399; font-weight:700; font-size:11px; border-radius:8px; width:90%;">
                         </td>
                     </tr>
                 `;
@@ -735,9 +818,7 @@
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
         }
 
-        function imprimirRolPDF() {
-            window.print();
-        }
+        function imprimirRolPDF() { window.print(); }
 
         function exportarRolExcel() {
             if (partidosGeneradosRR.length === 0) { alert("No hay partidos para exportar."); return; }
@@ -802,13 +883,13 @@
             if (error) {
                 alert("Error al guardar.");
                 btn.disabled = false;
-                btn.innerText = "💾 Guardar Acomodo Definitivo en Base de Datos";
+                btn.innerText = "Guardar Acomodo Definitivo en Base de Datos";
                 return;
             }
 
             alert("✅ ¡Acomodo y rol guardados con éxito!");
             btn.disabled = false;
-            btn.innerText = "💾 Guardar Acomodo Definitivo en Base de Datos";
+            btn.innerText = "Guardar Acomodo Definitivo en Base de Datos";
         }
 
         inicializarSorteo();
