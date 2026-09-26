@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -108,7 +107,7 @@
                 </div>
             </div>
 
-            <!-- MÓDULO CONFIGURACIÓN DE HORARIOS Y MESAS CON JUECES EXTERNOS -->
+            <!-- MÓDULO CONFIGURACIÓN DE HORARIOS Y MESAS -->
             <div id="panel-config-horarios" style="display: none; background: #0e0f12; border: 1px solid #323644; padding: 18px; border-radius: 10px; margin-top: 15px;">
                 <h3 style="margin-top:0; font-size:15px; color:#f5a623;">⚙️ Configuración de Horarios y Jueces Externos</h3>
                 
@@ -135,11 +134,10 @@
                     </div>
                 </div>
 
-                <!-- JUECES EXTERNOS PARA MESAS SECUNDARIAS -->
                 <div style="border-top:1px solid #323644; padding-top:12px; margin-top:5px;">
                     <div style="font-size:12px; font-weight:bold; color:#f5a623; margin-bottom:8px;">👨‍⚖️ Asignación de Jueces para Mesas Adicionales:</div>
                     <div id="contenedor-jueces-externos" style="display:flex; flex-wrap:wrap; gap:10px;"></div>
-                    <p style="font-size:11px; color:#a0a5b1; margin:8px 0 0 0;">* Mesa 1 tomará automáticamente al jugador que descansa en cada ronda. Para las demás mesas se usarán los nombres externos configurados arriba.</p>
+                    <p style="font-size:11px; color:#a0a5b1; margin:8px 0 0 0;">* Mesa 1 asignará automáticamente al jugador que descansa en esa ronda. Para las demás mesas se utilizarán las opciones configuradas arriba.</p>
                 </div>
 
                 <button class="btn-sorteo" onclick="recalcularRolPartidos()" style="margin-top:15px; width:100%;">⚡ Generar Rol de Partidos con Horarios y Jueces</button>
@@ -150,7 +148,7 @@
             <button id="btn-guardar-grupos" class="btn-guardar" style="display:none;" onclick="guardarGruposBD()">💾 Guardar Acomodo Definitivo en Base de Datos</button>
         </div>
 
-        <!-- SECCIÓN ROL DE PARTIDOS Y EXPORTACIÓN (WHATSAPP, PDF, EXCEL) -->
+        <!-- SECCIÓN ROL DE PARTIDOS Y EXPORTACIÓN -->
         <div class="container" id="seccion-partidos-rr" style="display: none;">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2d37; padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                 <h2 style="border:none; margin:0;">📋 Rol Oficial de Partidos</h2>
@@ -166,7 +164,7 @@
                 </div>
             </div>
 
-            <p class="no-print" style="font-size:13px; color:#a0a5b1; margin-top:10px;">Haz clic sobre cualquier jugador en la lista para ver exclusivamente sus partidos asignados.</p>
+            <p class="no-print" style="font-size:13px; color:#a0a5b1; margin-top:10px;">Haz clic sobre cualquier jugador en la lista para filtrar sus partidos y enviar su agenda individual por WhatsApp.</p>
 
             <table>
                 <thead>
@@ -229,7 +227,6 @@
             const container = document.getElementById('contenedor-jueces-externos');
             container.innerHTML = '';
 
-            // La Mesa 1 usa al jugador que descansa automáticamente
             container.innerHTML += `
                 <div style="flex:1; min-width:140px;">
                     <label style="font-size:11px; color:#28a745; display:block; margin-bottom:3px; font-weight:bold;">Mesa 1:</label>
@@ -429,9 +426,6 @@
                         breakAplicado = true;
                     }
 
-                    // ASIGNACIÓN LÓGICA DE JUEZ:
-                    // Mesa 1: Usa al jugador descansando de esa ronda si existe.
-                    // Mesas >= 2: Lee el campo del Juez Externo configurado arriba.
                     let nombreJuez = 'Comité / Auto-arbitraje';
 
                     if (mesaActual === 1 && descansando) {
@@ -510,26 +504,64 @@
             }
         }
 
+        // ENVÍO INTELIGENTE POR WHATSAPP (GENERAL O INDIVIDUAL CON ALERTA DE JUEZ)
         function compartirRolWhatsApp() {
             if (partidosGeneradosRR.length === 0) { alert("No hay partidos generados para enviar."); return; }
 
+            const idJugadorSel = document.getElementById('select-filtro-jugador-partidos').value;
             const nombreTorneo = torneoActivoObj ? torneoActivoObj.nombre : 'Torneo Oficial';
             const fechaTorneo = torneoActivoObj ? (torneoActivoObj.fecha_evento || '') : '';
 
-            let texto = `🏓 *ROL OFICIAL DE PARTIDOS* 🏓\n` +
-                        `🏆 *${nombreTorneo}*\n` +
+            let texto = '';
+
+            if (idJugadorSel !== 'TODOS') {
+                // MODALIDAD 1: AGENDA PERSONAL DE UN JUGADOR
+                const jugador = jugadoresListos.find(j => j.id == idJugadorSel);
+                const nombreJugador = jugador ? jugador.nombre : 'Jugador';
+
+                texto = `🏓 *AGENDA PERSONAL DE JUEGO* 🏓\n` +
+                        `👤 Jugador: *${nombreJugador}*\n` +
+                        `🏆 Torneo: *${nombreTorneo}*\n` +
                         `📅 Fecha: _${fechaTorneo}_\n\n` +
-                        `📋 *PROGRAMACIÓN DE PARTIDOS:* \n` +
+                        `📋 *TUS PARTIDOS Y TURNOS DE JUEZ:* \n` +
                         `────────────────────────────\n`;
 
-            partidosGeneradosRR.forEach(p => {
-                texto += `⏰ *${p.hora}* | 🏓 *Mesa ${p.mesa}* (Rda ${p.ronda})\n`;
-                texto += `   👤 *${p.j1.nombre}* vs *${p.j2.nombre}*\n`;
-                texto += `   👨‍⚖️ Juez: _${p.juez}_\n\n`;
-            });
+                partidosGeneradosRR.forEach(p => {
+                    let esJugador = (p.j1.id == idJugadorSel || p.j2.id == idJugadorSel);
+                    let esJuez = p.juez.toLowerCase().includes(nombreJugador.toLowerCase());
 
-            texto += `────────────────────────────\n` +
-                     `📌 *Nota:* Se solicita puntualidad a los competidores.`;
+                    if (esJugador) {
+                        let rival = (p.j1.id == idJugadorSel) ? p.j2 : p.j1;
+                        texto += `⚔️ *MESA ${p.mesa}* | ⏰ *${p.hora}* (Rda ${p.ronda})\n`;
+                        texto += `   🏓 VS: *${rival.nombre}* (${rival.club || 'S/C'})\n`;
+                        texto += `   👨‍⚖️ Juez: _${p.juez}_\n\n`;
+                    } else if (esJuez) {
+                        texto += `👨‍⚖️ ⚠️ *TE TOCA ARBITRAR ESTE PARTIDO:* \n`;
+                        texto += `   ⏰ *${p.hora}* | 🏓 *Mesa ${p.mesa}* (Rda ${p.ronda})\n`;
+                        texto += `   ⚔️ Partido: *${p.j1.nombre}* vs *${p.j2.nombre}*\n\n`;
+                    }
+                });
+
+                texto += `────────────────────────────\n` +
+                         `📌 *Nota:* ¡Por favor preséntate 10 minutos antes a tus partidos y turnos de juez!`;
+
+            } else {
+                // MODALIDAD 2: ROL GENERAL DE TODO EL TORNEO
+                texto = `🏓 *ROL OFICIAL DE PARTIDOS* 🏓\n` +
+                        `🏆 *${nombreTorneo}*\n` +
+                        `📅 Fecha: _${fechaTorneo}_\n\n` +
+                        `📋 *PROGRAMACIÓN GENERAL DE PARTIDOS:* \n` +
+                        `────────────────────────────\n`;
+
+                partidosGeneradosRR.forEach(p => {
+                    texto += `⏰ *${p.hora}* | 🏓 *Mesa ${p.mesa}* (Rda ${p.ronda})\n`;
+                    texto += `   👤 *${p.j1.nombre}* vs *${p.j2.nombre}*\n`;
+                    texto += `   👨‍⚖️ Juez: _${p.juez}_\n\n`;
+                });
+
+                texto += `────────────────────────────\n` +
+                         `📌 *Nota:* Se solicita puntualidad a todos los competidores.`;
+            }
 
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
         }
