@@ -6,31 +6,121 @@
     <title>Inscripción al Torneo - Pixel Studio</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; max-width: 520px; margin: auto; background: #0a0b10; color: #ffffff; }
-        
-        /* TARJETA PÚBLICA CON GLOW Y BORDE NEÓN */
-        .formulario { background: #131520; padding: 25px; border-radius: 16px; border: 1px solid #232738; box-shadow: 0 0 30px rgba(0, 242, 254, 0.15); transition: all 0.3s ease; }
-        .formulario:hover { border-color: rgba(0, 242, 254, 0.6); box-shadow: 0 0 35px rgba(0, 242, 254, 0.3); }
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
 
-        .banner-torneo { background: linear-gradient(135deg, #1a1d2a 0%, #131520 100%); border: 1px solid #f5a623; color: white; padding: 16px; border-radius: 12px; text-align: center; margin-bottom: 20px; box-shadow: 0 0 15px rgba(245, 166, 35, 0.2); }
-        .banner-torneo h2 { margin: 0; font-size: 22px; color: #f5a623; text-transform: uppercase; text-shadow: 0 0 8px rgba(245, 166, 35, 0.4); }
-        .banner-torneo p { margin: 5px 0 0 0; font-size: 12px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; color: #00f2fe; }
-
-        label { font-weight: bold; display: block; margin-top: 18px; margin-bottom: 8px; color: #f5a623; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+        /* FONDO OSCURO PROFUNDO (#04060a) */
+        body { 
+            font-family: 'Sora', sans-serif; 
+            padding: 20px; 
+            max-width: 520px; 
+            margin: auto; 
+            background-color: #04060a; 
+            color: #f8fafc; 
+            min-height: 100vh; 
+            position: relative; 
+            overflow-x: hidden; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            box-sizing: border-box;
+        }
         
-        input[type="text"], input[type="password"], select, button { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #2a2f42; background: #0a0b10; color: #fff; font-size: 15px; box-sizing: border-box; transition: all 0.3s ease; }
-        input[type="text"]:focus, input[type="password"]:focus, select:focus { border-color: #00f2fe; outline: none; box-shadow: 0 0 12px rgba(0, 242, 254, 0.5); }
+        /* ORBES ATMOSFÉRICOS DE FONDO */
+        body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 400px; height: 400px; background: #06b6d4; border-radius: 50%; filter: blur(140px); opacity: 0.15; pointer-events: none; z-index: -1; animation: pulse-slow 10s infinite alternate; }
+        body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 500px; height: 500px; background: #8b5cf6; border-radius: 50%; filter: blur(140px); opacity: 0.15; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
+        @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
 
-        .buscador-box { margin-bottom: 10px; }
-        
-        button { background: #28a745; color: white; border: none; margin-top: 22px; cursor: pointer; font-weight: bold; font-size: 16px; text-transform: uppercase; letter-spacing: 0.5px; transition: all 0.3s ease; }
-        button:hover:not(:disabled) { background: #34ce57; box-shadow: 0 0 20px rgba(40, 167, 69, 0.6); }
-        button:disabled { background: #2a2f42; color: #6c757d; border-color: #2a2f42; cursor: not-allowed; opacity: 0.6; }
+        /* CONTENEDOR GLASSMORPHISM CON BISEL 3D */
+        .formulario { 
+            position: relative; 
+            width: 100%;
+            background: rgba(10, 15, 26, 0.55); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px); 
+            border-radius: 20px; 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            border-bottom: 5px solid #0e7490; 
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6); 
+            padding: 28px; 
+            box-sizing: border-box;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-        #info-puntos { color: #00f2fe; font-size: 13px; margin-top: 6px; font-style: italic; }
-        .ya-inscrito { color: #28a745; font-size: 13px; font-weight: bold; margin-top: 6px; text-shadow: 0 0 6px rgba(40, 167, 69, 0.4); }
+        .formulario:hover {
+            border-bottom-color: #06b6d4;
+            box-shadow: 0 25px 45px -10px rgba(6, 182, 212, 0.35);
+        }
+
+        /* BANNER ENCABEZADO TORNEO */
+        .banner-torneo { 
+            background: rgba(15, 23, 42, 0.6); 
+            border: 1px solid rgba(255, 255, 255, 0.08); 
+            color: white; 
+            padding: 18px; 
+            border-radius: 14px; 
+            text-align: center; 
+            margin-bottom: 22px; 
+        }
+        .banner-torneo h2 { margin: 0; font-size: 18px; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
+        .banner-torneo p { margin: 6px 0 0 0; font-size: 10px; color: #38bdf8; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; }
+
+        label { font-weight: 800; display: block; margin-top: 18px; margin-bottom: 8px; color: #ffffff; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
         
-        .caja-seguridad { background: #1a1d2a; padding: 16px; border-radius: 10px; border: 1px solid #f5a623; margin-top: 18px; display: none; box-shadow: 0 0 15px rgba(245, 166, 35, 0.15); }
+        /* INPUTS Y SELECTS DE ALTA VISIBILIDAD */
+        input[type="text"], input[type="password"], select { 
+            width: 100%; 
+            padding: 11px 14px; 
+            border-radius: 10px; 
+            border: 1px solid rgba(255, 255, 255, 0.18) !important; 
+            background: rgba(10, 15, 26, 0.85) !important; 
+            color: #ffffff !important; 
+            font-size: 12px; 
+            font-family: 'Sora', sans-serif;
+            font-weight: 600;
+            box-sizing: border-box; 
+            transition: all 0.2s ease; 
+        }
+
+        select option { background-color: #0a0b10 !important; color: #ffffff !important; padding: 10px; }
+
+        input[type="text"]:focus, input[type="password"]:focus, select:focus { 
+            border-color: #38bdf8 !important; 
+            outline: none; 
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.55); 
+        }
+
+        /* BOTÓN PÍLDORA DE ACCIÓN */
+        .btn-submit { 
+            width: 100%;
+            margin-top: 24px;
+            padding: 14px; 
+            background: rgba(16, 185, 129, 0.15); 
+            color: #34d399; 
+            border: 1px solid rgba(16, 185, 129, 0.5); 
+            border-radius: 9999px; 
+            font-size: 11px; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px; 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            font-family: 'Sora', sans-serif;
+        }
+
+        .btn-submit:hover:not(:disabled) { 
+            background: #10b981; 
+            color: #000000; 
+            border-color: #34d399; 
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.85); 
+            transform: translateY(-2px); 
+        }
+
+        .btn-submit:disabled { background: rgba(255,255,255,0.03); color: #64748b; border-color: rgba(255,255,255,0.06); cursor: not-allowed; opacity: 0.6; }
+
+        #info-puntos { color: #38bdf8; font-size: 11px; margin-top: 6px; font-weight: 700; }
+        .ya-inscrito { color: #34d399; font-size: 11px; font-weight: 700; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .caja-seguridad { background: rgba(15, 23, 42, 0.5); padding: 16px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.4); margin-top: 18px; display: none; }
     </style>
 </head>
 <body>
@@ -43,10 +133,10 @@
         </div>
         
         <label>1. Busca y selecciona tu nombre:</label>
-        <div class="buscador-box">
+        <div style="margin-bottom: 8px;">
             <input type="text" id="buscador" placeholder="🔎 Escribe tu nombre o apellido..." onkeyup="filtrarJugadores()">
         </div>
-        <select id="select-jugador" onchange="evaluarCategorias()" size="4" style="margin-bottom: 10px;">
+        <select id="select-jugador" onchange="evaluarCategorias()" size="4" style="margin-bottom: 8px;">
             <option value="">Cargando base de datos...</option>
         </select>
         <div id="info-puntos"></div>
@@ -58,12 +148,12 @@
         </select>
 
         <div id="caja-nip" class="caja-seguridad">
-            <label for="nip-jugador" style="margin-top: 0; color:#f5a623;">🔒 3. Ingresa tu NIP de seguridad:</label>
+            <label for="nip-jugador" style="margin-top: 0; color:#fbbf24;">🔒 3. Ingresa tu NIP de seguridad:</label>
             <input type="password" id="nip-jugador" maxlength="4" placeholder="Ej. 1234">
-            <div style="font-size: 11px; color: #a0a5b1; margin-top: 6px;">*Tu NIP por defecto es 1234.</div>
+            <div style="font-size: 10px; color: #94a3b8; margin-top: 6px; font-weight:600;">*Tu NIP por defecto es 1234.</div>
         </div>
 
-        <button id="btn-inscribir" disabled onclick="inscribirJugador()">Reservar mi lugar (Pendiente de Pago)</button>
+        <button id="btn-inscribir" class="btn-submit" disabled onclick="inscribirJugador()">Reservar mi lugar (Pendiente de Pago)</button>
     </div>
 
     <script>
