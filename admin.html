@@ -14,10 +14,10 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
 
-        /* FONDO GRIS GRAFITO / PIZARRA OSCURO */
+        /* FONDO GRAFITO / PIZARRA OSCURO */
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 0; background-color: #0b0f19; color: #f8fafc; min-height: 100vh; position: relative; overflow-x: hidden; }
         
-        /* ORBES ATMOSFÉRICOS DE FONDO CON +20% DE INTENSIDAD EN LUZ */
+        /* ORBES ATMOSFÉRICOS DE FONDO MULTICOLOR */
         body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.15; pointer-events: none; z-index: -1; animation: pulse-slow 10s infinite alternate; }
         body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.15; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
         @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
@@ -29,15 +29,14 @@
         .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
         .nav-btn { color: #94a3b8; text-decoration: none; padding: 8px 18px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* HOVER NAVEGACIÓN NEÓN (+20% RESPLANDOR) */
         .nav-btn:hover { color: #000000; background: #f5a623; border-color: #f5a623; box-shadow: 0 0 25px rgba(245, 166, 35, 0.8); transform: translateY(-2px); }
         .nav-btn.active { color: #ffffff; border-color: #8b5cf6; background: rgba(139, 92, 246, 0.3); box-shadow: 0 0 15px rgba(139, 92, 246, 0.4); }
         .nav-btn.public { color: #34d399; border-color: rgba(16, 185, 129, 0.5); }
         .nav-btn.public:hover { color: #000000; background: #10b981; border-color: #10b981; box-shadow: 0 0 25px rgba(16, 185, 129, 0.8); }
 
         .main-content { padding: 30px; max-width: 1100px; margin: auto; position: relative; z-index: 10; }
-        
-        /* PANEL 3D CON CRISTAL Y RESPLANDOR DE LUZ (+20% HOVER) */
+
+        /* BASE GENERAL DE PANEL 3D GLASSMORPHISM */
         .panel-3d { 
             position: relative; 
             background: rgba(30, 41, 59, 0.55); 
@@ -45,52 +44,48 @@
             -webkit-backdrop-filter: blur(20px); 
             border-radius: 20px; 
             border: 1px solid rgba(255, 255, 255, 0.1); 
-            border-bottom: 5px solid #1e293b; 
             box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5); 
             padding: 26px; 
             margin-bottom: 26px; 
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
+
+        /* Variantes de Color por Módulo (Estilo Plex/Jellyfin/Emby) */
         
-        .panel-3d:hover { 
-            transform: translateY(-3px); 
-            border-bottom-color: #a855f7; 
-            box-shadow: 0 18px 40px -5px rgba(168, 85, 247, 0.45); /* +20% luz */
-        }
+        /* 1. MÓDULO CIAN (TORNEO ACTIVO BANNER) */
+        .panel-cyan { border-bottom: 5px solid #0e7490; }
+        .panel-cyan:hover { transform: translateY(-3px); border-bottom-color: #06b6d4; box-shadow: 0 18px 40px -5px rgba(6, 182, 212, 0.5); }
+        .panel-cyan:hover h3, .panel-cyan:hover h2 { color: #38bdf8 !important; text-shadow: 0 0 16px rgba(56, 189, 248, 0.9); }
 
-        .panel-3d:hover h2 {
-            color: #d8b4fe !important;
-            text-shadow: 0 0 16px rgba(192, 132, 252, 0.85); /* +20% texto brillante */
-        }
+        /* 2. MÓDULO ESMERALDA (INSCRITOS EN VIVO) */
+        .panel-emerald { border-bottom: 5px solid #064e3b; }
+        .panel-emerald:hover { transform: translateY(-3px); border-bottom-color: #10b981; box-shadow: 0 18px 40px -5px rgba(16, 185, 129, 0.5); }
+        .panel-emerald:hover h2 { color: #34d399 !important; text-shadow: 0 0 16px rgba(52, 211, 153, 0.9); }
 
-        /* BANNER CON BISEL 3D CIAN (+20% LUZ EN HOVER) */
-        .banner-torneo-3d { 
-            position: relative; 
-            background: rgba(30, 41, 59, 0.7); 
-            backdrop-filter: blur(20px); 
-            border: 1px solid rgba(255, 255, 255, 0.12); 
-            border-bottom: 5px solid #0e7490; 
-            border-radius: 20px; 
-            padding: 20px 28px; 
-            margin-bottom: 28px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            flex-wrap: wrap; 
-            gap: 16px; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        /* 3. MÓDULO ÁMBAR / DORADO (VALIDACIÓN DE PAGOS) */
+        .panel-amber { border-bottom: 5px solid #451a03; }
+        .panel-amber:hover { transform: translateY(-3px); border-bottom-color: #f59e0b; box-shadow: 0 18px 40px -5px rgba(245, 158, 11, 0.5); }
+        .panel-amber:hover h2 { color: #fbbf24 !important; text-shadow: 0 0 16px rgba(251, 191, 36, 0.9); }
 
-        .banner-torneo-3d:hover { 
-            transform: translateY(-3px); 
-            border-bottom-color: #06b6d4; 
-            box-shadow: 0 18px 40px -5px rgba(6, 182, 212, 0.5); /* +20% luz */
-        }
+        /* 4. MÓDULO MORADO / VIOLETA (BASE DE DATOS JUGADORES) */
+        .panel-purple { border-bottom: 5px solid #2e1065; }
+        .panel-purple:hover { transform: translateY(-3px); border-bottom-color: #8b5cf6; box-shadow: 0 18px 40px -5px rgba(139, 92, 246, 0.5); }
+        .panel-purple:hover h2 { color: #c084fc !important; text-shadow: 0 0 16px rgba(192, 132, 252, 0.9); }
 
-        .banner-torneo-3d:hover h3 {
-            color: #38bdf8 !important;
-            text-shadow: 0 0 18px rgba(56, 189, 248, 0.9); /* +20% texto cian */
-        }
+        /* 5. MÓDULO AZUL TÉCNICO (CLUBS / EQUIPOS) */
+        .panel-blue { border-bottom: 5px solid #1e3a8a; }
+        .panel-blue:hover { transform: translateY(-3px); border-bottom-color: #3b82f6; box-shadow: 0 18px 40px -5px rgba(59, 130, 246, 0.5); }
+        .panel-blue:hover h2 { color: #60a5fa !important; text-shadow: 0 0 16px rgba(96, 165, 250, 0.9); }
+
+        /* 6. MÓDULO ROSA / MAGENTA (GESTIÓN DE CATEGORÍAS) */
+        .panel-pink { border-bottom: 5px solid #500724; }
+        .panel-pink:hover { transform: translateY(-3px); border-bottom-color: #ec4899; box-shadow: 0 18px 40px -5px rgba(236, 72, 153, 0.5); }
+        .panel-pink:hover h2 { color: #f472b6 !important; text-shadow: 0 0 16px rgba(244, 114, 182, 0.9); }
+
+        /* 7. MÓDULO ROJO NEÓN (REGLAS DE PUNTUACIÓN Y RANKING) */
+        .panel-red { border-bottom: 5px solid #450a0a; }
+        .panel-red:hover { transform: translateY(-3px); border-bottom-color: #ef4444; box-shadow: 0 18px 40px -5px rgba(239, 68, 68, 0.5); }
+        .panel-red:hover h2 { color: #f87171 !important; text-shadow: 0 0 16px rgba(248, 113, 113, 0.9); }
 
         h2, h3 { color: #ffffff; margin-top: 0; padding-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 20px; transition: all 0.3s ease; }
         
@@ -121,7 +116,7 @@
             box-shadow: 0 0 16px rgba(56, 189, 248, 0.55); 
         }
         
-        /* BOTONES PÍLDORA INTERACTIVOS (+20% LUZ AL ENTRAR EL MOUSE) */
+        /* BOTONES PÍLDORA INTERACTIVOS */
         .btn-console { 
             display: inline-flex;
             align-items: center;
@@ -144,18 +139,20 @@
             background: #06b6d4; 
             color: #000000; 
             border-color: #38bdf8; 
-            box-shadow: 0 0 25px rgba(6, 182, 212, 0.85); /* +20% halo */
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.85); 
             transform: translateY(-2px); 
         }
         
         .btn-gold:hover { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 25px rgba(245, 158, 11, 0.85); }
         .btn-purple:hover { background: #8b5cf6; color: #ffffff; border-color: #c084fc; box-shadow: 0 0 25px rgba(139, 92, 246, 0.85); }
+        .btn-pink:hover { background: #ec4899; color: #ffffff; border-color: #f472b6; box-shadow: 0 0 25px rgba(236, 72, 153, 0.85); }
+        .btn-blue:hover { background: #3b82f6; color: #ffffff; border-color: #60a5fa; box-shadow: 0 0 25px rgba(59, 130, 246, 0.85); }
         .btn-red:hover { background: #ef4444; color: #ffffff; border-color: #f87171; box-shadow: 0 0 25px rgba(239, 68, 68, 0.85); }
         .btn-green:hover { background: #10b981; color: #000000; border-color: #34d399; box-shadow: 0 0 25px rgba(16, 185, 129, 0.85); }
         .btn-ws-style { border-color: rgba(34, 197, 94, 0.5); color: #4ade80; }
         .btn-ws-style:hover { background: #22c55e; color: #000000; border-color: #22c55e; box-shadow: 0 0 25px rgba(34, 197, 94, 0.85); }
         
-        /* TABLAS - RESALTADO EN FILA (+20% INTENSIDAD EN HOVER) */
+        /* TABLAS - RESALTADO EN FILA */
         table { width: 100%; border-collapse: separate; border-spacing: 0 6px; margin-top: 10px; font-size: 12px; }
         th { color: #94a3b8; text-transform: uppercase; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; padding: 0 12px 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
         
@@ -206,19 +203,21 @@
 
     <div class="main-content">
         
-        <div class="banner-torneo-3d no-print">
+        <!-- BANNER TORNEO - CIAN -->
+        <div class="panel-3d panel-cyan no-print" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding: 20px 28px;">
             <div>
-                <span style="font-size: 9px; font-weight: 800; text-transform: uppercase; color:#a855f7; letter-spacing: 2px;">Torneo Activo en el Sistema</span>
+                <span style="font-size: 9px; font-weight: 800; text-transform: uppercase; color:#38bdf8; letter-spacing: 2px;">Torneo Activo en el Sistema</span>
                 <h3 id="nombre-torneo-banner" style="margin: 4px 0 0 0; border: none; padding: 0; color:#ffffff; font-size:18px; letter-spacing: 1px;">Cargando...</h3>
             </div>
             <button class="btn-console btn-ws-style" onclick="compartirLinkInscripcionWS()">📲 LINK DE INSCRIPCIÓN</button>
         </div>
 
-        <div class="panel-3d no-print">
+        <!-- INSCRITOS EN VIVO - ESMERALDA -->
+        <div class="panel-3d panel-emerald no-print">
             <h2>📋 Inscritos en el Torneo Activo</h2>
             <div style="display: flex; gap: 30px; margin-bottom: 18px; font-size: 11px; color:#94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
                 <div>Total Registrados: <strong id="cant-registrados" style="color:#ffffff; font-size: 14px; margin-left: 6px;">0</strong></div>
-                <div>Confirmados: <strong id="cant-pagados" style="color:#38bdf8; font-size: 14px; margin-left: 6px;">0</strong></div>
+                <div>Confirmados: <strong id="cant-pagados" style="color:#34d399; font-size: 14px; margin-left: 6px;">0</strong></div>
             </div>
             <table>
                 <thead>
@@ -236,7 +235,8 @@
             </table>
         </div>
 
-        <div class="panel-3d no-print">
+        <!-- VALIDACIÓN DE PAGOS PENDIENTES - ÁMBAR / DORADO -->
+        <div class="panel-3d panel-amber no-print">
             <h2>💰 Validación de Pagos Pendientes</h2>
             <table>
                 <thead><tr><th>Jugador</th><th>Categoría</th><th>Ranking</th><th>Acción</th></tr></thead>
@@ -244,7 +244,8 @@
             </table>
         </div>
 
-        <div class="panel-3d no-print">
+        <!-- BASE DE DATOS DE JUGADORES - MORADO -->
+        <div class="panel-3d panel-purple no-print">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 14px; flex-wrap: wrap; gap: 12px;">
                 <h2 style="border: none; margin: 0; padding: 0;">👥 Base de Datos de Jugadores</h2>
                 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
@@ -278,13 +279,15 @@
             </div>
         </div>
 
-        <div class="panel-3d" id="seccion-print" style="display: none;">
+        <!-- SECCIÓN RANKING REPORTE -->
+        <div class="panel-3d panel-purple" id="seccion-print" style="display: none;">
             <h2 style="text-align: center; color:#ffffff; font-size: 16px; letter-spacing: 2px;">RANKING OFICIAL DE JUGADORES</h2>
             <p style="text-align: center; font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 1px;" id="fecha-impresion"></p>
             <div id="contenedor-ranking-categorias">Cargando ranking...</div>
         </div>
 
-        <div class="panel-3d no-print">
+        <!-- GESTIÓN DE CLUBS / EQUIPOS - AZUL TÉCNICO -->
+        <div class="panel-3d panel-blue no-print">
             <h2>🏡 Gestión de Clubs / Equipos</h2>
             <div class="form-row" style="margin-bottom: 18px;">
                 <input type="text" id="nuevo-nombre-club" placeholder="Nombre del Club (Ej. Halcones Xalapa)">
@@ -296,13 +299,14 @@
             </table>
         </div>
 
-        <div class="panel-3d no-print">
+        <!-- GESTIÓN DE CATEGORÍAS - ROSA MAGENTA -->
+        <div class="panel-3d panel-pink no-print">
             <h2>🏷️ Gestión de Categorías</h2>
             <div class="form-row" style="margin-bottom: 18px;">
                 <input type="text" id="nueva-cat-nombre" placeholder="Nombre de categoría">
                 <input type="number" id="nueva-cat-min" placeholder="Pts Min" style="max-width: 100px;">
                 <input type="number" id="nueva-cat-max" placeholder="Pts Max" style="max-width: 100px;">
-                <button class="btn-console" onclick="crearCategoria()">Añadir Categoría</button>
+                <button class="btn-console btn-pink" onclick="crearCategoria()">Añadir Categoría</button>
             </div>
             <table>
                 <thead><tr><th>Categoría</th><th>Mínimo (Piso)</th><th>Máximo (Techo)</th><th>Acción</th></tr></thead>
@@ -310,7 +314,8 @@
             </table>
         </div>
 
-        <div class="panel-3d no-print">
+        <!-- REGLAS DE PUNTUACIÓN - ROJO NEÓN -->
+        <div class="panel-3d panel-red no-print">
             <h2>📈 Reglas de Puntuación</h2>
             <table>
                 <thead><tr><th>Dif. de Puntos</th><th>Escenario del Partido</th><th>Ganador (+)</th><th>Perdedor (-)</th><th>Acción</th></tr></thead>
