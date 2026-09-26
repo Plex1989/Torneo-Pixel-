@@ -3,59 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cronograma de Partidos y WhatsApp</title>
+    <title>Horarios y Difusión WS - Central</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // GUARDIA DE SEGURIDAD GLOBAL
+        if (localStorage.getItem('admin_autenticado') !== 'true') {
+            alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
+            window.location.href = "torneos.html";
+        }
+    </script>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; background: #eef2f5; max-width: 1100px; margin: auto; }
-        .container { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        h2 { color: #333; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 0; }
-        .controles { margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px; border: 1px solid #ddd; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; }
-        select, input, button { padding: 8px 12px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; }
-        .btn-generar { background: #007bff; color: white; border: none; font-weight: bold; cursor: pointer; }
-        .btn-generar:hover { background: #0056b3; }
-        .btn-ws { background: #25d366; color: white; border: none; font-weight: bold; cursor: pointer; padding: 5px 10px; border-radius: 4px; font-size: 12px; }
-        .btn-ws:hover { background: #1ebc57; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #0e0f12; color: #ffffff; }
+        
+        /* BARRA DE NAVEGACIÓN SUPERIOR UNIFICADA */
+        .navbar { background: #181a20; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2d37; flex-wrap: wrap; gap: 10px; }
+        .nav-title { font-weight: 800; font-size: 18px; color: #f5a623; letter-spacing: 1px; }
+        .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
+        .nav-btn { color: #a0a5b1; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; background: #232630; border: 1px solid #323644; transition: 0.2s; }
+        .nav-btn:hover { background: #f5a623; color: #000; border-color: #f5a623; }
+        .nav-btn.active { background: #f5a623; color: #000000; border-color: #f5a623; }
+        .nav-btn.public { background: #28a745; color: white; border-color: #28a745; }
+
+        .main-content { padding: 25px; max-width: 1100px; margin: auto; }
+        .container { background: #181a20; padding: 25px; border-radius: 12px; border: 1px solid #2a2d37; margin-bottom: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        h2, h3 { color: #f5a623; margin-top: 0; border-bottom: 1px solid #2a2d37; padding-bottom: 12px; font-size: 18px; text-transform: uppercase; }
+        
+        .banner-torneo { background: linear-gradient(135deg, #181a20 0%, #232630 100%); border: 1px solid #f5a623; color: #ffffff; padding: 18px 20px; border-radius: 10px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+
+        .form-row { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+        .form-row input, .form-row select { flex: 1; padding: 10px 12px; border: 1px solid #323644; background: #0e0f12; color: #fff; border-radius: 6px; min-width: 150px; font-size: 14px; }
+        .form-row input:focus, .form-row select:focus { border-color: #f5a623; outline: none; }
+
+        .btn-accion { color: #000; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; }
+        .btn-dorado { background: #f5a623; color: #000; } .btn-dorado:hover { background: #d98c18; }
+        .btn-verde { background: #28a745; color: white; } .btn-verde:hover { background: #218838; }
+        .btn-ws { background: #25d366; color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; } .btn-ws:hover { background: #1ebc57; }
+
+        .caja-preview { background: #0e0f12; border: 1px solid #323644; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 13px; color: #25d366; white-space: pre-wrap; margin-top: 15px; max-height: 350px; overflow-y: auto; }
+        
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-        th { background-color: #343a40; color: white; }
-        .tag-grupo { background: #6c757d; color: white; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #2a2d37; }
+        th { background-color: #232630; color: #f5a623; text-transform: uppercase; font-size: 12px; font-weight: bold; }
+        .mensaje-vacio { text-align: center; color: #a0a5b1; font-style: italic; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>📅 Programación de Partidos y Envíos por WhatsApp</h2>
+
+    <!-- BARRA DE NAVEGACIÓN SUPERIOR -->
+    <nav class="navbar">
+        <div class="nav-title">🏆 CENTRAL DE TORNEOS</div>
+        <div class="nav-links">
+            <a href="torneos.html" class="nav-btn">📂 Mis Torneos</a>
+            <a href="admin.html" class="nav-btn">⚙️ Administrador</a>
+            <a href="sorteo.html" class="nav-btn">🧠 Sorteo</a>
+            <a href="horarios.html" class="nav-btn active">📅 Horarios WS</a>
+            <a href="index.html" target="_blank" class="nav-btn public">🌐 Portal Público</a>
+            <button onclick="cerrarSesionAdmin()" class="nav-btn" style="background:#dc3545; color:white; border:none; cursor:pointer;">🔒 Salir</button>
+        </div>
+    </nav>
+
+    <div class="main-content">
         
-        <div class="controles">
-            <select id="filtro-categoria">
-                <option value="">Cargando categorías...</option>
-            </select>
-            
-            <label>Hora Inicio:</label>
-            <input type="time" id="hora-inicio" value="09:00">
-
-            <label>Minutos/Partido:</label>
-            <input type="number" id="duracion-partido" value="20" style="width: 60px;">
-
-            <label>Mesas Disp.:</label>
-            <input type="number" id="num-mesas" value="4" style="width: 60px;">
-
-            <button class="btn-generar" onclick="generarCronograma()">⚡ Generar Horarios</button>
+        <!-- BANNER DEL TORNEO ACTIVO -->
+        <div class="banner-torneo">
+            <div>
+                <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; color:#f5a623;">Torneo Seleccionado:</span>
+                <h3 id="nombre-torneo-banner" style="margin: 3px 0 0 0; border: none; padding: 0; color:#fff; font-size:22px;">Cargando...</h3>
+            </div>
+            <button class="btn-ws" onclick="enviarProgramacionWhatsApp()">📲 Publicar Horarios por WhatsApp</button>
         </div>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Hora</th>
-                    <th>Mesa</th>
-                    <th>Grupo</th>
-                    <th>Enfrentamiento</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody id="tabla-partidos">
-                <tr><td colspan="5" style="text-align: center; color: #777;">Selecciona una categoría y genera los horarios.</td></tr>
-            </tbody>
-        </table>
+        <!-- MÓDULO PROGRAMACIÓN DE CATEGORÍAS -->
+        <div class="container">
+            <h2>📅 Asignación de Horarios por Categoría</h2>
+            <p style="font-size: 13px; color: #a0a5b1; margin-bottom: 15px;">Define la hora de llamada y mesas asignadas para cada categoría del torneo activo:</p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Categoría</th>
+                        <th>Hora de Llamada</th>
+                        <th>Mesas Asignadas</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-horarios">
+                    <tr><td colspan="4" class="mensaje-vacio">Cargando categorías...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- VISTA PREVIA DEL MENSAJE DE WHATSAPP -->
+        <div class="container">
+            <h2>📲 Vista Previa del Mensaje para Grupos de WhatsApp</h2>
+            <p style="font-size: 13px; color: #a0a5b1;">Este es el texto exacto con formato negrita y emojies que se enviará a los participantes:</p>
+            <div id="vista-previa-ws" class="caja-preview">Generando mensaje...</div>
+        </div>
+
     </div>
 
     <script>
@@ -63,121 +107,118 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        let partidosGenerados = [];
+        let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
+        let torneoActivoObj = null;
+        let categoriasList = [];
+        let horariosGuardados = {};
 
-        async function inicializar() {
-            const { data } = await clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true });
-            const select = document.getElementById('filtro-categoria');
-            select.innerHTML = '<option value="">-- Selecciona Categoría --</option>';
-            if (data) data.forEach(c => select.innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
+        function cerrarSesionAdmin() {
+            localStorage.removeItem('admin_autenticado');
+            window.location.reload();
         }
 
-        async function generarCronograma() {
-            const idCat = document.getElementById('filtro-categoria').value;
-            if (!idCat) { alert("Selecciona una categoría."); return; }
+        async function inicializarHorarios() {
+            // Cargar Torneo Activo
+            const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
+            if (torneoData) {
+                torneoActivoObj = torneoData;
+                document.getElementById('nombre-torneo-banner').innerText = `${torneoData.nombre} (${torneoData.fecha_evento || 'Sin fecha'})`;
+            } else {
+                document.getElementById('nombre-torneo-banner').innerText = "Sin torneo activo seleccionado";
+            }
 
-            const { data: grupos, error } = await clienteSupabase
-                .from('grupos_torneo')
-                .select(`nombre_grupo, jugador_id, jugadores ( nombre, club )`)
-                .eq('categoria_id', idCat);
+            // Cargar Categorías
+            const { data: catData } = await clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true });
+            categoriasList = catData || [];
 
-            if (error || !grupos || grupos.length === 0) {
-                alert("No hay grupos guardados para esta categoría. Ve a sorteo.html y guarda los grupos primero.");
+            // Cargar Horarios de localStorage específicos para este torneo
+            const claveStorage = `horarios_torneo_${idTorneoActivo}`;
+            horariosGuardados = JSON.parse(localStorage.getItem(claveStorage)) || {};
+
+            dibujarTablaHorarios();
+            generarTextoWhatsApp();
+        }
+
+        function dibujarTablaHorarios() {
+            const tbody = document.getElementById('tabla-horarios');
+            tbody.innerHTML = '';
+
+            if (categoriasList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="mensaje-vacio">No hay categorías configuradas.</td></tr>';
                 return;
             }
 
-            // Agrupar jugadores por su letra de grupo (A, B, C...)
-            const gruposMap = {};
-            grupos.forEach(item => {
-                if (!gruposMap[item.nombre_grupo]) gruposMap[item.nombre_grupo] = [];
-                gruposMap[item.nombre_grupo].push(item.jugadores);
-            });
+            categoriasList.forEach(cat => {
+                const hConfig = horariosGuardados[cat.id] || { hora: '09:00', mesas: 'Mesas 1-4' };
 
-            // Generar todos los cruces de Round-Robin (todos contra todos)
-            let partidosRaw = [];
-            Object.keys(gruposMap).sort().forEach(letra => {
-                const lista = gruposMap[letra];
-                for (let i = 0; i < lista.length; i++) {
-                    for (let j = i + 1; j < lista.length; j++) {
-                        partidosRaw.push({
-                            grupo: letra,
-                            jugadorA: lista[i],
-                            jugadorB: lista[j]
-                        });
-                    }
-                }
-            });
-
-            // Asignar Horario y Mesa
-            const horaInicioStr = document.getElementById('hora-inicio').value;
-            const duracion = parseInt(document.getElementById('duracion-partido').value) || 20;
-            const mesas = parseInt(document.getElementById('num-mesas').value) || 1;
-
-            let [h, m] = horaInicioStr.split(':').map(Number);
-            let tiempoActual = new Date();
-            tiempoActual.setHours(h, m, 0, 0);
-
-            partidosGenerados = [];
-            let mesaActual = 1;
-
-            partidosRaw.forEach((p, idx) => {
-                const horaFormatted = tiempoActual.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                
-                partidosGenerados.push({
-                    id: idx + 1,
-                    hora: horaFormatted,
-                    mesa: mesaActual,
-                    grupo: p.grupo,
-                    jugadorA: p.jugadorA,
-                    jugadorB: p.jugadorB
-                });
-
-                mesaActual++;
-                if (mesaActual > mesas) {
-                    mesaActual = 1;
-                    tiempoActual.setMinutes(tiempoActual.getMinutes() + duracion);
-                }
-            });
-
-            dibujarTablaPartidos();
-        }
-
-        function dibujarTablaPartidos() {
-            const tbody = document.getElementById('tabla-partidos');
-            tbody.innerHTML = '';
-
-            const catTexto = document.getElementById('filtro-categoria').options[document.getElementById('filtro-categoria').selectedIndex].text;
-
-            partidosGenerados.forEach(p => {
                 tbody.innerHTML += `
                     <tr>
-                        <td><strong>${p.hora} hrs</strong></td>
-                        <td>Mesa ${p.mesa}</td>
-                        <td><span class="tag-grupo">Grupo ${p.grupo}</span></td>
-                        <td><strong>${p.jugadorA.nombre}</strong> <small>(${p.jugadorA.club})</small> vs <strong>${p.jugadorB.nombre}</strong> <small>(${p.jugadorB.club})</small></td>
+                        <td><strong style="color:#f5a623;">${cat.nombre}</strong></td>
                         <td>
-                            <button class="btn-ws" onclick="compartirWhatsApp('${catTexto}', '${p.hora}', ${p.mesa}, '${p.grupo}', '${p.jugadorA.nombre}', '${p.jugadorB.nombre}')">
-                                📲 Enviar WS
-                            </button>
+                            <input type="time" id="hora-cat-${cat.id}" value="${hConfig.hora}" style="padding:6px; border:1px solid #323644; background:#0e0f12; color:#fff; border-radius:4px;">
+                        </td>
+                        <td>
+                            <input type="text" id="mesas-cat-${cat.id}" value="${hConfig.mesas}" placeholder="Ej. Mesas 1 a 4" style="padding:6px; border:1px solid #323644; background:#0e0f12; color:#fff; border-radius:4px; width: 80%;">
+                        </td>
+                        <td>
+                            <button class="btn-accion btn-dorado" onclick="guardarHorarioCategoria(${cat.id})">💾 Guardar</button>
                         </td>
                     </tr>
                 `;
             });
         }
 
-        function compartirWhatsApp(cat, hora, mesa, grupo, jA, jB) {
-            const mensaje = `🏓 *CITACIÓN DE PARTIDO - TORNEO* 🏓\n\n` +
-                `🏆 *Categoría:* ${cat}\n` +
-                `👥 *Grupo:* ${grupo}\n` +
-                `⚔️ *Partido:* ${jA} vs ${jB}\n` +
-                `⏰ *Hora:* ${hora} hrs\n` +
-                `📍 *Lugar:* Mesa ${mesa}\n\n` +
-                `Por favor preséntate 5 minutos antes con tu raqueta lista. ¡Éxito!`;
+        function guardarHorarioCategoria(catId) {
+            const hora = document.getElementById(`hora-cat-${catId}`).value;
+            const mesas = document.getElementById(`mesas-cat-${catId}`).value.trim();
 
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`, '_blank');
+            horariosGuardados[catId] = { hora, mesas };
+            
+            const claveStorage = `horarios_torneo_${idTorneoActivo}`;
+            localStorage.setItem(claveStorage, JSON.stringify(horariosGuardados));
+
+            alert("✅ Horario guardado.");
+            generarTextoWhatsApp();
         }
 
-        inicializar();
+        function generarTextoWhatsApp() {
+            const nombreTorneo = torneoActivoObj ? torneoActivoObj.nombre : 'Torneo Oficial';
+            const fechaTorneo = torneoActivoObj ? (torneoActivoObj.fecha_evento || '') : '';
+
+            let texto = `🏓 *PROGRAMACIÓN OFICIAL DE HORARIOS* 🏓\n` +
+                        `🏆 *${nombreTorneo}*\n` +
+                        `📅 Fecha: _${fechaTorneo}_\n\n` +
+                        `📍 *HORARIOS DE LLAMADA Y MESAS:* \n` +
+                        `────────────────────────────\n`;
+
+            categoriasList.forEach(cat => {
+                const hConfig = horariosGuardados[cat.id] || { hora: '09:00', mesas: 'Por asignar' };
+                
+                // Formatear hora AM/PM
+                let [hrs, mins] = hConfig.hora.split(':');
+                let hNum = parseInt(hrs);
+                let ampm = hNum >= 12 ? 'PM' : 'AM';
+                hNum = hNum % 12 || 12;
+                let horaFormateada = `${hNum}:${mins} ${ampm}`;
+
+                texto += `⏰ *${horaFormateada}* - *${cat.nombre.toUpperCase()}*\n`;
+                texto += `   🏓 _${hConfig.mesas}_\n\n`;
+            });
+
+            texto += `────────────────────────────\n` +
+                     `📌 *Nota:* Se solicita a los jugadores llegar 15 minutos antes de su horario asignado para calentamiento.\n\n` +
+                     `¡Mucho éxito a todos los competidores! 🏆`;
+
+            document.getElementById('vista-previa-ws').innerText = texto;
+            return texto;
+        }
+
+        function enviarProgramacionWhatsApp() {
+            const texto = generarTextoWhatsApp();
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+
+        inicializarHorarios();
     </script>
 </body>
 </html>
