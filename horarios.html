@@ -3,59 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Horarios y Difusión WS - Central</title>
+    <title>Horarios y Difusión WS - Pixel Studio</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // GUARDIA DE SEGURIDAD GLOBAL
         if (localStorage.getItem('admin_autenticado') !== 'true') {
             alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
             window.location.href = "torneos.html";
         }
     </script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #0e0f12; color: #ffffff; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #0a0b10; color: #ffffff; }
         
-        /* BARRA DE NAVEGACIÓN SUPERIOR UNIFICADA */
-        .navbar { background: #181a20; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #2a2d37; flex-wrap: wrap; gap: 10px; }
-        .nav-title { font-weight: 800; font-size: 18px; color: #f5a623; letter-spacing: 1px; }
+        /* BARRA DE NAVEGACIÓN CON EFECTO NEÓN */
+        .navbar { background: #12141d; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #232738; flex-wrap: wrap; gap: 10px; }
+        .nav-title { font-weight: 800; font-size: 18px; color: #f5a623; letter-spacing: 1px; text-shadow: 0 0 10px rgba(245, 166, 35, 0.4); }
         .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
-        .nav-btn { color: #a0a5b1; text-decoration: none; padding: 8px 14px; border-radius: 6px; font-size: 13px; font-weight: bold; background: #232630; border: 1px solid #323644; transition: 0.2s; }
-        .nav-btn:hover { background: #f5a623; color: #000; border-color: #f5a623; }
-        .nav-btn.active { background: #f5a623; color: #000000; border-color: #f5a623; }
-        .nav-btn.public { background: #28a745; color: white; border-color: #28a745; }
+        .nav-btn { color: #a0a5b1; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: bold; background: #1a1d2a; border: 1px solid #2a2f42; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
+        .nav-btn:hover { background: #f5a623; color: #000; border-color: #f5a623; box-shadow: 0 0 15px rgba(245, 166, 35, 0.6); transform: translateY(-2px); }
+        .nav-btn.active { background: #f5a623; color: #000000; border-color: #f5a623; box-shadow: 0 0 12px rgba(245, 166, 35, 0.5); }
+        .nav-btn.public { background: #00f2fe; color: #000; border-color: #00f2fe; font-weight: bold; }
+        .nav-btn.public:hover { box-shadow: 0 0 15px rgba(0, 242, 254, 0.7); }
 
         .main-content { padding: 25px; max-width: 1100px; margin: auto; }
-        .container { background: #181a20; padding: 25px; border-radius: 12px; border: 1px solid #2a2d37; margin-bottom: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
-        h2, h3 { color: #f5a623; margin-top: 0; border-bottom: 1px solid #2a2d37; padding-bottom: 12px; font-size: 18px; text-transform: uppercase; }
         
-        .banner-torneo { background: linear-gradient(135deg, #181a20 0%, #232630 100%); border: 1px solid #f5a623; color: #ffffff; padding: 18px 20px; border-radius: 10px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
-
-        .form-row { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
-        .form-row input, .form-row select { flex: 1; padding: 10px 12px; border: 1px solid #323644; background: #0e0f12; color: #fff; border-radius: 6px; min-width: 150px; font-size: 14px; }
-        .form-row input:focus, .form-row select:focus { border-color: #f5a623; outline: none; }
-
-        .btn-accion { color: #000; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; transition: 0.2s; }
-        .btn-dorado { background: #f5a623; color: #000; } .btn-dorado:hover { background: #d98c18; }
-        .btn-verde { background: #28a745; color: white; } .btn-verde:hover { background: #218838; }
-        .btn-ws { background: #25d366; color: white; border: none; padding: 12px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; } .btn-ws:hover { background: #1ebc57; }
-
-        .caja-preview { background: #0e0f12; border: 1px solid #323644; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 13px; color: #25d366; white-space: pre-wrap; margin-top: 15px; max-height: 350px; overflow-y: auto; }
+        .container { background: #131520; padding: 25px; border-radius: 14px; border: 1px solid #232738; margin-bottom: 25px; transition: all 0.3s ease; }
+        .container:hover { border-color: rgba(0, 242, 254, 0.5); box-shadow: 0 0 25px rgba(0, 242, 254, 0.2); }
         
+        h2, h3 { color: #f5a623; border-bottom: 1px solid #232738; padding-bottom: 12px; margin-top: 0; font-size: 18px; text-transform: uppercase; text-shadow: 0 0 8px rgba(245, 166, 35, 0.3); }
+        
+        .banner-torneo { background: linear-gradient(135deg, #131520 0%, #1a1d2a 100%); border: 1px solid #a100ff; color: #ffffff; padding: 18px 20px; border-radius: 12px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(161, 0, 255, 0.2); }
+        .banner-torneo:hover { border-color: #a100ff; box-shadow: 0 0 25px rgba(161, 0, 255, 0.5), inset 0 0 10px rgba(161, 0, 255, 0.2); }
+
+        .btn-accion { color: #000; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; transition: all 0.3s ease; }
+        .btn-dorado { background: #f5a623; color: #000; } .btn-dorado:hover { background: #ffb703; box-shadow: 0 0 15px rgba(245, 166, 35, 0.6); }
+        .btn-ws { background: #25d366; color: white; border: none; padding: 12px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; transition: all 0.3s ease; } .btn-ws:hover { background: #1ebc57; box-shadow: 0 0 15px rgba(37, 211, 102, 0.6); }
+
+        .caja-preview { background: #0a0b10; border: 1px solid #2a2f42; padding: 18px; border-radius: 10px; font-family: monospace; font-size: 13px; color: #25d366; white-space: pre-wrap; margin-top: 15px; max-height: 350px; overflow-y: auto; transition: all 0.3s ease; }
+        .caja-preview:hover { border-color: #25d366; box-shadow: 0 0 15px rgba(37, 211, 102, 0.25); }
+
         table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #2a2d37; }
-        th { background-color: #232630; color: #f5a623; text-transform: uppercase; font-size: 12px; font-weight: bold; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #232738; }
+        th { background-color: #1a1d2a; color: #f5a623; text-transform: uppercase; font-size: 12px; font-weight: bold; }
+        tr:hover { background-color: rgba(0, 242, 254, 0.05); }
+        
         .mensaje-vacio { text-align: center; color: #a0a5b1; font-style: italic; }
     </style>
 </head>
 <body>
 
-    <!-- BARRA DE NAVEGACIÓN SUPERIOR -->
     <nav class="navbar">
         <div class="nav-title">🏆 CENTRAL DE TORNEOS</div>
         <div class="nav-links">
             <a href="torneos.html" class="nav-btn">📂 Mis Torneos</a>
             <a href="admin.html" class="nav-btn">⚙️ Administrador</a>
-            <a href="sorteo.html" class="nav-btn">🧠 Sorteo</a>
+            <a href="sorteo.html" class="nav-btn">🧠 Sorteo y Rol</a>
             <a href="horarios.html" class="nav-btn active">📅 Horarios WS</a>
             <a href="index.html" target="_blank" class="nav-btn public">🌐 Portal Público</a>
             <button onclick="cerrarSesionAdmin()" class="nav-btn" style="background:#dc3545; color:white; border:none; cursor:pointer;">🔒 Salir</button>
@@ -64,16 +65,14 @@
 
     <div class="main-content">
         
-        <!-- BANNER DEL TORNEO ACTIVO -->
         <div class="banner-torneo">
             <div>
-                <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; color:#f5a623;">Torneo Seleccionado:</span>
+                <span style="font-size: 11px; font-weight: bold; text-transform: uppercase; color:#00f2fe; letter-spacing: 1px;">Torneo Seleccionado:</span>
                 <h3 id="nombre-torneo-banner" style="margin: 3px 0 0 0; border: none; padding: 0; color:#fff; font-size:22px;">Cargando...</h3>
             </div>
             <button class="btn-ws" onclick="enviarProgramacionWhatsApp()">📲 Publicar Horarios por WhatsApp</button>
         </div>
 
-        <!-- MÓDULO PROGRAMACIÓN DE CATEGORÍAS -->
         <div class="container">
             <h2>📅 Asignación de Horarios por Categoría</h2>
             <p style="font-size: 13px; color: #a0a5b1; margin-bottom: 15px;">Define la hora de llamada y mesas asignadas para cada categoría del torneo activo:</p>
@@ -93,10 +92,9 @@
             </table>
         </div>
 
-        <!-- VISTA PREVIA DEL MENSAJE DE WHATSAPP -->
         <div class="container">
             <h2>📲 Vista Previa del Mensaje para Grupos de WhatsApp</h2>
-            <p style="font-size: 13px; color: #a0a5b1;">Este es el texto exacto con formato negrita y emojies que se enviará a los participantes:</p>
+            <p style="font-size: 13px; color: #a0a5b1;">Este es el texto exacto formateado que se enviará a los participantes:</p>
             <div id="vista-previa-ws" class="caja-preview">Generando mensaje...</div>
         </div>
 
@@ -118,7 +116,6 @@
         }
 
         async function inicializarHorarios() {
-            // Cargar Torneo Activo
             const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
             if (torneoData) {
                 torneoActivoObj = torneoData;
@@ -127,11 +124,10 @@
                 document.getElementById('nombre-torneo-banner').innerText = "Sin torneo activo seleccionado";
             }
 
-            // Cargar Categorías
-            const { data: catData } = await clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true });
+            // Ordenar por puntos mínimos descendente para mostrar Primera Fuerza hasta arriba
+            const { data: catData } = await clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: false });
             categoriasList = catData || [];
 
-            // Cargar Horarios de localStorage específicos para este torneo
             const claveStorage = `horarios_torneo_${idTorneoActivo}`;
             horariosGuardados = JSON.parse(localStorage.getItem(claveStorage)) || {};
 
@@ -155,10 +151,10 @@
                     <tr>
                         <td><strong style="color:#f5a623;">${cat.nombre}</strong></td>
                         <td>
-                            <input type="time" id="hora-cat-${cat.id}" value="${hConfig.hora}" style="padding:6px; border:1px solid #323644; background:#0e0f12; color:#fff; border-radius:4px;">
+                            <input type="time" id="hora-cat-${cat.id}" value="${hConfig.hora}" style="padding:8px; border:1px solid #2a2f42; background:#0a0b10; color:#fff; border-radius:6px;">
                         </td>
                         <td>
-                            <input type="text" id="mesas-cat-${cat.id}" value="${hConfig.mesas}" placeholder="Ej. Mesas 1 a 4" style="padding:6px; border:1px solid #323644; background:#0e0f12; color:#fff; border-radius:4px; width: 80%;">
+                            <input type="text" id="mesas-cat-${cat.id}" value="${hConfig.mesas}" placeholder="Ej. Mesas 1 a 4" style="padding:8px; border:1px solid #2a2f42; background:#0a0b10; color:#fff; border-radius:6px; width: 80%;">
                         </td>
                         <td>
                             <button class="btn-accion btn-dorado" onclick="guardarHorarioCategoria(${cat.id})">💾 Guardar</button>
@@ -194,7 +190,6 @@
             categoriasList.forEach(cat => {
                 const hConfig = horariosGuardados[cat.id] || { hora: '09:00', mesas: 'Por asignar' };
                 
-                // Formatear hora AM/PM
                 let [hrs, mins] = hConfig.hora.split(':');
                 let hNum = parseInt(hrs);
                 let ampm = hNum >= 12 ? 'PM' : 'AM';
