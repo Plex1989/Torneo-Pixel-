@@ -6,107 +6,198 @@
     <title>Central de Torneos - Pixel Studio</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; background: #0a0b10; color: #ffffff; }
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
+
+        /* FONDO OSCURO PROFUNDO (#04060a) */
+        body { font-family: 'Sora', sans-serif; margin: 0; padding: 0; background-color: #04060a; color: #f8fafc; min-height: 100vh; position: relative; overflow-x: hidden; }
         
-        /* BARRA DE NAVEGACIÓN CON EFECTO NEÓN */
-        .navbar { background: #12141d; padding: 15px 25px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #232738; flex-wrap: wrap; gap: 10px; }
-        .nav-title { font-weight: 800; font-size: 18px; color: #f5a623; letter-spacing: 1px; text-shadow: 0 0 10px rgba(245, 166, 35, 0.4); }
+        /* ORBES ATMOSFÉRICOS DE FONDO MULTICOLOR */
+        body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 10s infinite alternate; }
+        body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
+        @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
+
+        /* NAVEGACIÓN LIMPIA SIN "HORARIOS WS" */
+        .navbar { background: rgba(10, 15, 26, 0.65); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 50; }
+        .nav-title { font-weight: 800; font-size: 15px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
+        
         .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
-        .nav-btn { color: #a0a5b1; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: bold; background: #1a1d2a; border: 1px solid #2a2f42; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); }
-        .nav-btn:hover { background: #f5a623; color: #000; border-color: #f5a623; box-shadow: 0 0 15px rgba(245, 166, 35, 0.6); transform: translateY(-2px); }
-        .nav-btn.active { background: #f5a623; color: #000000; border-color: #f5a623; box-shadow: 0 0 12px rgba(245, 166, 35, 0.5); }
-        .nav-btn.public { background: #00f2fe; color: #000; border-color: #00f2fe; font-weight: bold; }
-        .nav-btn.public:hover { box-shadow: 0 0 15px rgba(0, 242, 254, 0.7); }
+        .nav-btn { color: #94a3b8; text-decoration: none; padding: 8px 18px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
+        
+        .nav-btn:hover { color: #000000; background: #f5a623; border-color: #f5a623; box-shadow: 0 0 25px rgba(245, 166, 35, 0.8); transform: translateY(-2px); }
+        .nav-btn.active { color: #ffffff; border-color: #8b5cf6; background: rgba(139, 92, 246, 0.3); box-shadow: 0 0 15px rgba(139, 92, 246, 0.4); }
+        .nav-btn.public { color: #34d399; border-color: rgba(16, 185, 129, 0.5); }
+        .nav-btn.public:hover { color: #000000; background: #10b981; border-color: #10b981; box-shadow: 0 0 25px rgba(16, 185, 129, 0.8); }
 
-        .main-content { padding: 25px; max-width: 1100px; margin: auto; }
-        
-        /* PANELES CON LUZ TRASERA */
-        .container { background: #131520; padding: 25px; border-radius: 14px; border: 1px solid #232738; margin-bottom: 25px; transition: all 0.3s ease; }
-        .container:hover { border-color: rgba(0, 242, 254, 0.5); box-shadow: 0 0 25px rgba(0, 242, 254, 0.2); }
-        
-        h2 { color: #f5a623; border-bottom: 1px solid #232738; padding-bottom: 12px; margin-top: 0; font-size: 18px; text-transform: uppercase; letter-spacing: 0.5px; text-shadow: 0 0 8px rgba(245, 166, 35, 0.3); }
-        
-        .form-row { display: flex; gap: 12px; margin-top: 15px; flex-wrap: wrap; align-items: center; }
-        .form-row input, .form-row select { flex: 1; padding: 12px; border: 1px solid #2a2f42; background: #0a0b10; color: #fff; border-radius: 8px; min-width: 150px; font-size: 14px; transition: all 0.3s ease; }
-        .form-row input:focus, .form-row select:focus { border-color: #00f2fe; outline: none; box-shadow: 0 0 12px rgba(0, 242, 254, 0.5); }
-        
-        .btn { color: #000; border: none; padding: 12px 18px; border-radius: 8px; cursor: pointer; font-weight: bold; text-decoration: none; display: inline-block; font-size: 14px; transition: all 0.3s ease; }
-        .btn-dorado { background: #f5a623; color: #000; } .btn-dorado:hover { background: #ffb703; box-shadow: 0 0 15px rgba(245, 166, 35, 0.6); }
-        .btn-verde { background: #28a745; color: white; } .btn-verde:hover { background: #34ce57; box-shadow: 0 0 15px rgba(40, 167, 69, 0.6); }
-        .btn-rojo { background: #dc3545; color: white; } .btn-rojo:hover { background: #ff4d5e; box-shadow: 0 0 15px rgba(220, 53, 69, 0.6); }
-        .btn-gris { background: #2a2f42; color: white; } .btn-gris:hover { background: #3c435e; }
-        .btn-ws { background: #25d366; color: white; } .btn-ws:hover { background: #1ebc57; box-shadow: 0 0 15px rgba(37, 211, 102, 0.6); }
-        
-        .banner-activo { background: linear-gradient(135deg, #131520 0%, #1a1d2a 100%); border: 1px solid #a100ff; padding: 22px; border-radius: 14px; margin-bottom: 25px; transition: all 0.3s ease; box-shadow: 0 0 15px rgba(161, 0, 255, 0.2); }
-        .banner-activo:hover { border-color: #a100ff; box-shadow: 0 0 25px rgba(161, 0, 255, 0.5), inset 0 0 10px rgba(161, 0, 255, 0.2); }
+        .main-content { padding: 30px; max-width: 1100px; margin: auto; position: relative; z-index: 10; }
 
-        .grid-categorias-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-top: 15px; }
-        .card-cat-resumen { background: #0a0b10; border: 1px solid #2a2f42; padding: 14px; border-radius: 10px; text-align: center; transition: all 0.3s ease; }
-        .card-cat-resumen:hover { border-color: #00f2fe; box-shadow: 0 0 12px rgba(0, 242, 254, 0.3); }
-        .card-cat-resumen .num { font-size: 24px; font-weight: bold; color: #f5a623; }
-        .card-cat-resumen .label { font-size: 12px; color: #a0a5b1; margin-top: 4px; font-weight: bold; text-transform: uppercase; }
+        /* PANELES 3D ESTILO PLEX */
+        .panel-3d { 
+            position: relative; 
+            background: rgba(10, 15, 26, 0.45); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px); 
+            border-radius: 20px; 
+            border: 1px solid rgba(255, 255, 255, 0.06); 
+            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.03); 
+            padding: 26px; 
+            margin-bottom: 26px; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #232738; }
-        th { background-color: #1a1d2a; color: #f5a623; font-weight: bold; text-transform: uppercase; font-size: 12px; }
-        tr { transition: all 0.2s ease; }
-        tr:hover { background-color: rgba(0, 242, 254, 0.05); }
+        .panel-cyan { border-bottom: 5px solid #0e7490; }
+        .panel-cyan:hover { transform: translateY(-3px); border-bottom-color: #06b6d4; box-shadow: 0 18px 40px -5px rgba(6, 182, 212, 0.5); }
+        .panel-cyan:hover h2, .panel-cyan:hover h3 { color: #38bdf8 !important; text-shadow: 0 0 16px rgba(56, 189, 248, 0.9); }
+
+        .panel-purple { border-bottom: 5px solid #2e1065; }
+        .panel-purple:hover { transform: translateY(-3px); border-bottom-color: #8b5cf6; box-shadow: 0 18px 40px -5px rgba(139, 92, 246, 0.5); }
+        .panel-purple:hover h2 { color: #c084fc !important; text-shadow: 0 0 16px rgba(192, 132, 252, 0.9); }
+
+        .panel-emerald { border-bottom: 5px solid #064e3b; }
+        .panel-emerald:hover { transform: translateY(-3px); border-bottom-color: #10b981; box-shadow: 0 18px 40px -5px rgba(16, 185, 129, 0.5); }
+        .panel-emerald:hover h2 { color: #34d399 !important; text-shadow: 0 0 16px rgba(52, 211, 153, 0.9); }
+
+        h2, h3 { color: #ffffff; margin-top: 0; padding-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 20px; transition: all 0.3s ease; }
+
+        /* INPUTS VISIBLES EN BLANCO Y FONDO OSCURO */
+        .form-row { display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+        .form-row input[type="text"], .form-row input[type="date"], .form-row select, select { 
+            flex: 1; 
+            padding: 10px 14px; 
+            border: 1px solid rgba(255, 255, 255, 0.18) !important; 
+            background: rgba(10, 15, 26, 0.85) !important; 
+            color: #ffffff !important; 
+            border-radius: 10px; 
+            min-width: 130px; 
+            font-size: 12px; 
+            font-family: 'Sora', sans-serif; 
+            font-weight: 600;
+            transition: all 0.2s ease; 
+        }
         
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; color: white; display: inline-block; }
-        .badge-registro { background: #ffc107; color: #000; box-shadow: 0 0 8px rgba(255, 193, 7, 0.4); }
-        .badge-curso { background: #28a745; box-shadow: 0 0 8px rgba(40, 167, 69, 0.4); }
-        .badge-finalizado { background: #6c757d; }
+        select option {
+            background-color: #0a0b10 !important;
+            color: #ffffff !important;
+            padding: 10px;
+        }
+
+        .form-row input:focus, .form-row select:focus, select:focus { 
+            border-color: #38bdf8 !important; 
+            outline: none; 
+            box-shadow: 0 0 16px rgba(56, 189, 248, 0.55); 
+        }
+
+        /* BOTONES PÍLDORA */
+        .btn-console { 
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 20px; 
+            background: rgba(255, 255, 255, 0.06); 
+            border: 1px solid rgba(255, 255, 255, 0.18); 
+            border-radius: 9999px; 
+            color: #f1f5f9; 
+            font-size: 11px; 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            letter-spacing: 1px; 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            font-family: 'Sora', sans-serif; 
+        }
+
+        .btn-console:hover { 
+            background: #06b6d4; 
+            color: #000000; 
+            border-color: #38bdf8; 
+            box-shadow: 0 0 25px rgba(6, 182, 212, 0.85); 
+            transform: translateY(-2px); 
+        }
+        
+        .btn-gold:hover { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 25px rgba(245, 158, 11, 0.85); }
+        .btn-red:hover { background: #ef4444; color: #ffffff; border-color: #f87171; box-shadow: 0 0 25px rgba(239, 68, 68, 0.85); }
+        .btn-green:hover { background: #10b981; color: #000000; border-color: #34d399; box-shadow: 0 0 25px rgba(16, 185, 129, 0.85); }
+        .btn-ws-style { border-color: rgba(34, 197, 94, 0.5); color: #4ade80; }
+        .btn-ws-style:hover { background: #22c55e; color: #000000; border-color: #22c55e; box-shadow: 0 0 25px rgba(34, 197, 94, 0.85); }
+
+        /* GRID RESUMEN DE CATEGORÍAS */
+        .grid-categorias-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-top: 20px; }
+        .card-cat-resumen { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); padding: 18px; border-radius: 14px; text-align: center; transition: all 0.3s ease; }
+        .card-cat-resumen:hover { border-color: #38bdf8; box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); transform: translateY(-2px); }
+        .card-cat-resumen .num { font-size: 26px; font-weight: 800; color: #38bdf8; }
+        .card-cat-resumen .label { font-size: 10px; color: #94a3b8; margin-top: 6px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* TABLA HISTORIAL DE TORNEOS */
+        table { width: 100%; border-collapse: separate; border-spacing: 0 6px; margin-top: 10px; font-size: 12px; }
+        th { color: #94a3b8; text-transform: uppercase; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; padding: 0 12px 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-align: left; }
+        
+        td { padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border-top: 1px solid rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02); color: #ffffff; transition: all 0.25s ease; }
+        td:first-child { border-left: 1px solid rgba(255,255,255,0.02); border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
+        td:last-child { border-right: 1px solid rgba(255,255,255,0.02); border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
+        
+        tr { cursor: pointer; transition: all 0.25s ease; }
+        tr:hover td { background: rgba(16, 185, 129, 0.1) !important; border-color: rgba(16, 185, 129, 0.3); } /* Verde Esmeralda Hover en tabla torneos */
+        tr:hover td strong { color: #34d399 !important; text-shadow: 0 0 12px rgba(52, 211, 153, 0.8); }
+        tr:hover td:first-child { border-left: 3px solid #34d399; }
+
+        /* BADGES ESTADO TORNEO */
+        .badge { padding: 4px 10px; border-radius: 9999px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border: 1px solid transparent; }
+        .badge-registro { background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4); color: #fbbf24; }
+        .badge-curso { background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #34d399; }
+        .badge-finalizado { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.15); color: #94a3b8; }
     </style>
 </head>
 <body>
 
+    <!-- MENÚ SIN HORARIOS -->
     <nav class="navbar">
-        <div class="nav-title">🏆 CENTRAL DE TORNEOS</div>
+        <div class="nav-title">CENTRAL DE TORNEOS</div>
         <div class="nav-links">
-            <a href="torneos.html" class="nav-btn active">📂 Mis Torneos</a>
-            <a href="admin.html" class="nav-btn">⚙️ Administrador</a>
-            <a href="sorteo.html" class="nav-btn">🧠 Sorteo y Rol</a>
-            <a href="horarios.html" class="nav-btn">📅 Horarios WS</a>
-            <a href="index.html" target="_blank" class="nav-btn public">🌐 Portal Público</a>
-            <button onclick="cerrarSesionAdmin()" class="nav-btn" style="background:#dc3545; color:white; border:none; cursor:pointer;">🔒 Salir</button>
+            <a href="torneos.html" class="nav-btn active">Mis Torneos</a>
+            <a href="admin.html" class="nav-btn">Administrador</a>
+            <a href="sorteo.html" class="nav-btn">Sorteo y Rol</a>
+            <a href="index.html" target="_blank" class="nav-btn public">Portal Público</a>
+            <button onclick="cerrarSesionAdmin()" class="nav-btn" style="border-color: rgba(239,68,68,0.4); color: #f87171; cursor:pointer;">SALIR</button>
         </div>
     </nav>
 
     <div class="main-content">
 
-        <div class="banner-activo">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <!-- PANEL CIAN: TORNEO ACTIVO Y DESGLOSE -->
+        <div class="panel-3d panel-cyan">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
                 <div>
-                    <span style="font-size: 11px; text-transform: uppercase; font-weight: bold; color: #00f2fe; letter-spacing: 1px;">Torneo Activo en el Sistema:</span>
-                    <h2 id="nombre-torneo-activo" style="margin: 5px 0 0 0; border: none; padding: 0; color: #ffffff; font-size: 24px;">Cargando...</h2>
+                    <span style="font-size: 9px; text-transform: uppercase; font-weight: 800; color: #38bdf8; letter-spacing: 2px;">Torneo Activo en el Sistema</span>
+                    <h3 id="nombre-torneo-activo" style="margin: 4px 0 0 0; border: none; padding: 0; color: #ffffff; font-size: 20px; letter-spacing: 1px;">Cargando...</h3>
                 </div>
-                <button class="btn btn-ws" onclick="compartirWhatsAppInscripciones()">📲 Compartir Link por WhatsApp</button>
+                <button class="btn-console btn-ws-style" onclick="compartirWhatsAppInscripciones()">📲 Compartir Link por WhatsApp</button>
             </div>
 
-            <div style="margin-top: 20px; border-top: 1px solid #232738; padding-top: 15px;">
-                <div style="font-weight: bold; font-size: 13px; color: #a0a5b1; text-transform: uppercase;">📊 Jugadores Confirmados (Pagados) por Categoría:</div>
+            <div style="margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px;">
+                <div style="font-weight: 800; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px;">📊 Jugadores Confirmados por Categoría:</div>
                 <div id="grid-categorias-vivo" class="grid-categorias-resumen">
                     <div class="card-cat-resumen">Cargando desglose...</div>
                 </div>
             </div>
         </div>
 
-        <div class="container">
+        <!-- PANEL MORADO: CREAR NUEVO TORNEO -->
+        <div class="panel-3d panel-purple">
             <h2>➕ Crear Nuevo Torneo</h2>
-            <p style="font-size: 13px; color: #a0a5b1; margin-bottom: 0;">Inicia un evento con lista de inscritos limpia manteniendo la base permanente de ranking acumulado.</p>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px; font-weight: 600;">Inicia un evento con lista de inscritos limpia manteniendo la base permanente de ranking acumulado.</p>
             
             <div class="form-row">
                 <input type="text" id="nuevo-nombre-torneo" placeholder="Nombre del Torneo (Ej. Abierto de Otoño 2026)">
-                <select id="nuevo-formato-torneo" style="max-width: 220px;">
+                <select id="nuevo-formato-torneo" style="max-width: 260px;">
                     <option value="grupos_y_llaves">Fase de Grupos + Llaves</option>
                     <option value="round_robin">Round Robin Directo (Todos vs Todos)</option>
                 </select>
-                <input type="date" id="nueva-fecha-torneo" style="max-width: 180px;">
-                <button class="btn btn-dorado" onclick="crearTorneo()">🏆 Crear Torneo</button>
+                <input type="date" id="nueva-fecha-torneo" style="max-width: 160px;">
+                <button class="btn-console btn-gold" onclick="crearTorneo()">🏆 Crear Torneo</button>
             </div>
         </div>
 
-        <div class="container">
+        <!-- PANEL ESMERALDA: HISTORIAL DE TORNEOS -->
+        <div class="panel-3d panel-emerald">
             <h2>📂 Historial de Torneos Guardados</h2>
             <table>
                 <thead>
@@ -115,11 +206,11 @@
                         <th>Nombre del Torneo</th>
                         <th>Formato</th>
                         <th>Estado</th>
-                        <th style="width: 300px;">Acciones / Controles</th>
+                        <th style="width: 250px;">Acciones / Controles</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-torneos">
-                    <tr><td colspan="5" style="text-align: center; color: #a0a5b1;">Cargando historial...</td></tr>
+                    <tr><td colspan="5" style="text-align: center; color: #475569;">Cargando historial...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -135,6 +226,7 @@
         let todosLosTorneos = [];
         let torneoActivoObj = null;
 
+        // Login Admin Security
         function verificarAccesoAdmin() {
             if (localStorage.getItem('admin_autenticado') !== 'true') {
                 let pass = prompt("🔒 Ingrese la Contraseña Maestra de Administrador:");
@@ -142,7 +234,7 @@
                     localStorage.setItem('admin_autenticado', 'true');
                 } else {
                     alert("❌ Contraseña incorrecta. Acceso denegado.");
-                    document.body.innerHTML = "<h2 style='text-align:center; margin-top:80px; color:#dc3545;'>Acceso Denegado 🔒</h2>";
+                    document.body.innerHTML = "<h2 style='text-align:center; margin-top:80px; color:#ef4444;'>Acceso Denegado 🔒</h2>";
                     return false;
                 }
             }
@@ -154,9 +246,11 @@
             window.location.reload();
         }
 
+        // Initialize Module
         async function cargarTorneos() {
             if (!verificarAccesoAdmin()) return;
 
+            // Set default date to today
             document.getElementById('nueva-fecha-torneo').valueAsDate = new Date();
 
             const { data, error } = await clienteSupabase
@@ -165,12 +259,13 @@
                 .order('created_at', { ascending: false });
 
             if (error) {
-                document.getElementById('tabla-torneos').innerHTML = `<tr><td colspan="5" style="color:#dc3545; text-align:center;">Error de conexión.</td></tr>`;
+                document.getElementById('tabla-torneos').innerHTML = `<tr><td colspan="5" style="color:#ef4444; text-align:center;">Error de conexión.</td></tr>`;
                 return;
             }
 
             todosLosTorneos = data || [];
 
+            // Identify Active Tournament
             let idActivo = localStorage.getItem('torneo_activo_id');
             if (!idActivo && todosLosTorneos.length > 0) {
                 idActivo = todosLosTorneos[0].id;
@@ -193,6 +288,7 @@
             }
         }
 
+        // Live Breakdown Grid
         async function cargarDesgloseCategoriasVivo(idTorneo) {
             const grid = document.getElementById('grid-categorias-vivo');
             grid.innerHTML = '';
@@ -218,9 +314,9 @@
             let totalPagados = inscripciones.length;
 
             grid.innerHTML += `
-                <div class="card-cat-resumen" style="border-color: #f5a623; box-shadow: 0 0 10px rgba(245, 166, 35, 0.3);">
-                    <div class="num">${totalPagados}</div>
-                    <div class="label" style="color: #f5a623;">TOTAL CONFIRMADOS</div>
+                <div class="card-cat-resumen" style="border: 1px solid rgba(245,158,11,0.4); box-shadow: 0 0 15px rgba(245, 158, 11, 0.1);">
+                    <div class="num" style="color:#fbbf24;">${totalPagados}</div>
+                    <div class="label" style="color: #fbbf24;">TOTAL CONFIRMADOS</div>
                 </div>
             `;
 
@@ -228,13 +324,14 @@
                 let cantInscritos = inscripciones.filter(ins => ins.categoria_id === cat.id).length;
                 grid.innerHTML += `
                     <div class="card-cat-resumen">
-                        <div class="num" style="color:#00f2fe;">${cantInscritos}</div>
+                        <div class="num">${cantInscritos}</div>
                         <div class="label">${cat.nombre}</div>
                     </div>
                 `;
             });
         }
 
+        // Draw Tournament History
         function dibujarTablaTorneos(idActivo) {
             const tbody = document.getElementById('tabla-torneos');
             tbody.innerHTML = '';
@@ -255,23 +352,23 @@
                 let formatoTexto = t.formato === 'grupos_y_llaves' ? 'Grupos + Eliminatoria' : 'Round Robin Directo';
 
                 tbody.innerHTML += `
-                    <tr style="${esElActivo ? 'background-color: rgba(245, 166, 35, 0.1);' : ''}">
-                        <td>${t.fecha_evento || 'S/F'}</td>
+                    <tr>
+                        <td style="color:#94a3b8;">${t.fecha_evento || 'S/F'}</td>
                         <td>
-                            <strong style="color:${esElActivo ? '#f5a623' : '#ffffff'};">${t.nombre}</strong>
-                            ${esElActivo ? ' <small style="color:#f5a623;">(ACTIVO)</small>' : ''}
+                            <strong style="color:${esElActivo ? '#34d399' : '#ffffff'}; font-size:13px;">${t.nombre}</strong>
+                            ${esElActivo ? ' <small style="color:#34d399; font-weight:800; letter-spacing:1px;">(ACTIVO)</small>' : ''}
                         </td>
-                        <td>${formatoTexto}</td>
+                        <td style="color:#cbd5e1; font-weight:600;">${formatoTexto}</td>
                         <td>${badgeEstado}</td>
                         <td>
                             ${!esElActivo ? `
-                                <button class="btn btn-dorado" style="padding: 6px 12px; font-size: 12px;" onclick="seleccionarTorneoActivo(${t.id})">⚙️ Trabajar en Este</button>
-                            ` : '<span style="color:#f5a623; font-size:12px; font-weight:bold; margin-right:5px;">✅ Seleccionado</span>'}
+                                <button class="btn-console btn-gold" style="padding: 6px 12px; font-size: 9px;" onclick="seleccionarTorneoActivo(${t.id})">⚙️ Trabajar en Este</button>
+                            ` : '<span style="color:#34d399; font-size:10px; font-weight:800; text-transform:uppercase; margin-right:10px;">✅ Seleccionado</span>'}
                             
                             ${t.estado !== 'finalizado' ? `
-                                <button class="btn btn-rojo" style="padding: 6px 12px; font-size: 12px;" onclick="cambiarEstadoTorneo(${t.id}, 'finalizado')">🏁 Finalizar</button>
+                                <button class="btn-console btn-red" style="padding: 6px 12px; font-size: 9px;" onclick="cambiarEstadoTorneo(${t.id}, 'finalizado')">🏁 Finalizar</button>
                             ` : `
-                                <button class="btn btn-gris" style="padding: 6px 12px; font-size: 12px;" onclick="cambiarEstadoTorneo(${t.id}, 'en_curso')">🔄 Reabrir</button>
+                                <button class="btn-console btn-green" style="padding: 6px 12px; font-size: 9px;" onclick="cambiarEstadoTorneo(${t.id}, 'en_curso')">🔄 Reabrir</button>
                             `}
                         </td>
                     </tr>
