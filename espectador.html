@@ -298,11 +298,9 @@
                 return porCategoria;
             };
 
-            // FUNCIÓN SEGURA PARA OBTENER EL NOMBRE DEL JUGADOR EN LA LLAVE (SOLO SI YA JUGÓ)
             const getPosicionGrupoNombre = (grupoArr, posIndex, fallbackText) => {
                 if (!grupoArr || grupoArr.length <= posIndex) return fallbackText;
                 const jugador = grupoArr[posIndex];
-                // Solo si el jugador tiene puntos acumulados o partidos jugados mayores a 0, mostramos su nombre real
                 if (jugador && (jugador.pts > 0 || jugador.pj > 0)) {
                     return jugador.nombre;
                 }
@@ -323,7 +321,6 @@
                 const finalizadosGpo = partidosCat.filter(m => (m.estado || '').trim().toLowerCase() === 'finalizado').length;
                 const gpoCompleto = totalPartidosGpo > 0 && totalPartidosGpo === finalizadosGpo;
 
-                // LISTA UNICA DE CATEGORÍAS EN CARTELERA
                 const categoriasUnicasCartelera = [...new Set(lobbyMatches.map(m => m.categorias?.nombre).filter(Boolean))];
 
                 return (
@@ -348,7 +345,6 @@
                                 <button className={`tab-filter ${estadoFiltro === 'todos' ? 'active' : ''}`} onClick={() => setEstadoFiltro('todos')}>📋 Todos</button>
                             </div>
 
-                            {/* FILTRO VISIBLE DE CATEGORÍAS EN LA PARTE SUPERIOR DE CARTELERA */}
                             {estadoFiltro !== 'resumen' && categoriasUnicasCartelera.length > 0 && (
                                 <div className="flex justify-start sm:justify-center gap-2 px-6 overflow-x-auto no-scrollbar pt-2 border-t border-white/5">
                                     <button onClick={() => setCategoriaFiltroCartelera('todas')} 
@@ -431,7 +427,6 @@
                                             );
                                         })}
 
-                                        {/* LLAVES ELIMINATORIAS (CON VALIDACIÓN DE PARTIDOS JUGADOS) */}
                                         {(() => {
                                             const gpoA_arr = resumenData[catNombreActual]?.grupos['A'] ? Object.values(resumenData[catNombreActual].grupos['A']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
                                             const gpoB_arr = resumenData[catNombreActual]?.grupos['B'] ? Object.values(resumenData[catNombreActual].grupos['B']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
@@ -524,7 +519,6 @@
 
                             </div>
                         ) : (
-                            /* SECCIÓN CARTELERA DE PARTIDOS OTRAS PESTAÑAS */
                             <div className="p-4 max-w-3xl mx-auto space-y-4">
                                 {(() => {
                                     let filtrados = lobbyMatches;
@@ -559,6 +553,9 @@
                                         const catObj = p.categorias || {};
                                         const estiloCat = obtenerEstiloCategoria(catObj.id || 0);
 
+                                        let nombreJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
+                                        let nombreJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
+
                                         return (
                                             <div key={p.id} onClick={() => entrarAlPartido(p.id)} 
                                                  className={`bg-slate-900/80 p-4 rounded-[16px] border border-white/10 cursor-pointer transition-all ${isFin ? 'opacity-90 border-slate-800' : 'hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]'}`}>
@@ -570,12 +567,12 @@
                                                 
                                                 <div style={{ color: estiloCat.text, backgroundColor: estiloCat.bg, borderColor: estiloCat.border }} 
                                                      className="text-[9px] font-bold uppercase mb-3 border inline-block px-2 py-1 rounded">
-                                                    🏆 {catObj.nombre || 'Categoría'} • Gpo {p.grupo_nombre}
+                                                    🏆 {catObj.nombre || 'Categoría'} • {p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Eliminatoria')}
                                                 </div>
                                                 
                                                 <div className="bg-black/40 rounded-xl p-3 flex justify-between items-center mb-2 border border-white/5">
                                                     <span className={`font-bold text-sm truncate ${isFin && !isJ1Win ? 'text-zinc-500' : 'text-white'}`}>
-                                                        {isFin && isJ1Win ? '🏆 ' : ''}{p.j1?.nombre || 'J1'}
+                                                        {isFin && isJ1Win ? '🏆 ' : ''}{nombreJ1}
                                                     </span>
                                                     <div className="flex items-center gap-3">
                                                         <span className={`font-digital text-xl font-bold ${isFin && !isJ1Win ? 'text-zinc-600' : 'text-cyan-400'}`}>
@@ -587,7 +584,7 @@
                                                 
                                                 <div className="bg-black/40 rounded-xl p-3 flex justify-between items-center border border-white/5">
                                                     <span className={`font-bold text-sm truncate ${isFin && !isJ2Win ? 'text-zinc-500' : 'text-white'}`}>
-                                                        {isFin && isJ2Win ? '🏆 ' : ''}{p.j2?.nombre || 'J2'}
+                                                        {isFin && isJ2Win ? '🏆 ' : ''}{nombreJ2}
                                                     </span>
                                                     <div className="flex items-center gap-3">
                                                         <span className={`font-digital text-xl font-bold ${isFin && !isJ2Win ? 'text-zinc-600' : 'text-fuchsia-400'}`}>
