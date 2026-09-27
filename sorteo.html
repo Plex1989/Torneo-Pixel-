@@ -168,7 +168,6 @@
                     </div>
                 </div>
 
-                <!-- ALERTA DINÁMICA DE JUECES EXTERNOS -->
                 <div id="contenedor-jueces-externos" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom:15px; border: 1px dashed rgba(255,255,255,0.1);">
                     <span style="color:#94a3b8; font-size:10px; font-style:italic;">Calculando jueces necesarios...</span>
                 </div>
@@ -243,6 +242,14 @@
             const select = document.getElementById('filtro-categoria');
             select.innerHTML = '<option value="">-- Selecciona una categoría --</option>';
             if (data) data.forEach(cat => select.innerHTML += `<option value="${cat.id}">${cat.nombre}</option>`);
+
+            // MEMORIA FLASH DE CATEGORÍA
+            const ultimaCat = localStorage.getItem('categoria_guardada_reciente');
+            if (ultimaCat) {
+                select.value = ultimaCat;
+                localStorage.removeItem('categoria_guardada_reciente');
+                cargarEstadoCategoria();
+            }
         }
 
         async function cargarEstadoCategoria() {
@@ -303,10 +310,6 @@
                 seccionPartidos.style.display = 'none';
             }
         }
-
-        // ==========================================
-        // LÓGICA DE ALGORITMO ROUND ROBIN + JUECES
-        // ==========================================
 
         function algoritmoRoundRobin(jugadoresArr) {
             let arr = [...jugadoresArr];
@@ -618,10 +621,6 @@
             dibujarTablaPartidosGenerados(partidosGeneradosRR);
         }
 
-        // ==========================================
-        // DIBUJO DE TABLAS CON RESALTADO DE JUECES
-        // ==========================================
-
         function dibujarTablaPartidosBD(partidosBD) {
             const tbody = document.getElementById('tabla-partidos-rr');
             tbody.innerHTML = '';
@@ -684,10 +683,6 @@
                 `;
             });
         }
-
-        // ==========================================
-        // UTILIDADES Y ALMACENAMIENTO A PRUEBA DE FALLOS
-        // ==========================================
 
         function poblarDropdownAgenda(partidos) {
             const select = document.getElementById('filtro-jugador-agenda');
@@ -770,38 +765,6 @@
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
-        function reconstruirGruposDesdePartidosBD(partidosBD) {
-            const contenedor = document.getElementById('contenedor-grupos');
-            contenedor.innerHTML = '';
-
-            let nombresGrupos = [...new Set(partidosBD.map(p => p.grupo_nombre))].sort();
-
-            nombresGrupos.forEach((nombreGpo, idx) => {
-                let partidosDelGrupo = partidosBD.filter(p => p.grupo_nombre === nombreGpo);
-                let mapaJugadores = new Map();
-
-                partidosDelGrupo.forEach(p => {
-                    if (p.j1) mapaJugadores.set(p.jugador1_id, p.j1.nombre);
-                    if (p.j2) mapaJugadores.set(p.jugador2_id, p.j2.nombre);
-                });
-
-                let claseColor = clasesColoresGrupo[idx % clasesColoresGrupo.length];
-                let html = `<div class="grupo-card ${claseColor}"><div class="grupo-header">Grupo ${nombreGpo}</div>`;
-
-                mapaJugadores.forEach((nombre) => {
-                    html += `
-                        <div class="jugador-item">
-                            <div class="jugador-info">
-                                <strong style="color:#ffffff;">${nombre}</strong>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                contenedor.innerHTML += html + `</div>`;
-            });
-        }
-
         async function rehacerSorteo() {
             const idCat = document.getElementById('filtro-categoria').value;
             if (!confirm("⚠️ ¿Deseas ELIMINAR el sorteo guardado de esta categoría y generar uno nuevo?")) return;
@@ -810,7 +773,6 @@
             cargarEstadoCategoria();
         }
 
-        // GUARDADO A PRUEBA DE FALLOS CON RECARGA FORZADA
         async function guardarGruposBD() {
             const idCategoria = document.getElementById('filtro-categoria').value;
             const pinJueces = document.getElementById('rr-pin-jueces').value.trim() || '1234';
@@ -822,22 +784,19 @@
             btn.innerText = "Guardando en Supabase...";
 
             try {
-                // Actualiza el PIN del torneo
-                const req1 = await clienteSupabase.from('torneos').update({ pin_jueces: pinJueces }).eq('id', idTorneoActivo);
-                if (req1.error) throw new Error("Fallo al actualizar PIN: " + req1.error.message);
+                const { error: err1 } = await clienteSupabase.from('torneos').update({ pin_jueces: pinJueces }).eq('id', idTorneoActivo);
+                if (err1) throw new Error("Fallo al actualizar PIN: " + err1.message);
 
-                // Borra partidos viejos de la categoría
-                const req2 = await clienteSupabase.from('partidos').delete().eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo);
-                if (req2.error) throw new Error("Fallo al limpiar partidos antiguos: " + req2.error.message);
+                const { error: err2 } = await clienteSupabase.from('partidos').delete().eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo);
+                if (err2) throw new Error("Fallo al limpiar partidos antiguos: " + err2.message);
 
-                // Prepara e Inserta la nueva lista
                 let partidosInsertar = partidosGeneradosRR.map(p => ({
                     torneo_id: parseInt(idTorneoActivo),
                     categoria_id: parseInt(idCategoria),
                     grupo_nombre: p.grupoNombre || 'A',
                     ronda_fase: `Ronda ${p.ronda}`,
                     mesa: p.mesa || 1,
-                    hora: p.hora || '09:00',
+                    hora: p.hora || '09:00 AM',
                     modo_juego: p.modoJuego || '3-5',
                     jugador1_id: p.j1.id,
                     jugador2_id: p.j2.id,
@@ -845,16 +804,15 @@
                     estado: 'pendiente'
                 }));
 
-                const req3 = await clienteSupabase.from('partidos').insert(partidosInsertar);
-                if (req3.error) throw new Error("Fallo al insertar los partidos nuevos: " + req3.error.message);
+                const { error: err3 } = await clienteSupabase.from('partidos').insert(partidosInsertar);
+                if (err3) throw new Error("Fallo al insertar los partidos nuevos: " + err3.message);
 
-                // ALERTA Y RECARGA LA PÁGINA (Limpiando errores de caché)
                 alert("✅ ¡Partidos y PIN guardados con éxito en la Base de Datos!");
+                localStorage.setItem('categoria_guardada_reciente', idCategoria);
                 window.location.reload(); 
 
             } catch (error) {
-                // Si algo falla, lo notifica sin congelarse
-                alert("❌ Error crítico en Supabase:\n\n" + error.message + "\n\n(Verifica que hayas ejecutado el código SQL en la base de datos)");
+                alert("❌ Error crítico en Supabase:\n\n" + error.message);
                 btn.disabled = false;
                 btn.innerText = "💾 Guardar Acomodo Definitivo en Base de Datos";
             }
