@@ -110,6 +110,15 @@
         .badge-grupo { background: rgba(6, 182, 212, 0.15); color: #38bdf8; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(6,182,212,0.3); }
 
         .mensaje-vacio { text-align: center; color: #475569; font-style: italic; background: transparent !important; border: none !important; }
+
+        @media print {
+            body { background: white !important; color: black !important; padding: 0; }
+            .no-print, .panel-3d:not(#seccion-partidos-rr) { display: none !important; }
+            #seccion-partidos-rr { display: block !important; box-shadow: none; border: none; background: white !important; color: black !important; }
+            table { font-size: 10pt; border: 1px solid #000; margin-bottom: 20px; color: black !important; }
+            th { background-color: #333 !important; color: white !important; -webkit-print-color-adjust: exact; }
+            td, th { border: 1px solid #999; padding: 6px; color: black !important; background: white !important; }
+        }
     </style>
 </head>
 <body>
@@ -179,7 +188,20 @@
         </div>
 
         <div class="panel-3d panel-purple" id="seccion-partidos-rr" style="display: none;">
-            <h2>📋 Rol Oficial de Partidos Guardado</h2>
+            
+            <!-- BARRA DE EXPORTACIÓN RESTAURADA Y CONECTADA -->
+            <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 15px; flex-wrap:wrap; gap:12px;">
+                <h2 style="border:none; padding:0; margin:0;">📋 Rol Oficial de Partidos Guardado</h2>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <button class="btn-console btn-ws-style" onclick="compartirAgendaWhatsApp()">📲 Enviar por WhatsApp</button>
+                    <button class="btn-console" onclick="imprimirAgenda()">📄 PDF / Imprimir</button>
+                    <button class="btn-console btn-green" onclick="exportarAgendaExcel()">📊 Excel</button>
+                    <select id="filtro-jugador-agenda" onchange="filtrarPartidosPorJugador()" style="padding:8px 12px; font-size:11px; max-width:200px;">
+                        <option value="">-- Todos los Jugadores --</option>
+                    </select>
+                </div>
+            </div>
+
             <table>
                 <thead>
                     <tr>
@@ -189,7 +211,7 @@
                         <th>Jugador 1</th>
                         <th style="text-align:center;">VS</th>
                         <th>Jugador 2</th>
-                        <th>Estatus / Scoreboard</th>
+                        <th class="no-print">Estatus / Scoreboard</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-partidos-rr">
@@ -210,6 +232,7 @@
         let jugadoresListos = [];
         let gruposGlobal = [];
         let partidosGeneradosRR = [];
+        let partidosCargadosGlobal = []; // Para los filtros de la barra superior
 
         const clasesColoresGrupo = ['gpo-cyan', 'gpo-purple', 'gpo-emerald', 'gpo-amber'];
 
@@ -247,7 +270,6 @@
                 return; 
             }
 
-            // Contar pagados
             const { count } = await clienteSupabase.from('inscripciones')
                 .select('*', { count: 'exact', head: true })
                 .eq('categoria_id', idCat)
@@ -256,7 +278,6 @@
             
             contador.innerText = count || 0;
 
-            // Consultar si ya hay partidos guardados en BD
             const { data: partidosBD } = await clienteSupabase
                 .from('partidos')
                 .select('*, j1:jugador1_id(nombre), j2:jugador2_id(nombre)')
@@ -265,20 +286,19 @@
                 .order('id', { ascending: true });
 
             if (partidosBD && partidosBD.length > 0) {
-                // CATEGORÍA YA CON PARTIDOS GUARDADOS EN BD
+                partidosCargadosGlobal = partidosBD;
                 contSorteo.style.display = 'none';
                 btnRehacer.style.display = 'inline-flex';
                 panelHorarios.style.display = 'none';
                 btnGuardar.style.display = 'none';
 
-                // Reconstruir vista de grupos
                 reconstruirGruposDesdePartidosBD(partidosBD);
-
-                // Mostrar tabla de partidos guardados
+                poblarDropdownAgenda(partidosBD);
+                
                 seccionPartidos.style.display = 'block';
                 dibujarTablaPartidosBD(partidosBD);
             } else {
-                // CATEGORÍA SIN SORTEO
+                partidosCargadosGlobal = [];
                 contSorteo.style.display = 'flex';
                 btnRehacer.style.display = 'none';
                 contenedorGrupos.innerHTML = '';
@@ -288,6 +308,71 @@
             }
         }
 
+        // FUNCIONES DE LA BARRA DE EXPORTACIÓN Y FILTROS
+        function poblarDropdownAgenda(partidos) {
+            const select = document.getElementById('filtro-jugador-agenda');
+            select.innerHTML = '<option value="">-- Todos los Jugadores --</option>';
+            let jugadoresSet = new Set();
+            partidos.forEach(p => {
+                if (p.j1 && p.j1.nombre) jugadoresSet.add(p.j1.nombre);
+                if (p.j2 && p.j2.nombre) jugadoresSet.add(p.j2.nombre);
+            });
+            [...jugadoresSet].sort().forEach(nombre => {
+                select.innerHTML += `<option value="${nombre}">${nombre}</option>`;
+            });
+        }
+
+        function filtrarPartidosPorJugador() {
+            const nombre = document.getElementById('filtro-jugador-agenda').value;
+            if (!nombre) {
+                dibujarTablaPartidosBD(partidosCargadosGlobal);
+                return;
+            }
+            const filtrados = partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre));
+            dibujarTablaPartidosBD(filtrados);
+        }
+
+        function compartirAgendaWhatsApp() {
+            const nombre = document.getElementById('filtro-jugador-agenda').value;
+            let texto = `🏓 *ROL DE PARTIDOS - ${torneoActivoObj ? torneoActivoObj.nombre : ''}* 🏓\n\n`;
+            
+            let lista = partidosCargadosGlobal;
+            if (nombre) {
+                texto += `👤 *Jugador:* ${nombre}\n\n`;
+                lista = partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre));
+            } else {
+                texto += `📋 *Rol General (Todos los partidos)*\n\n`;
+            }
+
+            if(lista.length === 0) { alert("No hay partidos para enviar."); return; }
+
+            lista.forEach(p => {
+                texto += `⏰ ${p.hora || '09:00'} | Mesa ${p.mesa}\n` +
+                         `   ${p.j1 ? p.j1.nombre : 'J1'} vs ${p.j2 ? p.j2.nombre : 'J2'}\n\n`;
+            });
+
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+
+        function imprimirAgenda() { window.print(); }
+
+        function exportarAgendaExcel() {
+            let csv = 'Hora,Mesa,Grupo/Ronda,Jugador 1,Jugador 2\n';
+            const nombre = document.getElementById('filtro-jugador-agenda').value;
+            let lista = partidosCargadosGlobal;
+            if (nombre) lista = lista.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre));
+
+            lista.forEach(p => {
+                csv += `"${p.hora || '09:00'}","Mesa ${p.mesa}","Gpo ${p.grupo_nombre}","${p.j1 ? p.j1.nombre : ''}","${p.j2 ? p.j2.nombre : ''}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a"); 
+            link.setAttribute("href", URL.createObjectURL(blob)); 
+            link.setAttribute("download", `Rol_Partidos_${nombre || 'General'}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        // DIBUJO Y RECONSTRUCCIÓN DE GRUPOS
         function reconstruirGruposDesdePartidosBD(partidosBD) {
             const contenedor = document.getElementById('contenedor-grupos');
             contenedor.innerHTML = '';
@@ -325,7 +410,7 @@
             tbody.innerHTML = '';
 
             partidosBD.forEach(p => {
-                let horaStr = p.updated_at ? p.updated_at.slice(11, 16) : '09:00';
+                let horaStr = p.hora || '09:00';
                 tbody.innerHTML += `
                     <tr>
                         <td><strong>⏰ ${horaStr}</strong></td>
@@ -334,7 +419,7 @@
                         <td><strong>${p.j1 ? p.j1.nombre : 'J1'}</strong></td>
                         <td style="text-align:center;">VS</td>
                         <td><strong>${p.j2 ? p.j2.nombre : 'J2'}</strong></td>
-                        <td>
+                        <td class="no-print">
                             <a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 10px; font-size:9px; text-decoration:none;">🏓 Arbitrar</a>
                         </td>
                     </tr>
@@ -461,6 +546,7 @@
         function dibujarTablaPartidosGenerados(lista) {
             const tbody = document.getElementById('tabla-partidos-rr');
             tbody.innerHTML = '';
+            document.getElementById('filtro-jugador-agenda').innerHTML = '<option value="">-- Guarda para habilitar filtros --</option>';
 
             lista.forEach((p) => {
                 tbody.innerHTML += `
@@ -471,7 +557,7 @@
                         <td><strong>${p.j1.nombre}</strong></td>
                         <td style="text-align:center;">VS</td>
                         <td><strong>${p.j2.nombre}</strong></td>
-                        <td><small style="color:#fbbf24; font-weight:700;">Guarda en BD para habilitar arbitraje</small></td>
+                        <td class="no-print"><small style="color:#fbbf24; font-weight:700;">Guarda en BD para habilitar arbitraje</small></td>
                     </tr>
                 `;
             });
@@ -494,6 +580,7 @@
                 grupo_nombre: p.grupoNombre,
                 ronda_fase: `Ronda ${p.ronda}`,
                 mesa: p.mesa,
+                hora: p.hora,
                 jugador1_id: p.j1.id,
                 jugador2_id: p.j2.id,
                 juez: p.juez,
@@ -503,13 +590,13 @@
             const { error } = await clienteSupabase.from('partidos').insert(partidosInsertar);
 
             if (error) {
-                alert("Error al guardar los partidos en Supabase.");
+                alert("Error de Supabase: " + error.message + "\n\n💡 RECUERDA: Ejecutar el código SQL en Supabase para asegurar que la tabla 'partidos' existe y tiene la columna 'hora'.");
                 btn.disabled = false;
                 btn.innerText = "💾 Guardar Acomodo y Partidos en Base de Datos";
                 return;
             }
 
-            alert("✅ ¡Partidos guardados con éxito!");
+            alert("✅ ¡Partidos guardados con éxito en la Base de Datos!");
             cargarEstadoCategoria();
         }
 
