@@ -41,14 +41,13 @@
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
         const { useState, useEffect, useRef } = React;
 
-        // PALETA DINÁMICA DE CATEGORÍAS
         const obtenerEstiloCategoria = (catId) => {
             const paleta = [
-                { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.5)', text: '#fbbf24' }, // Dorado
-                { bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.5)', text: '#38bdf8' },  // Cian
-                { bg: 'rgba(217, 70, 239, 0.15)', border: 'rgba(217, 70, 239, 0.5)', text: '#f0abfc' }, // Magenta
-                { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.5)', text: '#34d399' }, // Esmeralda
-                { bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.5)', text: '#c084fc' }  // Púrpura
+                { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.5)', text: '#fbbf24' }, 
+                { bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.5)', text: '#38bdf8' },  
+                { bg: 'rgba(217, 70, 239, 0.15)', border: 'rgba(217, 70, 239, 0.5)', text: '#f0abfc' }, 
+                { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.5)', text: '#34d399' }, 
+                { bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.5)', text: '#c084fc' }  
             ];
             const idx = (catId || 0) % paleta.length;
             return paleta[idx];
@@ -77,9 +76,39 @@
             const [winner, setWinner] = useState(null);
             
             const [isMuted, setIsMuted] = useState(true);
+            const [viewerCount, setViewerCount] = useState(1); // ESTADO PARA EL CONTADOR DE ESPECTADORES
+            
             const matchStateRef = useRef({ p1: '', p2: '', score1: 0, score2: 0 });
 
             const torneoId = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id') || 1;
+
+            // =====================================
+            // LÓGICA DE PRESENCIA PARA EL CONTADOR
+            // =====================================
+            useEffect(() => {
+                const userId = 'espectador-' + Math.random().toString(36).substring(2, 10);
+                const room = clienteSupabase.channel(`espectadores_torneo_${torneoId}`, {
+                    config: {
+                        presence: {
+                            key: userId,
+                        },
+                    },
+                });
+
+                room.on('presence', { event: 'sync' }, () => {
+                    const newState = room.presenceState();
+                    const numSpectators = Object.keys(newState).length;
+                    setViewerCount(numSpectators > 0 ? numSpectators : 1);
+                }).subscribe(async (status) => {
+                    if (status === 'SUBSCRIBED') {
+                        await room.track({ online_at: new Date().toISOString() });
+                    }
+                });
+
+                return () => {
+                    clienteSupabase.removeChannel(room);
+                };
+            }, [torneoId]);
 
             const entrarAlPartido = (id) => {
                 setActivePartidoId(id);
@@ -254,7 +283,13 @@
                         
                         <div className="sticky-header">
                             <div className="text-center mb-4">
-                                <div className="text-rose-500 font-bold uppercase tracking-widest text-[9px] mb-1 animate-pulse">🔴 Transmisiones Oficiales</div>
+                                <div className="flex justify-center items-center gap-3 mb-1">
+                                    <div className="text-rose-500 font-bold uppercase tracking-widest text-[9px] animate-pulse">🔴 Transmisiones Oficiales</div>
+                                    {/* CONTADOR DE ESPECTADORES LOBBY */}
+                                    <div className="text-zinc-400 font-bold text-[9px] uppercase tracking-widest bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                                        <i className="fa-solid fa-eye text-cyan-400 mr-1"></i> {viewerCount}
+                                    </div>
+                                </div>
                                 <h1 className="text-lg font-black text-cyan-400 uppercase tracking-widest">Cartelera</h1>
                             </div>
                             
@@ -278,7 +313,6 @@
                                     let isJ1Win = p.ganador_id === p.jugador1_id;
                                     let isJ2Win = p.ganador_id === p.jugador2_id;
 
-                                    // ESTILO DINÁMICO DE CATEGORÍA
                                     const catObj = p.categorias || {};
                                     const estiloCat = obtenerEstiloCategoria(catObj.id || 0);
 
@@ -352,7 +386,13 @@
 
                 return (
                     <div className="fixed inset-0 bg-[#04060a] p-6 overflow-y-auto z-50 text-white flex flex-col items-center">
-                        <div className="mt-8 text-center text-rose-500 font-bold uppercase tracking-widest text-xs mb-2 animate-pulse">🔴 Transmisión Oficial</div>
+                        <div className="mt-8 text-center text-rose-500 font-bold uppercase tracking-widest text-xs mb-2 flex items-center justify-center gap-3">
+                            <span className="animate-pulse">🔴 Transmisión Oficial</span>
+                            {/* CONTADOR EN RIVALIDAD */}
+                            <span className="text-zinc-400 font-bold text-[9px] uppercase tracking-widest bg-white/5 border border-white/10 px-2 py-0.5 rounded-full not-italic">
+                                <i className="fa-solid fa-eye text-cyan-400 mr-1"></i> {viewerCount}
+                            </span>
+                        </div>
                         <h1 className="text-2xl md:text-3xl font-black text-cyan-400 mb-6 uppercase tracking-widest text-center">Frente a Frente</h1>
                         
                         <div className="flex w-full max-w-md justify-between items-center bg-slate-900/50 p-6 rounded-[30px] border border-white/10 mb-8 shadow-[0_0_30px_rgba(6,182,212,0.1)]">
@@ -411,13 +451,18 @@
                             <div className="text-[8px] text-cyan-400 font-bold uppercase mt-0.5 truncate">Formato: {mode === '2-3' ? '2 de 3' : (mode === '3-5' ? '3 de 5' : '4 de 7')} Sets</div>
                         </div>
 
-                        <button onClick={() => setIsMuted(!isMuted)} className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors shrink-0 ${isMuted ? 'bg-rose-500/20 text-rose-500 border border-rose-500/50' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'}`}>
-                            {isMuted ? <i className="fa-solid fa-volume-xmark"></i> : <i className="fa-solid fa-volume-high"></i>}
-                        </button>
+                        <div className="flex items-center gap-2">
+                            {/* CONTADOR EN EL MARCADOR (Lado superior derecho junto al Mute) */}
+                            <div className="text-zinc-400 font-bold text-[9px] uppercase tracking-widest bg-white/5 border border-white/10 px-2 py-1.5 rounded-full flex items-center">
+                                <i className="fa-solid fa-eye text-cyan-400 mr-1"></i> {viewerCount}
+                            </div>
+                            <button onClick={() => setIsMuted(!isMuted)} className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors shrink-0 ${isMuted ? 'bg-rose-500/20 text-rose-500 border border-rose-500/50' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'}`}>
+                                {isMuted ? <i className="fa-solid fa-volume-xmark"></i> : <i className="fa-solid fa-volume-high"></i>}
+                            </button>
+                        </div>
                     </div>
 
                     <div className="flex-1 flex flex-col landscape:flex-row w-full p-3 landscape:p-6 gap-4 overflow-hidden min-h-0">
-                        {/* JUGADOR 1 */}
                         <div className="flex-1 flex flex-col min-h-0 min-w-0">
                             <div className="name-p1 py-4 px-5 rounded-[20px] flex items-center justify-between shrink-0">
                                 <div className="w-10"></div> 
@@ -436,7 +481,6 @@
                             <div className="text-zinc-600 font-black italic text-2xl">VS</div>
                         </div>
 
-                        {/* JUGADOR 2 */}
                         <div className="flex-1 flex flex-col min-h-0 min-w-0">
                             <div className="name-p2 py-4 px-5 rounded-[20px] flex items-center justify-between shrink-0">
                                 <div className="w-10 h-10 bg-black/30 border border-white/20 rounded-lg flex items-center justify-center text-white font-digital font-bold text-xl">{sets2}</div>
