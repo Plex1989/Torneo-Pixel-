@@ -45,7 +45,7 @@
 
         .header-hora { grid-column: 1 / -1; font-size: 13px; color: #38bdf8; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid rgba(56, 189, 248, 0.3); padding-bottom: 6px; margin-top: 20px; margin-bottom: 5px; letter-spacing: 1.5px; }
 
-        /* SECCIÓN LLAVES ABAJO */
+        /* SECCIÓN LLAVES AL FINAL */
         .seccion-llaves-footer { grid-column: 1 / -1; margin-top: 30px; background: rgba(10, 15, 26, 0.85); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 20px; padding: 20px; backdrop-filter: blur(15px); }
     </style>
 </head>
@@ -101,6 +101,12 @@
             ];
             const idx = (catId || 0) % paleta.length;
             return paleta[idx];
+        };
+
+        const getApellido = (nombreCompleto) => {
+            if(!nombreCompleto) return "";
+            const partes = nombreCompleto.trim().split(" ");
+            return partes[partes.length - 1];
         };
 
         async function inicializar() {
@@ -205,7 +211,7 @@
             const porCategoria = {};
 
             todosLosPartidos.forEach(m => {
-                if (!m.grupo_nombre) return; // Solo partidos de grupo
+                if (!m.grupo_nombre) return; 
                 const catNombre = m.categorias?.nombre || 'General';
                 if (!porCategoria[catNombre]) porCategoria[catNombre] = {};
                 
@@ -254,7 +260,7 @@
             const contenedor = document.getElementById('contenedor-partidos');
             contenedor.innerHTML = '';
 
-            // Solo mostramos partidos de grupos en el listado por hora
+            // 1. DIBUJAR PARTIDOS DE GRUPOS ARRIBA
             let filtrados = todosLosPartidos.filter(p => p.grupo_nombre);
 
             if (mesaFiltro !== 'todas') {
@@ -327,27 +333,26 @@
                 });
             });
 
-            // ==========================================
-            // SECCIÓN FASE FINAL / LLAVES ELIMINATORIAS AL FINAL
-            // ==========================================
+            // 2. DIBUJAR SIEMPRE LAS LLAVES ELIMINATORIAS AL FINAL
             dibujarLlavesInferiores(contenedor);
         }
 
         function dibujarLlavesInferiores(contenedor) {
             const standings = calcularStandingsGrupos();
-            const categoriasNombres = Object.keys(standings);
+            
+            // Extraer todas las categorías únicas presentes en el torneo
+            const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
+            let catsList = [...categoriasSet];
 
-            let catsFiltradas = categoriasNombres;
             if (categoriaFiltro !== 'todas') {
-                catsFiltradas = catsFiltradas.filter(c => c === categoriaFiltro);
+                catsList = catsList.filter(c => c === categoriaFiltro);
             }
 
-            if (catsFiltradas.length === 0) return;
+            if (catsList.length === 0) return;
 
-            // Buscamos partidos de eliminatoria guardados en la BD si existen
             const partidosLlaveBD = todosLosPartidos.filter(p => !p.grupo_nombre || p.ronda_fase?.toLowerCase().includes('cruce') || p.ronda_fase?.toLowerCase().includes('semifinal') || p.ronda_fase?.toLowerCase().includes('final'));
 
-            catsFiltradas.forEach(catNombre => {
+            catsList.forEach(catNombre => {
                 const gruposCat = standings[catNombre] || {};
                 const gpoA_arr = gruposCat['A'] ? Object.values(gruposCat['A']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
                 const gpoB_arr = gruposCat['B'] ? Object.values(gruposCat['B']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
@@ -362,7 +367,6 @@
                 const finGpo = partidosCatGpo.filter(p => (p.estado || '').trim().toLowerCase() === 'finalizado').length;
                 const gpoCompleto = totalGpo > 0 && totalGpo === finGpo;
 
-                // Buscar ID de partidos de semifinal si ya existen en BD
                 const partidoSemi1 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && (p.ronda_fase?.includes('1') || p.ronda_fase?.toLowerCase().includes('semi')));
                 const partidoSemi2 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && (p.ronda_fase?.includes('2') || p.ronda_fase?.toLowerCase().includes('semi')));
 
@@ -379,7 +383,7 @@
                             </div>
                         ` : `
                             <div style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase; margin-bottom:18px;">
-                                ⏳ PROYECCIÓN PRELIMINAR EN TIEMPO REAL (En espera de finalizar grupo)
+                                ⏳ PROYECCIÓN PRELIMINAR EN TIEMPO REAL (En espera de finalizar grupos)
                             </div>
                         `}
 
@@ -389,22 +393,22 @@
                             <div style="background:rgba(0,0,0,0.4); padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08);">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                                     <span style="font-size:10px; color:#38bdf8; font-weight:800; text-transform:uppercase;">Semifinal 1</span>
-                                    <span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partidosSemi1?.mesa || 1}</span>
+                                    <span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partidoSemi1?.mesa || 1}</span>
                                 </div>
 
                                 <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
-                                    <strong style="font-size:12px; color:#fff;">🥇 ${primeroA}</strong>
+                                    <strong style="font-size:12px; color:#fff;">🥇 ${partidoSemi1?.j1 ? partidoSemi1.j1.nombre : primeroA}</strong>
                                     <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800;">1° Gpo A</span>
                                 </div>
 
                                 <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
 
                                 <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                                    <strong style="font-size:12px; color:#fff;">🥈 ${segundoB}</strong>
+                                    <strong style="font-size:12px; color:#fff;">🥈 ${partidoSemi1?.j2 ? partidoSemi1.j2.nombre : segundoB}</strong>
                                     <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">2° Gpo B</span>
                                 </div>
 
-                                <button class="btn-arbitrar" onclick="abrirScoreboardJuez(${partidosSemi1 ? partidosSemi1.id : 0})">
+                                <button class="btn-arbitrar" onclick="abrirScoreboardJuez(${partidoSemi1 ? partidoSemi1.id : 0})">
                                     🏓 Arbitrar Semifinal 1
                                 </button>
                             </div>
@@ -413,22 +417,22 @@
                             <div style="background:rgba(0,0,0,0.4); padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08);">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                                     <span style="font-size:10px; color:#f0abfc; font-weight:800; text-transform:uppercase;">Semifinal 2</span>
-                                    <span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partidosSemi2?.mesa || 2}</span>
+                                    <span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partidoSemi2?.mesa || 2}</span>
                                 </div>
 
                                 <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
-                                    <strong style="font-size:12px; color:#fff;">🥇 ${primeroB}</strong>
+                                    <strong style="font-size:12px; color:#fff;">🥇 ${partidoSemi2?.j1 ? partidoSemi2.j1.nombre : primeroB}</strong>
                                     <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800;">1° Gpo B</span>
                                 </div>
 
                                 <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
 
                                 <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                                    <strong style="font-size:12px; color:#fff;">🥈 ${segundoA}</strong>
+                                    <strong style="font-size:12px; color:#fff;">🥈 ${partidoSemi2?.j2 ? partidoSemi2.j2.nombre : segundoA}</strong>
                                     <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">2° Gpo A</span>
                                 </div>
 
-                                <button class="btn-arbitrar" onclick="abrirScoreboardJuez(${partidosSemi2 ? partidosSemi2.id : 0})">
+                                <button class="btn-arbitrar" onclick="abrirScoreboardJuez(${partidoSemi2 ? partidoSemi2.id : 0})">
                                     🏓 Arbitrar Semifinal 2
                                 </button>
                             </div>
