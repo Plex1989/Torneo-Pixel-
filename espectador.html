@@ -78,14 +78,12 @@
             const [isMuted, setIsMuted] = useState(true);
             const [viewerCount, setViewerCount] = useState(1); 
             
-            // ESTADO PARA MODAL DE JUGADOR DETALLE
             const [jugadorModal, setJugadorModal] = useState(null);
             const [categoriaResumenSel, setCategoriaResumenSel] = useState(null);
 
             const matchStateRef = useRef({ p1: '', p2: '', score1: 0, score2: 0 });
             const torneoId = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id') || 1;
 
-            // PRESENCIA EN VIVO
             useEffect(() => {
                 const userId = 'espectador-' + Math.random().toString(36).substring(2, 10);
                 const room = clienteSupabase.channel(`espectadores_torneo_${torneoId}`, {
@@ -258,9 +256,6 @@
                 return () => { if(channel) clienteSupabase.removeChannel(channel); };
             }, [activePartidoId, torneoId, isMuted]);
 
-            // ==========================================
-            // CÁLCULO DE TABLAS Y RESUMEN DE GRUPOS
-            // ==========================================
             const calcularResumenCategorias = () => {
                 const porCategoria = {};
 
@@ -313,6 +308,12 @@
 
                 let catNombreActual = categoriaResumenSel || (listaCategoriasNombres[0] || null);
 
+                // VERIFICAR SI TODOS LOS PARTIDOS DE GRUPO DE ESTA CATEGORÍA FINALIZARON
+                const partidosCat = lobbyMatches.filter(m => (m.categorias?.nombre || 'General') === catNombreActual);
+                const totalPartidosGpo = partidosCat.length;
+                const finalizadosGpo = partidosCat.filter(m => m.estado === 'finalizado').length;
+                const gpoCompleto = totalPartidosGpo > 0 && totalPartidosGpo === finalizadosGpo;
+
                 return (
                     <div className="min-h-screen bg-[#04060a] overflow-x-hidden text-white pb-10">
                         
@@ -336,11 +337,9 @@
                             </div>
                         </div>
 
-                        {/* SECCIÓN VISTA RESUMEN Y LLAVES */}
                         {estadoFiltro === 'resumen' ? (
                             <div className="p-4 max-w-4xl mx-auto space-y-6">
                                 
-                                {/* SELECTOR DE CATEGORÍA PARA RESUMEN */}
                                 <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 justify-center">
                                     {listaCategoriasNombres.map(cat => (
                                         <button key={cat} onClick={() => setCategoriaResumenSel(cat)}
@@ -353,7 +352,6 @@
                                 {catNombreActual && resumenData[catNombreActual] ? (
                                     <div className="space-y-6">
                                         
-                                        {/* TABLAS DE CADA GRUPO DE LA CATEGORÍA */}
                                         {Object.keys(resumenData[catNombreActual].grupos).sort().map(gpoNombre => {
                                             const jugadoresMap = resumenData[catNombreActual].grupos[gpoNombre];
                                             const listaJugadores = Object.values(jugadoresMap).sort((a,b) => b.pts - a.pts || b.pg - a.pg);
@@ -405,12 +403,23 @@
                                             );
                                         })}
 
-                                        {/* LLAVES ELIMINATORIAS (PLAYOFFS BRACKET) */}
+                                        {/* LLAVES ELIMINATORIAS CON BANNER CLARO DE ESTADO */}
                                         <div className="bg-slate-900/90 rounded-2xl p-5 border border-amber-500/30 shadow-xl mt-8">
-                                            <div className="text-center mb-6">
+                                            <div className="text-center mb-4">
                                                 <span className="text-amber-400 text-[10px] font-extrabold uppercase tracking-widest block mb-1">Fase Final de Eliminatoria Directa</span>
                                                 <h3 className="text-lg font-black text-white uppercase tracking-wider">🏆 Cuadro de Llaves</h3>
                                             </div>
+
+                                            {/* BANNER INDICADOR DE ESTADO EN TIEMPO REAL */}
+                                            {gpoCompleto ? (
+                                                <div className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 p-3 rounded-xl text-center font-extrabold text-[11px] uppercase tracking-widest mb-6 animate-pulse">
+                                                    ✅ ¡LLAVE DEFINITIVA CONFIRMADA! (Fase de grupos 100% completada)
+                                                </div>
+                                            ) : (
+                                                <div className="bg-amber-500/20 border border-amber-500/50 text-amber-400 p-3 rounded-xl text-center font-extrabold text-[10px] uppercase tracking-widest mb-6">
+                                                    ⏳ PROYECCIÓN EN TIEMPO REAL (Resultados preliminares según partidos jugados hasta el momento)
+                                                </div>
+                                            )}
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 {/* CRUCE 1 */}
@@ -477,7 +486,6 @@
 
                             </div>
                         ) : (
-                            /* SECCIÓN CARTELERA DE PARTIDOS OTRAS PESTAÑAS */
                             <div className="p-4 max-w-3xl mx-auto space-y-4">
                                 {(() => {
                                     let filtrados = lobbyMatches;
@@ -560,7 +568,7 @@
                             </div>
                         )}
 
-                        {/* MODAL EMERGENTE DETALLE DE PARTIDOS DE UN JUGADOR */}
+                        {/* MODAL DETALLE DE PARTIDOS DE UN JUGADOR */}
                         {jugadorModal && (
                             <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
                                 <div className="bg-slate-900 border border-white/20 rounded-2xl w-full max-w-lg p-5 text-white max-h-[85vh] overflow-y-auto">
@@ -599,7 +607,6 @@
                                                             ) : <span className="text-[9px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded">⏳ {m.hora}</span>}
                                                         </div>
 
-                                                        {/* DESGLOSE DE SETS PUNTO A PUNTO */}
                                                         {m.historial_sets && m.historial_sets.length > 0 && (
                                                             <div className="flex gap-2 flex-wrap pt-1 border-t border-white/5">
                                                                 {m.historial_sets.map((s, idx) => (
