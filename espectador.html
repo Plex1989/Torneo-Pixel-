@@ -64,6 +64,7 @@
             const [lobbyMatches, setLobbyMatches] = useState([]);
             const [errorMsg, setErrorMsg] = useState(null);
             const [estadoFiltro, setEstadoFiltro] = useState('en_curso');
+            const [categoriaFiltroCartelera, setCategoriaFiltroCartelera] = useState('todas');
 
             const [p1, setP1] = useState("");
             const [p2, setP2] = useState("");
@@ -276,7 +277,8 @@
                         }
                     });
 
-                    if (m.estado === 'finalizado' && m.j1 && m.j2) {
+                    let estLimpio = (m.estado || '').trim().toLowerCase();
+                    if (estLimpio === 'finalizado' && m.j1 && m.j2) {
                         const j1 = grupoObj[m.j1.id];
                         const j2 = grupoObj[m.j2.id];
 
@@ -296,23 +298,33 @@
                 return porCategoria;
             };
 
+            // FUNCIÓN SEGURA PARA OBTENER EL NOMBRE DEL JUGADOR EN LA LLAVE (SOLO SI YA JUGÓ)
+            const getPosicionGrupoNombre = (grupoArr, posIndex, fallbackText) => {
+                if (!grupoArr || grupoArr.length <= posIndex) return fallbackText;
+                const jugador = grupoArr[posIndex];
+                // Solo si el jugador tiene puntos acumulados o partidos jugados mayores a 0, mostramos su nombre real
+                if (jugador && (jugador.pts > 0 || jugador.pj > 0)) {
+                    return jugador.nombre;
+                }
+                return fallbackText;
+            };
+
             if (view === 'loading') return <div className="min-h-screen flex items-center justify-center text-cyan-400 font-bold uppercase tracking-widest text-sm">Cargando Transmisión...</div>;
             if (view === 'error') return <div className="min-h-screen flex items-center justify-center text-rose-500 font-bold uppercase">{errorMsg}</div>;
 
-            // ==========================================
-            // VISTA CARTELERA / RESUMEN
-            // ==========================================
             if (view === 'lobby') {
                 const resumenData = calcularResumenCategorias();
                 const listaCategoriasNombres = Object.keys(resumenData);
 
                 let catNombreActual = categoriaResumenSel || (listaCategoriasNombres[0] || null);
 
-                // VERIFICAR SI TODOS LOS PARTIDOS DE GRUPO DE ESTA CATEGORÍA FINALIZARON
                 const partidosCat = lobbyMatches.filter(m => (m.categorias?.nombre || 'General') === catNombreActual);
                 const totalPartidosGpo = partidosCat.length;
-                const finalizadosGpo = partidosCat.filter(m => m.estado === 'finalizado').length;
+                const finalizadosGpo = partidosCat.filter(m => (m.estado || '').trim().toLowerCase() === 'finalizado').length;
                 const gpoCompleto = totalPartidosGpo > 0 && totalPartidosGpo === finalizadosGpo;
+
+                // LISTA UNICA DE CATEGORÍAS EN CARTELERA
+                const categoriasUnicasCartelera = [...new Set(lobbyMatches.map(m => m.categorias?.nombre).filter(Boolean))];
 
                 return (
                     <div className="min-h-screen bg-[#04060a] overflow-x-hidden text-white pb-10">
@@ -335,6 +347,22 @@
                                 <button className={`tab-filter ${estadoFiltro === 'finalizado' ? 'active' : ''}`} onClick={() => setEstadoFiltro('finalizado')}>🏁 Finalizados</button>
                                 <button className={`tab-filter ${estadoFiltro === 'todos' ? 'active' : ''}`} onClick={() => setEstadoFiltro('todos')}>📋 Todos</button>
                             </div>
+
+                            {/* FILTRO VISIBLE DE CATEGORÍAS EN LA PARTE SUPERIOR DE CARTELERA */}
+                            {estadoFiltro !== 'resumen' && categoriasUnicasCartelera.length > 0 && (
+                                <div className="flex justify-start sm:justify-center gap-2 px-6 overflow-x-auto no-scrollbar pt-2 border-t border-white/5">
+                                    <button onClick={() => setCategoriaFiltroCartelera('todas')} 
+                                            className={`px-3 py-1 rounded-full text-[9px] font-black uppercase transition-all ${categoriaFiltroCartelera === 'todas' ? 'bg-amber-500 text-black shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 'bg-white/5 text-zinc-400 border border-white/10'}`}>
+                                        Todas las Categorías
+                                    </button>
+                                    {categoriasUnicasCartelera.map(cName => (
+                                        <button key={cName} onClick={() => setCategoriaFiltroCartelera(cName)}
+                                                className={`px-3 py-1 rounded-full text-[9px] font-black uppercase transition-all ${categoriaFiltroCartelera === cName ? 'bg-amber-500 text-black shadow-[0_0_10px_rgba(245,158,11,0.5)]' : 'bg-white/5 text-zinc-400 border border-white/10'}`}>
+                                            🏆 {cName}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
                         {estadoFiltro === 'resumen' ? (
@@ -403,81 +431,91 @@
                                             );
                                         })}
 
-                                        {/* LLAVES ELIMINATORIAS CON BANNER CLARO DE ESTADO */}
-                                        <div className="bg-slate-900/90 rounded-2xl p-5 border border-amber-500/30 shadow-xl mt-8">
-                                            <div className="text-center mb-4">
-                                                <span className="text-amber-400 text-[10px] font-extrabold uppercase tracking-widest block mb-1">Fase Final de Eliminatoria Directa</span>
-                                                <h3 className="text-lg font-black text-white uppercase tracking-wider">🏆 Cuadro de Llaves</h3>
-                                            </div>
+                                        {/* LLAVES ELIMINATORIAS (CON VALIDACIÓN DE PARTIDOS JUGADOS) */}
+                                        {(() => {
+                                            const gpoA_arr = resumenData[catNombreActual]?.grupos['A'] ? Object.values(resumenData[catNombreActual].grupos['A']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
+                                            const gpoB_arr = resumenData[catNombreActual]?.grupos['B'] ? Object.values(resumenData[catNombreActual].grupos['B']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
 
-                                            {/* BANNER INDICADOR DE ESTADO EN TIEMPO REAL */}
-                                            {gpoCompleto ? (
-                                                <div className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 p-3 rounded-xl text-center font-extrabold text-[11px] uppercase tracking-widest mb-6 animate-pulse">
-                                                    ✅ ¡LLAVE DEFINITIVA CONFIRMADA! (Fase de grupos 100% completada)
-                                                </div>
-                                            ) : (
-                                                <div className="bg-amber-500/20 border border-amber-500/50 text-amber-400 p-3 rounded-xl text-center font-extrabold text-[10px] uppercase tracking-widest mb-6">
-                                                    ⏳ PROYECCIÓN EN TIEMPO REAL (Resultados preliminares según partidos jugados hasta el momento)
-                                                </div>
-                                            )}
+                                            const primeroA_nombre = getPosicionGrupoNombre(gpoA_arr, 0, '1° Grupo A');
+                                            const segundoA_nombre = getPosicionGrupoNombre(gpoA_arr, 1, '2° Grupo A');
+                                            const primeroB_nombre = getPosicionGrupoNombre(gpoB_arr, 0, '1° Grupo B');
+                                            const segundoB_nombre = getPosicionGrupoNombre(gpoB_arr, 1, '2° Grupo B');
 
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                {/* CRUCE 1 */}
-                                                <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-3">
-                                                    <span className="text-[9px] text-cyan-400 font-extrabold uppercase tracking-wider block border-b border-white/10 pb-1">Semifinal / Cruce 1</span>
-                                                    
-                                                    <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
-                                                        <span className="text-xs font-extrabold text-white">
-                                                            🥇 {resumenData[catNombreActual]?.grupos['A'] && Object.values(resumenData[catNombreActual].grupos['A'])[0]?.nombre ? Object.values(resumenData[catNombreActual].grupos['A'])[0].nombre : '1° Grupo A'}
-                                                        </span>
-                                                        <span className="text-[9px] bg-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded">1° Gpo A</span>
+                                            return (
+                                                <div className="bg-slate-900/90 rounded-2xl p-5 border border-amber-500/30 shadow-xl mt-8">
+                                                    <div className="text-center mb-4">
+                                                        <span className="text-amber-400 text-[10px] font-extrabold uppercase tracking-widest block mb-1">Fase Final de Eliminatoria Directa</span>
+                                                        <h3 className="text-lg font-black text-white uppercase tracking-wider">🏆 Cuadro de Llaves</h3>
                                                     </div>
 
-                                                    <div className="text-center text-[10px] text-zinc-600 font-black italic">VS</div>
+                                                    {gpoCompleto ? (
+                                                        <div className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 p-3 rounded-xl text-center font-extrabold text-[11px] uppercase tracking-widest mb-6 animate-pulse">
+                                                            ✅ ¡LLAVE DEFINITIVA CONFIRMADA! (Fase de grupos 100% completada)
+                                                        </div>
+                                                    ) : (
+                                                        <div className="bg-amber-500/20 border border-amber-500/50 text-amber-400 p-3 rounded-xl text-center font-extrabold text-[10px] uppercase tracking-widest mb-6">
+                                                            ⏳ PROYECCIÓN EN TIEMPO REAL (Resultados preliminares según partidos jugados hasta el momento)
+                                                        </div>
+                                                    )}
 
-                                                    <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
-                                                        <span className="text-xs font-extrabold text-white">
-                                                            🥈 {resumenData[catNombreActual]?.grupos['B'] && Object.values(resumenData[catNombreActual].grupos['B'])[1]?.nombre ? Object.values(resumenData[catNombreActual].grupos['B'])[1].nombre : '2° Grupo B'}
-                                                        </span>
-                                                        <span className="text-[9px] bg-cyan-500/20 text-cyan-400 font-bold px-2 py-0.5 rounded">2° Gpo B</span>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                        {/* CRUCE 1 */}
+                                                        <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-3">
+                                                            <span className="text-[9px] text-cyan-400 font-extrabold uppercase tracking-wider block border-b border-white/10 pb-1">Semifinal / Cruce 1</span>
+                                                            
+                                                            <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
+                                                                <span className="text-xs font-extrabold text-white">
+                                                                    🥇 {primeroA_nombre}
+                                                                </span>
+                                                                <span className="text-[9px] bg-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded">1° Gpo A</span>
+                                                            </div>
+
+                                                            <div className="text-center text-[10px] text-zinc-600 font-black italic">VS</div>
+
+                                                            <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
+                                                                <span className="text-xs font-extrabold text-white">
+                                                                    🥈 {segundoB_nombre}
+                                                                </span>
+                                                                <span className="text-[9px] bg-cyan-500/20 text-cyan-400 font-bold px-2 py-0.5 rounded">2° Gpo B</span>
+                                                            </div>
+                                                        </div>
+
+                                                        {/* CRUCE 2 */}
+                                                        <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-3">
+                                                            <span className="text-[9px] text-fuchsia-400 font-extrabold uppercase tracking-wider block border-b border-white/10 pb-1">Semifinal / Cruce 2</span>
+                                                            
+                                                            <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
+                                                                <span className="text-xs font-extrabold text-white">
+                                                                    🥇 {primeroB_nombre}
+                                                                </span>
+                                                                <span className="text-[9px] bg-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded">1° Gpo B</span>
+                                                            </div>
+
+                                                            <div className="text-center text-[10px] text-zinc-600 font-black italic">VS</div>
+
+                                                            <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
+                                                                <span className="text-xs font-extrabold text-white">
+                                                                    🥈 {segundoA_nombre}
+                                                                </span>
+                                                                <span className="text-[9px] bg-cyan-500/20 text-cyan-400 font-bold px-2 py-0.5 rounded">2° Gpo A</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
+
+                                                    <div className="mt-6 pt-4 border-t border-white/10 text-center">
+                                                        <div className="bg-gradient-to-r from-amber-500/10 via-yellow-500/20 to-amber-500/10 p-4 rounded-xl border border-amber-500/40 inline-block w-full max-w-md">
+                                                            <span className="text-amber-400 font-black text-xs uppercase tracking-widest block mb-2">🏆 Gran Final de Categoría</span>
+                                                            <div className="flex justify-around items-center text-xs font-extrabold">
+                                                                <span>Ganador Cruce 1</span>
+                                                                <span className="text-amber-400 italic">VS</span>
+                                                                <span>Ganador Cruce 2</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
                                                 </div>
-
-                                                {/* CRUCE 2 */}
-                                                <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-3">
-                                                    <span className="text-[9px] text-fuchsia-400 font-extrabold uppercase tracking-wider block border-b border-white/10 pb-1">Semifinal / Cruce 2</span>
-                                                    
-                                                    <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
-                                                        <span className="text-xs font-extrabold text-white">
-                                                            🥇 {resumenData[catNombreActual]?.grupos['B'] && Object.values(resumenData[catNombreActual].grupos['B'])[0]?.nombre ? Object.values(resumenData[catNombreActual].grupos['B'])[0].nombre : '1° Grupo B'}
-                                                        </span>
-                                                        <span className="text-[9px] bg-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded">1° Gpo B</span>
-                                                    </div>
-
-                                                    <div className="text-center text-[10px] text-zinc-600 font-black italic">VS</div>
-
-                                                    <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
-                                                        <span className="text-xs font-extrabold text-white">
-                                                            🥈 {resumenData[catNombreActual]?.grupos['A'] && Object.values(resumenData[catNombreActual].grupos['A'])[1]?.nombre ? Object.values(resumenData[catNombreActual].grupos['A'])[1].nombre : '2° Grupo A'}
-                                                        </span>
-                                                        <span className="text-[9px] bg-cyan-500/20 text-cyan-400 font-bold px-2 py-0.5 rounded">2° Gpo A</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* LA GRAN FINAL */}
-                                            <div className="mt-6 pt-4 border-t border-white/10 text-center">
-                                                <div className="bg-gradient-to-r from-amber-500/10 via-yellow-500/20 to-amber-500/10 p-4 rounded-xl border border-amber-500/40 inline-block w-full max-w-md">
-                                                    <span className="text-amber-400 font-black text-xs uppercase tracking-widest block mb-2">🏆 Gran Final de Categoría</span>
-                                                    <div className="flex justify-around items-center text-xs font-extrabold">
-                                                        <span>Ganador Cruce 1</span>
-                                                        <span className="text-amber-400 italic">VS</span>
-                                                        <span>Ganador Cruce 2</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                        </div>
+                                            );
+                                        })()}
 
                                     </div>
                                 ) : (
@@ -486,24 +524,35 @@
 
                             </div>
                         ) : (
+                            /* SECCIÓN CARTELERA DE PARTIDOS OTRAS PESTAÑAS */
                             <div className="p-4 max-w-3xl mx-auto space-y-4">
                                 {(() => {
                                     let filtrados = lobbyMatches;
-                                    if (estadoFiltro === 'en_curso') filtrados = lobbyMatches.filter(p => p.estado === 'en_curso');
-                                    else if (estadoFiltro === 'pendiente') filtrados = lobbyMatches.filter(p => p.estado === 'pendiente');
-                                    else if (estadoFiltro === 'finalizado') filtrados = lobbyMatches.filter(p => p.estado === 'finalizado');
+
+                                    if (categoriaFiltroCartelera !== 'todas') {
+                                        filtrados = filtrados.filter(p => p.categorias?.nombre === categoriaFiltroCartelera);
+                                    }
+
+                                    if (estadoFiltro === 'en_curso') {
+                                        filtrados = filtrados.filter(p => (p.estado || '').trim().toLowerCase() === 'en_curso');
+                                    } else if (estadoFiltro === 'pendiente') {
+                                        filtrados = filtrados.filter(p => (p.estado || '').trim().toLowerCase() === 'pendiente');
+                                    } else if (estadoFiltro === 'finalizado') {
+                                        filtrados = filtrados.filter(p => (p.estado || '').trim().toLowerCase() === 'finalizado');
+                                    }
 
                                     filtrados.sort((a, b) => timeStringToMinutes(a.hora) - timeStringToMinutes(b.hora));
 
                                     if (filtrados.length === 0) {
-                                        return <div className="text-center text-zinc-500 font-bold text-xs uppercase tracking-widest italic py-8 border border-white/5 rounded-2xl bg-white/5 mt-10">No hay partidos en esta categoría.</div>;
+                                        return <div className="text-center text-zinc-500 font-bold text-xs uppercase tracking-widest italic py-8 border border-white/5 rounded-2xl bg-white/5 mt-10">No hay partidos registrados bajo estos filtros.</div>;
                                     }
 
                                     return filtrados.map(p => {
-                                        let estadoColor = p.estado === 'en_curso' ? '#34d399' : (p.estado === 'finalizado' ? '#94a3b8' : '#fbbf24');
-                                        let estadoTexto = p.estado === 'en_curso' ? '🔴 EN VIVO' : (p.estado === 'finalizado' ? '🏁 FINALIZADO' : '⏳ PENDIENTE');
+                                        let estLimpio = (p.estado || '').trim().toLowerCase();
+                                        let estadoColor = estLimpio === 'en_curso' ? '#34d399' : (estLimpio === 'finalizado' ? '#94a3b8' : '#fbbf24');
+                                        let estadoTexto = estLimpio === 'en_curso' ? '🔴 EN VIVO' : (estLimpio === 'finalizado' ? '🏁 FINALIZADO' : '⏳ PENDIENTE');
                                         
-                                        let isFin = p.estado === 'finalizado';
+                                        let isFin = estLimpio === 'finalizado';
                                         let isJ1Win = p.ganador_id === p.jugador1_id;
                                         let isJ2Win = p.ganador_id === p.jugador2_id;
 
@@ -568,7 +617,6 @@
                             </div>
                         )}
 
-                        {/* MODAL DETALLE DE PARTIDOS DE UN JUGADOR */}
                         {jugadorModal && (
                             <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
                                 <div className="bg-slate-900 border border-white/20 rounded-2xl w-full max-w-lg p-5 text-white max-h-[85vh] overflow-y-auto">
@@ -594,7 +642,7 @@
                                                 const misSets = esJ1 ? m.sets_j1 : m.sets_j2;
                                                 const rivalSets = esJ1 ? m.sets_j2 : m.sets_j1;
                                                 const gano = m.ganador_id === jugadorModal.id;
-                                                const esFin = m.estado === 'finalizado';
+                                                const esFin = (m.estado || '').trim().toLowerCase() === 'finalizado';
 
                                                 return (
                                                     <div key={m.id} className="bg-black/50 p-3 rounded-xl border border-white/5 space-y-2">
