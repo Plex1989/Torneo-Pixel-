@@ -35,7 +35,7 @@
         const { useState, useEffect } = React;
 
         function App() {
-            const [view, setView] = useState('loading'); // loading, lobby, h2h, match, error
+            const [view, setView] = useState('loading'); 
             const [partidoData, setPartidoData] = useState(null);
             const [h2hHistory, setH2hHistory] = useState([]);
             const [lobbyMatches, setLobbyMatches] = useState([]);
@@ -47,17 +47,29 @@
             const [score2, setScore2] = useState(0);
             const [sets1, setSets1] = useState(0);
             const [sets2, setSets2] = useState(0);
+            const [mode, setMode] = useState('2-3');
+            const [historialSets, setHistorialSets] = useState([]);
             const [winner, setWinner] = useState(null);
+            const [isMuted, setIsMuted] = useState(true);
 
             const urlParams = new URLSearchParams(window.location.search);
             const partidoId = urlParams.get('partido');
             const torneoId = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id') || 1;
 
+            const announceScore = (nom1, s1, nom2, s2, isWin = false, winName = "") => {
+                if (isMuted || !window.speechSynthesis) return;
+                window.speechSynthesis.cancel(); 
+                const text = isWin ? `¡Ganador ${winName}!` : `${nom1} ${s1}, ${nom2} ${s2}`;
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'es-MX'; 
+                utterance.rate = 1.0;
+                window.speechSynthesis.speak(utterance);
+            };
+
             useEffect(() => {
                 if (!partidoId) {
-                    // MODO CARTELERA (LOBBY)
                     async function fetchLobby() {
-                        const { data, error } = await clienteSupabase
+                        const { data } = await clienteSupabase
                             .from('partidos')
                             .select('*, j1:jugador1_id(nombre), j2:jugador2_id(nombre), categorias(nombre)')
                             .eq('torneo_id', torneoId)
@@ -76,7 +88,6 @@
 
                     return () => clienteSupabase.removeChannel(channel);
                 } else {
-                    // MODO PARTIDO INDIVIDUAL
                     async function fetchMatch() {
                         const { data, error } = await clienteSupabase
                             .from('partidos')
@@ -91,15 +102,19 @@
                         }
 
                         setPartidoData(data);
-                        setP1(data.j1 ? data.j1.nombre : 'Jugador 1');
-                        setP2(data.j2 ? data.j2.nombre : 'Jugador 2');
+                        let nom1 = data.j1 ? data.j1.nombre : 'Jugador 1';
+                        let nom2 = data.j2 ? data.j2.nombre : 'Jugador 2';
+                        setP1(nom1);
+                        setP2(nom2);
                         setScore1(data.puntos_j1 || 0);
                         setScore2(data.puntos_j2 || 0);
                         setSets1(data.sets_j1 || 0);
                         setSets2(data.sets_j2 || 0);
+                        setMode(data.modo_juego || '2-3');
+                        setHistorialSets(data.historial_sets || []);
 
                         if (data.estado === 'finalizado') {
-                            setWinner(data.ganador_id === data.jugador1_id ? data.j1.nombre : data.j2.nombre);
+                            setWinner(data.ganador_id === data.jugador1_id ? nom1 : nom2);
                             setView('match');
                         } else if (data.estado === 'en_curso') {
                             setView('match');
@@ -121,8 +136,14 @@
                         .channel(`public:partidos:id=eq.${partidoId}`)
                         .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'partidos', filter: `id=eq.${partidoId}` }, payload => {
                             const m = payload.new;
-                            setScore1(m.puntos_j1); setScore2(m.puntos_j2);
-                            setSets1(m.sets_j1); setSets2(m.sets_j2);
+                            setScore1(m.puntos_j1);
+                            setScore2(m.puntos_j2);
+                            setSets1(m.sets_j1);
+                            setSets2(m.sets_j2);
+                            setMode(m.modo_juego || '2-3');
+                            setHistorialSets(m.historial_sets || []);
+
+                            announceScore(p1, m.puntos_j1, p2, m.puntos_j2);
 
                             if (m.estado === 'en_curso') setView('match');
                             if (m.estado === 'finalizado') {
@@ -136,11 +157,10 @@
                 }
             }, [partidoId, p1, p2]);
 
-            // VISTA: CARGANDO
             if (view === 'loading') return <div className="min-h-screen flex items-center justify-center text-cyan-400 font-bold uppercase tracking-widest text-sm">Cargando Transmisión...</div>;
             if (view === 'error') return <div className="min-h-screen flex items-center justify-center text-rose-500 font-bold uppercase">{errorMsg}</div>;
 
-            // VISTA: LOBBY DE CARTELERA PÚBLICA
+            // VISTA CARTELERA
             if (view === 'lobby') {
                 return (
                     <div className="min-h-screen bg-[#04060a] p-6 overflow-y-auto z-50 text-white">
@@ -167,11 +187,11 @@
                                         
                                         <div className="flex justify-between items-center mb-3 bg-black/40 p-3 rounded-xl border border-white/5">
                                             <span className="font-bold text-sm truncate w-2/3">{m.j1?.nombre || 'J1'}</span>
-                                            <span className="font-digital text-cyan-400 text-2xl font-bold">{m.puntos_j1}</span>
+                                            <span className="font-digital text-cyan-400 text-2xl font-bold">{m.puntos_j1} ({m.sets_j1})</span>
                                         </div>
                                         <div className="flex justify-between items-center bg-black/40 p-3 rounded-xl border border-white/5">
                                             <span className="font-bold text-sm truncate w-2/3">{m.j2?.nombre || 'J2'}</span>
-                                            <span className="font-digital text-fuchsia-400 text-2xl font-bold">{m.puntos_j2}</span>
+                                            <span className="font-digital text-fuchsia-400 text-2xl font-bold">{m.puntos_j2} ({m.sets_j2})</span>
                                         </div>
                                     </div>
                                 ))
@@ -181,7 +201,7 @@
                 )
             }
 
-            // VISTA: H2H PÚBLICO (ESPERANDO AL JUEZ)
+            // VISTA RIVALIDAD
             if (view === 'h2h') {
                 let p1Wins = 0, p2Wins = 0;
                 h2hHistory.forEach(h => {
@@ -208,7 +228,9 @@
 
                         <div className="w-full max-w-md mb-10">
                             {h2hHistory.length === 0 ? (
-                                <div className="text-center text-zinc-500 font-bold text-xs uppercase tracking-widest italic py-8 border border-white/5 rounded-2xl bg-white/5">Es la primera vez que se enfrentan en la liga.</div>
+                                <div className="text-center text-zinc-400 font-bold text-xs uppercase tracking-widest italic py-8 border border-white/5 rounded-2xl bg-white/5">
+                                    ES LA PRIMERA VEZ QUE SE ENFRENTAN EN TORNEOS.
+                                </div>
                             ) : (
                                 <div className="space-y-3">
                                     <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest border-b border-white/10 pb-2 mb-4">Últimos Enfrentamientos</h3>
@@ -219,7 +241,7 @@
                                                 <div className="text-[9px] text-zinc-500 font-bold tracking-widest mt-1">{h.torneos?.fecha_evento || ''}</div>
                                             </div>
                                             <div className="text-right">
-                                                <div className="text-[10px] font-bold uppercase text-white mb-1">🏆 {h.ganador_id === partidoData.jugador1_id ? p1 : p2}</div>
+                                                <div className="text-[10px] font-bold uppercase text-white mb-1">🏆 Ganó: {h.ganador_id === partidoData.jugador1_id ? p1 : p2}</div>
                                             </div>
                                         </div>
                                     ))}
@@ -235,20 +257,30 @@
                 )
             }
 
-            // VISTA: SCOREBOARD EN VIVO
+            // SCOREBOARD TRANSMISIÓN EN VIVO
             return (
                 <div className="fixed inset-0 flex flex-col z-50 bg-[#04060a] overflow-hidden">
                     <div className="glass-dark py-3 px-6 flex justify-between items-center text-white shrink-0 z-20 border-b border-white/5">
-                        <span className="text-[10px] font-bold tracking-[0.2em] text-cyan-400 uppercase">🔴 EN VIVO • MESA {partidoData?.mesa || 1}</span>
+                        <div>
+                            <span className="text-[10px] font-bold tracking-[0.2em] text-cyan-400 uppercase">🔴 TRANSMISIÓN EN VIVO • MESA {partidoData?.mesa || 1}</span>
+                            <div className="text-[9px] text-zinc-400 font-semibold uppercase">Formato: Al mejor de {mode === '2-3' ? '3' : (mode === '3-5' ? '5' : '7')} Sets</div>
+                        </div>
+
+                        <button onClick={() => setIsMuted(!isMuted)} className={`flex items-center gap-2 px-3 py-1.5 rounded-full font-bold text-[9px] uppercase tracking-widest transition-colors ${isMuted ? 'bg-rose-500/20 text-rose-500 border border-rose-500/50' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'}`}>
+                            {isMuted ? <><i className="fa-solid fa-volume-xmark"></i> Narración Apagada</> : <><i className="fa-solid fa-volume-high"></i> Narración Encendida</>}
+                        </button>
+
                         <button onClick={() => window.location.href = `espectador.html?torneo=${partidoData.torneo_id}`} className="text-zinc-500 font-bold text-[9px] uppercase tracking-widest hover:text-white transition-colors"><i className="fa-solid fa-list"></i> Cartelera</button>
                     </div>
 
                     <div className="flex-1 flex flex-col landscape:flex-row w-full p-3 landscape:p-6 gap-4 overflow-hidden min-h-0">
+                        {/* JUGADOR 1 */}
                         <div className="flex-1 flex flex-col min-h-0 min-w-0">
                             <div className="name-p1 py-4 px-5 rounded-[20px] flex items-center justify-between shrink-0">
                                 <div className="w-10"></div> 
                                 <div className="flex flex-col items-center">
                                     <h2 className="text-white text-center font-extrabold text-xl landscape:text-2xl tracking-wider uppercase leading-none">{p1}</h2>
+                                    <span className="text-[9px] font-bold text-cyan-200 mt-1 uppercase">Sets Ganados: {sets1}</span>
                                 </div>
                                 <div className="w-10 h-10 bg-black/30 border border-white/20 rounded-lg flex items-center justify-center text-white font-digital font-bold text-xl">{sets1}</div>
                             </div>
@@ -261,11 +293,13 @@
                             <div className="text-zinc-600 font-black italic text-2xl">VS</div>
                         </div>
 
+                        {/* JUGADOR 2 */}
                         <div className="flex-1 flex flex-col min-h-0 min-w-0">
                             <div className="name-p2 py-4 px-5 rounded-[20px] flex items-center justify-between shrink-0">
                                 <div className="w-10 h-10 bg-black/30 border border-white/20 rounded-lg flex items-center justify-center text-white font-digital font-bold text-xl">{sets2}</div>
                                 <div className="flex flex-col items-center">
                                     <h2 className="text-white text-center font-extrabold text-xl landscape:text-2xl tracking-wider uppercase leading-none">{p2}</h2>
+                                    <span className="text-[9px] font-bold text-fuchsia-200 mt-1 uppercase">Sets Ganados: {sets2}</span>
                                 </div>
                                 <div className="w-10"></div>
                             </div>
@@ -274,6 +308,21 @@
                             </div>
                         </div>
                     </div>
+
+                    {/* CAJA DESGLOSE DE SETS ANTERIORES */}
+                    {historialSets.length > 0 && (
+                        <div className="bg-slate-900/90 border-t border-white/10 p-3 flex justify-center items-center gap-4 flex-wrap shrink-0">
+                            <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Resumen de Sets:</span>
+                            {historialSets.map((s, idx) => (
+                                <div key={idx} className="bg-black/50 border border-white/10 px-3 py-1 rounded-lg text-center font-semibold text-xs">
+                                    <span className="text-zinc-400 text-[9px] block font-bold uppercase">Set {s.numSet}</span>
+                                    <span className={s.s1 > s.s2 ? 'text-cyan-400 font-bold' : 'text-zinc-400'}>{s.s1}</span>
+                                    <span className="text-zinc-500 mx-1">-</span>
+                                    <span className={s.s2 > s.s1 ? 'text-fuchsia-400 font-bold' : 'text-zinc-400'}>{s.s2}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     {winner && (
                         <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[600] flex flex-col items-center justify-center text-center p-6 animate-in zoom-in duration-500">
