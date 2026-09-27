@@ -242,6 +242,13 @@
             const select = document.getElementById('filtro-categoria');
             select.innerHTML = '<option value="">-- Selecciona una categoría --</option>';
             if (data) data.forEach(cat => select.innerHTML += `<option value="${cat.id}">${cat.nombre}</option>`);
+
+            const ultimaCat = localStorage.getItem('categoria_guardada_reciente');
+            if (ultimaCat) {
+                select.value = ultimaCat;
+                localStorage.removeItem('categoria_guardada_reciente');
+                cargarEstadoCategoria();
+            }
         }
 
         async function cargarEstadoCategoria() {
@@ -302,10 +309,6 @@
                 seccionPartidos.style.display = 'none';
             }
         }
-
-        // ==========================================
-        // LÓGICA DE ALGORITMO ROUND ROBIN + JUECES
-        // ==========================================
 
         function algoritmoRoundRobin(jugadoresArr) {
             let arr = [...jugadoresArr];
@@ -617,10 +620,6 @@
             dibujarTablaPartidosGenerados(partidosGeneradosRR);
         }
 
-        // ==========================================
-        // DIBUJO DE TABLAS CON RESALTADO DE JUECES
-        // ==========================================
-
         function dibujarTablaPartidosBD(partidosBD) {
             const tbody = document.getElementById('tabla-partidos-rr');
             tbody.innerHTML = '';
@@ -684,10 +683,6 @@
             });
         }
 
-        // ==========================================
-        // UTILIDADES Y ALMACENAMIENTO (SIN RECARGAR PAGINA)
-        // ==========================================
-
         function poblarDropdownAgenda(partidos) {
             const select = document.getElementById('filtro-jugador-agenda');
             select.innerHTML = '<option value="">-- Todos los Jugadores --</option>';
@@ -727,8 +722,13 @@
 
         function compartirAgendaWhatsApp() {
             const nombre = document.getElementById('filtro-jugador-agenda').value;
-            let texto = `🏓 *ROL DE PARTIDOS - ${torneoActivoObj ? torneoActivoObj.nombre : ''}* 🏓\n\n`;
-            
+            let texto = `🏓 *ROL DE PARTIDOS - ${torneoActivoObj ? torneoActivoObj.nombre : ''}* 🏓\n`;
+            if (torneoActivoObj) {
+                if (torneoActivoObj.fecha_evento) texto += `📅 *Fecha:* ${torneoActivoObj.fecha_evento}\n`;
+                if (torneoActivoObj.lugar_evento) texto += `📍 *Lugar:* ${torneoActivoObj.lugar_evento}\n`;
+            }
+            texto += `\n`;
+
             let lista = partidosCargadosGlobal;
             if (nombre) {
                 texto += `👤 *Agenda Individual:* ${nombre}\n\n`;
@@ -811,7 +811,6 @@
             cargarEstadoCategoria();
         }
 
-        // GUARDADO A PRUEBA DE FALLOS SIN RECARGAR PAGINA
         async function guardarGruposBD() {
             const idCategoria = document.getElementById('filtro-categoria').value;
             const pinJueces = document.getElementById('rr-pin-jueces').value.trim() || '1234';
@@ -823,15 +822,12 @@
             btn.innerText = "Guardando en Supabase...";
 
             try {
-                // Actualiza el PIN del torneo
                 const req1 = await clienteSupabase.from('torneos').update({ pin_jueces: pinJueces }).eq('id', idTorneoActivo);
                 if (req1.error) throw new Error("Fallo al actualizar PIN: " + req1.error.message);
 
-                // Borra partidos viejos de la categoría
                 const req2 = await clienteSupabase.from('partidos').delete().eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo);
                 if (req2.error) throw new Error("Fallo al limpiar partidos antiguos: " + req2.error.message);
 
-                // Prepara e Inserta la nueva lista
                 let partidosInsertar = partidosGeneradosRR.map(p => ({
                     torneo_id: parseInt(idTorneoActivo),
                     categoria_id: parseInt(idCategoria),
@@ -850,13 +846,10 @@
                 if (req3.error) throw new Error("Fallo al insertar los partidos nuevos: " + req3.error.message);
 
                 alert("✅ ¡Partidos y PIN guardados con éxito en la Base de Datos!");
-                
-                // Refresca la interfaz desde DB sin recargar la página
                 await cargarEstadoCategoria();
 
             } catch (error) {
-                // Si algo falla, lo notifica sin congelarse
-                alert("❌ Error crítico en Supabase:\n\n" + error.message + "\n\n(Verifica que hayas ejecutado el código SQL en la base de datos)");
+                alert("❌ Error crítico en Supabase:\n\n" + error.message);
             } finally {
                 btn.disabled = false;
                 btn.innerText = "💾 Guardar Acomodo Definitivo en Base de Datos";
