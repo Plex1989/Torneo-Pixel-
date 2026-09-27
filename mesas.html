@@ -25,6 +25,7 @@
         
         .card-finalizado { opacity: 0.5; filter: grayscale(80%); border-bottom-color: #334155 !important; }
 
+        /* BADGES DE CATEGORÍAS GIGANTES Y DE DISTINTOS COLORES NEÓN */
         .badge-cat { font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; }
 
         .top-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
@@ -74,6 +75,9 @@
         let todosLosPartidos = [];
         let mesaFiltro = 'todas';
         let estadoFiltro = 'todos';
+        
+        // Variable para guardar el PIN real del torneo
+        let pinJuecesActual = "1234";
 
         // PALETA DINÁMICA NEÓN PARA CATEGORÍAS
         const obtenerEstiloCategoria = (catId) => {
@@ -89,8 +93,14 @@
         };
 
         async function inicializar() {
-            const { data: torneo } = await clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).single();
-            if (torneo) document.getElementById('nombre-torneo').innerText = torneo.nombre;
+            // AQUÍ PEDIMOS EL PIN DEL TORNEO A SUPABASE
+            const { data: torneo } = await clienteSupabase.from('torneos').select('nombre, pin_jueces').eq('id', idTorneoActivo).single();
+            if (torneo) {
+                document.getElementById('nombre-torneo').innerText = torneo.nombre;
+                if (torneo.pin_jueces) {
+                    pinJuecesActual = torneo.pin_jueces;
+                }
+            }
 
             cargarPartidos();
 
@@ -188,10 +198,8 @@
                                   (p.estado === 'finalizado' ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
                     
                     let opacidadClass = p.estado === 'finalizado' ? 'card-finalizado' : '';
-                    
-                    // ESTILO DINÁMICO DE CATEGORÍA
-                    const catObj = p.categorias || {};
-                    const estiloCat = obtenerEstiloCategoria(catObj.id || 0);
+                    let catId = p.categorias ? p.categorias.id : 0;
+                    let estiloCat = obtenerEstiloCategoria(catId);
 
                     contenedor.innerHTML += `
                         <div class="card-partido ${opacidadClass}">
@@ -202,7 +210,7 @@
 
                             <div style="margin-bottom:12px;">
                                 <span class="badge-cat" style="color:${estiloCat.text}; background:${estiloCat.bg}; border:1px solid ${estiloCat.border};">
-                                    🏆 ${catObj.nombre || 'Categoría'} • Gpo ${p.grupo_nombre}
+                                    🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'} • Gpo ${p.grupo_nombre}
                                 </span>
                             </div>
 
@@ -227,11 +235,13 @@
         }
 
         function abrirScoreboardJuez(partidoId) {
-            let pin = prompt("🔒 Ingrese el PIN de Juez (Por defecto: 1234):");
-            if (pin === "1234") {
+            let pin = prompt("🔒 Ingrese el PIN de Autorización para Arbitrar:");
+            
+            // VALIDACIÓN CON EL PIN REAL DE LA BASE DE DATOS
+            if (pin === pinJuecesActual) {
                 window.location.href = `juez.html?partido=${partidoId}`;
             } else if (pin !== null) {
-                alert("❌ PIN incorrecto.");
+                alert("❌ PIN de autorización incorrecto.");
             }
         }
 
