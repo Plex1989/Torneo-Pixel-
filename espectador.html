@@ -27,8 +27,8 @@
         .tab-filter { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 8px 14px; border-radius: 9999px; font-size: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; transition: all 0.2s ease; white-space: nowrap; }
         .tab-filter.active { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 15px rgba(6, 182, 212, 0.5); }
         
-        /* Sticky Header for Filters */
-        .sticky-header { position: sticky; top: 0; z-index: 40; background: rgba(4, 6, 10, 0.9); backdrop-filter: blur(10px); padding: 15px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        /* Sticky Header (Se queda pegado arriba) */
+        .sticky-header { position: sticky; top: 0; z-index: 40; background: rgba(4, 6, 10, 0.95); backdrop-filter: blur(15px); padding: 15px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
     </style>
 </head>
 <body>
@@ -38,15 +38,20 @@
         const supabaseUrl = 'https://stytjtqshyupkyihurpd.supabase.co';
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
         function App() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Estado Principal SPA
+            const [activePartidoId, setActivePartidoId] = useState(urlParams.get('partido'));
             const [view, setView] = useState('loading'); 
+            
             const [partidoData, setPartidoData] = useState(null);
             const [h2hHistory, setH2hHistory] = useState([]);
             const [lobbyMatches, setLobbyMatches] = useState([]);
             const [errorMsg, setErrorMsg] = useState(null);
-            const [estadoFiltro, setEstadoFiltro] = useState('en_curso'); // Pestaña por defecto
+            const [estadoFiltro, setEstadoFiltro] = useState('en_curso');
 
             const [p1, setP1] = useState("");
             const [p2, setP2] = useState("");
@@ -57,13 +62,34 @@
             const [mode, setMode] = useState('2-3');
             const [historialSets, setHistorialSets] = useState([]);
             const [winner, setWinner] = useState(null);
-            const [isMuted, setIsMuted] = useState(false); // AUDIO ENCENDIDO POR DEFECTO PARA ESPECTADORES (Si el navegador lo permite)
+            
+            // MUTE ESTÁ EN TRUE MIENTRAS SE ESTÁ EN EL LOBBY
+            const [isMuted, setIsMuted] = useState(true);
+            const matchStateRef = useRef({ p1: '', p2: '', score1: 0, score2: 0 });
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const partidoId = urlParams.get('partido');
             const torneoId = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id') || 1;
 
-            // Extraer solo la última palabra (apellido)
+            // Transición a Partido (Pantalla Completa + Audio ON)
+            const entrarAlPartido = (id) => {
+                setActivePartidoId(id);
+                setIsMuted(false); // Activamos audio automáticamente gracias al Touch
+                window.history.pushState({}, '', `?partido=${id}`);
+                
+                let docEl = document.documentElement;
+                if (docEl.requestFullscreen) docEl.requestFullscreen().catch(()=>{});
+                else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen().catch(()=>{});
+            };
+
+            // Volver a Cartelera (Quitar Pantalla Completa + Audio OFF)
+            const volverACartelera = () => {
+                setActivePartidoId(null);
+                setIsMuted(true); // Silenciamos para que no hable en la cartelera
+                window.history.pushState({}, '', `?torneo=${partidoData?.torneo_id || torneoId}`);
+                
+                if (document.exitFullscreen && document.fullscreenElement) document.exitFullscreen().catch(()=>{});
+                else if (document.webkitExitFullscreen) document.webkitExitFullscreen().catch(()=>{});
+            };
+
             const getApellido = (nombreCompleto) => {
                 if(!nombreCompleto) return "";
                 const partes = nombreCompleto.trim().split(" ");
@@ -84,32 +110,50 @@
                 window.speechSynthesis.speak(utterance);
             };
 
+            // UTILIDAD PARA ORDENAR HORARIOS
+            const timeStringToMinutes = (timeStr) => {
+                if (!timeStr) return 0;
+                let match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+                if (!match) return 0;
+                let hrs = parseInt(match[1]);
+                let mins = parseInt(match[2]);
+                let ampm = match[3] ? match[3].toUpperCase() : null;
+                if (ampm === 'PM' && hrs < 12) hrs += 12;
+                if (ampm === 'AM' && hrs === 12) hrs = 0;
+                return hrs * 60 + mins;
+            };
+
             useEffect(() => {
-                if (!partidoId) {
+                let channel;
+
+                if (!activePartidoId) {
+                    // MODO LOBBY (CARTELERA SILENCIOSA)
+                    setView('loading');
                     async function fetchLobby() {
                         const { data } = await clienteSupabase
                             .from('partidos')
                             .select('*, j1:jugador1_id(nombre), j2:jugador2_id(nombre), categorias(nombre)')
-                            .eq('torneo_id', torneoId)
-                            .order('hora', { ascending: true })
-                            .order('mesa', { ascending: true });
+                            .eq('torneo_id', torneoId);
                         
                         setLobbyMatches(data || []);
                         setView('lobby');
                     }
                     fetchLobby();
 
-                    const channel = clienteSupabase.channel('public:partidos:lobby')
+                    channel = clienteSupabase.channel('public:partidos:lobby')
                         .on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => fetchLobby())
                         .subscribe();
 
-                    return () => clienteSupabase.removeChannel(channel);
                 } else {
+                    // MODO PARTIDO (VISTA INDIVIDUAL ACTIVA)
+                    setView('loading');
+                    setWinner(null); // Reset winner state on entry
+                    
                     async function fetchMatch() {
                         const { data, error } = await clienteSupabase
                             .from('partidos')
                             .select('*, j1:jugador1_id(id, nombre), j2:jugador2_id(id, nombre)')
-                            .eq('id', partidoId)
+                            .eq('id', activePartidoId)
                             .single();
 
                         if (error || !data) {
@@ -130,6 +174,8 @@
                         setMode(data.modo_juego || '2-3');
                         setHistorialSets(data.historial_sets || []);
 
+                        matchStateRef.current = { p1: nom1, p2: nom2, score1: data.puntos_j1 || 0, score2: data.puntos_j2 || 0 };
+
                         if (data.estado === 'finalizado') {
                             setWinner(data.ganador_id === data.jugador1_id ? nom1 : nom2);
                             setView('match');
@@ -149,15 +195,19 @@
                     }
                     fetchMatch();
 
-                    const channel = clienteSupabase
-                        .channel(`public:partidos:id=eq.${partidoId}`)
-                        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'partidos', filter: `id=eq.${partidoId}` }, payload => {
+                    channel = clienteSupabase.channel(`public:partidos:id=eq.${activePartidoId}`)
+                        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'partidos', filter: `id=eq.${activePartidoId}` }, payload => {
                             const m = payload.new;
+                            const refs = matchStateRef.current;
                             
-                            if (m.puntos_j1 !== score1 || m.puntos_j2 !== score2) {
-                                announceScore(p1, m.puntos_j1, p2, m.puntos_j2);
+                            // DISPARAR VOZ INTELIGENTE SI CAMBIA MARCADOR
+                            if (m.puntos_j1 !== refs.score1 || m.puntos_j2 !== refs.score2) {
+                                announceScore(refs.p1, m.puntos_j1, refs.p2, m.puntos_j2);
                             }
 
+                            // ACTUALIZAR ESTADOS
+                            refs.score1 = m.puntos_j1;
+                            refs.score2 = m.puntos_j2;
                             setScore1(m.puntos_j1);
                             setScore2(m.puntos_j2);
                             setSets1(m.sets_j1);
@@ -167,21 +217,21 @@
 
                             if (m.estado === 'en_curso') setView('match');
                             if (m.estado === 'finalizado') {
-                                setWinner(m.ganador_id === m.jugador1_id ? p1 : p2);
+                                setWinner(m.ganador_id === m.jugador1_id ? refs.p1 : refs.p2);
                                 setView('match');
                             }
                         })
                         .subscribe();
-
-                    return () => clienteSupabase.removeChannel(channel);
                 }
-            }, [partidoId, p1, p2, score1, score2]);
+
+                return () => { if(channel) clienteSupabase.removeChannel(channel); };
+            }, [activePartidoId, torneoId, isMuted]);
 
             if (view === 'loading') return <div className="min-h-screen flex items-center justify-center text-cyan-400 font-bold uppercase tracking-widest text-sm">Cargando Transmisión...</div>;
             if (view === 'error') return <div className="min-h-screen flex items-center justify-center text-rose-500 font-bold uppercase">{errorMsg}</div>;
 
             // ==========================================
-            // VISTA CARTELERA (NUEVO DISEÑO TIPO ADMIN PARA CELULAR)
+            // VISTA: LOBBY CARTELERA DE PARTIDOS (SILENCIOSO)
             // ==========================================
             if (view === 'lobby') {
                 
@@ -190,10 +240,13 @@
                 else if (estadoFiltro === 'pendiente') filtrados = lobbyMatches.filter(p => p.estado === 'pendiente');
                 else if (estadoFiltro === 'finalizado') filtrados = lobbyMatches.filter(p => p.estado === 'finalizado');
 
+                // Ordenar cronológicamente para que 1:30 PM no salga antes de 9:00 AM
+                filtrados.sort((a, b) => timeStringToMinutes(a.hora) - timeStringToMinutes(b.hora));
+
                 return (
-                    <div className="min-h-screen bg-[#04060a] overflow-x-hidden text-white">
+                    <div className="min-h-screen bg-[#04060a] overflow-x-hidden text-white pb-10">
                         
-                        {/* ENCABEZADO Y FILTROS FIJOS (STICKY) */}
+                        {/* ENCABEZADO STICKY QUE NO SE PIERDE AL HACER SCROLL */}
                         <div className="sticky-header">
                             <div className="text-center mb-4">
                                 <div className="text-rose-500 font-bold uppercase tracking-widest text-[9px] mb-1 animate-pulse">🔴 Transmisiones Oficiales</div>
@@ -210,7 +263,7 @@
                         
                         <div className="p-4 max-w-3xl mx-auto space-y-4">
                             {filtrados.length === 0 ? (
-                                <div className="text-center text-zinc-500 font-bold text-xs uppercase tracking-widest italic py-8 border border-white/5 rounded-2xl bg-white/5 mt-10">No hay partidos en esta categoría.</div>
+                                <div className="text-center text-zinc-500 font-bold text-xs uppercase tracking-widest italic py-8 border border-white/5 rounded-2xl bg-white/5 mt-10">No hay partidos activos en este momento.</div>
                             ) : (
                                 filtrados.map(p => {
                                     let estadoColor = p.estado === 'en_curso' ? '#34d399' : (p.estado === 'finalizado' ? '#94a3b8' : '#fbbf24');
@@ -218,7 +271,7 @@
                                     let isFin = p.estado === 'finalizado';
 
                                     return (
-                                        <div key={p.id} onClick={() => window.location.href=`espectador.html?partido=${p.id}`} 
+                                        <div key={p.id} onClick={() => entrarAlPartido(p.id)} 
                                              className={`bg-slate-900/80 p-4 rounded-[16px] border border-white/10 cursor-pointer transition-all ${isFin ? 'opacity-60 grayscale-[50%]' : 'hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]'}`}>
                                             
                                             <div className="flex justify-between items-center mb-3">
@@ -226,7 +279,7 @@
                                                 <span style={{color: estadoColor, borderColor: estadoColor}} className="border px-2 py-1 rounded-full text-[8px] font-black uppercase">{estadoTexto}</span>
                                             </div>
                                             
-                                            <div className="text-[9px] text-zinc-400 font-bold uppercase mb-3 bg-white/5 inline-block px-2 py-1 rounded">
+                                            <div className="text-[9px] text-[#fbbf24] font-bold uppercase mb-3 bg-[#fbbf24]/10 border border-[#fbbf24]/30 inline-block px-2 py-1 rounded">
                                                 🏆 {p.categorias?.nombre} • Gpo {p.grupo_nombre}
                                             </div>
                                             
@@ -245,7 +298,6 @@
                                                     <span className="text-xs text-zinc-500 font-bold">({p.sets_j2})</span>
                                                 </div>
                                             </div>
-                                            
                                         </div>
                                     )
                                 })
@@ -255,7 +307,7 @@
                 )
             }
 
-            // VISTA: H2H PÚBLICO
+            // VISTA: H2H PÚBLICO (PREVIO AL PARTIDO)
             if (view === 'h2h') {
                 let p1Wins = 0, p2Wins = 0;
                 h2hHistory.forEach(h => {
@@ -282,7 +334,9 @@
 
                         <div className="w-full max-w-md mb-10">
                             {h2hHistory.length === 0 ? (
-                                <div className="text-center text-zinc-500 font-bold text-xs uppercase tracking-widest italic py-8 border border-white/5 rounded-2xl bg-white/5">Es la primera vez que se enfrentan en torneos.</div>
+                                <div className="text-center text-zinc-500 font-bold text-xs uppercase tracking-widest italic py-8 border border-white/5 rounded-2xl bg-white/5">
+                                    ES LA PRIMERA VEZ QUE SE ENFRENTAN EN TORNEOS.
+                                </div>
                             ) : (
                                 <div className="space-y-3">
                                     <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest border-b border-white/10 pb-2 mb-4">Últimos Enfrentamientos</h3>
@@ -304,12 +358,12 @@
                         <div className="mt-auto mb-6 text-center text-zinc-400 font-bold text-[10px] tracking-[0.2em] uppercase">
                             <i className="fa-solid fa-hourglass-half animate-spin mr-2"></i> Esperando que el juez inicie el partido...
                         </div>
-                        <button onClick={() => window.location.href = `espectador.html?torneo=${partidoData.torneo_id}`} className="mt-4 w-full max-w-md py-4 rounded-xl border border-white/20 text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-colors">Volver a Cartelera</button>
+                        <button onClick={volverACartelera} className="mt-4 w-full max-w-md py-4 rounded-xl border border-white/20 text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-colors">Volver a Cartelera</button>
                     </div>
                 )
             }
 
-            // VISTA: SCOREBOARD PÚBLICO EN VIVO
+            // VISTA: SCOREBOARD INDIVIDUAL EN VIVO
             return (
                 <div className="fixed inset-0 flex flex-col z-50 bg-[#04060a] overflow-hidden">
                     <div className="glass-dark py-3 px-6 flex justify-between items-center text-white shrink-0 z-20 border-b border-white/5">
@@ -330,7 +384,7 @@
                                 <div className="w-10"></div> 
                                 <div className="flex flex-col items-center">
                                     <h2 className="text-white text-center font-extrabold text-xl landscape:text-2xl tracking-wider uppercase leading-none">{p1}</h2>
-                                    <span className="text-[10px] font-black text-cyan-200 mt-1 uppercase tracking-widest">Sets: {sets1}</span>
+                                    <span className="text-[10px] font-black text-cyan-200 mt-1 uppercase tracking-widest">Sets Ganados: {sets1}</span>
                                 </div>
                                 <div className="w-10 h-10 bg-black/30 border border-white/20 rounded-lg flex items-center justify-center text-white font-digital font-bold text-xl">{sets1}</div>
                             </div>
@@ -349,7 +403,7 @@
                                 <div className="w-10 h-10 bg-black/30 border border-white/20 rounded-lg flex items-center justify-center text-white font-digital font-bold text-xl">{sets2}</div>
                                 <div className="flex flex-col items-center">
                                     <h2 className="text-white text-center font-extrabold text-xl landscape:text-2xl tracking-wider uppercase leading-none">{p2}</h2>
-                                    <span className="text-[10px] font-black text-fuchsia-200 mt-1 uppercase tracking-widest">Sets: {sets2}</span>
+                                    <span className="text-[10px] font-black text-fuchsia-200 mt-1 uppercase tracking-widest">Sets Ganados: {sets2}</span>
                                 </div>
                                 <div className="w-10"></div>
                             </div>
@@ -359,10 +413,10 @@
                         </div>
                     </div>
 
-                    {/* HISTORIAL DE SETS ANTERIORES EN EL ESPECTADOR */}
+                    {/* CAJA DESGLOSE DE SETS ANTERIORES EN EL ESPECTADOR */}
                     {historialSets.length > 0 && (
                         <div className="bg-slate-900/90 border-t border-white/10 p-3 flex justify-center items-center gap-3 flex-wrap shrink-0">
-                            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Historial:</span>
+                            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Historial de Sets:</span>
                             {historialSets.map((s, idx) => (
                                 <div key={idx} className="bg-black/50 border border-white/10 px-3 py-1.5 rounded-lg text-center font-semibold text-xs">
                                     <span className="text-zinc-500 text-[8px] block font-bold uppercase mb-0.5">Set {s.numSet}</span>
@@ -375,7 +429,7 @@
                     )}
 
                     <div className="bg-black py-3 px-6 flex justify-center shrink-0 border-t border-white/5">
-                        <button onClick={() => window.location.href = `espectador.html?torneo=${partidoData.torneo_id}`} className="text-zinc-500 font-bold text-[10px] uppercase tracking-widest hover:text-white transition-colors"><i className="fa-solid fa-list mr-2"></i> Ver Cartelera Completa</button>
+                        <button onClick={volverACartelera} className="text-zinc-500 font-bold text-[10px] uppercase tracking-widest hover:text-white transition-colors"><i className="fa-solid fa-list mr-2"></i> Volver a Cartelera Completa</button>
                     </div>
 
                     {winner && (
@@ -383,7 +437,7 @@
                             <div className="w-20 h-20 rounded-full bg-cyan-600 flex items-center justify-center mb-6"><i className="fa-solid fa-trophy text-3xl text-white"></i></div>
                             <p className="text-cyan-400 font-bold uppercase tracking-[0.4em] text-[10px] mb-3">Ganador del Partido</p>
                             <h2 className="text-[6vh] font-black text-white mb-12 uppercase tracking-widest leading-none">{winner}</h2>
-                            <button onClick={() => window.location.href = `espectador.html?torneo=${partidoData.torneo_id}`} className="py-4 px-8 rounded-xl font-black uppercase tracking-widest text-xs bg-white text-black">Ver Siguiente Partido</button>
+                            <button onClick={volverACartelera} className="py-4 px-8 rounded-xl font-black uppercase tracking-widest text-xs bg-white text-black">Ver Cartelera de Partidos</button>
                         </div>
                     )}
                 </div>
