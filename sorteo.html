@@ -16,8 +16,9 @@
 
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 0; background-color: #04060a; color: #f8fafc; min-height: 100vh; position: relative; overflow-x: hidden; }
         
-        body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
-        body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
+        body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 10s infinite alternate; }
+        body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
+        @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
 
         .navbar { background: rgba(10, 15, 26, 0.65); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 50; }
         .nav-title { font-weight: 800; font-size: 15px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
@@ -26,6 +27,8 @@
         .nav-btn { color: #94a3b8; text-decoration: none; padding: 8px 18px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
         .nav-btn:hover { color: #000000; background: #f5a623; border-color: #f5a623; box-shadow: 0 0 25px rgba(245, 166, 35, 0.8); transform: translateY(-2px); }
         .nav-btn.active { color: #ffffff; border-color: #8b5cf6; background: rgba(139, 92, 246, 0.3); box-shadow: 0 0 15px rgba(139, 92, 246, 0.4); }
+        .nav-btn.public { color: #34d399; border-color: rgba(16, 185, 129, 0.5); }
+        .nav-btn.public:hover { color: #000000; background: #10b981; border-color: #10b981; box-shadow: 0 0 25px rgba(16, 185, 129, 0.8); }
 
         .main-content { padding: 30px; max-width: 1100px; margin: auto; position: relative; z-index: 10; }
 
@@ -46,10 +49,17 @@
         .btn-gold:hover { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 25px rgba(245, 158, 11, 0.85); }
         .btn-green:hover { background: #10b981; color: #000000; border-color: #34d399; box-shadow: 0 0 25px rgba(16, 185, 129, 0.85); }
         .btn-red:hover { background: #ef4444; color: #ffffff; border-color: #f87171; box-shadow: 0 0 25px rgba(239, 68, 68, 0.85); }
+        .btn-ws-style { border-color: rgba(34, 197, 94, 0.5); color: #4ade80; }
+        .btn-ws-style:hover { background: #22c55e; color: #000000; border-color: #22c55e; box-shadow: 0 0 25px rgba(34, 197, 94, 0.85); }
 
         .grupos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-top: 20px; }
         .grupo-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden; transition: all 0.3s ease; }
         .grupo-header { background: rgba(0, 0, 0, 0.35); font-weight: 800; font-size: 13px; padding: 12px; text-align: center; text-transform: uppercase; letter-spacing: 2px; }
+
+        .grupo-card.gpo-cyan { border-bottom: 5px solid #0e7490; }
+        .grupo-card.gpo-purple { border-bottom: 5px solid #2e1065; }
+        .grupo-card.gpo-emerald { border-bottom: 5px solid #064e3b; }
+        .grupo-card.gpo-amber { border-bottom: 5px solid #451a03; }
 
         .jugador-item { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
         .jugador-info { flex: 1; }
@@ -62,6 +72,17 @@
 
         .badge-mesa { background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(16,185,129,0.3); }
         .badge-grupo { background: rgba(6, 182, 212, 0.15); color: #38bdf8; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(6,182,212,0.3); }
+
+        .mensaje-vacio { text-align: center; color: #475569; font-style: italic; background: transparent !important; border: none !important; }
+
+        @media print {
+            body { background: white !important; color: black !important; padding: 0; }
+            .no-print, .panel-3d:not(#seccion-partidos-rr) { display: none !important; }
+            #seccion-partidos-rr { display: block !important; box-shadow: none; border: none; background: white !important; color: black !important; }
+            table { font-size: 10pt; border: 1px solid #000; margin-bottom: 20px; color: black !important; }
+            th { background-color: #333 !important; color: white !important; -webkit-print-color-adjust: exact; }
+            td, th { border: 1px solid #999; padding: 6px; color: black !important; background: white !important; }
+        }
     </style>
 </head>
 <body>
@@ -106,7 +127,6 @@
                 </div>
             </div>
 
-            <!-- PARÁMETRO CLAVE: MESA INICIAL DE LA CATEGORÍA -->
             <div id="panel-config-horarios" style="display: none; background: rgba(15,23,42,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 18px; border-radius: 14px; margin-top: 15px;">
                 <h3 style="margin-top:0; font-size:12px; color:#ffffff;">⚙️ Asignación de Mesas y Horarios para esta Categoría</h3>
                 
@@ -165,7 +185,19 @@
         </div>
 
         <div class="panel-3d panel-purple" id="seccion-partidos-rr" style="display: none;">
-            <h2>📋 Rol Oficial de Partidos Guardado</h2>
+            
+            <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 15px; flex-wrap:wrap; gap:12px;">
+                <h2 style="border:none; padding:0; margin:0;">📋 Rol Oficial de Partidos Guardado</h2>
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <button class="btn-console btn-ws-style" onclick="compartirAgendaWhatsApp()">📲 Enviar por WhatsApp</button>
+                    <button class="btn-console" onclick="imprimirAgenda()">📄 PDF / Imprimir</button>
+                    <button class="btn-console btn-green" onclick="exportarAgendaExcel()">📊 Excel</button>
+                    <select id="filtro-jugador-agenda" onchange="filtrarPartidosPorJugador()" style="padding:8px 12px; font-size:11px; max-width:200px;">
+                        <option value="">-- Todos los Jugadores --</option>
+                    </select>
+                </div>
+            </div>
+
             <table>
                 <thead>
                     <tr>
@@ -203,80 +235,93 @@
         const clasesColoresGrupo = ['gpo-cyan', 'gpo-purple', 'gpo-emerald', 'gpo-amber'];
 
         async function inicializarSorteo() {
-            const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
-            if (torneoData) {
-                torneoActivoObj = torneoData;
-                document.getElementById('banner-torneo-info').innerText = `📌 Torneo Activo: ${torneoData.nombre}`;
-                if(torneoData.pin_jueces) document.getElementById('rr-pin-jueces').value = torneoData.pin_jueces;
-            }
+            try {
+                const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
+                if (torneoData) {
+                    torneoActivoObj = torneoData;
+                    document.getElementById('banner-torneo-info').innerText = `📌 Torneo Activo: ${torneoData.nombre}`;
+                    if(torneoData.pin_jueces) document.getElementById('rr-pin-jueces').value = torneoData.pin_jueces;
+                }
 
-            const { data } = await clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true });
-            const select = document.getElementById('filtro-categoria');
-            select.innerHTML = '<option value="">-- Selecciona una categoría --</option>';
-            if (data) data.forEach(cat => select.innerHTML += `<option value="${cat.id}">${cat.nombre}</option>`);
+                const { data } = await clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true });
+                const select = document.getElementById('filtro-categoria');
+                select.innerHTML = '<option value="">-- Selecciona una categoría --</option>';
+                if (data) data.forEach(cat => select.innerHTML += `<option value="${cat.id}">${cat.nombre}</option>`);
 
-            const ultimaCat = localStorage.getItem('categoria_guardada_reciente');
-            if (ultimaCat) {
-                select.value = ultimaCat;
-                localStorage.removeItem('categoria_guardada_reciente');
-                cargarEstadoCategoria();
+                const ultimaCat = localStorage.getItem('categoria_guardada_reciente');
+                if (ultimaCat) {
+                    select.value = ultimaCat;
+                    localStorage.removeItem('categoria_guardada_reciente');
+                    await cargarEstadoCategoria();
+                }
+            } catch(e) {
+                console.error("Error al iniciar:", e);
             }
         }
 
         async function cargarEstadoCategoria() {
-            const idCat = document.getElementById('filtro-categoria').value;
-            const contador = document.getElementById('contador-jugadores');
-            const contSorteo = document.getElementById('controles-sorteo');
-            const btnRehacer = document.getElementById('btn-rehacer-sorteo');
-            const contenedorGrupos = document.getElementById('contenedor-grupos');
-            const panelHorarios = document.getElementById('panel-config-horarios');
-            const btnGuardar = document.getElementById('btn-guardar-grupos');
-            const seccionPartidos = document.getElementById('seccion-partidos-rr');
+            try {
+                const idCat = document.getElementById('filtro-categoria').value;
+                const contador = document.getElementById('contador-jugadores');
+                const contSorteo = document.getElementById('controles-sorteo');
+                const btnRehacer = document.getElementById('btn-rehacer-sorteo');
+                const contenedorGrupos = document.getElementById('contenedor-grupos');
+                const panelHorarios = document.getElementById('panel-config-horarios');
+                const btnGuardar = document.getElementById('btn-guardar-grupos');
+                const seccionPartidos = document.getElementById('seccion-partidos-rr');
 
-            if (!idCat) { 
-                contador.innerText = '0';
-                contenedorGrupos.innerHTML = '';
-                panelHorarios.style.display = 'none';
-                btnGuardar.style.display = 'none';
-                seccionPartidos.style.display = 'none';
-                contSorteo.style.display = 'flex';
-                btnRehacer.style.display = 'none';
-                return; 
-            }
+                if (!idCat) { 
+                    contador.innerText = '0';
+                    contenedorGrupos.innerHTML = '';
+                    panelHorarios.style.display = 'none';
+                    btnGuardar.style.display = 'none';
+                    seccionPartidos.style.display = 'none';
+                    contSorteo.style.display = 'flex';
+                    btnRehacer.style.display = 'none';
+                    return; 
+                }
 
-            const { count } = await clienteSupabase.from('inscripciones')
-                .select('*', { count: 'exact', head: true })
-                .eq('categoria_id', idCat)
-                .eq('torneo_id', idTorneoActivo)
-                .eq('estatus_pago', 'Pagado');
-            
-            contador.innerText = count || 0;
+                const { count } = await clienteSupabase.from('inscripciones')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('categoria_id', idCat)
+                    .eq('torneo_id', idTorneoActivo)
+                    .eq('estatus_pago', 'Pagado');
+                
+                contador.innerText = count || 0;
 
-            const { data: partidosBD } = await clienteSupabase
-                .from('partidos')
-                .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking)')
-                .eq('categoria_id', idCat)
-                .eq('torneo_id', idTorneoActivo)
-                .order('id', { ascending: true });
+                const { data: partidosBD, error } = await clienteSupabase
+                    .from('partidos')
+                    .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking)')
+                    .eq('categoria_id', idCat)
+                    .eq('torneo_id', idTorneoActivo)
+                    .order('id', { ascending: true });
 
-            if (partidosBD && partidosBD.length > 0) {
-                partidosCargadosGlobal = partidosBD;
-                contSorteo.style.display = 'none';
-                btnRehacer.style.display = 'inline-flex';
-                panelHorarios.style.display = 'none';
-                btnGuardar.style.display = 'none';
+                if (error) throw error;
 
-                reconstruirGruposDesdePartidosBD(partidosBD);
-                seccionPartidos.style.display = 'block';
-                dibujarTablaPartidosBD(partidosBD);
-            } else {
-                partidosCargadosGlobal = [];
-                contSorteo.style.display = 'flex';
-                btnRehacer.style.display = 'none';
-                contenedorGrupos.innerHTML = '';
-                panelHorarios.style.display = 'none';
-                btnGuardar.style.display = 'none';
-                seccionPartidos.style.display = 'none';
+                if (partidosBD && partidosBD.length > 0) {
+                    partidosCargadosGlobal = partidosBD;
+                    contSorteo.style.display = 'none';
+                    btnRehacer.style.display = 'inline-flex';
+                    panelHorarios.style.display = 'none';
+                    btnGuardar.style.display = 'none';
+
+                    reconstruirGruposDesdePartidosBD(partidosBD);
+                    poblarDropdownAgenda(partidosBD);
+                    
+                    seccionPartidos.style.display = 'block';
+                    dibujarTablaPartidosBD(partidosBD);
+                } else {
+                    partidosCargadosGlobal = [];
+                    contSorteo.style.display = 'flex';
+                    btnRehacer.style.display = 'none';
+                    contenedorGrupos.innerHTML = '';
+                    panelHorarios.style.display = 'none';
+                    btnGuardar.style.display = 'none';
+                    seccionPartidos.style.display = 'none';
+                }
+            } catch (err) {
+                console.error("Error al cargar la categoría:", err);
+                alert("Ocurrió un problema al leer la base de datos para esta categoría.");
             }
         }
 
@@ -435,6 +480,8 @@
             const contenedor = document.getElementById('contenedor-grupos');
             contenedor.innerHTML = '';
 
+            let optionsGrupo = gruposGlobal.map(g => `<option value="${g.nombre}">Gpo ${g.nombre}</option>`).join('');
+
             gruposGlobal.forEach((grupo, idxGrupo) => {
                 let claseColor = clasesColoresGrupo[idxGrupo % clasesColoresGrupo.length];
                 let html = `<div class="grupo-card ${claseColor}"><div class="grupo-header">Grupo ${grupo.nombre}</div>`;
@@ -479,7 +526,6 @@
             simularJuecesYActualizarUI();
         }
 
-        // CÁLCULO DE MESAS CON OFFSET ("MESA INICIAL")
         function recalcularRolPartidos() {
             let scheds = {};
             let maxRounds = 0;
@@ -551,7 +597,6 @@
             for(let i=0; i<sequentialMatches.length; i++) {
                 let match = sequentialMatches[i];
                 
-                // MESA ASIGNADA = MESA INICIAL + OFFSET
                 match.mesa = mesaInicio + tableCounter;
                 match.hora = blockTimes[currentBlock];
                 
@@ -592,23 +637,41 @@
             dibujarTablaPartidosGenerados(partidosGeneradosRR);
         }
 
+        // ==========================================
+        // DIBUJO DE TABLAS A PRUEBA DE FALLOS
+        // ==========================================
+
         function dibujarTablaPartidosBD(partidosBD) {
             const tbody = document.getElementById('tabla-partidos-rr');
+            if (!tbody) return;
             tbody.innerHTML = '';
             
+            const filtroEl = document.getElementById('filtro-jugador-agenda');
+            const filtroActual = filtroEl ? filtroEl.value : '';
+
             partidosBD.forEach(p => {
                 let horaStr = p.hora || '09:00 AM';
                 let juezTexto = p.juez || 'Comité / Libre';
+                
+                let esJuez = filtroActual && typeof juezTexto === 'string' && juezTexto.includes(filtroActual);
+                let esJ1 = filtroActual && p.j1 && p.j1.nombre === filtroActual;
+                let esJ2 = filtroActual && p.j2 && p.j2.nombre === filtroActual;
+
+                let juezBadge = esJuez 
+                    ? `<span style="background: #ef4444; color: #ffffff; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 1px; box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); display:inline-block;"><i class="fa-solid fa-gavel"></i> ¡TE TOCA ARBITRAR!</span>`
+                    : `<span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span>`;
+
+                let trStyle = esJuez ? 'background: rgba(239, 68, 68, 0.1);' : '';
 
                 tbody.innerHTML += `
-                    <tr>
+                    <tr style="${trStyle}">
                         <td><strong>⏰ ${horaStr}</strong></td>
                         <td><span class="badge-mesa">Mesa ${p.mesa || 1}</span></td>
-                        <td><span class="badge-grupo">Gpo ${p.grupo_nombre}</span></td>
-                        <td><strong>${p.j1 ? p.j1.nombre : 'J1'}</strong></td>
+                        <td><span class="badge-grupo">Gpo ${p.grupo_nombre || 'A'}</span></td>
+                        <td><strong style="${esJ1 ? 'color:#38bdf8; font-size:14px;' : ''}">${p.j1 ? p.j1.nombre : 'J1'}</strong></td>
                         <td style="text-align:center;">VS</td>
-                        <td><strong>${p.j2 ? p.j2.nombre : 'J2'}</strong></td>
-                        <td><span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span></td>
+                        <td><strong style="${esJ2 ? 'color:#38bdf8; font-size:14px;' : ''}">${p.j2 ? p.j2.nombre : 'J2'}</strong></td>
+                        <td>${juezBadge}</td>
                         <td class="no-print">
                             <div style="display:flex; gap:6px; flex-wrap:wrap;">
                                 <a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 8px; font-size:9px; text-decoration:none;">🏓 Juez</a>
@@ -622,7 +685,11 @@
 
         function dibujarTablaPartidosGenerados(lista) {
             const tbody = document.getElementById('tabla-partidos-rr');
+            if(!tbody) return;
             tbody.innerHTML = '';
+            
+            const filtroDropdown = document.getElementById('filtro-jugador-agenda');
+            if (filtroDropdown) filtroDropdown.innerHTML = '<option value="">-- Guarda para habilitar filtros --</option>';
 
             lista.forEach((p) => {
                 let juezTexto = p.juez || 'Comité / Libre';
@@ -630,10 +697,10 @@
                     <tr>
                         <td><strong>⏰ ${p.hora}</strong></td>
                         <td><span class="badge-mesa">Mesa ${p.mesa}</span></td>
-                        <td><span class="badge-grupo">Gpo ${p.grupoNombre}</span></td>
-                        <td><strong>${p.j1.nombre}</strong></td>
+                        <td><span class="badge-grupo">Gpo ${p.grupoNombre || 'A'}</span></td>
+                        <td><strong>${p.j1 ? p.j1.nombre : 'J1'}</strong></td>
                         <td style="text-align:center;">VS</td>
-                        <td><strong>${p.j2.nombre}</strong></td>
+                        <td><strong>${p.j2 ? p.j2.nombre : 'J2'}</strong></td>
                         <td><span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span></td>
                         <td class="no-print"><small style="color:#fbbf24; font-weight:700;">Guarda en BD para habilitar arbitraje</small></td>
                     </tr>
@@ -641,12 +708,138 @@
             });
         }
 
+        function poblarDropdownAgenda(partidos) {
+            const select = document.getElementById('filtro-jugador-agenda');
+            if (!select) return;
+            select.innerHTML = '<option value="">-- Todos los Jugadores --</option>';
+            let jugadoresSet = new Set();
+            partidos.forEach(p => {
+                if (p.j1 && p.j1.nombre) jugadoresSet.add(p.j1.nombre);
+                if (p.j2 && p.j2.nombre) jugadoresSet.add(p.j2.nombre);
+                if (p.juez && typeof p.juez === 'string' && p.juez.includes("(Descansa)")) {
+                    let jName = p.juez.replace(" (Descansa)", "");
+                    jugadoresSet.add(jName);
+                }
+            });
+            [...jugadoresSet].sort().forEach(nombre => {
+                select.innerHTML += `<option value="${nombre}">${nombre}</option>`;
+            });
+        }
+
+        function filtrarPartidosPorJugador() {
+            const filtroEl = document.getElementById('filtro-jugador-agenda');
+            const nombre = filtroEl ? filtroEl.value : '';
+            if (!nombre) {
+                dibujarTablaPartidosBD(partidosCargadosGlobal);
+                return;
+            }
+            const filtrados = partidosCargadosGlobal.filter(p => 
+                (p.j1 && p.j1.nombre === nombre) || 
+                (p.j2 && p.j2.nombre === nombre) || 
+                (p.juez && typeof p.juez === 'string' && p.juez.includes(nombre))
+            );
+            dibujarTablaPartidosBD(filtrados);
+        }
+
+        function compartirAgendaWhatsApp() {
+            const filtroEl = document.getElementById('filtro-jugador-agenda');
+            const nombre = filtroEl ? filtroEl.value : '';
+            let texto = `🏓 *ROL DE PARTIDOS - ${torneoActivoObj ? torneoActivoObj.nombre : ''}* 🏓\n`;
+            if (torneoActivoObj) {
+                if (torneoActivoObj.fecha_evento) texto += `📅 *Fecha:* ${torneoActivoObj.fecha_evento}\n`;
+                if (torneoActivoObj.lugar_evento) texto += `📍 *Lugar:* ${torneoActivoObj.lugar_evento}\n`;
+            }
+            texto += `\n`;
+
+            let lista = partidosCargadosGlobal;
+            if (nombre) {
+                texto += `👤 *Agenda Individual:* ${nombre}\n\n`;
+                lista = partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre) || (p.juez && typeof p.juez === 'string' && p.juez.includes(nombre)));
+            } else {
+                texto += `📋 *Rol General (Todos los partidos)*\n\n`;
+            }
+
+            if(lista.length === 0) { alert("No hay partidos para enviar."); return; }
+
+            lista.forEach(p => {
+                let rolText = "🏓 JUEGA";
+                if(nombre && p.juez && typeof p.juez === 'string' && p.juez.includes(nombre)) rolText = "⚖️ ARBITRA";
+
+                texto += `⏰ ${p.hora || '09:00 AM'} | Mesa ${p.mesa} [${rolText}]\n` +
+                         `   ${p.j1 ? p.j1.nombre : 'J1'} vs ${p.j2 ? p.j2.nombre : 'J2'}\n` +
+                         `   ⚖️ Juez: ${p.juez || 'Comité'}\n\n`;
+            });
+
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+
+        function imprimirAgenda() { window.print(); }
+
+        function exportarAgendaExcel() {
+            let csv = 'Hora,Mesa,Grupo/Ronda,Jugador 1,Jugador 2,Juez Asignado\n';
+            const filtroEl = document.getElementById('filtro-jugador-agenda');
+            const nombre = filtroEl ? filtroEl.value : '';
+            let lista = partidosCargadosGlobal;
+            
+            if (nombre) {
+                lista = lista.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre) || (p.juez && typeof p.juez === 'string' && p.juez.includes(nombre)));
+            }
+
+            lista.forEach(p => {
+                csv += `"${p.hora || '09:00 AM'}","Mesa ${p.mesa}","Gpo ${p.grupo_nombre || 'A'}","${p.j1 ? p.j1.nombre : ''}","${p.j2 ? p.j2.nombre : ''}","${p.juez || 'Comité'}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a"); 
+            link.setAttribute("href", URL.createObjectURL(blob)); 
+            link.setAttribute("download", `Rol_Partidos_${nombre || 'General'}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        function reconstruirGruposDesdePartidosBD(partidosBD) {
+            const contenedor = document.getElementById('contenedor-grupos');
+            if (!contenedor) return;
+            contenedor.innerHTML = '';
+
+            let nombresGrupos = [...new Set(partidosBD.map(p => p.grupo_nombre || 'A'))].sort();
+
+            nombresGrupos.forEach((nombreGpo, idx) => {
+                let partidosDelGrupo = partidosBD.filter(p => (p.grupo_nombre || 'A') === nombreGpo);
+                let mapaJugadores = new Map();
+
+                partidosDelGrupo.forEach(p => {
+                    if (p.j1 && p.jugador1_id) mapaJugadores.set(p.jugador1_id, p.j1);
+                    if (p.j2 && p.jugador2_id) mapaJugadores.set(p.jugador2_id, p.j2);
+                });
+
+                let claseColor = clasesColoresGrupo[idx % clasesColoresGrupo.length];
+                let html = `<div class="grupo-card ${claseColor}"><div class="grupo-header">Grupo ${nombreGpo}</div>`;
+
+                mapaJugadores.forEach((jObj) => {
+                    html += `
+                        <div class="jugador-item">
+                            <div class="jugador-info">
+                                <strong style="color:#ffffff;">${jObj.nombre || 'Desconocido'}</strong>
+                                <div><span class="tag-club">${jObj.club || 'Sin Club'}</span></div>
+                                <span style="font-size:10px; color:#94a3b8;">${jObj.puntos_ranking || 0} pts</span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                contenedor.innerHTML += html + `</div>`;
+            });
+        }
+
         async function rehacerSorteo() {
             const idCat = document.getElementById('filtro-categoria').value;
-            if (!confirm("⚠️ ¿Deseas ELIMINAR el sorteo guardado de esta categoría?")) return;
+            if (!confirm("⚠️ ¿Deseas ELIMINAR el sorteo guardado de esta categoría y generar uno nuevo?")) return;
 
-            await clienteSupabase.from('partidos').delete().eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo);
-            cargarEstadoCategoria();
+            try {
+                await clienteSupabase.from('partidos').delete().eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo);
+                await cargarEstadoCategoria();
+            } catch(e) {
+                alert("Error al borrar: " + e.message);
+            }
         }
 
         async function guardarGruposBD() {
@@ -660,8 +853,11 @@
             btn.innerText = "Guardando en Supabase...";
 
             try {
-                await clienteSupabase.from('torneos').update({ pin_jueces: pinJueces }).eq('id', idTorneoActivo);
-                await clienteSupabase.from('partidos').delete().eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo);
+                const req1 = await clienteSupabase.from('torneos').update({ pin_jueces: pinJueces }).eq('id', idTorneoActivo);
+                if (req1.error) throw new Error("Fallo al actualizar PIN: " + req1.error.message);
+
+                const req2 = await clienteSupabase.from('partidos').delete().eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo);
+                if (req2.error) throw new Error("Fallo al limpiar partidos antiguos: " + req2.error.message);
 
                 let partidosInsertar = partidosGeneradosRR.map(p => ({
                     torneo_id: parseInt(idTorneoActivo),
@@ -677,21 +873,24 @@
                     estado: 'pendiente'
                 }));
 
-                const { error } = await clienteSupabase.from('partidos').insert(partidosInsertar);
-                if (error) throw new Error(error.message);
+                const req3 = await clienteSupabase.from('partidos').insert(partidosInsertar);
+                if (req3.error) throw new Error("Fallo al insertar los partidos nuevos: " + req3.error.message);
 
-                alert("✅ ¡Partidos guardados con éxito en la Base de Datos!");
-                await cargarEstadoCategoria();
+                alert("✅ ¡Partidos y PIN guardados con éxito en la Base de Datos!");
+                
+                // Refresco seguro
+                localStorage.setItem('categoria_guardada_reciente', idCategoria);
+                window.location.reload(); 
 
             } catch (error) {
                 alert("❌ Error crítico en Supabase:\n\n" + error.message);
-            } finally {
                 btn.disabled = false;
                 btn.innerText = "💾 Guardar Acomodo Definitivo en Base de Datos";
             }
         }
 
         function timeToMinutes(t) { if(!t) return null; let [h, m] = t.split(':').map(Number); return h * 60 + m; }
+        
         function minutesToTimeStr(m) { 
             let hrs = Math.floor(m / 60) % 24;
             let mins = m % 60; 
