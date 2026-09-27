@@ -8,26 +8,27 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Orbitron:wght@700;800&display=swap');
 
-        body { 
-            font-family: 'Sora', sans-serif; 
-            margin: 0; 
-            padding: 20px; 
-            background-color: #04060a; 
-            color: #f8fafc; 
-            min-height: 100vh; 
-        }
-
+        body { font-family: 'Sora', sans-serif; margin: 0; padding: 20px; background-color: #04060a; color: #f8fafc; min-height: 100vh; }
         .header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
         .header h1 { margin: 0; font-size: 20px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; font-weight: 800; }
         .header p { margin: 5px 0 0 0; font-size: 11px; color: #06b6d4; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; }
 
-        .filtro-mesa { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .filtro-mesa { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
         .btn-mesa-filter { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 8px 16px; border-radius: 9999px; font-size: 11px; font-weight: 800; cursor: pointer; text-transform: uppercase; transition: all 0.2s ease; }
         .btn-mesa-filter.active { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 15px rgba(6, 182, 212, 0.5); }
+
+        .filtro-estado { display: flex; justify-content: center; gap: 8px; margin-bottom: 25px; flex-wrap: wrap; }
+        .btn-estado-filter { background: transparent; border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 6px 14px; border-radius: 9999px; font-size: 9px; font-weight: 800; cursor: pointer; text-transform: uppercase; transition: all 0.2s ease; }
+        .btn-estado-filter.active { background: rgba(6, 182, 212, 0.15); color: #38bdf8; border-color: #06b6d4; }
 
         .grid-partidos { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; max-width: 1100px; margin: auto; }
         .card-partido { background: rgba(10, 15, 26, 0.65); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 4px solid #0e7490; border-radius: 18px; padding: 20px; transition: all 0.3s ease; }
         .card-partido:hover { transform: translateY(-3px); border-bottom-color: #06b6d4; box-shadow: 0 12px 30px rgba(6, 182, 212, 0.25); }
+        
+        /* ESTILO PARA PARTIDOS TERMINADOS */
+        .card-finalizado { opacity: 0.5; filter: grayscale(80%); border-bottom-color: #334155 !important; }
+        .card-finalizado:hover { transform: none; box-shadow: none; opacity: 0.8; }
+        .card-finalizado .btn-arbitrar { background: #1e293b; border-color: #334155; color: #94a3b8; }
 
         .top-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .badge-mesa { background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.4); color: #38bdf8; padding: 4px 10px; border-radius: 9999px; font-weight: 800; font-size: 10px; text-transform: uppercase; }
@@ -43,7 +44,7 @@
         .btn-arbitrar { width: 100%; padding: 12px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; border-radius: 9999px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; }
         .btn-arbitrar:hover { background: #f59e0b; color: #000000; box-shadow: 0 0 20px rgba(245, 158, 11, 0.6); }
 
-        .header-hora { grid-column: 1 / -1; font-size: 14px; color: #38bdf8; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid rgba(56, 189, 248, 0.3); padding-bottom: 8px; margin-top: 15px; letter-spacing: 2px; }
+        .header-hora { grid-column: 1 / -1; font-size: 14px; color: #38bdf8; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid rgba(56, 189, 248, 0.3); padding-bottom: 8px; margin-top: 25px; margin-bottom: 5px; letter-spacing: 2px; }
     </style>
 </head>
 <body>
@@ -57,8 +58,15 @@
         <button class="btn-mesa-filter active" onclick="filtrarMesa('todas')">Todas las Mesas</button>
     </div>
 
+    <!-- PESTAÑAS DE ESTADO -->
+    <div class="filtro-estado">
+        <button class="btn-estado-filter active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Todos</button>
+        <button class="btn-estado-filter" id="tab-pendientes" onclick="filtrarEstado('pendientes_vivo')">⏳ Pendientes / En Vivo</button>
+        <button class="btn-estado-filter" id="tab-finalizados" onclick="filtrarEstado('finalizado')">🏁 Finalizados</button>
+    </div>
+
     <div class="grid-partidos" id="contenedor-partidos">
-        <div style="text-align:center; color:#64748b; grid-column:1/-1;">Cargando partidos activos...</div>
+        <div style="text-align:center; color:#64748b; grid-column:1/-1;">Cargando partidos...</div>
     </div>
 
     <script>
@@ -69,6 +77,7 @@
         let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
         let todosLosPartidos = [];
         let mesaFiltro = 'todas';
+        let estadoFiltro = 'todos';
 
         async function inicializar() {
             const { data: torneo } = await clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).single();
@@ -114,35 +123,50 @@
             dibujarPartidos();
         }
 
+        function filtrarEstado(est) {
+            estadoFiltro = est;
+            document.querySelectorAll('.btn-estado-filter').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${est === 'pendientes_vivo' ? 'pendientes' : est}`).classList.add('active');
+            dibujarPartidos();
+        }
+
         function dibujarPartidos() {
             const contenedor = document.getElementById('contenedor-partidos');
             contenedor.innerHTML = '';
 
             let filtrados = mesaFiltro === 'todas' ? todosLosPartidos : todosLosPartidos.filter(p => p.mesa == mesaFiltro);
 
+            if (estadoFiltro === 'pendientes_vivo') {
+                filtrados = filtrados.filter(p => p.estado !== 'finalizado');
+            } else if (estadoFiltro === 'finalizado') {
+                filtrados = filtrados.filter(p => p.estado === 'finalizado');
+            }
+
             if (filtrados.length === 0) {
-                contenedor.innerHTML = '<div style="text-align:center; color:#64748b; grid-column:1/-1;">No hay partidos asignados a esta mesa.</div>';
+                contenedor.innerHTML = '<div style="text-align:center; color:#64748b; grid-column:1/-1;">No hay partidos en esta categoría.</div>';
                 return;
             }
 
             // Agrupar por hora
             const gruposPorHora = {};
             filtrados.forEach(p => {
-                const h = p.hora || 'Horario por definir';
+                const h = p.hora || '09:00 AM';
                 if(!gruposPorHora[h]) gruposPorHora[h] = [];
                 gruposPorHora[h].push(p);
             });
 
             // Dibujar cada bloque de hora
-            Object.keys(gruposPorHora).sort().forEach(hora => {
+            Object.keys(gruposPorHora).forEach(hora => {
                 contenedor.innerHTML += `<div class="header-hora">⏰ ${hora}</div>`;
                 
                 gruposPorHora[hora].forEach(p => {
                     let badgeEst = p.estado === 'en_curso' ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : 
                                   (p.estado === 'finalizado' ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
+                    
+                    let opacidadClass = p.estado === 'finalizado' ? 'card-finalizado' : '';
 
                     contenedor.innerHTML += `
-                        <div class="card-partido">
+                        <div class="card-partido ${opacidadClass}">
                             <div class="top-info">
                                 <span class="badge-mesa">MESA ${p.mesa || '-'}</span>
                                 <span style="font-size:10px; color:#94a3b8; font-weight:700;">${p.categorias ? p.categorias.nombre : ''} • Gpo ${p.grupo_nombre}</span>
@@ -170,7 +194,6 @@
         function abrirScoreboardJuez(partidoId) {
             let pin = prompt("🔒 Ingrese el PIN de Juez (Por defecto: 1234):");
             if (pin === "1234") {
-                // Redirige en la misma pestaña para que la tablet no acumule ventanas abiertas
                 window.location.href = `juez.html?partido=${partidoId}`;
             } else if (pin !== null) {
                 alert("❌ PIN incorrecto.");
