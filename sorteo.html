@@ -32,59 +32,21 @@
 
         .main-content { padding: 30px; max-width: 1100px; margin: auto; position: relative; z-index: 10; }
 
-        .panel-3d { 
-            position: relative; 
-            background: rgba(10, 15, 26, 0.45); 
-            backdrop-filter: blur(20px); 
-            -webkit-backdrop-filter: blur(20px); 
-            border-radius: 20px; 
-            border: 1px solid rgba(255, 255, 255, 0.06); 
-            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.03); 
-            padding: 26px; 
-            margin-bottom: 26px; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
+        .panel-3d { background: rgba(10, 15, 26, 0.45); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.03); padding: 26px; margin-bottom: 26px; transition: all 0.3s ease; }
         .panel-cyan { border-bottom: 5px solid #0e7490; }
         .panel-purple { border-bottom: 5px solid #2e1065; }
 
-        h2, h3 { color: #ffffff; margin-top: 0; padding-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 20px; transition: all 0.3s ease; }
+        h2, h3 { color: #ffffff; margin-top: 0; padding-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 20px; }
 
         .form-row input[type="text"], .form-row input[type="number"], .form-row input[type="time"], .form-row select, select { 
-            padding: 10px 14px; 
-            border: 1px solid rgba(255, 255, 255, 0.18) !important; 
-            background: rgba(10, 15, 26, 0.85) !important; 
-            color: #ffffff !important; 
-            border-radius: 10px; 
-            font-size: 12px; 
-            font-family: 'Sora', sans-serif; 
-            font-weight: 600;
+            padding: 10px 14px; border: 1px solid rgba(255, 255, 255, 0.18) !important; background: rgba(10, 15, 26, 0.85) !important; color: #ffffff !important; border-radius: 10px; font-size: 12px; font-family: 'Sora', sans-serif; font-weight: 600;
         }
 
         select option { background-color: #0a0b10 !important; color: #ffffff !important; padding: 10px; }
 
-        .btn-console { 
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 9px 20px; 
-            background: rgba(255, 255, 255, 0.06); 
-            border: 1px solid rgba(255, 255, 255, 0.18); 
-            border-radius: 9999px; 
-            color: #f1f5f9; 
-            font-size: 11px; 
-            font-weight: 700; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            cursor: pointer; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            font-family: 'Sora', sans-serif; 
-            text-decoration: none;
-        }
-
+        .btn-console { display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 9999px; color: #f1f5f9; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s ease; text-decoration: none; }
         .btn-console:hover { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 25px rgba(6, 182, 212, 0.85); transform: translateY(-2px); }
         .btn-gold:hover { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 25px rgba(245, 158, 11, 0.85); }
-        .btn-purple:hover { background: #8b5cf6; color: #ffffff; border-color: #c084fc; box-shadow: 0 0 25px rgba(139, 92, 246, 0.85); }
         .btn-green:hover { background: #10b981; color: #000000; border-color: #34d399; box-shadow: 0 0 25px rgba(16, 185, 129, 0.85); }
         .btn-red:hover { background: #ef4444; color: #ffffff; border-color: #f87171; box-shadow: 0 0 25px rgba(239, 68, 68, 0.85); }
         .btn-ws-style { border-color: rgba(34, 197, 94, 0.5); color: #4ade80; }
@@ -151,7 +113,8 @@
                     <select id="tamano-grupo" style="max-width: 200px;">
                         <option value="3">Grupos de 3 jugadores</option>
                         <option value="4">Grupos de 4 jugadores</option>
-                        <option value="5">Grupos de 5 jugadores</option>
+                        <option value="5" selected>Grupos de 5 jugadores</option>
+                        <option value="6">Grupos de 6 jugadores</option>
                     </select>
                     <button class="btn-console btn-gold" id="btn-ejecutar-sorteo" onclick="prepararSorteo()">🎲 Generar Acomodo</button>
                 </div>
@@ -163,9 +126,8 @@
                 </div>
             </div>
 
-            <!-- PARÁMETROS RESTAURADOS: PIN JUEZ Y FORMATO DE SETS -->
             <div id="panel-config-horarios" style="display: none; background: rgba(15,23,42,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 18px; border-radius: 14px; margin-top: 15px;">
-                <h3 style="margin-top:0; font-size:12px; color:#ffffff;">⚙️ Parámetros de Horarios, Mesas y Asignación de Jueces</h3>
+                <h3 style="margin-top:0; font-size:12px; color:#ffffff;">⚙️ Parámetros de Horarios, Break y Jueces</h3>
                 
                 <div class="form-row" style="margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap;">
                     <div>
@@ -174,15 +136,26 @@
                     </div>
                     <div>
                         <label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">N° Mesas</label>
-                        <input type="number" id="rr-num-mesas" value="3" min="1" max="10" style="width:70px;">
+                        <input type="number" id="rr-num-mesas" value="3" min="1" max="20" style="width:70px;">
                     </div>
                     <div>
                         <label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Min/Partido</label>
                         <input type="number" id="rr-duracion-partido" value="30" min="10" style="width:70px;">
                     </div>
                     <div>
+                        <label style="font-size:9px; color:#f87171; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Hora de Comida/Break</label>
+                        <input type="time" id="rr-hora-break">
+                    </div>
+                    <div>
+                        <label style="font-size:9px; color:#f87171; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Min. de Break</label>
+                        <input type="number" id="rr-duracion-break" value="30" min="0" style="width:70px;">
+                    </div>
+                </div>
+
+                <div class="form-row" style="margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap;">
+                    <div>
                         <label style="font-size:9px; color:#fbbf24; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Formato Juego</label>
-                        <select id="rr-modo-juego" style="width:120px;">
+                        <select id="rr-modo-juego" style="width:130px;">
                             <option value="2-3">2 de 3 Sets</option>
                             <option value="3-5" selected>3 de 5 Sets</option>
                             <option value="4-7">4 de 7 Sets</option>
@@ -190,7 +163,11 @@
                     </div>
                     <div>
                         <label style="font-size:9px; color:#38bdf8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">PIN Jueces</label>
-                        <input type="text" id="rr-pin-jueces" value="1234" maxlength="4" style="width:70px; text-align:center;">
+                        <input type="text" id="rr-pin-jueces" value="1234" maxlength="4" style="width:80px; text-align:center;">
+                    </div>
+                    <div style="flex: 2;">
+                        <label style="font-size:9px; color:#a855f7; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Jueces Externos (Opcional, separados por comas)</label>
+                        <input type="text" id="rr-jueces-externos" placeholder="Ej. Juan Perez, Juez 1, Arbitro A">
                     </div>
                 </div>
 
@@ -225,11 +202,12 @@
                         <th>Jugador 1</th>
                         <th style="text-align:center;">VS</th>
                         <th>Jugador 2</th>
+                        <th>⚖️ Juez Asignado</th>
                         <th class="no-print" style="width: 200px;">Estatus / Scoreboard</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-partidos-rr">
-                    <tr><td colspan="7" class="mensaje-vacio">Cargando partidos...</td></tr>
+                    <tr><td colspan="8" class="mensaje-vacio">Cargando partidos...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -330,6 +308,8 @@
             partidos.forEach(p => {
                 if (p.j1 && p.j1.nombre) jugadoresSet.add(p.j1.nombre);
                 if (p.j2 && p.j2.nombre) jugadoresSet.add(p.j2.nombre);
+                // Si su nombre está en el string de juez, también nos interesa listarlo
+                // (Para que pueda sacar su rol de arbitraje)
             });
             [...jugadoresSet].sort().forEach(nombre => {
                 select.innerHTML += `<option value="${nombre}">${nombre}</option>`;
@@ -342,7 +322,11 @@
                 dibujarTablaPartidosBD(partidosCargadosGlobal);
                 return;
             }
-            const filtrados = partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre));
+            const filtrados = partidosCargadosGlobal.filter(p => 
+                (p.j1 && p.j1.nombre === nombre) || 
+                (p.j2 && p.j2.nombre === nombre) || 
+                (p.juez && p.juez.includes(nombre))
+            );
             dibujarTablaPartidosBD(filtrados);
         }
 
@@ -358,8 +342,8 @@
             
             let lista = partidosCargadosGlobal;
             if (nombre) {
-                texto += `👤 *Jugador:* ${nombre}\n\n`;
-                lista = partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre));
+                texto += `👤 *Agenda Individual:* ${nombre}\n\n`;
+                lista = partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre) || (p.juez && p.juez.includes(nombre)));
             } else {
                 texto += `📋 *Rol General (Todos los partidos)*\n\n`;
             }
@@ -367,8 +351,12 @@
             if(lista.length === 0) { alert("No hay partidos para enviar."); return; }
 
             lista.forEach(p => {
-                texto += `⏰ ${p.hora || '09:00 AM'} | Mesa ${p.mesa}\n` +
-                         `   ${p.j1 ? p.j1.nombre : 'J1'} vs ${p.j2 ? p.j2.nombre : 'J2'}\n\n`;
+                let rolText = "🏓 JUEGA";
+                if(nombre && p.juez && p.juez.includes(nombre)) rolText = "⚖️ ARBITRA";
+
+                texto += `⏰ ${p.hora || '09:00 AM'} | Mesa ${p.mesa} [${rolText}]\n` +
+                         `   ${p.j1 ? p.j1.nombre : 'J1'} vs ${p.j2 ? p.j2.nombre : 'J2'}\n` +
+                         `   ⚖️ Juez: ${p.juez || 'Comité'}\n\n`;
             });
 
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
@@ -377,13 +365,13 @@
         function imprimirAgenda() { window.print(); }
 
         function exportarAgendaExcel() {
-            let csv = 'Hora,Mesa,Grupo/Ronda,Jugador 1,Jugador 2\n';
+            let csv = 'Hora,Mesa,Grupo/Ronda,Jugador 1,Jugador 2,Juez Asignado\n';
             const nombre = document.getElementById('filtro-jugador-agenda').value;
             let lista = partidosCargadosGlobal;
-            if (nombre) lista = lista.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre));
+            if (nombre) lista = lista.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre) || (p.juez && p.juez.includes(nombre)));
 
             lista.forEach(p => {
-                csv += `"${p.hora || '09:00 AM'}","Mesa ${p.mesa}","Gpo ${p.grupo_nombre}","${p.j1 ? p.j1.nombre : ''}","${p.j2 ? p.j2.nombre : ''}"\n`;
+                csv += `"${p.hora || '09:00 AM'}","Mesa ${p.mesa}","Gpo ${p.grupo_nombre}","${p.j1 ? p.j1.nombre : ''}","${p.j2 ? p.j2.nombre : ''}","${p.juez || 'Comité'}"\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a"); 
@@ -438,6 +426,7 @@
                         <td><strong>${p.j1 ? p.j1.nombre : 'J1'}</strong></td>
                         <td style="text-align:center;">VS</td>
                         <td><strong>${p.j2 ? p.j2.nombre : 'J2'}</strong></td>
+                        <td><span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${p.juez || 'Comité'}</span></td>
                         <td class="no-print">
                             <div style="display:flex; gap:6px; flex-wrap:wrap;">
                                 <a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 8px; font-size:9px; text-decoration:none;">🏓 Juez</a>
@@ -527,45 +516,107 @@
             document.getElementById('btn-guardar-grupos').style.display = 'block';
         }
 
+        // CÁLCULO DE HORARIOS + BREAK + ASIGNACIÓN DE JUECES
         function recalcularRolPartidos() {
             partidosGeneradosRR = [];
             const horaInicioStr = document.getElementById('rr-hora-inicio').value || '09:00';
             const numMesas = parseInt(document.getElementById('rr-num-mesas').value) || 3;
             const duracionPartido = parseInt(document.getElementById('rr-duracion-partido').value) || 30;
-            const modoJuego = document.getElementById('rr-modo-juego').value || '2-3';
+            const modoJuego = document.getElementById('rr-modo-juego').value || '3-5';
+            
+            const horaBreakStr = document.getElementById('rr-hora-break').value;
+            const duracionBreak = parseInt(document.getElementById('rr-duracion-break').value) || 30;
+            let externalRefs = document.getElementById('rr-jueces-externos').value.split(',').map(s=>s.trim()).filter(s=>s);
 
-            let minsInicio = timeToMinutes(horaInicioStr);
+            let maxRounds = 0;
+            gruposGlobal.forEach(g => {
+                let n = g.jugadores.length;
+                let rounds = (n % 2 !== 0) ? n : n - 1;
+                if (rounds > maxRounds) maxRounds = rounds;
+            });
 
-            gruposGlobal.forEach((grupo) => {
-                let arr = [...grupo.jugadores];
-                if (arr.length % 2 !== 0) arr.push(null);
-                let n = arr.length;
+            let todosLosPartidosListos = [];
+            let refIndex = 0;
 
-                for (let r = 0; r < n - 1; r++) {
+            for(let r = 0; r < maxRounds; r++) {
+                gruposGlobal.forEach(grupo => {
+                    let arr = [...grupo.jugadores];
+                    let isOdd = arr.length % 2 !== 0;
+                    if (isOdd) arr.push(null); 
+                    let n = arr.length;
+
+                    // Rotación Polígono para Round Robin
+                    let shift = r % (n - 1);
+                    let rotated = [arr[0]];
+                    let others = arr.slice(1);
+                    for(let k=0; k<shift; k++) {
+                        others.unshift(others.pop());
+                    }
+                    rotated = rotated.concat(others);
+
+                    let restingPlayer = null;
+                    let groupMatchesThisRound = [];
+
                     for (let i = 0; i < n / 2; i++) {
-                        let j1 = arr[i];
-                        let j2 = arr[n - 1 - i];
+                        let j1 = rotated[i];
+                        let j2 = rotated[n - 1 - i];
 
-                        if (j1 && j2) {
-                            let matchIndex = partidosGeneradosRR.length;
-                            let mesaAsignada = (matchIndex % numMesas) + 1;
-                            let bloques = Math.floor(matchIndex / numMesas);
-                            let horaPartido = minutesToTimeStr(minsInicio + (bloques * duracionPartido));
-
-                            partidosGeneradosRR.push({
+                        if (j1 === null) {
+                            restingPlayer = j2;
+                        } else if (j2 === null) {
+                            restingPlayer = j1;
+                        } else {
+                            groupMatchesThisRound.push({
                                 grupoNombre: grupo.nombre,
                                 ronda: r + 1,
                                 j1: j1,
                                 j2: j2,
-                                hora: horaPartido,
-                                mesa: mesaAsignada,
-                                modoJuego: modoJuego,
-                                juez: 'Auto / Libre'
+                                modoJuego: modoJuego
                             });
                         }
                     }
-                    arr.splice(1, 0, arr.pop());
+
+                    // Asignación de Juez para ese partido
+                    groupMatchesThisRound.forEach(match => {
+                        if (restingPlayer) {
+                            match.juez = restingPlayer.nombre + " (Descansa)";
+                            restingPlayer = null; 
+                        } else {
+                            if (externalRefs.length > 0) {
+                                match.juez = externalRefs[refIndex % externalRefs.length];
+                                refIndex++;
+                            } else {
+                                match.juez = "Comité / Libre";
+                            }
+                        }
+                        todosLosPartidosListos.push(match);
+                    });
+                });
+            }
+
+            // Asignación de Tiempos y Mesas
+            let minsInicio = timeToMinutes(horaInicioStr);
+            let minsBreak = horaBreakStr ? timeToMinutes(horaBreakStr) : null;
+            let currentTimeMins = minsInicio;
+            let matchesAssigned = 0;
+            let breakApplied = false;
+
+            todosLosPartidosListos.forEach((match) => {
+                let mesaAsignada = (matchesAssigned % numMesas) + 1;
+                
+                if (matchesAssigned > 0 && mesaAsignada === 1) {
+                    currentTimeMins += duracionPartido;
+                    // Detectar si llegamos a la hora del Break
+                    if (!breakApplied && minsBreak !== null && currentTimeMins >= minsBreak) {
+                        currentTimeMins += duracionBreak;
+                        breakApplied = true;
+                    }
                 }
+
+                match.hora = minutesToTimeStr(currentTimeMins);
+                match.mesa = mesaAsignada;
+                partidosGeneradosRR.push(match);
+                matchesAssigned++;
             });
 
             document.getElementById('seccion-partidos-rr').style.display = 'block';
@@ -586,6 +637,7 @@
                         <td><strong>${p.j1.nombre}</strong></td>
                         <td style="text-align:center;">VS</td>
                         <td><strong>${p.j2.nombre}</strong></td>
+                        <td><span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${p.juez}</span></td>
                         <td class="no-print"><small style="color:#fbbf24; font-weight:700;">Guarda en BD para habilitar arbitraje</small></td>
                     </tr>
                 `;
@@ -602,9 +654,7 @@
             btn.disabled = true;
             btn.innerText = "Guardando en Supabase...";
 
-            // Actualizar PIN de jueces del torneo
             await clienteSupabase.from('torneos').update({ pin_jueces: pinJueces }).eq('id', idTorneoActivo);
-
             await clienteSupabase.from('partidos').delete().eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo);
 
             let partidosInsertar = partidosGeneradosRR.map(p => ({
@@ -630,11 +680,11 @@
                 return;
             }
 
-            alert("✅ ¡Partidos y PIN de jueces guardados con éxito en la Base de Datos!");
+            alert("✅ ¡Partidos guardados con éxito en la Base de Datos!");
             cargarEstadoCategoria();
         }
 
-        function timeToMinutes(t) { let [h, m] = t.split(':').map(Number); return h * 60 + m; }
+        function timeToMinutes(t) { if(!t) return null; let [h, m] = t.split(':').map(Number); return h * 60 + m; }
         
         function minutesToTimeStr(m) { 
             let hrs = Math.floor(m / 60) % 24;
