@@ -41,6 +41,19 @@
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
         const { useState, useEffect, useRef } = React;
 
+        // PALETA DINÁMICA DE CATEGORÍAS
+        const obtenerEstiloCategoria = (catId) => {
+            const paleta = [
+                { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.5)', text: '#fbbf24' }, // Dorado
+                { bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.5)', text: '#38bdf8' },  // Cian
+                { bg: 'rgba(217, 70, 239, 0.15)', border: 'rgba(217, 70, 239, 0.5)', text: '#f0abfc' }, // Magenta
+                { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.5)', text: '#34d399' }, // Esmeralda
+                { bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.5)', text: '#c084fc' }  // Púrpura
+            ];
+            const idx = (catId || 0) % paleta.length;
+            return paleta[idx];
+        };
+
         function App() {
             const urlParams = new URLSearchParams(window.location.search);
             
@@ -127,7 +140,7 @@
                     async function fetchLobby() {
                         const { data } = await clienteSupabase
                             .from('partidos')
-                            .select('*, j1:jugador1_id(nombre), j2:jugador2_id(nombre), categorias(nombre)')
+                            .select('*, j1:jugador1_id(nombre), j2:jugador2_id(nombre), categorias(id, nombre)')
                             .eq('torneo_id', torneoId)
                             .order('hora', { ascending: true })
                             .order('mesa', { ascending: true });
@@ -265,6 +278,10 @@
                                     let isJ1Win = p.ganador_id === p.jugador1_id;
                                     let isJ2Win = p.ganador_id === p.jugador2_id;
 
+                                    // ESTILO DINÁMICO DE CATEGORÍA
+                                    const catObj = p.categorias || {};
+                                    const estiloCat = obtenerEstiloCategoria(catObj.id || 0);
+
                                     return (
                                         <div key={p.id} onClick={() => entrarAlPartido(p.id)} 
                                              className={`bg-slate-900/80 p-4 rounded-[16px] border border-white/10 cursor-pointer transition-all ${isFin ? 'opacity-90 border-slate-800' : 'hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]'}`}>
@@ -274,8 +291,9 @@
                                                 <span style={{color: estadoColor, borderColor: estadoColor}} className="border px-2 py-1 rounded-full text-[8px] font-black uppercase">{estadoTexto}</span>
                                             </div>
                                             
-                                            <div className="text-[9px] text-[#fbbf24] font-bold uppercase mb-3 bg-[#fbbf24]/10 border border-[#fbbf24]/30 inline-block px-2 py-1 rounded">
-                                                🏆 {p.categorias?.nombre} • Gpo {p.grupo_nombre}
+                                            <div style={{ color: estiloCat.text, backgroundColor: estiloCat.bg, borderColor: estiloCat.border }} 
+                                                 className="text-[9px] font-bold uppercase mb-3 border inline-block px-2 py-1 rounded">
+                                                🏆 {catObj.nombre || 'Categoría'} • Gpo {p.grupo_nombre}
                                             </div>
                                             
                                             <div className="bg-black/40 rounded-xl p-3 flex justify-between items-center mb-2 border border-white/5">
@@ -302,7 +320,6 @@
                                                 </div>
                                             </div>
 
-                                            {/* CAJA DE SETS CUANDO EL PARTIDO FINALIZA */}
                                             {isFin && p.historial_sets && p.historial_sets.length > 0 && (
                                                 <div className="flex gap-2 flex-wrap mt-3 justify-center pt-3 border-t border-white/10 border-dashed">
                                                     <span className="text-[9px] text-zinc-500 font-bold uppercase flex items-center mr-1">Sets:</span>
@@ -352,7 +369,9 @@
 
                         <div className="w-full max-w-md mb-10">
                             {h2hHistory.length === 0 ? (
-                                <div className="text-center text-zinc-500 font-bold text-xs uppercase tracking-widest italic py-8 border border-white/5 rounded-2xl bg-white/5">Es la primera vez que se enfrentan en torneos.</div>
+                                <div className="text-center text-zinc-500 font-bold text-xs uppercase tracking-widest italic py-8 border border-white/5 rounded-2xl bg-white/5">
+                                    ES LA PRIMERA VEZ QUE SE ENFRENTAN EN TORNEOS.
+                                </div>
                             ) : (
                                 <div className="space-y-3">
                                     <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest border-b border-white/10 pb-2 mb-4">Últimos Enfrentamientos</h3>
@@ -398,6 +417,7 @@
                     </div>
 
                     <div className="flex-1 flex flex-col landscape:flex-row w-full p-3 landscape:p-6 gap-4 overflow-hidden min-h-0">
+                        {/* JUGADOR 1 */}
                         <div className="flex-1 flex flex-col min-h-0 min-w-0">
                             <div className="name-p1 py-4 px-5 rounded-[20px] flex items-center justify-between shrink-0">
                                 <div className="w-10"></div> 
@@ -416,6 +436,7 @@
                             <div className="text-zinc-600 font-black italic text-2xl">VS</div>
                         </div>
 
+                        {/* JUGADOR 2 */}
                         <div className="flex-1 flex flex-col min-h-0 min-w-0">
                             <div className="name-p2 py-4 px-5 rounded-[20px] flex items-center justify-between shrink-0">
                                 <div className="w-10 h-10 bg-black/30 border border-white/20 rounded-lg flex items-center justify-center text-white font-digital font-bold text-xl">{sets2}</div>
