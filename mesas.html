@@ -12,7 +12,6 @@
         .header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
         .header h1 { margin: 0; font-size: 18px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; font-weight: 800; }
 
-        /* CARRUSEL DE FILTROS PARA CELULAR */
         .scrolling-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none; -ms-overflow-style: none; }
         .scrolling-bar::-webkit-scrollbar { display: none; }
 
@@ -53,13 +52,13 @@
         <h1 id="nombre-torneo">CENTRAL DE MESAS</h1>
     </div>
 
-    <!-- FILTRO DE CATEGORÍAS (DESTACADO Y VISIBLE) -->
+    <!-- FILTRO DE CATEGORÍAS -->
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">🏆 Filtrar por Categoría:</div>
     <div class="scrolling-bar" id="bar-categorias">
         <button class="btn-filter-pill btn-cat-pill active" onclick="filtrarCategoria('todas')">Todas las Categorías</button>
     </div>
 
-    <!-- FILTRO DE ESTADO (EN VIVO / PENDIENTES / FINALIZADOS) -->
+    <!-- FILTRO DE ESTADO -->
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">📌 Estado de Juego:</div>
     <div class="scrolling-bar">
         <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Todos</button>
@@ -172,14 +171,17 @@
             dibujarPartidos();
         }
 
+        // CORRECCIÓN DEL BOTÓN DE ESTADO ("FINALIZADOS")
         function filtrarEstado(est) {
             estadoFiltro = est;
-            document.querySelectorAll('.btn-filter-pill').forEach(btn => {
-                if (['tab-todos', 'tab-pendientes', 'tab-finalizados'].includes(btn.id)) {
-                    btn.classList.remove('active');
-                }
-            });
-            document.getElementById(`tab-${est === 'pendientes_vivo' ? 'pendientes' : est}`).classList.add('active');
+            document.getElementById('tab-todos').classList.remove('active');
+            document.getElementById('tab-pendientes').classList.remove('active');
+            document.getElementById('tab-finalizados').classList.remove('active');
+
+            if (est === 'todos') document.getElementById('tab-todos').classList.add('active');
+            else if (est === 'pendientes_vivo') document.getElementById('tab-pendientes').classList.add('active');
+            else if (est === 'finalizado') document.getElementById('tab-finalizados').classList.add('active');
+
             dibujarPartidos();
         }
 
@@ -201,17 +203,14 @@
 
             let filtrados = todosLosPartidos;
 
-            // Filtro por mesa
             if (mesaFiltro !== 'todas') {
                 filtrados = filtrados.filter(p => p.mesa == mesaFiltro);
             }
 
-            // Filtro por categoría
             if (categoriaFiltro !== 'todas') {
                 filtrados = filtrados.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
             }
 
-            // Filtro por estado
             if (estadoFiltro === 'pendientes_vivo') {
                 filtrados = filtrados.filter(p => (p.estado || '').trim().toLowerCase() !== 'finalizado');
             } else if (estadoFiltro === 'finalizado') {
@@ -247,6 +246,9 @@
                     let catId = p.categorias ? p.categorias.id : 0;
                     let estiloCat = obtenerEstiloCategoria(catId);
 
+                    let nombreJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
+                    let nombreJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
+
                     contenedor.innerHTML += `
                         <div class="card-partido ${opacidadClass}">
                             <div class="top-info">
@@ -256,17 +258,17 @@
 
                             <div style="margin-bottom:12px;">
                                 <span class="badge-cat" style="color:${estiloCat.text}; background:${estiloCat.bg}; border:1px solid ${estiloCat.border};">
-                                    🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'} • Gpo ${p.grupo_nombre || 'A'}
+                                    🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'} • ${p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Eliminatoria')}
                                 </span>
                             </div>
 
                             <div class="duelo-box">
                                 <div class="jugador-row">
-                                    <span style="color:#ffffff;">${p.j1 ? p.j1.nombre : 'J1'}</span>
+                                    <span style="color:#ffffff;">${nombreJ1}</span>
                                     <span class="score-digital">${p.puntos_j1 || 0} (${p.sets_j1 || 0})</span>
                                 </div>
                                 <div class="jugador-row" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:4px; padding-top:6px;">
-                                    <span style="color:#ffffff;">${p.j2 ? p.j2.nombre : 'J2'}</span>
+                                    <span style="color:#ffffff;">${nombreJ2}</span>
                                     <span class="score-digital" style="color:#d946ef;">${p.puntos_j2 || 0} (${p.sets_j2 || 0})</span>
                                 </div>
                             </div>
