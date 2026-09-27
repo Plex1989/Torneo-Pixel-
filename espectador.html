@@ -195,8 +195,8 @@
                         }
 
                         setPartidoData(data);
-                        let nom1 = data.j1 ? data.j1.nombre : 'Jugador 1';
-                        let nom2 = data.j2 ? data.j2.nombre : 'Jugador 2';
+                        let nom1 = data.j1 ? data.j1.nombre : (data.ronda_fase ? `${data.ronda_fase} J1` : '1° Grupo A');
+                        let nom2 = data.j2 ? data.j2.nombre : (data.ronda_fase ? `${data.ronda_fase} J2` : '2° Grupo B');
                         setP1(nom1);
                         setP2(nom2);
                         setScore1(data.puntos_j1 || 0);
@@ -214,14 +214,18 @@
                         } else if (data.estado === 'en_curso') {
                             setView('match');
                         } else {
-                            const { data: historial } = await clienteSupabase
-                                .from('partidos')
-                                .select('*, torneos(nombre, fecha_evento)')
-                                .eq('estado', 'finalizado')
-                                .or(`and(jugador1_id.eq.${data.jugador1_id},jugador2_id.eq.${data.jugador2_id}),and(jugador1_id.eq.${data.jugador2_id},jugador2_id.eq.${data.jugador1_id})`)
-                                .order('created_at', { ascending: false });
+                            if (data.jugador1_id && data.jugador2_id) {
+                                const { data: historial } = await clienteSupabase
+                                    .from('partidos')
+                                    .select('*, torneos(nombre, fecha_evento)')
+                                    .eq('estado', 'finalizado')
+                                    .or(`and(jugador1_id.eq.${data.jugador1_id},jugador2_id.eq.${data.jugador2_id}),and(jugador1_id.eq.${data.jugador2_id},jugador2_id.eq.${data.jugador1_id})`)
+                                    .order('created_at', { ascending: false });
 
-                            setH2hHistory(historial || []);
+                                setH2hHistory(historial || []);
+                            } else {
+                                setH2hHistory([]);
+                            }
                             setView('h2h');
                         }
                     }
@@ -427,6 +431,7 @@
                                             );
                                         })}
 
+                                        {/* LLAVES ELIMINATORIAS CON PROYECCIÓN SEGURA */}
                                         {(() => {
                                             const gpoA_arr = resumenData[catNombreActual]?.grupos['A'] ? Object.values(resumenData[catNombreActual].grupos['A']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
                                             const gpoB_arr = resumenData[catNombreActual]?.grupos['B'] ? Object.values(resumenData[catNombreActual].grupos['B']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
@@ -553,8 +558,13 @@
                                         const catObj = p.categorias || {};
                                         const estiloCat = obtenerEstiloCategoria(catObj.id || 0);
 
-                                        let nombreJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
-                                        let nombreJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
+                                        let esLlave = !p.grupo_nombre || p.ronda_fase?.toLowerCase().includes('cruce') || p.ronda_fase?.toLowerCase().includes('semifinal') || p.ronda_fase?.toLowerCase().includes('final');
+                                        let sinNombresAun = !p.j1 || !p.j2;
+
+                                        let nombreJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? `${p.ronda_fase} J1` : '1° Grupo A');
+                                        let nombreJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? `${p.ronda_fase} J2` : '2° Grupo B');
+
+                                        let subtituloFase = p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Eliminatoria Directa');
 
                                         return (
                                             <div key={p.id} onClick={() => entrarAlPartido(p.id)} 
@@ -567,11 +577,17 @@
                                                 
                                                 <div style={{ color: estiloCat.text, backgroundColor: estiloCat.bg, borderColor: estiloCat.border }} 
                                                      className="text-[9px] font-bold uppercase mb-3 border inline-block px-2 py-1 rounded">
-                                                    🏆 {catObj.nombre || 'Categoría'} • {p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Eliminatoria')}
+                                                    🏆 {catObj.nombre || 'Categoría'} • {subtituloFase}
                                                 </div>
+
+                                                {sinNombresAun && esLlave && (
+                                                    <div className="text-[9px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/30 p-2 rounded-lg mb-3">
+                                                        ⏳ PROYECCIÓN EN TIEMPO REAL (En espera de clasificados)
+                                                    </div>
+                                                )}
                                                 
                                                 <div className="bg-black/40 rounded-xl p-3 flex justify-between items-center mb-2 border border-white/5">
-                                                    <span className={`font-bold text-sm truncate ${isFin && !isJ1Win ? 'text-zinc-500' : 'text-white'}`}>
+                                                    <span className={`font-bold text-sm truncate ${isFin && !isJ1Win ? 'text-zinc-500' : (p.j1 ? 'text-white' : 'text-zinc-400 italic')}`}>
                                                         {isFin && isJ1Win ? '🏆 ' : ''}{nombreJ1}
                                                     </span>
                                                     <div className="flex items-center gap-3">
@@ -583,7 +599,7 @@
                                                 </div>
                                                 
                                                 <div className="bg-black/40 rounded-xl p-3 flex justify-between items-center border border-white/5">
-                                                    <span className={`font-bold text-sm truncate ${isFin && !isJ2Win ? 'text-zinc-500' : 'text-white'}`}>
+                                                    <span className={`font-bold text-sm truncate ${isFin && !isJ2Win ? 'text-zinc-500' : (p.j2 ? 'text-white' : 'text-zinc-400 italic')}`}>
                                                         {isFin && isJ2Win ? '🏆 ' : ''}{nombreJ2}
                                                     </span>
                                                     <div className="flex items-center gap-3">
