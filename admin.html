@@ -246,7 +246,7 @@
                 <input type="text" id="nueva-cat-nombre" placeholder="Nombre de categoría">
                 <input type="number" id="nueva-cat-min" placeholder="Pts Min" style="max-width: 100px;">
                 <input type="number" id="nueva-cat-max" placeholder="Pts Max" style="max-width: 100px;">
-                <input type="number" id="nueva-cat-precio" placeholder="Inscripción $" style="max-width: 110px;" value="200">
+                <input type="number" id="nueva-cat-precio" placeholder="Inscripción Base $" style="max-width: 110px;" value="200">
                 <button class="btn-console btn-pink" onclick="crearCategoria()">Añadir Categoría</button>
             </div>
             <table>
@@ -267,6 +267,19 @@
         let todosLosJugadoresAdmin = [], todasLasCategoriasAdmin = [], todosLosClubsAdmin = [];
         let programacionCategoriasNube = [];
         let filtroEstadoMonitor = 'en_curso'; 
+
+        // PALETA DINÁMICA NEÓN PARA CATEGORÍAS
+        const obtenerEstiloCategoria = (catId) => {
+            const paleta = [
+                { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.5)', text: '#fbbf24' }, // Dorado
+                { bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.5)', text: '#38bdf8' },  // Cian
+                { bg: 'rgba(217, 70, 239, 0.15)', border: 'rgba(217, 70, 239, 0.5)', text: '#f0abfc' }, // Magenta
+                { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.5)', text: '#34d399' }, // Esmeralda
+                { bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.5)', text: '#c084fc' }  // Púrpura
+            ];
+            const idx = (catId || 0) % paleta.length;
+            return paleta[idx];
+        };
 
         function cerrarSesionAdmin() {
             localStorage.removeItem('admin_autenticado');
@@ -337,7 +350,7 @@
         async function cargarPartidosEnVivo() {
             let query = clienteSupabase
                 .from('partidos')
-                .select('*, j1:jugador1_id(nombre), j2:jugador2_id(nombre), categorias(nombre)')
+                .select('*, j1:jugador1_id(nombre), j2:jugador2_id(nombre), categorias(id, nombre)')
                 .eq('torneo_id', idTorneoActivo);
 
             if (filtroEstadoMonitor !== 'todos') {
@@ -379,6 +392,10 @@
                 let colorScore1 = (isFin && !isJ1Win) ? '#64748b' : '#06b6d4';
                 let colorScore2 = (isFin && !isJ2Win) ? '#64748b' : '#d946ef';
 
+                // COLOR DINÁMICO DE CATEGORÍA
+                const catObj = p.categorias || {};
+                const estiloCat = obtenerEstiloCategoria(catObj.id || 0);
+
                 let historialHtml = '';
                 if (isFin && p.historial_sets && p.historial_sets.length > 0) {
                     historialHtml = `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; justify-content:center; padding-top:10px; border-top:1px dashed rgba(255,255,255,0.1);">`;
@@ -398,8 +415,8 @@
                             <span style="font-size:9px; font-weight:800; color:${estadoColor}; border:1px solid ${estadoColor}; padding:2px 8px; border-radius:999px;">${estadoTexto}</span>
                         </div>
                         
-                        <div style="font-size:10px; color:#fbbf24; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); display:inline-block; padding:3px 8px; border-radius:6px; font-weight:800; text-transform:uppercase; margin-bottom:12px;">
-                            🏆 ${p.categorias ? p.categorias.nombre : ''} • Gpo ${p.grupo_nombre || 'Único'}
+                        <div style="font-size:10px; color:${estiloCat.text}; background:${estiloCat.bg}; border:1px solid ${estiloCat.border}; display:inline-block; padding:3px 8px; border-radius:6px; font-weight:800; text-transform:uppercase; margin-bottom:12px;">
+                            🏆 ${catObj.nombre || 'Categoría'} • Gpo ${p.grupo_nombre || 'Único'}
                         </div>
 
                         <div style="background:rgba(0,0,0,0.4); border-radius:10px; padding:10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; border:1px solid rgba(255,255,255,0.02);">
