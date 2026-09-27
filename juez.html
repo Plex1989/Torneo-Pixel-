@@ -52,20 +52,29 @@
             const [score2, setScore2] = useState(0);
             const [sets1, setSets1] = useState(0);
             const [sets2, setSets2] = useState(0);
-            const [historialSets, setHistorialSets] = useState([]); // Array de sets terminados
+            const [historialSets, setHistorialSets] = useState([]); 
             const [winner, setWinner] = useState(null);
             const [history, setHistory] = useState([]); 
             const [servingFirst, setServingFirst] = useState(1); 
             const [swapped, setSwapped] = useState(false);
             const [isTimeoutActive, setIsTimeoutActive] = useState(false);
             const [timeoutSeconds, setTimeoutSeconds] = useState(0);
-            const [isMuted, setIsMuted] = useState(true); 
+            
+            // LA VOZ INICIA ENCENDIDA
+            const [isMuted, setIsMuted] = useState(false); 
 
             const timerRef = useRef(null);
             const stateRef = useRef({});
 
             const urlParams = new URLSearchParams(window.location.search);
             const partidoId = urlParams.get('partido');
+
+            // Extraer solo la última palabra (apellido)
+            const getApellido = (nombreCompleto) => {
+                if(!nombreCompleto) return "";
+                const partes = nombreCompleto.trim().split(" ");
+                return partes[partes.length - 1];
+            };
 
             useEffect(() => {
                 if (!partidoId) {
@@ -162,14 +171,18 @@
                 return () => window.removeEventListener('keydown', handleKeyDown);
             }, []);
 
-            // VOZ DE ANUNCIO: "Arturo 2, Carlos 0" (SIN LA PALABRA "MARCADOR")
+            // VOZ INTELIGENTE POR APELLIDO
             const announceScore = (s1, s2, isWin = false, winName = "") => {
                 if (isMuted || !window.speechSynthesis) return;
                 window.speechSynthesis.cancel(); 
-                const text = isWin ? `¡Set para ${winName}!` : `${p1} ${s1}, ${p2} ${s2}`;
+                
+                const n1 = getApellido(p1);
+                const n2 = getApellido(p2);
+
+                const text = isWin ? `¡Set para ${winName}!` : `${n1} ${s1}, ${n2} ${s2}`;
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'es-MX'; 
-                utterance.rate = 1.05;
+                utterance.rate = 1.0;
                 window.speechSynthesis.speak(utterance);
             };
 
@@ -249,12 +262,16 @@
             const iniciarPartido = () => {
                 setView('match');
                 syncToSupabase(0,0,0,0, 'en_curso', []);
+                if (!isMuted && window.speechSynthesis) {
+                    let u = new SpeechSynthesisUtterance("Partido iniciado.");
+                    u.lang = 'es-MX'; u.volume = 1.0;
+                    window.speechSynthesis.speak(u);
+                }
             };
 
             if (view === 'loading') return <div className="min-h-screen flex items-center justify-center text-cyan-400 font-bold uppercase tracking-widest text-sm">Cargando Mesa...</div>;
             if (view === 'error') return <div className="min-h-screen flex items-center justify-center text-rose-500 font-bold uppercase text-center">{errorMsg}</div>;
 
-            // PANTALLA H2H (RIVALIDAD Y SELECCIÓN DE MODALIDAD)
             if (view === 'h2h') {
                 let p1Wins = 0, p2Wins = 0;
                 h2hHistory.forEach(h => {
@@ -279,13 +296,12 @@
                             </div>
                         </div>
 
-                        {/* SELECTOR DE MODALIDAD DEL PARTIDO */}
                         <div className="w-full max-w-md bg-slate-900/60 p-4 rounded-2xl border border-cyan-500/30 mb-6">
                             <label className="block text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-3 text-center">Formato de Juego (Sets):</label>
                             <div className="flex gap-2">
-                                <button onClick={() => setMode('2-3')} className={`flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${mode === '2-3' ? 'bg-cyan-500 text-black shadow-[0_0_15px_rgba(6,182,212,0.6)] font-black' : 'bg-slate-800 text-zinc-400'}`}>2 de 3 Sets</button>
-                                <button onClick={() => setMode('3-5')} className={`flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${mode === '3-5' ? 'bg-cyan-500 text-black shadow-[0_0_15px_rgba(6,182,212,0.6)] font-black' : 'bg-slate-800 text-zinc-400'}`}>3 de 5 Sets</button>
-                                <button onClick={() => setMode('4-7')} className={`flex-1 py-3 rounded-xl font-bold text-xs uppercase tracking-wider transition-all ${mode === '4-7' ? 'bg-cyan-500 text-black shadow-[0_0_15px_rgba(6,182,212,0.6)] font-black' : 'bg-slate-800 text-zinc-400'}`}>4 de 7 Sets</button>
+                                <button onClick={() => setMode('2-3')} className={`flex-1 py-3 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all ${mode === '2-3' ? 'bg-cyan-500 text-black shadow-[0_0_15px_rgba(6,182,212,0.6)] font-black' : 'bg-slate-800 text-zinc-400'}`}>2 de 3</button>
+                                <button onClick={() => setMode('3-5')} className={`flex-1 py-3 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all ${mode === '3-5' ? 'bg-cyan-500 text-black shadow-[0_0_15px_rgba(6,182,212,0.6)] font-black' : 'bg-slate-800 text-zinc-400'}`}>3 de 5</button>
+                                <button onClick={() => setMode('4-7')} className={`flex-1 py-3 rounded-xl font-bold text-[10px] uppercase tracking-wider transition-all ${mode === '4-7' ? 'bg-cyan-500 text-black shadow-[0_0_15px_rgba(6,182,212,0.6)] font-black' : 'bg-slate-800 text-zinc-400'}`}>4 de 7</button>
                             </div>
                         </div>
 
@@ -321,17 +337,19 @@
                 )
             }
 
-            // SCOREBOARD EN VIVO
             return (
                 <div className="fixed inset-0 flex flex-col z-50 bg-[#04060a] overflow-hidden">
                     <div className="glass-dark py-3 px-6 flex justify-between items-center text-white shrink-0 z-20 border-b border-white/5">
-                        <span className="text-[10px] font-bold tracking-[0.2em] text-cyan-400 uppercase">MESA {partidoData?.mesa || 1} • {partidoData?.grupo_nombre ? `GPO ${partidoData.grupo_nombre}` : 'FASE'}</span>
+                        <div>
+                            <span className="text-[10px] font-bold tracking-[0.2em] text-cyan-400 uppercase">MESA {partidoData?.mesa || 1} • {partidoData?.grupo_nombre ? `GPO ${partidoData.grupo_nombre}` : 'FASE'}</span>
+                            <div className="text-[9px] text-zinc-400 font-bold uppercase mt-1">Formato: {mode === '2-3' ? '2 de 3 Sets' : (mode === '3-5' ? '3 de 5 Sets' : '4 de 7 Sets')}</div>
+                        </div>
                         
-                        <button onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }} className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-[10px] uppercase tracking-widest transition-colors ${isMuted ? 'bg-rose-500/20 text-rose-500 border border-rose-500/50' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'}`}>
+                        <button onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }} className={`flex items-center gap-2 px-4 py-2 rounded-full font-bold text-[10px] uppercase tracking-widest transition-colors ${isMuted ? 'bg-rose-500/20 text-rose-500 border border-rose-500/50' : 'bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/40 border border-cyan-500/50'}`}>
                             {isMuted ? <><i className="fa-solid fa-volume-xmark"></i> Voz Apagada</> : <><i className="fa-solid fa-volume-high"></i> Voz Encendida</>}
                         </button>
 
-                        <button onClick={() => window.location.href = 'mesas.html'} className="text-zinc-500 font-bold text-[9px] uppercase tracking-widest hover:text-white transition-colors"><i className="fa-solid fa-person-running"></i> Salir</button>
+                        <button onClick={() => window.location.href = 'mesas.html'} className="text-zinc-500 font-bold text-[9px] uppercase tracking-widest hover:text-white transition-colors"><i className="fa-solid fa-person-running"></i> Salir a Mesas</button>
                     </div>
 
                     <div className="flex-1 flex flex-col landscape:flex-row w-full p-3 landscape:p-6 gap-4 overflow-hidden min-h-0">
@@ -374,6 +392,21 @@
                             </div>
                         </div>
                     </div>
+
+                    {/* CAJA DESGLOSE DE SETS ANTERIORES JUEZ */}
+                    {historialSets.length > 0 && (
+                        <div className="bg-slate-900/90 border-t border-white/10 p-2 flex justify-center items-center gap-3 flex-wrap shrink-0">
+                            <span className="text-[9px] font-bold text-cyan-400 uppercase tracking-widest">Historial:</span>
+                            {historialSets.map((s, idx) => (
+                                <div key={idx} className="bg-black/50 border border-white/10 px-3 py-1 rounded-lg text-center font-semibold text-xs">
+                                    <span className="text-zinc-500 text-[8px] block font-bold uppercase mb-0.5">Set {s.numSet}</span>
+                                    <span className={s.s1 > s.s2 ? 'text-cyan-400 font-bold' : 'text-zinc-400'}>{s.s1}</span>
+                                    <span className="text-zinc-600 mx-1">-</span>
+                                    <span className={s.s2 > s.s1 ? 'text-fuchsia-400 font-bold' : 'text-zinc-400'}>{s.s2}</span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     {isTimeoutActive && (
                         <div className="fixed inset-0 bg-black/90 backdrop-blur-lg z-[500] flex flex-col items-center justify-center p-10 text-white animate-in zoom-in">
