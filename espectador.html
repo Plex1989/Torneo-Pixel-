@@ -271,6 +271,9 @@
                 return () => { if(channel) clienteSupabase.removeChannel(channel); };
             }, [activePartidoId, torneoId, isMuted]);
 
+            // ==========================================
+            // CÁLCULO DE POSICIONES CON RATIOS DE DESEMPATE ITTF
+            // ==========================================
             const calcularResumenCategorias = () => {
                 const porCategoria = {};
 
@@ -287,7 +290,12 @@
 
                     [m.j1, m.j2].forEach(j => {
                         if (j && j.id && !grupoObj[j.id]) {
-                            grupoObj[j.id] = { id: j.id, nombre: j.nombre, club: j.club, pj: 0, pg: 0, pp: 0, pts: 0, ganoA: [] };
+                            grupoObj[j.id] = { 
+                                id: j.id, nombre: j.nombre, club: j.club, 
+                                pj: 0, pg: 0, pp: 0, pts: 0, ganoA: [],
+                                setsGanados: 0, setsPerdidos: 0,
+                                puntosGanados: 0, puntosPerdidos: 0
+                            };
                         }
                     });
 
@@ -298,6 +306,18 @@
 
                         if (j1 && j2) {
                             j1.pj += 1; j2.pj += 1;
+                            
+                            // Sets y Puntos totales para Ratios ITTF
+                            j1.setsGanados += (m.sets_j1 || 0); j1.setsPerdidos += (m.sets_j2 || 0);
+                            j2.setsGanados += (m.sets_j2 || 0); j2.setsPerdidos += (m.sets_j1 || 0);
+
+                            if (m.historial_sets && Array.isArray(m.historial_sets)) {
+                                m.historial_sets.forEach(s => {
+                                    j1.puntosGanados += (s.s1 || 0); j1.puntosPerdidos += (s.s2 || 0);
+                                    j2.puntosGanados += (s.s2 || 0); j2.puntosPerdidos += (s.s1 || 0);
+                                });
+                            }
+
                             if (m.ganador_id === m.jugador1_id) {
                                 j1.pg += 1; j1.pts += 2; j1.ganoA.push(getApellido(m.j2.nombre));
                                 j2.pp += 1; j2.pts += 1;
@@ -319,6 +339,23 @@
                     return jugador.nombre;
                 }
                 return fallbackText;
+            };
+
+            // ORDENAMIENTO REGLAMENTO ITTF (PUNTOS -> RATIO SETS -> RATIO PUNTOS)
+            const ordenarJugadoresITTF = (lista) => {
+                return [...lista].sort((a, b) => {
+                    if (b.pts !== a.pts) return b.pts - a.pts; // 1. Puntos
+                    
+                    // 2. Ratio Sets
+                    const ratioSetA = a.setsGanados / (a.setsPerdidos || 0.0001);
+                    const ratioSetB = b.setsGanados / (b.setsPerdidos || 0.0001);
+                    if (Math.abs(ratioSetB - ratioSetA) > 0.0001) return ratioSetB - ratioSetA;
+
+                    // 3. Ratio Puntos
+                    const ratioPtsA = a.puntosGanados / (a.puntosPerdidos || 0.0001);
+                    const ratioPtsB = b.puntosGanados / (b.puntosPerdidos || 0.0001);
+                    return ratioPtsB - ratioPtsA;
+                });
             };
 
             if (view === 'loading') return <div className="min-h-screen flex items-center justify-center text-cyan-400 font-bold uppercase tracking-widest text-sm">Cargando Transmisión...</div>;
@@ -392,13 +429,13 @@
                                         
                                         {Object.keys(resumenData[catNombreActual].grupos).sort().map(gpoNombre => {
                                             const jugadoresMap = resumenData[catNombreActual].grupos[gpoNombre];
-                                            const listaJugadores = Object.values(jugadoresMap).sort((a,b) => b.pts - a.pts || b.pg - a.pg);
+                                            const listaJugadores = ordenarJugadoresITTF(Object.values(jugadoresMap));
 
                                             return (
                                                 <div key={gpoNombre} className="bg-slate-900/80 rounded-2xl p-4 border border-white/10 shadow-lg">
                                                     <div className="flex justify-between items-center mb-3 border-b border-white/10 pb-2">
                                                         <span className="font-extrabold text-sm text-cyan-400 uppercase tracking-wider"><i className="fa-solid fa-users mr-2"></i> Grupo {gpoNombre}</span>
-                                                        <span className="text-[9px] text-zinc-500 font-bold uppercase">Haz click en un jugador para ver sus partidos</span>
+                                                        <span className="text-[9px] text-zinc-500 font-bold uppercase">Criterio Oficial ITTF</span>
                                                     </div>
 
                                                     <div className="overflow-x-auto">
@@ -441,9 +478,10 @@
                                             );
                                         })}
 
+                                        {/* LLAVES ELIMINATORIAS DINÁMICAS */}
                                         {(() => {
-                                            const gpoA_arr = resumenData[catNombreActual]?.grupos['A'] ? Object.values(resumenData[catNombreActual].grupos['A']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
-                                            const gpoB_arr = resumenData[catNombreActual]?.grupos['B'] ? Object.values(resumenData[catNombreActual].grupos['B']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
+                                            const gpoA_arr = resumenData[catNombreActual]?.grupos['A'] ? ordenarJugadoresITTF(Object.values(resumenData[catNombreActual].grupos['A'])) : [];
+                                            const gpoB_arr = resumenData[catNombreActual]?.grupos['B'] ? ordenarJugadoresITTF(Object.values(resumenData[catNombreActual].grupos['B'])) : [];
 
                                             const primeroA_nombre = getPosicionGrupoNombre(gpoA_arr, 0, '1° Grupo A');
                                             const segundoA_nombre = getPosicionGrupoNombre(gpoA_arr, 1, '2° Grupo A');
@@ -463,49 +501,33 @@
                                                         </div>
                                                     ) : (
                                                         <div className="bg-amber-500/20 border border-amber-500/50 text-amber-400 p-3 rounded-xl text-center font-extrabold text-[10px] uppercase tracking-widest mb-6">
-                                                            ⏳ PROYECCIÓN EN TIEMPO REAL (Resultados preliminares)
+                                                            ⏳ PROYECCIÓN PRELIMINAR EN TIEMPO REAL (En espera de finalizar grupos)
                                                         </div>
                                                     )}
 
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                        {/* CRUCE 1 */}
                                                         <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-3">
-                                                            <span className="text-[9px] text-cyan-400 font-extrabold uppercase tracking-wider block border-b border-white/10 pb-1">Semifinal / Cruce 1</span>
-                                                            
+                                                            <span className="text-[9px] text-cyan-400 font-extrabold uppercase tracking-wider block border-b border-white/10 pb-1">Semifinal 1</span>
                                                             <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
-                                                                <span className="text-xs font-extrabold text-white">
-                                                                    🥇 {primeroA_nombre}
-                                                                </span>
+                                                                <span className="text-xs font-extrabold text-white">🥇 {primeroA_nombre}</span>
                                                                 <span className="text-[9px] bg-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded">1° Gpo A</span>
                                                             </div>
-
                                                             <div className="text-center text-[10px] text-zinc-600 font-black italic">VS</div>
-
                                                             <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
-                                                                <span className="text-xs font-extrabold text-white">
-                                                                    🥈 {segundoB_nombre}
-                                                                </span>
+                                                                <span className="text-xs font-extrabold text-white">🥈 {segundoB_nombre}</span>
                                                                 <span className="text-[9px] bg-cyan-500/20 text-cyan-400 font-bold px-2 py-0.5 rounded">2° Gpo B</span>
                                                             </div>
                                                         </div>
 
-                                                        {/* CRUCE 2 */}
                                                         <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-3">
-                                                            <span className="text-[9px] text-fuchsia-400 font-extrabold uppercase tracking-wider block border-b border-white/10 pb-1">Semifinal / Cruce 2</span>
-                                                            
+                                                            <span className="text-[9px] text-fuchsia-400 font-extrabold uppercase tracking-wider block border-b border-white/10 pb-1">Semifinal 2</span>
                                                             <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
-                                                                <span className="text-xs font-extrabold text-white">
-                                                                    🥇 {primeroB_nombre}
-                                                                </span>
+                                                                <span className="text-xs font-extrabold text-white">🥇 {primeroB_nombre}</span>
                                                                 <span className="text-[9px] bg-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded">1° Gpo B</span>
                                                             </div>
-
                                                             <div className="text-center text-[10px] text-zinc-600 font-black italic">VS</div>
-
                                                             <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
-                                                                <span className="text-xs font-extrabold text-white">
-                                                                    🥈 {segundoA_nombre}
-                                                                </span>
+                                                                <span className="text-xs font-extrabold text-white">🥈 {segundoA_nombre}</span>
                                                                 <span className="text-[9px] bg-cyan-500/20 text-cyan-400 font-bold px-2 py-0.5 rounded">2° Gpo A</span>
                                                             </div>
                                                         </div>
@@ -637,66 +659,6 @@
                                                     </div>
                                                 );
                                             })}
-
-                                            {/* CUADRO DE LLAVES AL FINAL DE LA CARTELERA */}
-                                            {catNombreActual && resumenData[catNombreActual] && (
-                                                <div className="bg-slate-900/90 rounded-2xl p-5 border border-amber-500/30 shadow-xl mt-8">
-                                                    <div className="text-center mb-4">
-                                                        <span className="text-amber-400 text-[10px] font-extrabold uppercase tracking-widest block mb-1">Fase Final de Eliminatoria Directa</span>
-                                                        <h3 className="text-lg font-black text-white uppercase tracking-wider">🏆 Cuadro de Llaves - {catNombreActual}</h3>
-                                                    </div>
-
-                                                    {gpoCompleto ? (
-                                                        <div className="bg-emerald-500/20 border border-emerald-500/50 text-emerald-400 p-3 rounded-xl text-center font-extrabold text-[11px] uppercase tracking-widest mb-6 animate-pulse">
-                                                            ✅ ¡LLAVE DEFINITIVA CONFIRMADA! (Fase de grupos 100% completada)
-                                                        </div>
-                                                    ) : (
-                                                        <div className="bg-amber-500/20 border border-amber-500/50 text-amber-400 p-3 rounded-xl text-center font-extrabold text-[10px] uppercase tracking-widest mb-6">
-                                                            ⏳ PROYECCIÓN EN TIEMPO REAL (Resultados preliminares)
-                                                        </div>
-                                                    )}
-
-                                                    {(() => {
-                                                        const gpoA_arr = resumenData[catNombreActual]?.grupos['A'] ? Object.values(resumenData[catNombreActual].grupos['A']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
-                                                        const gpoB_arr = resumenData[catNombreActual]?.grupos['B'] ? Object.values(resumenData[catNombreActual].grupos['B']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
-
-                                                        const primeroA_nombre = getPosicionGrupoNombre(gpoA_arr, 0, '1° Grupo A');
-                                                        const segundoA_nombre = getPosicionGrupoNombre(gpoA_arr, 1, '2° Grupo A');
-                                                        const primeroB_nombre = getPosicionGrupoNombre(gpoB_arr, 0, '1° Grupo B');
-                                                        const segundoB_nombre = getPosicionGrupoNombre(gpoB_arr, 1, '2° Grupo B');
-
-                                                        return (
-                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                                <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-3">
-                                                                    <span className="text-[9px] text-cyan-400 font-extrabold uppercase tracking-wider block border-b border-white/10 pb-1">Semifinal / Cruce 1</span>
-                                                                    <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
-                                                                        <span className="text-xs font-extrabold text-white">🥇 {primeroA_nombre}</span>
-                                                                        <span className="text-[9px] bg-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded">1° Gpo A</span>
-                                                                    </div>
-                                                                    <div className="text-center text-[10px] text-zinc-600 font-black italic">VS</div>
-                                                                    <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
-                                                                        <span className="text-xs font-extrabold text-white">🥈 {segundoB_nombre}</span>
-                                                                        <span className="text-[9px] bg-cyan-500/20 text-cyan-400 font-bold px-2 py-0.5 rounded">2° Gpo B</span>
-                                                                    </div>
-                                                                </div>
-
-                                                                <div className="bg-black/40 p-4 rounded-xl border border-white/10 space-y-3">
-                                                                    <span className="text-[9px] text-fuchsia-400 font-extrabold uppercase tracking-wider block border-b border-white/10 pb-1">Semifinal / Cruce 2</span>
-                                                                    <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
-                                                                        <span className="text-xs font-extrabold text-white">🥇 {primeroB_nombre}</span>
-                                                                        <span className="text-[9px] bg-amber-500/20 text-amber-400 font-bold px-2 py-0.5 rounded">1° Gpo B</span>
-                                                                    </div>
-                                                                    <div className="text-center text-[10px] text-zinc-600 font-black italic">VS</div>
-                                                                    <div className="flex justify-between items-center bg-white/5 p-2.5 rounded-lg border border-white/5">
-                                                                        <span className="text-xs font-extrabold text-white">🥈 {segundoA_nombre}</span>
-                                                                        <span className="text-[9px] bg-cyan-500/20 text-cyan-400 font-bold px-2 py-0.5 rounded">2° Gpo A</span>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })()}
-                                                </div>
-                                            )}
                                         </>
                                     );
                                 })()}
