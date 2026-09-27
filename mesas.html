@@ -11,7 +11,6 @@
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 20px; background-color: #04060a; color: #f8fafc; min-height: 100vh; }
         .header { text-align: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
         .header h1 { margin: 0; font-size: 20px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; font-weight: 800; }
-        .header p { margin: 5px 0 0 0; font-size: 11px; color: #06b6d4; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; }
 
         .filtro-mesa { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; }
         .btn-mesa-filter { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 8px 16px; border-radius: 9999px; font-size: 11px; font-weight: 800; cursor: pointer; text-transform: uppercase; transition: all 0.2s ease; }
@@ -23,11 +22,10 @@
 
         .grid-partidos { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; max-width: 1100px; margin: auto; }
         .card-partido { background: rgba(10, 15, 26, 0.65); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 4px solid #0e7490; border-radius: 18px; padding: 20px; transition: all 0.3s ease; }
-        .card-partido:hover { transform: translateY(-3px); border-bottom-color: #06b6d4; box-shadow: 0 12px 30px rgba(6, 182, 212, 0.25); }
         
         .card-finalizado { opacity: 0.5; filter: grayscale(80%); border-bottom-color: #334155 !important; }
-        .card-finalizado:hover { transform: none; box-shadow: none; opacity: 0.8; }
-        .card-finalizado .btn-arbitrar { background: #1e293b; border-color: #334155; color: #94a3b8; }
+
+        .badge-cat { font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px; display: inline-block; }
 
         .top-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .badge-mesa { background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.4); color: #38bdf8; padding: 4px 10px; border-radius: 9999px; font-weight: 800; font-size: 10px; text-transform: uppercase; }
@@ -49,7 +47,7 @@
 <body>
 
     <div class="header">
-        <p>Portal de Arbitraje Oficial</p>
+        <p style="color:#06b6d4; font-weight:800; font-size:10px; text-transform:uppercase;">Portal de Arbitraje Oficial</p>
         <h1 id="nombre-torneo">CENTRAL DE MESAS</h1>
     </div>
 
@@ -77,6 +75,19 @@
         let mesaFiltro = 'todas';
         let estadoFiltro = 'todos';
 
+        // PALETA DINÁMICA NEÓN PARA CATEGORÍAS
+        const obtenerEstiloCategoria = (catId) => {
+            const paleta = [
+                { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.5)', text: '#fbbf24' }, // Dorado
+                { bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.5)', text: '#38bdf8' },  // Cian
+                { bg: 'rgba(217, 70, 239, 0.15)', border: 'rgba(217, 70, 239, 0.5)', text: '#f0abfc' }, // Magenta
+                { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.5)', text: '#34d399' }, // Esmeralda
+                { bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.5)', text: '#c084fc' }  // Púrpura
+            ];
+            const idx = (catId || 0) % paleta.length;
+            return paleta[idx];
+        };
+
         async function inicializar() {
             const { data: torneo } = await clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).single();
             if (torneo) document.getElementById('nombre-torneo').innerText = torneo.nombre;
@@ -94,7 +105,7 @@
         async function cargarPartidos() {
             const { data } = await clienteSupabase
                 .from('partidos')
-                .select('*, j1:jugador1_id(nombre), j2:jugador2_id(nombre), categorias(nombre)')
+                .select('*, j1:jugador1_id(nombre), j2:jugador2_id(nombre), categorias(id, nombre)')
                 .eq('torneo_id', idTorneoActivo)
                 .order('id', { ascending: true });
 
@@ -127,7 +138,6 @@
             dibujarPartidos();
         }
 
-        // FUNCIÓN CLAVE: CONVIERTE "09:30 AM" O "01:30 PM" A MINUTOS ABSOLUTOS PARA ORDENAR CRONOLÓGICAMENTE
         function timeStringToMinutes(timeStr) {
             if (!timeStr) return 0;
             let match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
@@ -159,7 +169,6 @@
                 return;
             }
 
-            // Agrupar partidos por hora
             const gruposPorHora = {};
             filtrados.forEach(p => {
                 const h = p.hora || '09:00 AM';
@@ -167,12 +176,10 @@
                 gruposPorHora[h].push(p);
             });
 
-            // ORDENAR LAS HORAS CRONOLÓGICAMENTE (Del más temprano al más tarde)
             const horasOrdenadas = Object.keys(gruposPorHora).sort((a, b) => {
                 return timeStringToMinutes(a) - timeStringToMinutes(b);
             });
 
-            // Dibujar cada bloque de hora
             horasOrdenadas.forEach(hora => {
                 contenedor.innerHTML += `<div class="header-hora">⏰ ${hora}</div>`;
                 
@@ -181,13 +188,22 @@
                                   (p.estado === 'finalizado' ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
                     
                     let opacidadClass = p.estado === 'finalizado' ? 'card-finalizado' : '';
+                    
+                    // ESTILO DINÁMICO DE CATEGORÍA
+                    const catObj = p.categorias || {};
+                    const estiloCat = obtenerEstiloCategoria(catObj.id || 0);
 
                     contenedor.innerHTML += `
                         <div class="card-partido ${opacidadClass}">
                             <div class="top-info">
                                 <span class="badge-mesa">MESA ${p.mesa || '-'}</span>
-                                <span style="font-size:10px; color:#94a3b8; font-weight:700;">${p.categorias ? p.categorias.nombre : ''} • Gpo ${p.grupo_nombre}</span>
                                 ${badgeEst}
+                            </div>
+
+                            <div style="margin-bottom:12px;">
+                                <span class="badge-cat" style="color:${estiloCat.text}; background:${estiloCat.bg}; border:1px solid ${estiloCat.border};">
+                                    🏆 ${catObj.nombre || 'Categoría'} • Gpo ${p.grupo_nombre}
+                                </span>
                             </div>
 
                             <div class="duelo-box">
