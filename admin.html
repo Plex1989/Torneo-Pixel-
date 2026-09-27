@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control - Pixel Studio</title>
+    <!-- Agregamos FontAwesome para el ícono del ojo -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         if (localStorage.getItem('admin_autenticado') !== 'true') {
@@ -123,7 +125,15 @@
 
         <div class="panel-3d panel-cyan no-print" id="panel-monitoreo-vivo">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
-                <h2 style="border: none; margin: 0; padding: 0;">🔴 Monitoreo de Scoreboards</h2>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <h2 style="border: none; margin: 0; padding: 0;">🔴 Monitoreo de Scoreboards</h2>
+                    
+                    <!-- BADGE DE ESPECTADORES CONECTADOS -->
+                    <div id="badge-espectadores" style="display: none; background: rgba(34, 211, 238, 0.15); border: 1px solid rgba(34, 211, 238, 0.4); color: #22d3ee; padding: 4px 10px; border-radius: 9999px; font-weight: 800; font-size: 10px; text-transform: uppercase;">
+                        <i class="fa-solid fa-eye mr-1"></i> <span id="contador-espectadores">0</span> Conectados
+                    </div>
+                </div>
+
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <button class="tab-filter active" id="tab-en_curso" onclick="cambiarFiltroEstadoMonitor('en_curso')">🔴 En Vivo</button>
                     <button class="tab-filter" id="tab-pendiente" onclick="cambiarFiltroEstadoMonitor('pendiente')">⏳ Pendientes</button>
@@ -267,6 +277,7 @@
         let todosLosJugadoresAdmin = [], todasLasCategoriasAdmin = [], todosLosClubsAdmin = [];
         let programacionCategoriasNube = [];
         let filtroEstadoMonitor = 'en_curso'; 
+        let canalEspectadores = null;
 
         // PALETA DINÁMICA NEÓN PARA CATEGORÍAS
         const obtenerEstiloCategoria = (catId) => {
@@ -315,6 +326,32 @@
             generarRankingPorCategorias();
             cargarInscritosEnVivo();
             dibujarTablaProgramacionCategorias();
+            
+            activarSuscripcionEspectadores();
+        }
+
+        // LÓGICA DE PRESENCIA (LECTURA DE ESPECTADORES)
+        function activarSuscripcionEspectadores() {
+            if (canalEspectadores) {
+                clienteSupabase.removeChannel(canalEspectadores);
+            }
+            
+            canalEspectadores = clienteSupabase.channel(`espectadores_torneo_${idTorneoActivo}`);
+            
+            canalEspectadores.on('presence', { event: 'sync' }, () => {
+                const newState = canalEspectadores.presenceState();
+                const numSpectators = Object.keys(newState).length;
+                
+                const badge = document.getElementById('badge-espectadores');
+                const contador = document.getElementById('contador-espectadores');
+                
+                if (numSpectators > 0) {
+                    badge.style.display = 'inline-block';
+                    contador.innerText = numSpectators;
+                } else {
+                    badge.style.display = 'none';
+                }
+            }).subscribe();
         }
 
         function cambiarFiltroEstadoMonitor(nuevoEstado) {
