@@ -179,10 +179,10 @@
             <button class="btn-console btn-ws-style" onclick="compartirLinkInscripcionWS()">📲 LINK DE INSCRIPCIÓN</button>
         </div>
 
-        <!-- MÓDULO DE FECHAS, HORARIOS, LUGARES E INSCRIPCIÓN POR CATEGORÍA -->
+        <!-- MÓDULO DE FECHAS, HORARIOS, LUGARES E INSCRIPCIÓN SINCRONIZADO EN SUPABASE -->
         <div class="panel-3d panel-cyan no-print">
             <h2>📅 Programación de Fechas, Horarios e Inscripción por Categoría</h2>
-            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px; font-weight: 600;">Configura el día, hora de llamada, mesas/sede y cuota de inscripción ($) para cada categoría:</p>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px; font-weight: 600;">Configura el día, hora de llamada, mesas/sede y cuota de inscripción ($) guardados directamente en la nube:</p>
             
             <table>
                 <thead>
@@ -329,7 +329,7 @@
         let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
         let torneoActivoObj = null;
         let todosLosJugadoresAdmin = [], todasLasCategoriasAdmin = [], todosLosClubsAdmin = [];
-        let horariosCategoriasObj = {};
+        let programacionCategoriasNube = [];
 
         function cerrarSesionAdmin() {
             localStorage.removeItem('admin_autenticado');
@@ -349,17 +349,17 @@
                 document.getElementById('nombre-torneo-banner').innerText = "Sin torneo activo seleccionado";
             }
 
-            const [resJugadores, resCat, resClubs] = await Promise.all([
+            const [resJugadores, resCat, resClubs, resProg] = await Promise.all([
                 clienteSupabase.from('jugadores').select('*').order('puntos_ranking', { ascending: false }),
                 clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: false }),
-                clienteSupabase.from('clubs').select('*').order('nombre', { ascending: true })
+                clienteSupabase.from('clubs').select('*').order('nombre', { ascending: true }),
+                clienteSupabase.from('programacion_categorias').select('*').eq('torneo_id', idTorneoActivo)
             ]);
 
             todosLosJugadoresAdmin = resJugadores.data || [];
             todasLasCategoriasAdmin = resCat.data || [];
             todosLosClubsAdmin = resClubs.data || [];
-
-            horariosCategoriasObj = JSON.parse(localStorage.getItem(`horarios_torneo_${idTorneoActivo}`)) || {};
+            programacionCategoriasNube = resProg.data || [];
 
             poblarDropdownClubs();
             dibujarTablaClubs();
@@ -379,35 +379,48 @@
             }
 
             todasLasCategoriasAdmin.forEach(cat => {
-                const config = horariosCategoriasObj[cat.id] || { 
-                    fecha: torneoActivoObj ? torneoActivoObj.fecha_evento || '' : '', 
-                    hora: '09:00', 
-                    lugar: torneoActivoObj ? torneoActivoObj.lugar_evento || 'Sede Principal' : 'Sede Principal',
-                    inscripcion: cat.costo_inscripcion || 200
-                };
+                const prog = programacionCategoriasNube.find(p => p.categoria_id === cat.id) || {};
+                
+                const fechaVal = prog.fecha || (torneoActivoObj ? torneoActivoObj.fecha_evento || '' : '');
+                const horaVal = prog.hora || '09:00';
+                const lugarVal = prog.lugar || (torneoActivoObj ? torneoActivoObj.lugar_evento || 'Sede Principal' : 'Sede Principal');
+                const costoVal = prog.costo_inscripcion || cat.costo_inscripcion || 200;
 
                 tbody.innerHTML += `
                     <tr>
                         <td><strong style="color:#ffffff; font-size:12px;">${cat.nombre}</strong></td>
-                        <td><input type="date" id="cat-fecha-${cat.id}" value="${config.fecha}"></td>
-                        <td><input type="time" id="cat-hora-${cat.id}" value="${config.hora}"></td>
-                        <td><input type="text" id="cat-lugar-${cat.id}" value="${config.lugar}" placeholder="Lugar / Mesas"></td>
-                        <td><input type="number" id="cat-inscripcion-${cat.id}" value="${config.inscripcion || cat.costo_inscripcion || 200}" style="width:80px;" placeholder="$"></td>
+                        <td><input type="date" id="cat-fecha-${cat.id}" value="${fechaVal}"></td>
+                        <td><input type="time" id="cat-hora-${cat.id}" value="${horaVal}"></td>
+                        <td><input type="text" id="cat-lugar-${cat.id}" value="${lugarVal}" placeholder="Lugar / Mesas"></td>
+                        <td><input type="number" id="cat-inscripcion-${cat.id}" value="${costoVal}" style="width:80px;" placeholder="$"></td>
                         <td><button class="btn-console btn-gold" style="padding: 4px 10px; font-size: 9px;" onclick="guardarHorarioCat(${cat.id})">💾 Guardar</button></td>
                     </tr>
                 `;
             });
         }
 
-        function guardarHorarioCat(catId) {
+        async function guardarHorarioCat(catId) {
             const fecha = document.getElementById(`cat-fecha-${catId}`).value;
             const hora = document.getElementById(`cat-hora-${catId}`).value;
             const lugar = document.getElementById(`cat-lugar-${catId}`).value.trim();
-            const inscripcion = parseInt(document.getElementById(`cat-inscripcion-${catId}`).value) || 200;
+            const costo = parseFloat(document.getElementById(`cat-inscripcion-${catId}`).value) || 200;
 
-            horariosCategoriasObj[catId] = { fecha, hora, lugar, inscripcion };
-            localStorage.setItem(`horarios_torneo_${idTorneoActivo}`, JSON.stringify(horariosCategoriasObj));
-            alert("✅ Horario y cuota de inscripción guardados.");
+            const { error } = await clienteSupabase.from('programacion_categorias').upsert({
+                torneo_id: parseInt(idTorneoActivo),
+                categoria_id: catId,
+                fecha: fecha,
+                hora: hora,
+                lugar: lugar,
+                costo_inscripcion: costo
+            }, { onConflict: 'torneo_id,categoria_id' });
+
+            if (error) {
+                alert("Error al guardar en Supabase. Asegúrate de haber ejecutado el SQL entregado.");
+                return;
+            }
+
+            alert("✅ Guardado en Supabase con éxito.");
+            cargarDatosIniciales();
         }
 
         async function cargarInscritosEnVivo() {
@@ -499,16 +512,16 @@
                           `────────────────────────────\n`;
 
             todasLasCategoriasAdmin.forEach(cat => {
-                const conf = horariosCategoriasObj[cat.id] || { 
-                    fecha: torneoActivoObj.fecha_evento || 'Por confirmar', 
-                    hora: '09:00', 
-                    lugar: torneoActivoObj.lugar_evento || 'Sede Principal',
-                    inscripcion: cat.costo_inscripcion || 200
-                };
+                const prog = programacionCategoriasNube.find(p => p.categoria_id === cat.id) || {};
+                
+                const fechaVal = prog.fecha || torneoActivoObj.fecha_evento || 'Por confirmar';
+                const horaVal = prog.hora || '09:00';
+                const lugarVal = prog.lugar || torneoActivoObj.lugar_evento || 'Sede Principal';
+                const costoVal = prog.costo_inscripcion || cat.costo_inscripcion || 200;
 
-                let horaFormateada = conf.hora;
-                if (conf.hora && conf.hora.includes(':')) {
-                    let [hrs, mins] = conf.hora.split(':');
+                let horaFormateada = horaVal;
+                if (horaVal && horaVal.includes(':')) {
+                    let [hrs, mins] = horaVal.split(':');
                     let hNum = parseInt(hrs);
                     let ampm = hNum >= 12 ? 'PM' : 'AM';
                     hNum = hNum % 12 || 12;
@@ -516,10 +529,10 @@
                 }
 
                 textoWS += `🏆 *${cat.nombre.toUpperCase()}*\n` +
-                           `   📅 Fecha: _${conf.fecha}_\n` +
+                           `   📅 Fecha: _${fechaVal}_\n` +
                            `   ⏰ Hora: _${horaFormateada}_\n` +
-                           `   📍 Lugar: _${conf.lugar}_\n` +
-                           `   💵 Inscripción: *$${conf.inscripcion}*\n\n`;
+                           `   📍 Lugar: _${lugarVal}_\n` +
+                           `   💵 Inscripción: *$${costoVal}*\n\n`;
             });
 
             textoWS += `────────────────────────────\n` +
