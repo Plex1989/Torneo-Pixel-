@@ -3,187 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Central de Torneos - Pixel Studio</title>
+    <title>Mis Torneos - Pixel Studio</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
 
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 0; background-color: #04060a; color: #f8fafc; min-height: 100vh; position: relative; overflow-x: hidden; }
         
-        body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 10s infinite alternate; }
-        body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
-        @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
+        body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
+        body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
 
-        .navbar { background: rgba(10, 15, 26, 0.65); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 50; }
+        .navbar { background: rgba(10, 15, 26, 0.65); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
         .nav-title { font-weight: 800; font-size: 15px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
-        
-        .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
-        .nav-btn { color: #94a3b8; text-decoration: none; padding: 8px 18px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
-        .nav-btn:hover { color: #000000; background: #f5a623; border-color: #f5a623; box-shadow: 0 0 25px rgba(245, 166, 35, 0.8); transform: translateY(-2px); }
-        .nav-btn.active { color: #ffffff; border-color: #8b5cf6; background: rgba(139, 92, 246, 0.3); box-shadow: 0 0 15px rgba(139, 92, 246, 0.4); }
-        .nav-btn.public { color: #34d399; border-color: rgba(16, 185, 129, 0.5); }
-        .nav-btn.public:hover { color: #000000; background: #10b981; border-color: #10b981; box-shadow: 0 0 25px rgba(16, 185, 129, 0.8); }
 
-        .main-content { padding: 30px; max-width: 1100px; margin: auto; position: relative; z-index: 10; }
+        .main-content { padding: 30px; max-width: 1000px; margin: auto; }
+        .panel-3d { background: rgba(10, 15, 26, 0.45); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.06); padding: 26px; margin-bottom: 26px; border-bottom: 5px solid #0e7490; }
 
-        .panel-3d { 
-            position: relative; 
-            background: rgba(10, 15, 26, 0.45); 
-            backdrop-filter: blur(20px); 
-            -webkit-backdrop-filter: blur(20px); 
-            border-radius: 20px; 
-            border: 1px solid rgba(255, 255, 255, 0.06); 
-            box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.03); 
-            padding: 26px; 
-            margin-bottom: 26px; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
+        h2 { color: #ffffff; margin-top: 0; font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 12px; }
 
-        .panel-cyan { border-bottom: 5px solid #0e7490; }
-        .panel-cyan:hover { transform: translateY(-3px); border-bottom-color: #06b6d4; box-shadow: 0 18px 40px -5px rgba(6, 182, 212, 0.5); }
-        .panel-cyan:hover h2, .panel-cyan:hover h3 { color: #38bdf8 !important; text-shadow: 0 0 16px rgba(56, 189, 248, 0.9); }
+        .form-row { display: flex; gap: 12px; margin-bottom: 15px; flex-wrap: wrap; }
+        .form-row input, .form-row select { flex: 1; min-width: 140px; padding: 10px 14px; border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(10, 15, 26, 0.85); color: #ffffff; border-radius: 10px; font-size: 12px; font-family: 'Sora', sans-serif; font-weight: 600; }
 
-        .panel-purple { border-bottom: 5px solid #2e1065; }
-        .panel-purple:hover { transform: translateY(-3px); border-bottom-color: #8b5cf6; box-shadow: 0 18px 40px -5px rgba(139, 92, 246, 0.5); }
-        .panel-purple:hover h2 { color: #c084fc !important; text-shadow: 0 0 16px rgba(192, 132, 252, 0.9); }
+        .btn-console { display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 9999px; color: #f1f5f9; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; text-decoration: none; }
+        .btn-gold { background: #f59e0b; color: #000; border-color: #fbbf24; }
+        .btn-gold:hover { box-shadow: 0 0 20px rgba(245, 158, 11, 0.8); }
+        .btn-green { background: #10b981; color: #000; border-color: #34d399; }
+        .btn-red { background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.5); color: #f87171; }
+        .btn-red:hover { background: #ef4444; color: #fff; }
 
-        .panel-emerald { border-bottom: 5px solid #064e3b; }
-        .panel-emerald:hover { transform: translateY(-3px); border-bottom-color: #10b981; box-shadow: 0 18px 40px -5px rgba(16, 185, 129, 0.5); }
-        .panel-emerald:hover h2 { color: #34d399 !important; text-shadow: 0 0 16px rgba(52, 211, 153, 0.9); }
+        .grid-torneos { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+        .card-torneo { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 20px; transition: all 0.3s ease; position: relative; }
+        .card-torneo.activo { border-color: #06b6d4; box-shadow: 0 0 20px rgba(6, 182, 212, 0.3); }
 
-        h2, h3 { color: #ffffff; margin-top: 0; padding-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 20px; transition: all 0.3s ease; }
-
-        .form-row input[type="text"], .form-row input[type="date"], .form-row select, select { 
-            padding: 10px 14px; 
-            border: 1px solid rgba(255, 255, 255, 0.18) !important; 
-            background: rgba(10, 15, 26, 0.85) !important; 
-            color: #ffffff !important; 
-            border-radius: 10px; 
-            font-size: 12px; 
-            font-family: 'Sora', sans-serif; 
-            font-weight: 600;
-        }
-
-        select option { background-color: #0a0b10 !important; color: #ffffff !important; padding: 10px; }
-
-        .btn-console { 
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            padding: 9px 20px; 
-            background: rgba(255, 255, 255, 0.06); 
-            border: 1px solid rgba(255, 255, 255, 0.18); 
-            border-radius: 9999px; 
-            color: #f1f5f9; 
-            font-size: 11px; 
-            font-weight: 700; 
-            text-transform: uppercase; 
-            letter-spacing: 1px; 
-            cursor: pointer; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            font-family: 'Sora', sans-serif; 
-        }
-
-        .btn-gold:hover { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 25px rgba(245, 158, 11, 0.85); transform: translateY(-2px); }
-        .btn-red:hover { background: #ef4444; color: #ffffff; border-color: #f87171; box-shadow: 0 0 25px rgba(239, 68, 68, 0.85); transform: translateY(-2px); }
-        .btn-green:hover { background: #10b981; color: #000000; border-color: #34d399; box-shadow: 0 0 25px rgba(16, 185, 129, 0.85); transform: translateY(-2px); }
-        .btn-ws-style { border-color: rgba(34, 197, 94, 0.5); color: #4ade80; }
-        .btn-ws-style:hover { background: #22c55e; color: #000000; border-color: #22c55e; box-shadow: 0 0 25px rgba(34, 197, 94, 0.85); transform: translateY(-2px); }
-
-        .grid-categorias-resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 15px; margin-top: 20px; }
-        .card-cat-resumen { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.08); padding: 18px; border-radius: 14px; text-align: center; transition: all 0.3s ease; }
-        .card-cat-resumen:hover { border-color: #38bdf8; box-shadow: 0 0 15px rgba(56, 189, 248, 0.2); transform: translateY(-2px); }
-        .card-cat-resumen .num { font-size: 26px; font-weight: 800; color: #38bdf8; }
-        .card-cat-resumen .label { font-size: 10px; color: #94a3b8; margin-top: 6px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-
-        table { width: 100%; border-collapse: separate; border-spacing: 0 6px; margin-top: 10px; font-size: 12px; }
-        th { color: #94a3b8; text-transform: uppercase; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; padding: 0 12px 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-align: left; }
-        
-        td { padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border-top: 1px solid rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02); color: #ffffff; transition: all 0.25s ease; }
-        td:first-child { border-left: 1px solid rgba(255,255,255,0.02); border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
-        td:last-child { border-right: 1px solid rgba(255,255,255,0.02); border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
-        
-        tr { cursor: pointer; transition: all 0.25s ease; }
-        tr:hover td { background: rgba(16, 185, 129, 0.1) !important; border-color: rgba(16, 185, 129, 0.3); }
-        tr:hover td strong { color: #34d399 !important; text-shadow: 0 0 12px rgba(52, 211, 153, 0.8); }
-        tr:hover td:first-child { border-left: 3px solid #34d399; }
-
-        .badge { padding: 4px 10px; border-radius: 9999px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; border: 1px solid transparent; }
-        .badge-registro { background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4); color: #fbbf24; }
-        .badge-curso { background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #34d399; }
-        .badge-finalizado { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.15); color: #94a3b8; }
-        .badge-oculto { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); color: #f87171; }
+        .badge-activo { background: rgba(6, 182, 212, 0.2); border: 1px solid #06b6d4; color: #38bdf8; font-size: 9px; font-weight: 800; padding: 3px 8px; border-radius: 999px; text-transform: uppercase; }
     </style>
 </head>
 <body>
 
     <nav class="navbar">
-        <div class="nav-title">CENTRAL DE TORNEOS</div>
-        <div class="nav-links">
-            <a href="torneos.html" class="nav-btn active">Mis Torneos</a>
-            <a href="admin.html" class="nav-btn">Administrador</a>
-            <a href="sorteo.html" class="nav-btn">Sorteo y Rol</a>
-            <a href="index.html" target="_blank" class="nav-btn public">Portal Público</a>
-            <button onclick="cerrarSesionAdmin()" class="nav-btn" style="border-color: rgba(239,68,68,0.4); color: #f87171; cursor:pointer;">SALIR</button>
-        </div>
+        <div class="nav-title">Pixel Studio • Central de Torneos</div>
     </nav>
 
     <div class="main-content">
-
-        <div class="panel-3d panel-cyan">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-                <div>
-                    <span style="font-size: 9px; text-transform: uppercase; font-weight: 800; color: #38bdf8; letter-spacing: 2px;">Torneo Activo en el Sistema</span>
-                    <h3 id="nombre-torneo-activo" style="margin: 4px 0 0 0; border: none; padding: 0; color: #ffffff; font-size: 20px; letter-spacing: 1px;">Cargando...</h3>
-                </div>
-                <button class="btn-console btn-ws-style" onclick="compartirWhatsAppInscripciones()">📲 Compartir Link por WhatsApp</button>
-            </div>
-
-            <div style="margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 20px;">
-                <div style="font-weight: 800; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px;">📊 Jugadores Confirmados por Categoría:</div>
-                <div id="grid-categorias-vivo" class="grid-categorias-resumen">
-                    <div class="card-cat-resumen">Cargando desglose...</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="panel-3d panel-purple">
-            <h2>➕ Crear Nuevo Torneo</h2>
-            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px; font-weight: 600;">Inicia un evento con lista de inscritos limpia manteniendo la base permanente de ranking acumulado.</p>
+        
+        <div class="panel-3d">
+            <h2 id="titulo-form-torneo">🏆 Crear Nuevo Torneo</h2>
+            <input type="hidden" id="edit-torneo-id">
             
             <div class="form-row">
-                <input type="text" id="nuevo-nombre-torneo" placeholder="Nombre del Torneo (Ej. Abierto de Otoño 2026)">
-                <input type="text" id="nuevo-lugar-torneo" placeholder="Lugar / Sede (Ej. Club Xalapa)">
-                <select id="nuevo-formato-torneo" style="max-width: 220px;">
-                    <option value="grupos_y_llaves">Fase de Grupos + Llaves</option>
-                    <option value="round_robin">Round Robin Directo (Todos vs Todos)</option>
-                </select>
-                <input type="date" id="nueva-fecha-torneo" style="max-width: 150px;">
-                <button class="btn-console btn-gold" onclick="crearTorneo()">🏆 Crear Torneo</button>
+                <input type="text" id="torneo-nombre" placeholder="Nombre del Torneo (Ej. Gran Torneo Estatal 2026)">
+                <input type="date" id="torneo-fecha">
+            </div>
+            
+            <div class="form-row">
+                <input type="text" id="torneo-lugar" placeholder="Sede / Gimnasio (Ej. Complejo Deportivo Central)">
+                <input type="number" id="torneo-mesas" value="5" min="1" max="50" placeholder="Total Mesas Gimnasio">
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                <button class="btn-console btn-gold" id="btn-guardar-torneo" onclick="guardarTorneo()">➕ Crear Torneo</button>
+                <button class="btn-console" id="btn-cancelar-edit" style="display:none;" onclick="cancelarEdicion()">Cancelar Edición</button>
             </div>
         </div>
 
-        <div class="panel-3d panel-emerald">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
-                <h2 style="border: none; margin: 0; padding: 0;">📂 Historial de Torneos Guardados</h2>
-                <button id="btn-toggle-ocultos" class="btn-console" onclick="toggleVerOcultos()">👁️ Mostrar Archivados/Ocultos</button>
+        <div class="panel-3d">
+            <h2>📋 Mis Torneos Registrados</h2>
+            <div id="contenedor-torneos" class="grid-torneos">
+                <div style="color:#64748b; font-size:12px;">Cargando torneos...</div>
             </div>
-            
-            <table>
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Nombre del Torneo</th>
-                        <th>Sede / Lugar</th>
-                        <th>Formato</th>
-                        <th>Estado</th>
-                        <th style="width: 320px;">Acciones / Controles</th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-torneos">
-                    <tr><td colspan="6" style="text-align: center; color: #475569;">Cargando historial...</td></tr>
-                </tbody>
-            </table>
         </div>
 
     </div>
@@ -193,282 +80,112 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        const CLAVE_ADMIN_MAESTRA = 'admin2026';
-        let todosLosTorneos = [];
-        let torneoActivoObj = null;
-        let mostrarTorneosOcultos = false;
-
-        function verificarAccesoAdmin() {
-            if (localStorage.getItem('admin_autenticado') !== 'true') {
-                let pass = prompt("🔒 Ingrese la Contraseña Maestra de Administrador:");
-                if (pass === CLAVE_ADMIN_MAESTRA) {
-                    localStorage.setItem('admin_autenticado', 'true');
-                } else {
-                    alert("❌ Contraseña incorrecta. Acceso denegado.");
-                    document.body.innerHTML = "<h2 style='text-align:center; margin-top:80px; color:#ef4444;'>Acceso Denegado 🔒</h2>";
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        function cerrarSesionAdmin() {
-            localStorage.removeItem('admin_autenticado');
-            window.location.reload();
-        }
+        let listaTorneos = [];
 
         async function cargarTorneos() {
-            if (!verificarAccesoAdmin()) return;
-
-            document.getElementById('nueva-fecha-torneo').valueAsDate = new Date();
-
-            const { data, error } = await clienteSupabase
-                .from('torneos')
-                .select('*')
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                document.getElementById('tabla-torneos').innerHTML = `<tr><td colspan="6" style="color:#ef4444; text-align:center;">Error de conexión.</td></tr>`;
-                return;
-            }
-
-            todosLosTorneos = data || [];
-
-            let idActivo = localStorage.getItem('torneo_activo_id');
-            if (!idActivo && todosLosTorneos.length > 0) {
-                idActivo = todosLosTorneos[0].id;
-                localStorage.setItem('torneo_activo_id', idActivo);
-            }
-
-            torneoActivoObj = todosLosTorneos.find(t => t.id == idActivo);
-
-            actualizarBannerActivo();
-            dibujarTablaTorneos(idActivo);
-            cargarDesgloseCategoriasVivo(idActivo);
+            const { data, error } = await clienteSupabase.from('torneos').select('*').order('created_at', { ascending: false });
+            listaTorneos = data || [];
+            dibujarTorneos();
         }
 
-        function actualizarBannerActivo() {
-            const boxNombre = document.getElementById('nombre-torneo-activo');
-            if (torneoActivoObj) {
-                let detalles = [];
-                if (torneoActivoObj.fecha_evento) detalles.push(`📅 ${torneoActivoObj.fecha_evento}`);
-                if (torneoActivoObj.lugar_evento) detalles.push(`📍 ${torneoActivoObj.lugar_evento}`);
-                let strDetalles = detalles.length > 0 ? ` (${detalles.join(' - ')})` : '';
-                boxNombre.innerText = `${torneoActivoObj.nombre}${strDetalles}`;
-            } else {
-                boxNombre.innerText = "Ningún torneo seleccionado";
-            }
-        }
+        function dibujarTorneos() {
+            const container = document.getElementById('contenedor-torneos');
+            const idActivo = localStorage.getItem('torneo_activo_id') || (listaTorneos[0] ? listaTorneos[0].id : null);
+            container.innerHTML = '';
 
-        async function cargarDesgloseCategoriasVivo(idTorneo) {
-            const grid = document.getElementById('grid-categorias-vivo');
-            grid.innerHTML = '';
-
-            if (!idTorneo) {
-                grid.innerHTML = '<div class="card-cat-resumen">Selecciona un torneo activo.</div>';
+            if (listaTorneos.length === 0) {
+                container.innerHTML = '<div style="color:#64748b; font-size:12px;">No hay torneos registrados. Crea el primero arriba.</div>';
                 return;
             }
 
-            const [resCat, resIns] = await Promise.all([
-                clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: false }),
-                clienteSupabase.from('inscripciones').select('*').eq('torneo_id', idTorneo).eq('estatus_pago', 'Pagado')
-            ]);
+            listaTorneos.forEach(t => {
+                const esActivo = t.id == idActivo;
+                container.innerHTML += `
+                    <div class="card-torneo ${esActivo ? 'activo' : ''}">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <span style="font-size:10px; color:#94a3b8; font-weight:800;">ID #${t.id}</span>
+                            ${esActivo ? '<span class="badge-activo">Torneo Activo</span>' : ''}
+                        </div>
+                        
+                        <h3 style="margin:0 0 8px 0; font-size:15px; color:#fff;">${t.nombre}</h3>
+                        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">📅 ${t.fecha_evento || 'Sin Fecha'}</div>
+                        <div style="font-size:11px; color:#94a3b8; margin-bottom:4px;">📍 ${t.lugar_evento || 'Sin Sede'}</div>
+                        <div style="font-size:11px; color:#38bdf8; font-weight:700; margin-bottom:15px;">🏓 Mesas Gimnasio: ${t.total_mesas || 5}</div>
 
-            const categorias = resCat.data || [];
-            const inscripciones = resIns.data || [];
-
-            if (categorias.length === 0) {
-                grid.innerHTML = '<div class="card-cat-resumen">No hay categorías configuradas.</div>';
-                return;
-            }
-
-            let totalPagados = inscripciones.length;
-
-            grid.innerHTML += `
-                <div class="card-cat-resumen" style="border: 1px solid rgba(245,158,11,0.4); box-shadow: 0 0 15px rgba(245, 158, 11, 0.1);">
-                    <div class="num" style="color:#fbbf24;">${totalPagados}</div>
-                    <div class="label" style="color: #fbbf24;">TOTAL CONFIRMADOS</div>
-                </div>
-            `;
-
-            categorias.forEach(cat => {
-                let cantInscritos = inscripciones.filter(ins => ins.categoria_id === cat.id).length;
-                grid.innerHTML += `
-                    <div class="card-cat-resumen">
-                        <div class="num">${cantInscritos}</div>
-                        <div class="label">${cat.nombre}</div>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            ${!esActivo ? `<button class="btn-console btn-green" style="padding:6px 12px; font-size:9px;" onclick="seleccionarTorneoActivo(${t.id})">Aperturar</button>` : ''}
+                            <button class="btn-console btn-gold" style="padding:6px 12px; font-size:9px;" onclick="editarTorneo(${t.id})">✏️ Editar</button>
+                            <button class="btn-console btn-red" style="padding:6px 12px; font-size:9px;" onclick="eliminarTorneo(${t.id}, '${t.nombre}')">🗑️</button>
+                            ${esActivo ? `<a href="admin.html" class="btn-console" style="padding:6px 12px; font-size:9px; border-color:#06b6d4; color:#38bdf8;">Entrar Panel ➔</a>` : ''}
+                        </div>
                     </div>
-                `;
-            });
-        }
-
-        function toggleVerOcultos() {
-            mostrarTorneosOcultos = !mostrarTorneosOcultos;
-            const btn = document.getElementById('btn-toggle-ocultos');
-            btn.innerText = mostrarTorneosOcultos ? "🙈 Ocultar Archivados" : "👁️ Mostrar Archivados/Ocultos";
-            dibujarTablaTorneos(localStorage.getItem('torneo_activo_id'));
-        }
-
-        function dibujarTablaTorneos(idActivo) {
-            const tbody = document.getElementById('tabla-torneos');
-            tbody.innerHTML = '';
-
-            // Filtrar torneos visibles vs ocultos
-            const torneosFiltrados = todosLosTorneos.filter(t => mostrarTorneosOcultos || t.visible !== false);
-
-            if (torneosFiltrados.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#64748b;">${mostrarTorneosOcultos ? 'No hay torneos ocultos o archivados.' : 'No hay torneos visibles.'}</td></tr>`;
-                return;
-            }
-
-            torneosFiltrados.forEach(t => {
-                const esElActivo = t.id == idActivo;
-                const esOculto = t.visible === false;
-                let badgeEstado = '';
-
-                if (esOculto) badgeEstado = '<span class="badge badge-oculto">🔒 Oculto</span>';
-                else if (t.estado === 'en_registro') badgeEstado = '<span class="badge badge-registro">🟡 En Registro</span>';
-                else if (t.estado === 'en_curso') badgeEstado = '<span class="badge badge-curso">🟢 En Curso</span>';
-                else badgeEstado = '<span class="badge badge-finalizado">🔴 Finalizado</span>';
-
-                let formatoTexto = t.formato === 'grupos_y_llaves' ? 'Grupos + Eliminatoria' : 'Round Robin Directo';
-
-                tbody.innerHTML += `
-                    <tr style="${esOculto ? 'opacity:0.6;' : ''}">
-                        <td style="color:#94a3b8;">${t.fecha_evento || 'S/F'}</td>
-                        <td>
-                            <strong style="color:${esElActivo ? '#34d399' : '#ffffff'}; font-size:13px;">${t.nombre}</strong>
-                            ${esElActivo ? ' <small style="color:#34d399; font-weight:800; letter-spacing:1px;">(ACTIVO)</small>' : ''}
-                        </td>
-                        <td style="color:#cbd5e1;">${t.lugar_evento || 'Por definir'}</td>
-                        <td style="color:#cbd5e1; font-weight:600;">${formatoTexto}</td>
-                        <td>${badgeEstado}</td>
-                        <td>
-                            ${!esElActivo ? `
-                                <button class="btn-console btn-gold" style="padding: 5px 10px; font-size: 9px;" onclick="seleccionarTorneoActivo(${t.id})">⚙️ Activar</button>
-                            ` : '<span style="color:#34d399; font-size:10px; font-weight:800; text-transform:uppercase; margin-right:6px;">✅ Activo</span>'}
-                            
-                            <button class="btn-console" style="padding: 5px 10px; font-size: 9px;" onclick="toggleVisibilidadTorneo(${t.id}, ${!esOculto})">
-                                ${esOculto ? '👁️ Mostrar' : '🙈 Ocultar'}
-                            </button>
-
-                            ${t.estado !== 'finalizado' ? `
-                                <button class="btn-console btn-green" style="padding: 5px 10px; font-size: 9px;" onclick="cambiarEstadoTorneo(${t.id}, 'finalizado')">🏁 Finalizar</button>
-                            ` : `
-                                <button class="btn-console" style="padding: 5px 10px; font-size: 9px;" onclick="cambiarEstadoTorneo(${t.id}, 'en_curso')">🔄 Reabrir</button>
-                            `}
-
-                            <button class="btn-console btn-red" style="padding: 5px 10px; font-size: 9px;" onclick="eliminarTorneo(${t.id}, '${t.nombre}')">🗑️ Borrar</button>
-                        </td>
-                    </tr>
                 `;
             });
         }
 
         function seleccionarTorneoActivo(id) {
             localStorage.setItem('torneo_activo_id', id);
+            localStorage.setItem('admin_autenticado', 'true');
             cargarTorneos();
         }
 
-        async function toggleVisibilidadTorneo(id, ocultar) {
-            const { error } = await clienteSupabase.from('torneos').update({ visible: !ocultar }).eq('id', id);
-            if (error) {
-                // Fallback si la columna visible no existía
-                alert("Si no se actualiza, ejecuta en Supabase: ALTER TABLE torneos ADD COLUMN IF NOT EXISTS visible boolean DEFAULT true;");
-                return;
+        function editarTorneo(id) {
+            const t = listaTorneos.find(item => item.id == id);
+            if (!t) return;
+
+            document.getElementById('edit-torneo-id').value = t.id;
+            document.getElementById('torneo-nombre').value = t.nombre;
+            document.getElementById('torneo-fecha').value = t.fecha_evento || '';
+            document.getElementById('torneo-lugar').value = t.lugar_evento || '';
+            document.getElementById('torneo-mesas').value = t.total_mesas || 5;
+
+            document.getElementById('titulo-form-torneo').innerText = `✏️ Editando: ${t.nombre}`;
+            document.getElementById('btn-guardar-torneo').innerText = "💾 Actualizar Cambios";
+            document.getElementById('btn-cancelar-edit').style.display = "inline-flex";
+        }
+
+        function cancelarEdicion() {
+            document.getElementById('edit-torneo-id').value = "";
+            document.getElementById('torneo-nombre').value = "";
+            document.getElementById('torneo-fecha').value = "";
+            document.getElementById('torneo-lugar').value = "";
+            document.getElementById('torneo-mesas').value = "5";
+
+            document.getElementById('titulo-form-torneo').innerText = "🏆 Crear Nuevo Torneo";
+            document.getElementById('btn-guardar-torneo').innerText = "➕ Crear Torneo";
+            document.getElementById('btn-cancelar-edit').style.display = "none";
+        }
+
+        async function guardarTorneo() {
+            const idEdit = document.getElementById('edit-torneo-id').value;
+            const nombre = document.getElementById('torneo-nombre').value.trim();
+            const fecha = document.getElementById('torneo-fecha').value;
+            const lugar = document.getElementById('torneo-lugar').value.trim();
+            const mesas = parseInt(document.getElementById('torneo-mesas').value) || 5;
+
+            if (!nombre) { alert("Ingresa el nombre del torneo."); return; }
+
+            const payload = { nombre: nombre, fecha_evento: fecha, lugar_evento: lugar, total_mesas: mesas };
+
+            if (idEdit) {
+                await clienteSupabase.from('torneos').update(payload).eq('id', idEdit);
+                alert("✅ Torneo actualizado con éxito.");
+            } else {
+                const { data } = await clienteSupabase.from('torneos').insert([payload]).select().single();
+                if (data) localStorage.setItem('torneo_activo_id', data.id);
+                localStorage.setItem('admin_autenticado', 'true');
+                alert("✅ Torneo creado con éxito.");
             }
+
+            cancelarEdicion();
             cargarTorneos();
         }
 
         async function eliminarTorneo(id, nombre) {
-            if (!confirm(`⚠️ ¿Estás completamente seguro de que deseas ELIMINAR el torneo "${nombre}"?\n\nEsta acción borra todas las inscripciones y registros de grupos de este torneo y no se puede deshacer.`)) return;
-
-            // Borrar referencias en cascada
-            await clienteSupabase.from('inscripciones').delete().eq('torneo_id', id);
-            await clienteSupabase.from('grupos_torneo').delete().eq('torneo_id', id);
-            
-            const { error } = await clienteSupabase.from('torneos').delete().eq('id', id);
-
-            if (error) {
-                alert("Error al borrar el torneo: " + error.message);
-                return;
-            }
-
-            alert(`✅ Torneo "${nombre}" eliminado correctamente.`);
-
-            if (localStorage.getItem('torneo_activo_id') == id) {
-                localStorage.removeItem('torneo_activo_id');
-            }
-
+            if (!confirm(`⚠️ ¿Eliminar el torneo "${nombre}"? Se borrarán todos sus partidos.`)) return;
+            await clienteSupabase.from('partidos').delete().eq('torneo_id', id);
+            await clienteSupabase.from('torneos').delete().eq('id', id);
             cargarTorneos();
-        }
-
-        async function crearTorneo() {
-            const nombre = document.getElementById('nuevo-nombre-torneo').value.trim();
-            const lugar = document.getElementById('nuevo-lugar-torneo').value.trim();
-            const formato = document.getElementById('nuevo-formato-torneo').value;
-            const fecha = document.getElementById('nueva-fecha-torneo').value;
-
-            if (!nombre) { alert("Ingresa el nombre del torneo."); return; }
-
-            // Objeto de inserción tolerante a esquema
-            let datosTorneo = {
-                nombre: nombre,
-                lugar_evento: lugar || 'Sede Principal',
-                formato: formato,
-                fecha_evento: fecha,
-                estado: 'en_registro',
-                visible: true
-            };
-
-            let { data, error } = await clienteSupabase.from('torneos').insert([datosTorneo]).select();
-
-            // Si falla por columna no existente, reintentar sin 'lugar_evento' o 'visible' temporalmente
-            if (error) {
-                delete datosTorneo.lugar_evento;
-                delete datosTorneo.visible;
-                const retry = await clienteSupabase.from('torneos').insert([datosTorneo]).select();
-                data = retry.data;
-                error = retry.error;
-            }
-
-            if (error || !data) { alert(`Error al crear torneo: ${error ? error.message : ''}`); return; }
-
-            localStorage.setItem('torneo_activo_id', data[0].id);
-            alert(`✅ ¡Torneo "${nombre}" creado con éxito!`);
-            
-            document.getElementById('nuevo-nombre-torneo').value = '';
-            document.getElementById('nuevo-lugar-torneo').value = '';
-            cargarTorneos();
-        }
-
-        async function cambiarEstadoTorneo(id, nuevoEstado) {
-            const accion = nuevoEstado === 'finalizado' ? 'finalizar' : 'reabrir';
-            if (!confirm(`¿Estás seguro de que deseas ${accion} este torneo?`)) return;
-
-            const { error } = await clienteSupabase.from('torneos').update({ estado: nuevoEstado }).eq('id', id);
-            if (error) { alert("Error al cambiar estado."); return; }
-
-            cargarTorneos();
-        }
-
-        function compartirWhatsAppInscripciones() {
-            if (!torneoActivoObj) { alert("Selecciona un torneo activo primero."); return; }
-            
-            const nombre = torneoActivoObj.nombre;
-            const fecha = torneoActivoObj.fecha_evento || 'Por confirmar';
-            const lugar = torneoActivoObj.lugar_evento || 'Por definir';
-            const urlPublicaConID = `${window.location.origin}/index.html?torneo=${torneoActivoObj.id}`;
-
-            const mensaje = `🏓 *¡INSCRIPCIONES ABIERTAS!* 🏓\n\n` +
-                            `🏆 Torneo: *${nombre}*\n` +
-                            `📅 Fecha: _${fecha}_\n` +
-                            `📍 Lugar: _${lugar}_\n\n` +
-                            `Reserva tu lugar en línea ingresando aquí:\n` +
-                            `👉 ${urlPublicaConID}\n\n` +
-                            `¡Te esperamos! 🏆`;
-
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(mensaje)}`, '_blank');
         }
 
         cargarTorneos();
