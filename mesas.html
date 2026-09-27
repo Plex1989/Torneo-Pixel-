@@ -171,7 +171,6 @@
             dibujarPartidos();
         }
 
-        // CORRECCIÓN DEL BOTÓN DE ESTADO ("FINALIZADOS")
         function filtrarEstado(est) {
             estadoFiltro = est;
             document.getElementById('tab-todos').classList.remove('active');
@@ -246,8 +245,14 @@
                     let catId = p.categorias ? p.categorias.id : 0;
                     let estiloCat = obtenerEstiloCategoria(catId);
 
-                    let nombreJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
-                    let nombreJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
+                    // MANEJO DE NOMBRES Y FASES (GRUPOS VS LLAVES)
+                    let esLlave = !p.grupo_nombre || p.ronda_fase?.toLowerCase().includes('cruce') || p.ronda_fase?.toLowerCase().includes('semifinal') || p.ronda_fase?.toLowerCase().includes('final');
+                    let sinNombresAun = !p.j1 || !p.j2;
+
+                    let nombreJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? `${p.ronda_fase} J1` : '1° Grupo A');
+                    let nombreJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? `${p.ronda_fase} J2` : '2° Grupo B');
+
+                    let subtituloFase = p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Eliminatoria Directa');
 
                     contenedor.innerHTML += `
                         <div class="card-partido ${opacidadClass}">
@@ -256,25 +261,26 @@
                                 ${badgeEst}
                             </div>
 
-                            <div style="margin-bottom:12px;">
+                            <div style="margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:6px;">
                                 <span class="badge-cat" style="color:${estiloCat.text}; background:${estiloCat.bg}; border:1px solid ${estiloCat.border};">
-                                    🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'} • ${p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Eliminatoria')}
+                                    🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'} • ${subtituloFase}
                                 </span>
+                                ${sinNombresAun && esLlave ? '<span style="font-size:8px; font-weight:800; color:#fbbf24; background:rgba(245,158,11,0.1); padding:2px 6px; border-radius:4px; border:1px solid rgba(245,158,11,0.3);">⏳ Esperando Clasificados</span>' : ''}
                             </div>
 
                             <div class="duelo-box">
                                 <div class="jugador-row">
-                                    <span style="color:#ffffff;">${nombreJ1}</span>
+                                    <span style="color:${p.j1 ? '#ffffff' : '#94a3b8'}; font-style:${p.j1 ? 'normal' : 'italic'};">${nombreJ1}</span>
                                     <span class="score-digital">${p.puntos_j1 || 0} (${p.sets_j1 || 0})</span>
                                 </div>
                                 <div class="jugador-row" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:4px; padding-top:6px;">
-                                    <span style="color:#ffffff;">${nombreJ2}</span>
+                                    <span style="color:${p.j2 ? '#ffffff' : '#94a3b8'}; font-style:${p.j2 ? 'normal' : 'italic'};">${nombreJ2}</span>
                                     <span class="score-digital" style="color:#d946ef;">${p.puntos_j2 || 0} (${p.sets_j2 || 0})</span>
                                 </div>
                             </div>
 
                             <div style="display:flex; gap:10px;">
-                                <button class="btn-arbitrar" onclick="abrirScoreboardJuez(${p.id})">🏓 Arbitrar</button>
+                                <button class="btn-arbitrar" onclick="abrirScoreboardJuez(${p.id})">🏓 Arbitrar Partido</button>
                             </div>
                         </div>
                     `;
