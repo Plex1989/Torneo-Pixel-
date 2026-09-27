@@ -27,10 +27,7 @@
         .tab-filter { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 8px 14px; border-radius: 9999px; font-size: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; transition: all 0.2s ease; white-space: nowrap; flex-shrink: 0; }
         .tab-filter.active { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 15px rgba(6, 182, 212, 0.5); }
         
-        /* Sticky Header */
         .sticky-header { position: sticky; top: 0; z-index: 40; background: rgba(4, 6, 10, 0.95); backdrop-filter: blur(15px); padding: 15px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-
-        /* Ocultar barra de scroll para que se vea como app nativa */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -47,7 +44,6 @@
         function App() {
             const urlParams = new URLSearchParams(window.location.search);
             
-            // Estado Principal SPA
             const [activePartidoId, setActivePartidoId] = useState(urlParams.get('partido'));
             const [view, setView] = useState('loading'); 
             
@@ -55,7 +51,7 @@
             const [h2hHistory, setH2hHistory] = useState([]);
             const [lobbyMatches, setLobbyMatches] = useState([]);
             const [errorMsg, setErrorMsg] = useState(null);
-            const [estadoFiltro, setEstadoFiltro] = useState('en_curso'); // Pestaña por defecto
+            const [estadoFiltro, setEstadoFiltro] = useState('en_curso');
 
             const [p1, setP1] = useState("");
             const [p2, setP2] = useState("");
@@ -67,16 +63,14 @@
             const [historialSets, setHistorialSets] = useState([]);
             const [winner, setWinner] = useState(null);
             
-            // MUTE ESTÁ EN TRUE MIENTRAS SE ESTÁ EN EL LOBBY
             const [isMuted, setIsMuted] = useState(true);
             const matchStateRef = useRef({ p1: '', p2: '', score1: 0, score2: 0 });
 
             const torneoId = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id') || 1;
 
-            // Transición a Partido (Pantalla Completa + Audio ON)
             const entrarAlPartido = (id) => {
                 setActivePartidoId(id);
-                setIsMuted(false); // Activamos audio automáticamente gracias al Touch
+                setIsMuted(false); 
                 window.history.pushState({}, '', `?partido=${id}`);
                 
                 let docEl = document.documentElement;
@@ -84,10 +78,9 @@
                 else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen().catch(()=>{});
             };
 
-            // Volver a Cartelera (Quitar Pantalla Completa + Audio OFF)
             const volverACartelera = () => {
                 setActivePartidoId(null);
-                setIsMuted(true); // Silenciamos para que no hable en la cartelera
+                setIsMuted(true); 
                 window.history.pushState({}, '', `?torneo=${partidoData?.torneo_id || torneoId}`);
                 
                 if (document.exitFullscreen && document.fullscreenElement) document.exitFullscreen().catch(()=>{});
@@ -203,12 +196,10 @@
                             const m = payload.new;
                             const refs = matchStateRef.current;
                             
-                            // DISPARAR VOZ INTELIGENTE SI CAMBIA MARCADOR
                             if (m.puntos_j1 !== refs.score1 || m.puntos_j2 !== refs.score2) {
                                 announceScore(refs.p1, m.puntos_j1, refs.p2, m.puntos_j2);
                             }
 
-                            // ACTUALIZAR ESTADOS
                             refs.score1 = m.puntos_j1;
                             refs.score2 = m.puntos_j2;
                             setScore1(m.puntos_j1);
@@ -254,7 +245,6 @@
                                 <h1 className="text-lg font-black text-cyan-400 uppercase tracking-widest">Cartelera</h1>
                             </div>
                             
-                            {/* AQUÍ ESTÁ EL ARREGLO: justify-start para móviles y padding, quita el problema de elementos ocultos */}
                             <div className="flex justify-start sm:justify-center gap-2 px-6 overflow-x-auto no-scrollbar pb-2">
                                 <button className={`tab-filter ${estadoFiltro === 'en_curso' ? 'active' : ''}`} onClick={() => setEstadoFiltro('en_curso')}>🔴 En Vivo</button>
                                 <button className={`tab-filter ${estadoFiltro === 'pendiente' ? 'active' : ''}`} onClick={() => setEstadoFiltro('pendiente')}>⏳ Pendientes</button>
@@ -270,11 +260,14 @@
                                 filtrados.map(p => {
                                     let estadoColor = p.estado === 'en_curso' ? '#34d399' : (p.estado === 'finalizado' ? '#94a3b8' : '#fbbf24');
                                     let estadoTexto = p.estado === 'en_curso' ? '🔴 EN VIVO' : (p.estado === 'finalizado' ? '🏁 FINALIZADO' : '⏳ PENDIENTE');
+                                    
                                     let isFin = p.estado === 'finalizado';
+                                    let isJ1Win = p.ganador_id === p.jugador1_id;
+                                    let isJ2Win = p.ganador_id === p.jugador2_id;
 
                                     return (
                                         <div key={p.id} onClick={() => entrarAlPartido(p.id)} 
-                                             className={`bg-slate-900/80 p-4 rounded-[16px] border border-white/10 cursor-pointer transition-all ${isFin ? 'opacity-60 grayscale-[50%]' : 'hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]'}`}>
+                                             className={`bg-slate-900/80 p-4 rounded-[16px] border border-white/10 cursor-pointer transition-all ${isFin ? 'opacity-90 border-slate-800' : 'hover:border-cyan-400 hover:shadow-[0_0_20px_rgba(6,182,212,0.2)]'}`}>
                                             
                                             <div className="flex justify-between items-center mb-3">
                                                 <span className="font-bold text-[11px] text-cyan-400">MESA {p.mesa || 1} <span className="text-zinc-500 ml-2 font-normal">⏰ {p.hora}</span></span>
@@ -286,20 +279,42 @@
                                             </div>
                                             
                                             <div className="bg-black/40 rounded-xl p-3 flex justify-between items-center mb-2 border border-white/5">
-                                                <span className="font-bold text-sm truncate">{p.j1?.nombre || 'J1'}</span>
+                                                <span className={`font-bold text-sm truncate ${isFin && !isJ1Win ? 'text-zinc-500' : 'text-white'}`}>
+                                                    {isFin && isJ1Win ? '🏆 ' : ''}{p.j1?.nombre || 'J1'}
+                                                </span>
                                                 <div className="flex items-center gap-3">
-                                                    <span className="font-digital text-cyan-400 text-xl font-bold">{p.puntos_j1}</span>
-                                                    <span className="text-xs text-zinc-500 font-bold">({p.sets_j1})</span>
+                                                    <span className={`font-digital text-xl font-bold ${isFin && !isJ1Win ? 'text-zinc-600' : 'text-cyan-400'}`}>
+                                                        {isFin ? p.sets_j1 : p.puntos_j1}
+                                                    </span>
+                                                    {!isFin && <span className="text-xs text-zinc-500 font-bold">({p.sets_j1})</span>}
                                                 </div>
                                             </div>
                                             
                                             <div className="bg-black/40 rounded-xl p-3 flex justify-between items-center border border-white/5">
-                                                <span className="font-bold text-sm truncate">{p.j2?.nombre || 'J2'}</span>
+                                                <span className={`font-bold text-sm truncate ${isFin && !isJ2Win ? 'text-zinc-500' : 'text-white'}`}>
+                                                    {isFin && isJ2Win ? '🏆 ' : ''}{p.j2?.nombre || 'J2'}
+                                                </span>
                                                 <div className="flex items-center gap-3">
-                                                    <span className="font-digital text-fuchsia-400 text-xl font-bold">{p.puntos_j2}</span>
-                                                    <span className="text-xs text-zinc-500 font-bold">({p.sets_j2})</span>
+                                                    <span className={`font-digital text-xl font-bold ${isFin && !isJ2Win ? 'text-zinc-600' : 'text-fuchsia-400'}`}>
+                                                        {isFin ? p.sets_j2 : p.puntos_j2}
+                                                    </span>
+                                                    {!isFin && <span className="text-xs text-zinc-500 font-bold">({p.sets_j2})</span>}
                                                 </div>
                                             </div>
+
+                                            {/* CAJA DE SETS CUANDO EL PARTIDO FINALIZA */}
+                                            {isFin && p.historial_sets && p.historial_sets.length > 0 && (
+                                                <div className="flex gap-2 flex-wrap mt-3 justify-center pt-3 border-t border-white/10 border-dashed">
+                                                    <span className="text-[9px] text-zinc-500 font-bold uppercase flex items-center mr-1">Sets:</span>
+                                                    {p.historial_sets.map((s, idx) => (
+                                                        <span key={idx} className="text-[10px] bg-black/60 px-2 py-1 rounded font-bold">
+                                                            <span className={s.s1 > s.s2 ? "text-cyan-400" : "text-zinc-500"}>{s.s1}</span>
+                                                            <span className="text-zinc-600 mx-1">-</span>
+                                                            <span className={s.s2 > s.s1 ? "text-fuchsia-400" : "text-zinc-500"}>{s.s2}</span>
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
                                             
                                         </div>
                                     )
@@ -337,9 +352,7 @@
 
                         <div className="w-full max-w-md mb-10">
                             {h2hHistory.length === 0 ? (
-                                <div className="text-center text-zinc-500 font-bold text-xs uppercase tracking-widest italic py-8 border border-white/5 rounded-2xl bg-white/5">
-                                    ES LA PRIMERA VEZ QUE SE ENFRENTAN EN TORNEOS.
-                                </div>
+                                <div className="text-center text-zinc-500 font-bold text-xs uppercase tracking-widest italic py-8 border border-white/5 rounded-2xl bg-white/5">Es la primera vez que se enfrentan en torneos.</div>
                             ) : (
                                 <div className="space-y-3">
                                     <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest border-b border-white/10 pb-2 mb-4">Últimos Enfrentamientos</h3>
@@ -366,11 +379,9 @@
                 )
             }
 
-            // VISTA: SCOREBOARD PÚBLICO EN VIVO (CON BOTÓN VOLVER)
+            // VISTA: SCOREBOARD PÚBLICO EN VIVO
             return (
                 <div className="fixed inset-0 flex flex-col z-50 bg-[#04060a] overflow-hidden">
-                    
-                    {/* ENCABEZADO MEJORADO CON BOTÓN DE REGRESAR */}
                     <div className="glass-dark py-2 px-3 flex justify-between items-center text-white shrink-0 z-20 border-b border-white/5">
                         <button onClick={volverACartelera} className="flex items-center gap-1 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white transition-colors shrink-0">
                             <i className="fa-solid fa-arrow-left"></i> <span className="hidden sm:inline ml-1">Volver</span>
@@ -387,7 +398,6 @@
                     </div>
 
                     <div className="flex-1 flex flex-col landscape:flex-row w-full p-3 landscape:p-6 gap-4 overflow-hidden min-h-0">
-                        {/* JUGADOR 1 */}
                         <div className="flex-1 flex flex-col min-h-0 min-w-0">
                             <div className="name-p1 py-4 px-5 rounded-[20px] flex items-center justify-between shrink-0">
                                 <div className="w-10"></div> 
@@ -406,7 +416,6 @@
                             <div className="text-zinc-600 font-black italic text-2xl">VS</div>
                         </div>
 
-                        {/* JUGADOR 2 */}
                         <div className="flex-1 flex flex-col min-h-0 min-w-0">
                             <div className="name-p2 py-4 px-5 rounded-[20px] flex items-center justify-between shrink-0">
                                 <div className="w-10 h-10 bg-black/30 border border-white/20 rounded-lg flex items-center justify-center text-white font-digital font-bold text-xl">{sets2}</div>
@@ -422,7 +431,6 @@
                         </div>
                     </div>
 
-                    {/* HISTORIAL DE SETS */}
                     {historialSets.length > 0 && (
                         <div className="bg-slate-900/90 border-t border-white/10 p-3 flex justify-center items-center gap-3 flex-wrap shrink-0">
                             <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Historial:</span>
