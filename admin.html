@@ -12,7 +12,7 @@
         }
     </script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Orbitron:wght@700;800&display=swap');
 
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 0; background-color: #04060a; color: #f8fafc; min-height: 100vh; position: relative; overflow-x: hidden; }
         
@@ -110,6 +110,7 @@
             cursor: pointer; 
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
             font-family: 'Sora', sans-serif; 
+            text-decoration: none;
         }
 
         .btn-console:hover { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 25px rgba(6, 182, 212, 0.85); transform: translateY(-2px); }
@@ -179,6 +180,17 @@
             <button class="btn-console btn-ws-style" onclick="compartirLinkInscripcionWS()">📲 LINK DE INSCRIPCIÓN</button>
         </div>
 
+        <!-- MÓDULO MONITOREO DE PARTIDOS EN VIVO (WEBSOCKETS REALTIME) -->
+        <div class="panel-3d panel-cyan no-print" id="panel-monitoreo-vivo">
+            <h2>🔴 Monitoreo de Mesas y Scoreboard en Vivo</h2>
+            <p style="font-size:11px; color:#94a3b8; margin-bottom:15px;">Sincronizado en tiempo real con las tablets de los jueces mediante WebSockets:</p>
+            
+            <div id="grid-mesas-vivo" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
+                <div class="mensaje-vacio">Cargando monitoreo de mesas...</div>
+            </div>
+        </div>
+
+        <!-- MÓDULO DE FECHAS, HORARIOS, LUGARES E INSCRIPCIÓN POR CATEGORÍA -->
         <div class="panel-3d panel-cyan no-print">
             <h2>📅 Programación de Fechas, Horarios e Inscripción por Categoría</h2>
             <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px; font-weight: 600;">Configura el día, hora de llamada, mesas/sede y cuota de inscripción ($) guardados directamente en la nube:</p>
@@ -377,6 +389,69 @@
             cargarInscritosEnVivo();
             dibujarTablaProgramacionCategorias();
             cargarPendientesRanking();
+        }
+
+        // REALTIME: SUSCRIPCIÓN A LA TABLA PARTIDOS EN VIVO
+        function activarSuscripcionRealtime() {
+            clienteSupabase
+                .channel('partidos-realtime')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => {
+                    cargarPartidosEnVivo();
+                })
+                .subscribe();
+
+            cargarPartidosEnVivo();
+        }
+
+        async function cargarPartidosEnVivo() {
+            const { data } = await clienteSupabase
+                .from('partidos')
+                .select('*, j1:jugador1_id(nombre), j2:jugador2_id(nombre)')
+                .eq('torneo_id', idTorneoActivo)
+                .order('mesa', { ascending: true });
+
+            const grid = document.getElementById('grid-mesas-vivo');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            if (!data || data.length === 0) {
+                grid.innerHTML = '<div class="mensaje-vacio">No hay partidos registrados o en curso en este torneo.</div>';
+                return;
+            }
+
+            data.forEach(p => {
+                let estadoColor = p.estado === 'en_curso' ? '#34d399' : (p.estado === 'finalizado' ? '#94a3b8' : '#fbbf24');
+                let estadoTexto = p.estado === 'en_curso' ? '🔴 EN VIVO' : (p.estado === 'finalizado' ? '🏁 FINALIZADO' : '⏳ PENDIENTE');
+
+                grid.innerHTML += `
+                    <div style="background:rgba(15,23,42,0.7); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                            <span style="font-weight:800; font-size:12px; color:#38bdf8;">MESA ${p.mesa}</span>
+                            <span style="font-size:9px; font-weight:800; color:${estadoColor}; border:1px solid ${estadoColor}; padding:2px 8px; border-radius:999px;">${estadoTexto}</span>
+                        </div>
+                        
+                        <div style="font-size:11px; color:#cbd5e1; margin-bottom:12px;">Gpo ${p.grupo_nombre || 'Único'} • ${p.ronda_fase || 'Fase'}</div>
+
+                        <div style="background:rgba(0,0,0,0.4); border-radius:10px; padding:10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-weight:700; font-size:12px;">${p.j1 ? p.j1.nombre : 'J1'}</span>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <span style="font-family:'Orbitron', sans-serif; font-weight:800; font-size:18px; color:#06b6d4;">${p.puntos_j1}</span>
+                                <span style="font-weight:800; font-size:11px; color:#94a3b8;">(${p.sets_j1})</span>
+                            </div>
+                        </div>
+
+                        <div style="background:rgba(0,0,0,0.4); border-radius:10px; padding:10px; display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-weight:700; font-size:12px;">${p.j2 ? p.j2.nombre : 'J2'}</span>
+                            <div style="display:flex; gap:10px; align-items:center;">
+                                <span style="font-family:'Orbitron', sans-serif; font-weight:800; font-size:18px; color:#d946ef;">${p.puntos_j2}</span>
+                                <span style="font-weight:800; font-size:11px; color:#94a3b8;">(${p.sets_j2})</span>
+                            </div>
+                        </div>
+
+                        <a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-gold" style="width:100%; justify-content:center; margin-top:12px; font-size:10px; padding:6px; text-decoration:none;">🏓 Abrir / Controlar Scoreboard</a>
+                    </div>
+                `;
+            });
         }
 
         async function cargarPendientesRanking() {
@@ -857,7 +932,13 @@
             alert('✅ Bono guardado.');
         }
 
-        cargarDatosIniciales(); cargarPendientes(); cargarCategorias(); cargarReglas(); cargarBono();
+        // EJECUCIÓN INICIAL DE MÓDULOS
+        cargarDatosIniciales(); 
+        cargarPendientes(); 
+        cargarCategorias(); 
+        cargarReglas(); 
+        cargarBono();
+        activarSuscripcionRealtime();
     </script>
 </body>
 </html>
