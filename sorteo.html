@@ -163,8 +163,9 @@
                 </div>
             </div>
 
+            <!-- PARÁMETROS RESTAURADOS: PIN JUEZ Y FORMATO DE SETS -->
             <div id="panel-config-horarios" style="display: none; background: rgba(15,23,42,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 18px; border-radius: 14px; margin-top: 15px;">
-                <h3 style="margin-top:0; font-size:12px; color:#ffffff;">⚙️ Parámetros de Horarios y Mesas</h3>
+                <h3 style="margin-top:0; font-size:12px; color:#ffffff;">⚙️ Parámetros de Horarios, Mesas y Asignación de Jueces</h3>
                 
                 <div class="form-row" style="margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap;">
                     <div>
@@ -178,6 +179,18 @@
                     <div>
                         <label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Min/Partido</label>
                         <input type="number" id="rr-duracion-partido" value="30" min="10" style="width:70px;">
+                    </div>
+                    <div>
+                        <label style="font-size:9px; color:#fbbf24; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Formato Juego</label>
+                        <select id="rr-modo-juego" style="width:120px;">
+                            <option value="2-3">2 de 3 Sets</option>
+                            <option value="3-5" selected>3 de 5 Sets</option>
+                            <option value="4-7">4 de 7 Sets</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:9px; color:#38bdf8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">PIN Jueces</label>
+                        <input type="text" id="rr-pin-jueces" value="1234" maxlength="4" style="width:70px; text-align:center;">
                     </div>
                 </div>
 
@@ -242,6 +255,7 @@
             if (torneoData) {
                 torneoActivoObj = torneoData;
                 document.getElementById('banner-torneo-info').innerText = `📌 Torneo Activo: ${torneoData.nombre}`;
+                if(torneoData.pin_jueces) document.getElementById('rr-pin-jueces').value = torneoData.pin_jueces;
             }
 
             const { data } = await clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true });
@@ -518,6 +532,7 @@
             const horaInicioStr = document.getElementById('rr-hora-inicio').value || '09:00';
             const numMesas = parseInt(document.getElementById('rr-num-mesas').value) || 3;
             const duracionPartido = parseInt(document.getElementById('rr-duracion-partido').value) || 30;
+            const modoJuego = document.getElementById('rr-modo-juego').value || '2-3';
 
             let minsInicio = timeToMinutes(horaInicioStr);
 
@@ -534,7 +549,6 @@
                         if (j1 && j2) {
                             let matchIndex = partidosGeneradosRR.length;
                             let mesaAsignada = (matchIndex % numMesas) + 1;
-                            
                             let bloques = Math.floor(matchIndex / numMesas);
                             let horaPartido = minutesToTimeStr(minsInicio + (bloques * duracionPartido));
 
@@ -545,6 +559,7 @@
                                 j2: j2,
                                 hora: horaPartido,
                                 mesa: mesaAsignada,
+                                modoJuego: modoJuego,
                                 juez: 'Auto / Libre'
                             });
                         }
@@ -579,12 +594,16 @@
 
         async function guardarGruposBD() {
             const idCategoria = document.getElementById('filtro-categoria').value;
+            const pinJueces = document.getElementById('rr-pin-jueces').value.trim() || '1234';
             const btn = document.getElementById('btn-guardar-grupos');
 
             if (!idCategoria || !confirm("¿Guardar acomodo y generar partidos para el Scoreboard en vivo?")) return;
 
             btn.disabled = true;
             btn.innerText = "Guardando en Supabase...";
+
+            // Actualizar PIN de jueces del torneo
+            await clienteSupabase.from('torneos').update({ pin_jueces: pinJueces }).eq('id', idTorneoActivo);
 
             await clienteSupabase.from('partidos').delete().eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo);
 
@@ -595,6 +614,7 @@
                 ronda_fase: `Ronda ${p.ronda}`,
                 mesa: p.mesa,
                 hora: p.hora,
+                modo_juego: p.modoJuego || '2-3',
                 jugador1_id: p.j1.id,
                 jugador2_id: p.j2.id,
                 juez: p.juez,
@@ -610,7 +630,7 @@
                 return;
             }
 
-            alert("✅ ¡Partidos guardados con éxito en la Base de Datos!");
+            alert("✅ ¡Partidos y PIN de jueces guardados con éxito en la Base de Datos!");
             cargarEstadoCategoria();
         }
 
