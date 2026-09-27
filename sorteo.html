@@ -5,12 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sorteo y Rol de Partidos - Pixel Studio</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        if (localStorage.getItem('admin_autenticado') !== 'true') {
-            alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
-            window.location.href = "torneos.html";
-        }
-    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
 
@@ -189,7 +183,6 @@
 
         <div class="panel-3d panel-purple" id="seccion-partidos-rr" style="display: none;">
             
-            <!-- BARRA DE EXPORTACIÓN RESTAURADA Y CONECTADA -->
             <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 15px; flex-wrap:wrap; gap:12px;">
                 <h2 style="border:none; padding:0; margin:0;">📋 Rol Oficial de Partidos Guardado</h2>
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
@@ -232,7 +225,7 @@
         let jugadoresListos = [];
         let gruposGlobal = [];
         let partidosGeneradosRR = [];
-        let partidosCargadosGlobal = []; // Para los filtros de la barra superior
+        let partidosCargadosGlobal = [];
 
         const clasesColoresGrupo = ['gpo-cyan', 'gpo-purple', 'gpo-emerald', 'gpo-amber'];
 
@@ -308,7 +301,6 @@
             }
         }
 
-        // FUNCIONES DE LA BARRA DE EXPORTACIÓN Y FILTROS
         function poblarDropdownAgenda(partidos) {
             const select = document.getElementById('filtro-jugador-agenda');
             select.innerHTML = '<option value="">-- Todos los Jugadores --</option>';
@@ -372,7 +364,6 @@
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
-        // DIBUJO Y RECONSTRUCCIÓN DE GRUPOS
         function reconstruirGruposDesdePartidosBD(partidosBD) {
             const contenedor = document.getElementById('contenedor-grupos');
             contenedor.innerHTML = '';
@@ -504,6 +495,7 @@
             document.getElementById('btn-guardar-grupos').style.display = 'block';
         }
 
+        // CORRECCIÓN PRINCIPAL: SUMA DEL TIEMPO POR CADA BLOQUE DE PARTIDOS
         function recalcularRolPartidos() {
             partidosGeneradosRR = [];
             const horaInicioStr = document.getElementById('rr-hora-inicio').value || '09:00';
@@ -511,7 +503,6 @@
             const duracionPartido = parseInt(document.getElementById('rr-duracion-partido').value) || 30;
 
             let minsInicio = timeToMinutes(horaInicioStr);
-            let tiempoActual = minsInicio;
 
             gruposGlobal.forEach((grupo) => {
                 let arr = [...grupo.jugadores];
@@ -524,13 +515,20 @@
                         let j2 = arr[n - 1 - i];
 
                         if (j1 && j2) {
+                            let matchIndex = partidosGeneradosRR.length;
+                            let mesaAsignada = (matchIndex % numMesas) + 1;
+                            
+                            // Calcula cuántos bloques de partidos han pasado para sumar el tiempo
+                            let bloques = Math.floor(matchIndex / numMesas);
+                            let horaPartido = minutesToTimeStr(minsInicio + (bloques * duracionPartido));
+
                             partidosGeneradosRR.push({
                                 grupoNombre: grupo.nombre,
                                 ronda: r + 1,
                                 j1: j1,
                                 j2: j2,
-                                hora: minutesToTimeStr(tiempoActual),
-                                mesa: (partidosGeneradosRR.length % numMesas) + 1,
+                                hora: horaPartido,
+                                mesa: mesaAsignada,
                                 juez: 'Auto / Libre'
                             });
                         }
@@ -590,7 +588,7 @@
             const { error } = await clienteSupabase.from('partidos').insert(partidosInsertar);
 
             if (error) {
-                alert("Error de Supabase: " + error.message + "\n\n💡 RECUERDA: Ejecutar el código SQL en Supabase para asegurar que la tabla 'partidos' existe y tiene la columna 'hora'.");
+                alert("Error de Supabase: " + error.message);
                 btn.disabled = false;
                 btn.innerText = "💾 Guardar Acomodo y Partidos en Base de Datos";
                 return;
