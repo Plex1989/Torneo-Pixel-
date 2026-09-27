@@ -71,6 +71,8 @@
         
         select option { background-color: #0a0b10 !important; color: #ffffff !important; padding: 10px; }
 
+        .form-row input:focus, .form-row select:focus, select:focus { border-color: #38bdf8 !important; outline: none; box-shadow: 0 0 16px rgba(56, 189, 248, 0.55); }
+        
         .btn-console { 
             display: inline-flex;
             align-items: center;
@@ -100,25 +102,8 @@
         .btn-ws-style { border-color: rgba(34, 197, 94, 0.5); color: #4ade80; }
         .btn-ws-style:hover { background: #22c55e; color: #000000; border-color: #22c55e; box-shadow: 0 0 25px rgba(34, 197, 94, 0.85); }
         
-        .tab-filter {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #94a3b8;
-            padding: 6px 14px;
-            border-radius: 9999px;
-            font-size: 10px;
-            font-weight: 800;
-            cursor: pointer;
-            text-transform: uppercase;
-            transition: all 0.2s ease;
-        }
-
-        .tab-filter.active {
-            background: #06b6d4;
-            color: #000000;
-            border-color: #38bdf8;
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.5);
-        }
+        .tab-filter { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 6px 14px; border-radius: 9999px; font-size: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; transition: all 0.2s ease; }
+        .tab-filter.active { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 15px rgba(6, 182, 212, 0.5); }
 
         table { width: 100%; border-collapse: separate; border-spacing: 0 6px; margin-top: 10px; font-size: 12px; }
         th { color: #94a3b8; text-transform: uppercase; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; padding: 0 12px 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-align: left; }
@@ -173,7 +158,6 @@
             <button class="btn-console btn-ws-style" onclick="compartirLinkInscripcionWS()">📲 LINK DE INSCRIPCIÓN</button>
         </div>
 
-        <!-- MÓDULO MONITOREO DE PARTIDOS EN VIVO CON PESTAÑAS DE ESTADO -->
         <div class="panel-3d panel-cyan no-print" id="panel-monitoreo-vivo">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
                 <h2 style="border: none; margin: 0; padding: 0;">🔴 Monitoreo de Scoreboards</h2>
@@ -190,7 +174,6 @@
             </div>
         </div>
 
-        <!-- MÓDULO PROGRAMACIÓN POR CATEGORÍA -->
         <div class="panel-3d panel-cyan no-print">
             <h2>📅 Programación de Fechas, Horarios e Inscripción por Categoría</h2>
             <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px; font-weight: 600;">Configura el día, hora de llamada, mesas/sede y cuota de inscripción ($) guardados directamente en la nube:</p>
@@ -242,7 +225,6 @@
             </table>
         </div>
 
-        <!-- MÓDULO: ALERTA DE JUGADORES PENDIENTES DE RANKING -->
         <div class="panel-3d panel-amber no-print" id="modulo-pendientes-ranking" style="display:none; border-color: #f59e0b;">
             <h2 style="color: #fbbf24;">⚠️ Nuevos Jugadores (Esperando Ranking)</h2>
             <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px;">Estos jugadores se acaban de registrar en el portal. Asígnales sus puntos oficiales para que el sistema les libere sus categorías.</p>
@@ -392,7 +374,6 @@
             cargarPendientesRanking();
         }
 
-        // CONTROL DE PESTAÑAS DEL MONITOR
         function cambiarFiltroEstadoMonitor(nuevoEstado) {
             filtroEstadoMonitor = nuevoEstado;
             document.querySelectorAll('.tab-filter').forEach(btn => btn.classList.remove('active'));
@@ -463,10 +444,20 @@
                             </div>
                         </div>
 
-                        <a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-gold" style="width:100%; justify-content:center; margin-top:12px; font-size:10px; padding:6px; text-decoration:none;">🏓 Abrir / Controlar Scoreboard</a>
+                        <div style="display:flex; gap:6px; margin-top:12px;">
+                            <a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-gold" style="flex:1; justify-content:center; font-size:9px; padding:6px; text-decoration:none;">🏓 Juez</a>
+                            <a href="espectador.html?partido=${p.id}" target="_blank" class="btn-console btn-purple" style="flex:1; justify-content:center; font-size:9px; padding:6px; text-decoration:none;">👁️ Ver</a>
+                            <button onclick="compartirPartidoVivo(${p.id}, '${p.j1 ? p.j1.nombre : 'J1'}', '${p.j2 ? p.j2.nombre : 'J2'}')" class="btn-console btn-green" style="flex:1; justify-content:center; font-size:9px; padding:6px;">📲 WApp</button>
+                        </div>
                     </div>
                 `;
             });
+        }
+
+        function compartirPartidoVivo(id, p1, p2) {
+            const url = `${window.location.origin}/espectador.html?partido=${id}`;
+            const texto = `🔴 *TRANSMISIÓN EN VIVO*\n\n🏓 ${p1} vs ${p2}\n\nSigue el marcador en tiempo real aquí:\n👉 ${url}`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
         }
 
         async function cargarPendientesRanking() {
@@ -947,7 +938,6 @@
             alert('✅ Bono guardado.');
         }
 
-        // INICIALIZACIÓN
         cargarDatosIniciales(); 
         cargarPendientes(); 
         cargarCategorias(); 
