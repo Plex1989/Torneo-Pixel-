@@ -68,7 +68,7 @@
 
         table { width: 100%; border-collapse: separate; border-spacing: 0 6px; margin-top: 10px; font-size: 12px; }
         th { color: #94a3b8; text-transform: uppercase; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; padding: 0 12px 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-align: left; }
-        td { padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border-top: 1px solid rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02); color: #ffffff; }
+        td { padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border-top: 1px solid rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02); color: #ffffff; transition: all 0.3s ease; }
 
         .badge-mesa { background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(16,185,129,0.3); }
         .badge-grupo { background: rgba(6, 182, 212, 0.15); color: #38bdf8; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(6,182,212,0.3); }
@@ -227,7 +227,7 @@
         let gruposGlobal = [];
         let partidosGeneradosRR = [];
         let partidosCargadosGlobal = [];
-        let maxJuecesFaltantesSistema = 0; // Para saber cuántos inputs renderizar
+        let maxJuecesFaltantesSistema = 0; 
 
         const clasesColoresGrupo = ['gpo-cyan', 'gpo-purple', 'gpo-emerald', 'gpo-amber'];
 
@@ -618,12 +618,58 @@
             dibujarTablaPartidosGenerados(partidosGeneradosRR);
         }
 
+        // ==========================================
+        // DIBUJO DE TABLAS CON RESALTADO DE JUECES
+        // ==========================================
+
+        function dibujarTablaPartidosBD(partidosBD) {
+            const tbody = document.getElementById('tabla-partidos-rr');
+            tbody.innerHTML = '';
+            
+            const filtroActual = document.getElementById('filtro-jugador-agenda').value;
+
+            partidosBD.forEach(p => {
+                let horaStr = p.hora || '09:00 AM';
+                let juezTexto = p.juez || 'Comité / Libre';
+                
+                let esJuez = filtroActual && juezTexto.includes(filtroActual);
+                let esJ1 = filtroActual && p.j1 && p.j1.nombre === filtroActual;
+                let esJ2 = filtroActual && p.j2 && p.j2.nombre === filtroActual;
+
+                let juezBadge = esJuez 
+                    ? `<span style="background: #ef4444; color: #ffffff; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 1px; box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); display:inline-block;"><i class="fa-solid fa-gavel"></i> ¡TE TOCA ARBITRAR!</span>`
+                    : `<span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span>`;
+
+                let trStyle = esJuez ? 'background: rgba(239, 68, 68, 0.1);' : '';
+
+                tbody.innerHTML += `
+                    <tr style="${trStyle}">
+                        <td><strong>⏰ ${horaStr}</strong></td>
+                        <td><span class="badge-mesa">Mesa ${p.mesa || 1}</span></td>
+                        <td><span class="badge-grupo">Gpo ${p.grupo_nombre}</span></td>
+                        <td><strong style="${esJ1 ? 'color:#38bdf8; font-size:14px;' : ''}">${p.j1 ? p.j1.nombre : 'J1'}</strong></td>
+                        <td style="text-align:center;">VS</td>
+                        <td><strong style="${esJ2 ? 'color:#38bdf8; font-size:14px;' : ''}">${p.j2 ? p.j2.nombre : 'J2'}</strong></td>
+                        <td>${juezBadge}</td>
+                        <td class="no-print">
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                <a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 8px; font-size:9px; text-decoration:none;">🏓 Juez</a>
+                                <a href="espectador.html?partido=${p.id}" target="_blank" class="btn-console btn-purple" style="padding:4px 8px; font-size:9px; text-decoration:none;">👁️ Ver</a>
+                                <button onclick="compartirPartidoVivo(${p.id}, '${p.j1 ? p.j1.nombre : 'J1'}', '${p.j2 ? p.j2.nombre : 'J2'}')" class="btn-console btn-green" style="padding:4px 8px; font-size:9px;">📲 WApp</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
         function dibujarTablaPartidosGenerados(lista) {
             const tbody = document.getElementById('tabla-partidos-rr');
             tbody.innerHTML = '';
             document.getElementById('filtro-jugador-agenda').innerHTML = '<option value="">-- Guarda para habilitar filtros --</option>';
 
             lista.forEach((p) => {
+                let juezTexto = p.juez || 'Comité / Libre';
                 tbody.innerHTML += `
                     <tr>
                         <td><strong>⏰ ${p.hora}</strong></td>
@@ -632,60 +678,17 @@
                         <td><strong>${p.j1.nombre}</strong></td>
                         <td style="text-align:center;">VS</td>
                         <td><strong>${p.j2.nombre}</strong></td>
-                        <td><span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${p.juez}</span></td>
+                        <td><span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span></td>
                         <td class="no-print"><small style="color:#fbbf24; font-weight:700;">Guarda en BD para habilitar arbitraje</small></td>
                     </tr>
                 `;
             });
         }
 
-        async function guardarGruposBD() {
-            const idCategoria = document.getElementById('filtro-categoria').value;
-            const pinJueces = document.getElementById('rr-pin-jueces').value.trim() || '1234';
-            const btn = document.getElementById('btn-guardar-grupos');
+        // ==========================================
+        // UTILIDADES Y ALMACENAMIENTO
+        // ==========================================
 
-            if (!idCategoria || !confirm("¿Guardar acomodo y generar partidos para el Scoreboard en vivo?")) return;
-
-            btn.disabled = true;
-            btn.innerText = "Guardando en Supabase...";
-
-            try {
-                const { error: err1 } = await clienteSupabase.from('torneos').update({ pin_jueces: pinJueces }).eq('id', idTorneoActivo);
-                if (err1) throw new Error("Fallo al actualizar PIN del torneo: " + err1.message);
-
-                const { error: err2 } = await clienteSupabase.from('partidos').delete().eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo);
-                if (err2) throw new Error("Fallo al limpiar partidos antiguos: " + err2.message);
-
-                let partidosInsertar = partidosGeneradosRR.map(p => ({
-                    torneo_id: parseInt(idTorneoActivo),
-                    categoria_id: parseInt(idCategoria),
-                    grupo_nombre: p.grupoNombre,
-                    ronda_fase: `Ronda ${p.ronda}`,
-                    mesa: p.mesa,
-                    hora: p.hora,
-                    modo_juego: p.modoJuego || '3-5',
-                    jugador1_id: p.j1.id,
-                    jugador2_id: p.j2.id,
-                    juez: p.juez,
-                    estado: 'pendiente'
-                }));
-
-                const { error: err3 } = await clienteSupabase.from('partidos').insert(partidosInsertar);
-                if (err3) throw new Error("Fallo al insertar los partidos nuevos: " + err3.message);
-
-                alert("✅ ¡Partidos y PIN guardados con éxito en la Base de Datos!");
-                cargarEstadoCategoria();
-
-            } catch (error) {
-                alert("❌ Error crítico en Supabase:\n\n" + error.message);
-                console.error(error);
-            } finally {
-                btn.disabled = false;
-                btn.innerText = "💾 Guardar Acomodo Definitivo en Base de Datos";
-            }
-        }
-
-        // UTILS
         function poblarDropdownAgenda(partidos) {
             const select = document.getElementById('filtro-jugador-agenda');
             select.innerHTML = '<option value="">-- Todos los Jugadores --</option>';
@@ -767,71 +770,58 @@
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
-        function reconstruirGruposDesdePartidosBD(partidosBD) {
-            const contenedor = document.getElementById('contenedor-grupos');
-            contenedor.innerHTML = '';
-
-            let nombresGrupos = [...new Set(partidosBD.map(p => p.grupo_nombre))].sort();
-
-            nombresGrupos.forEach((nombreGpo, idx) => {
-                let partidosDelGrupo = partidosBD.filter(p => p.grupo_nombre === nombreGpo);
-                let mapaJugadores = new Map();
-
-                partidosDelGrupo.forEach(p => {
-                    if (p.j1) mapaJugadores.set(p.jugador1_id, p.j1.nombre);
-                    if (p.j2) mapaJugadores.set(p.jugador2_id, p.j2.nombre);
-                });
-
-                let claseColor = clasesColoresGrupo[idx % clasesColoresGrupo.length];
-                let html = `<div class="grupo-card ${claseColor}"><div class="grupo-header">Grupo ${nombreGpo}</div>`;
-
-                mapaJugadores.forEach((nombre) => {
-                    html += `
-                        <div class="jugador-item">
-                            <div class="jugador-info">
-                                <strong style="color:#ffffff;">${nombre}</strong>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                contenedor.innerHTML += html + `</div>`;
-            });
-        }
-
-        function dibujarTablaPartidosBD(partidosBD) {
-            const tbody = document.getElementById('tabla-partidos-rr');
-            tbody.innerHTML = '';
-
-            partidosBD.forEach(p => {
-                let horaStr = p.hora || '09:00 AM';
-                tbody.innerHTML += `
-                    <tr>
-                        <td><strong>⏰ ${horaStr}</strong></td>
-                        <td><span class="badge-mesa">Mesa ${p.mesa || 1}</span></td>
-                        <td><span class="badge-grupo">Gpo ${p.grupo_nombre}</span></td>
-                        <td><strong>${p.j1 ? p.j1.nombre : 'J1'}</strong></td>
-                        <td style="text-align:center;">VS</td>
-                        <td><strong>${p.j2 ? p.j2.nombre : 'J2'}</strong></td>
-                        <td><span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${p.juez || 'Comité'}</span></td>
-                        <td class="no-print">
-                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                                <a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 8px; font-size:9px; text-decoration:none;">🏓 Juez</a>
-                                <a href="espectador.html?partido=${p.id}" target="_blank" class="btn-console btn-purple" style="padding:4px 8px; font-size:9px; text-decoration:none;">👁️ Ver</a>
-                                <button onclick="compartirPartidoVivo(${p.id}, '${p.j1 ? p.j1.nombre : 'J1'}', '${p.j2 ? p.j2.nombre : 'J2'}')" class="btn-console btn-green" style="padding:4px 8px; font-size:9px;">📲 WApp</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
         async function rehacerSorteo() {
             const idCat = document.getElementById('filtro-categoria').value;
             if (!confirm("⚠️ ¿Deseas ELIMINAR el sorteo guardado de esta categoría y generar uno nuevo?")) return;
 
             await clienteSupabase.from('partidos').delete().eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo);
             cargarEstadoCategoria();
+        }
+
+        async function guardarGruposBD() {
+            const idCategoria = document.getElementById('filtro-categoria').value;
+            const pinJueces = document.getElementById('rr-pin-jueces').value.trim() || '1234';
+            const btn = document.getElementById('btn-guardar-grupos');
+
+            if (!idCategoria || !confirm("¿Guardar acomodo y generar partidos para el Scoreboard en vivo?")) return;
+
+            btn.disabled = true;
+            btn.innerText = "Guardando en Supabase...";
+
+            try {
+                const { error: err1 } = await clienteSupabase.from('torneos').update({ pin_jueces: pinJueces }).eq('id', idTorneoActivo);
+                if (err1) throw new Error("Fallo al actualizar PIN del torneo: " + err1.message);
+
+                const { error: err2 } = await clienteSupabase.from('partidos').delete().eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo);
+                if (err2) throw new Error("Fallo al limpiar partidos antiguos: " + err2.message);
+
+                let partidosInsertar = partidosGeneradosRR.map(p => ({
+                    torneo_id: parseInt(idTorneoActivo),
+                    categoria_id: parseInt(idCategoria),
+                    grupo_nombre: p.grupoNombre,
+                    ronda_fase: `Ronda ${p.ronda}`,
+                    mesa: p.mesa,
+                    hora: p.hora,
+                    modo_juego: p.modoJuego || '3-5',
+                    jugador1_id: p.j1.id,
+                    jugador2_id: p.j2.id,
+                    juez: p.juez,
+                    estado: 'pendiente'
+                }));
+
+                const { error: err3 } = await clienteSupabase.from('partidos').insert(partidosInsertar);
+                if (err3) throw new Error("Fallo al insertar los partidos nuevos: " + err3.message);
+
+                alert("✅ ¡Partidos y PIN guardados con éxito en la Base de Datos!");
+                cargarEstadoCategoria();
+
+            } catch (error) {
+                alert("❌ Error crítico en Supabase:\n\n" + error.message);
+                console.error(error);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "💾 Guardar Acomodo Definitivo en Base de Datos";
+            }
         }
 
         function timeToMinutes(t) { if(!t) return null; let [h, m] = t.split(':').map(Number); return h * 60 + m; }
