@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Mesas - Arbitraje Digital</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Orbitron:wght@700;800&display=swap');
+
+        body { 
+            font-family: 'Sora', sans-serif; 
+            margin: 0; 
+            padding: 20px; 
+            background-color: #04060a; 
+            color: #f8fafc; 
+            min-height: 100vh; 
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .header h1 { margin: 0; font-size: 20px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; font-weight: 800; }
+        .header p { margin: 5px 0 0 0; font-size: 11px; color: #06b6d4; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; }
+
+        .filtro-mesa {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-mesa-filter {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 800;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+        }
+
+        .btn-mesa-filter.active {
+            background: #06b6d4;
+            color: #000000;
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.5);
+        }
+
+        .grid-partidos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            max-width: 1100px;
+            margin: auto;
+        }
+
+        .card-partido {
+            background: rgba(10, 15, 26, 0.65);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-bottom: 4px solid #0e7490;
+            border-radius: 18px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .card-partido:hover {
+            transform: translateY(-3px);
+            border-bottom-color: #06b6d4;
+            box-shadow: 0 12px 30px rgba(6, 182, 212, 0.25);
+        }
+
+        .top-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .badge-mesa { background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.4); color: #38bdf8; padding: 4px 10px; border-radius: 9999px; font-weight: 800; font-size: 10px; text-transform: uppercase; }
+        .badge-estado { padding: 4px 10px; border-radius: 9999px; font-weight: 800; font-size: 9px; text-transform: uppercase; }
+        .est-pendiente { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; }
+        .est-curso { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; }
+        .est-fin { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; }
+
+        .duelo-box {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+
+        .jugador-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        .score-digital { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 800; color: #06b6d4; }
+
+        .btn-arbitrar {
+            width: 100%;
+            padding: 12px;
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.5);
+            color: #fbbf24;
+            border-radius: 9999px;
+            font-weight: 800;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-arbitrar:hover {
+            background: #f59e0b;
+            color: #000000;
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.6);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <p>Portal de Arbitraje Oficial</p>
+        <h1 id="nombre-torneo">CENTRAL DE MESAS</h1>
+    </div>
+
+    <div class="filtro-mesa" id="bar-mesas">
+        <button class="btn-mesa-filter active" onclick="filtrarMesa('todas')">Todas las Mesas</button>
+    </div>
+
+    <div class="grid-partidos" id="contenedor-partidos">
+        <div style="text-align:center; color:#64748b; grid-column:1/-1;">Cargando partidos activos...</div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://stytjtqshyupkyihurpd.supabase.co';
+        const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
+        const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
+        let todosLosPartidos = [];
+        let mesaFiltro = 'todas';
+
+        async function inicializar() {
+            const { data: torneo } = await clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).single();
+            if (torneo) document.getElementById('nombre-torneo').innerText = torneo.nombre;
+
+            cargarPartidos();
+
+            clienteSupabase
+                .channel('mesas-realtime')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => {
+                    cargarPartidos();
+                })
+                .subscribe();
+        }
+
+        async function cargarPartidos() {
+            const { data } = await clienteSupabase
+                .from('partidos')
+                .select('*, j1:jugador1_id(nombre), j2:jugador2_id(nombre), categorias(nombre)')
+                .eq('torneo_id', idTorneoActivo)
+                .order('mesa', { ascending: true })
+                .order('id', { ascending: true });
+
+            todosLosPartidos = data || [];
+            generarBotonesMesas();
+            dibujarPartidos();
+        }
+
+        function generarBotonesMesas() {
+            const bar = document.getElementById('bar-mesas');
+            let mesasUnicas = [...new Set(todosLosPartidos.map(p => p.mesa))].sort((a,b) => a-b);
+
+            let html = `<button class="btn-mesa-filter ${mesaFiltro === 'todas' ? 'active' : ''}" onclick="filtrarMesa('todas')">Todas</button>`;
+            mesasUnicas.forEach(m => {
+                html += `<button class="btn-mesa-filter ${mesaFiltro == m ? 'active' : ''}" onclick="filtrarMesa(${m})">Mesa ${m}</button>`;
+            });
+            bar.innerHTML = html;
+        }
+
+        function filtrarMesa(m) {
+            mesaFiltro = m;
+            generarBotonesMesas();
+            dibujarPartidos();
+        }
+
+        function dibujarPartidos() {
+            const contenedor = document.getElementById('contenedor-partidos');
+            contenedor.innerHTML = '';
+
+            let filtrados = mesaFiltro === 'todas' ? todosLosPartidos : todosLosPartidos.filter(p => p.mesa == mesaFiltro);
+
+            if (filtrados.length === 0) {
+                contenedor.innerHTML = '<div style="text-align:center; color:#64748b; grid-column:1/-1;">No hay partidos asignados a esta mesa.</div>';
+                return;
+            }
+
+            filtrados.forEach(p => {
+                let badgeEst = p.estado === 'en_curso' ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : 
+                              (p.estado === 'finalizado' ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
+
+                contenedor.innerHTML += `
+                    <div class="card-partido">
+                        <div class="top-info">
+                            <span class="badge-mesa">MESA ${p.mesa}</span>
+                            <span style="font-size:10px; color:#94a3b8; font-weight:700;">${p.categorias ? p.categorias.nombre : ''} • Gpo ${p.grupo_nombre}</span>
+                            ${badgeEst}
+                        </div>
+
+                        <div class="duelo-box">
+                            <div class="jugador-row">
+                                <span style="color:#ffffff;">${p.j1 ? p.j1.nombre : 'J1'}</span>
+                                <span class="score-digital">${p.puntos_j1} (${p.sets_j1})</span>
+                            </div>
+                            <div class="jugador-row" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:4px; padding-top:6px;">
+                                <span style="color:#ffffff;">${p.j2 ? p.j2.nombre : 'J2'}</span>
+                                <span class="score-digital" style="color:#d946ef;">${p.puntos_j2} (${p.sets_j2})</span>
+                            </div>
+                        </div>
+
+                        <button class="btn-arbitrar" onclick="abrirScoreboardJuez(${p.id})">🏓 Arbitrar Partido</button>
+                    </div>
+                `;
+            });
+        }
+
+        function abrirScoreboardJuez(partidoId) {
+            let pin = prompt("🔒 Ingrese el PIN de Juez de Mesa (Por defecto: 1234):");
+            if (pin === "1234") {
+                window.open(`juez.html?partido=${partidoId}`, '_self');
+            } else if (pin !== null) {
+                alert("❌ PIN incorrecto.");
+            }
+        }
+
+        inicializar();
+    </script>
+</body>
+</html>
