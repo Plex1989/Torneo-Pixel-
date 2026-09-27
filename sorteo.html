@@ -242,14 +242,6 @@
             const select = document.getElementById('filtro-categoria');
             select.innerHTML = '<option value="">-- Selecciona una categoría --</option>';
             if (data) data.forEach(cat => select.innerHTML += `<option value="${cat.id}">${cat.nombre}</option>`);
-
-            // MEMORIA FLASH DE CATEGORÍA
-            const ultimaCat = localStorage.getItem('categoria_guardada_reciente');
-            if (ultimaCat) {
-                select.value = ultimaCat;
-                localStorage.removeItem('categoria_guardada_reciente');
-                cargarEstadoCategoria();
-            }
         }
 
         async function cargarEstadoCategoria() {
@@ -283,7 +275,7 @@
 
             const { data: partidosBD } = await clienteSupabase
                 .from('partidos')
-                .select('*, j1:jugador1_id(nombre), j2:jugador2_id(nombre)')
+                .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking)')
                 .eq('categoria_id', idCat)
                 .eq('torneo_id', idTorneoActivo)
                 .order('id', { ascending: true });
@@ -310,6 +302,10 @@
                 seccionPartidos.style.display = 'none';
             }
         }
+
+        // ==========================================
+        // LÓGICA DE ALGORITMO ROUND ROBIN + JUECES
+        // ==========================================
 
         function algoritmoRoundRobin(jugadoresArr) {
             let arr = [...jugadoresArr];
@@ -621,6 +617,10 @@
             dibujarTablaPartidosGenerados(partidosGeneradosRR);
         }
 
+        // ==========================================
+        // DIBUJO DE TABLAS CON RESALTADO DE JUECES
+        // ==========================================
+
         function dibujarTablaPartidosBD(partidosBD) {
             const tbody = document.getElementById('tabla-partidos-rr');
             tbody.innerHTML = '';
@@ -683,6 +683,10 @@
                 `;
             });
         }
+
+        // ==========================================
+        // UTILIDADES Y ALMACENAMIENTO (SIN RECARGAR PAGINA)
+        // ==========================================
 
         function poblarDropdownAgenda(partidos) {
             const select = document.getElementById('filtro-jugador-agenda');
@@ -765,6 +769,40 @@
             document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
+        function reconstruirGruposDesdePartidosBD(partidosBD) {
+            const contenedor = document.getElementById('contenedor-grupos');
+            contenedor.innerHTML = '';
+
+            let nombresGrupos = [...new Set(partidosBD.map(p => p.grupo_nombre))].sort();
+
+            nombresGrupos.forEach((nombreGpo, idx) => {
+                let partidosDelGrupo = partidosBD.filter(p => p.grupo_nombre === nombreGpo);
+                let mapaJugadores = new Map();
+
+                partidosDelGrupo.forEach(p => {
+                    if (p.j1 && p.jugador1_id) mapaJugadores.set(p.jugador1_id, p.j1);
+                    if (p.j2 && p.jugador2_id) mapaJugadores.set(p.jugador2_id, p.j2);
+                });
+
+                let claseColor = clasesColoresGrupo[idx % clasesColoresGrupo.length];
+                let html = `<div class="grupo-card ${claseColor}"><div class="grupo-header">Grupo ${nombreGpo}</div>`;
+
+                mapaJugadores.forEach((jObj) => {
+                    html += `
+                        <div class="jugador-item">
+                            <div class="jugador-info">
+                                <strong style="color:#ffffff;">${jObj.nombre}</strong>
+                                <div><span class="tag-club">${jObj.club || 'Sin Club'}</span></div>
+                                <span style="font-size:10px; color:#94a3b8;">${jObj.puntos_ranking || 0} pts</span>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                contenedor.innerHTML += html + `</div>`;
+            });
+        }
+
         async function rehacerSorteo() {
             const idCat = document.getElementById('filtro-categoria').value;
             if (!confirm("⚠️ ¿Deseas ELIMINAR el sorteo guardado de esta categoría y generar uno nuevo?")) return;
@@ -773,6 +811,7 @@
             cargarEstadoCategoria();
         }
 
+        // GUARDADO A PRUEBA DE FALLOS SIN RECARGAR PAGINA
         async function guardarGruposBD() {
             const idCategoria = document.getElementById('filtro-categoria').value;
             const pinJueces = document.getElementById('rr-pin-jueces').value.trim() || '1234';
@@ -784,12 +823,15 @@
             btn.innerText = "Guardando en Supabase...";
 
             try {
-                const { error: err1 } = await clienteSupabase.from('torneos').update({ pin_jueces: pinJueces }).eq('id', idTorneoActivo);
-                if (err1) throw new Error("Fallo al actualizar PIN: " + err1.message);
+                // Actualiza el PIN del torneo
+                const req1 = await clienteSupabase.from('torneos').update({ pin_jueces: pinJueces }).eq('id', idTorneoActivo);
+                if (req1.error) throw new Error("Fallo al actualizar PIN: " + req1.error.message);
 
-                const { error: err2 } = await clienteSupabase.from('partidos').delete().eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo);
-                if (err2) throw new Error("Fallo al limpiar partidos antiguos: " + err2.message);
+                // Borra partidos viejos de la categoría
+                const req2 = await clienteSupabase.from('partidos').delete().eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo);
+                if (req2.error) throw new Error("Fallo al limpiar partidos antiguos: " + req2.error.message);
 
+                // Prepara e Inserta la nueva lista
                 let partidosInsertar = partidosGeneradosRR.map(p => ({
                     torneo_id: parseInt(idTorneoActivo),
                     categoria_id: parseInt(idCategoria),
@@ -804,15 +846,18 @@
                     estado: 'pendiente'
                 }));
 
-                const { error: err3 } = await clienteSupabase.from('partidos').insert(partidosInsertar);
-                if (err3) throw new Error("Fallo al insertar los partidos nuevos: " + err3.message);
+                const req3 = await clienteSupabase.from('partidos').insert(partidosInsertar);
+                if (req3.error) throw new Error("Fallo al insertar los partidos nuevos: " + req3.error.message);
 
                 alert("✅ ¡Partidos y PIN guardados con éxito en la Base de Datos!");
-                localStorage.setItem('categoria_guardada_reciente', idCategoria);
-                window.location.reload(); 
+                
+                // Refresca la interfaz desde DB sin recargar la página
+                await cargarEstadoCategoria();
 
             } catch (error) {
-                alert("❌ Error crítico en Supabase:\n\n" + error.message);
+                // Si algo falla, lo notifica sin congelarse
+                alert("❌ Error crítico en Supabase:\n\n" + error.message + "\n\n(Verifica que hayas ejecutado el código SQL en la base de datos)");
+            } finally {
                 btn.disabled = false;
                 btn.innerText = "💾 Guardar Acomodo Definitivo en Base de Datos";
             }
