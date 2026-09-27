@@ -24,11 +24,15 @@
         .name-p2 { background-color: #c026d3; box-shadow: 0 6px 0 #701a75; margin-bottom: 6px; }
         .glass-dark { background: rgba(10, 15, 26, 0.85); backdrop-filter: blur(20px); }
         
-        .tab-filter { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 8px 14px; border-radius: 9999px; font-size: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; transition: all 0.2s ease; white-space: nowrap; }
+        .tab-filter { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 8px 14px; border-radius: 9999px; font-size: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; transition: all 0.2s ease; white-space: nowrap; flex-shrink: 0; }
         .tab-filter.active { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 15px rgba(6, 182, 212, 0.5); }
         
-        /* Sticky Header (Se queda pegado arriba) */
+        /* Sticky Header */
         .sticky-header { position: sticky; top: 0; z-index: 40; background: rgba(4, 6, 10, 0.95); backdrop-filter: blur(15px); padding: 15px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+
+        /* Ocultar barra de scroll para que se vea como app nativa */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body>
@@ -51,7 +55,7 @@
             const [h2hHistory, setH2hHistory] = useState([]);
             const [lobbyMatches, setLobbyMatches] = useState([]);
             const [errorMsg, setErrorMsg] = useState(null);
-            const [estadoFiltro, setEstadoFiltro] = useState('en_curso');
+            const [estadoFiltro, setEstadoFiltro] = useState('en_curso'); // Pestaña por defecto
 
             const [p1, setP1] = useState("");
             const [p2, setP2] = useState("");
@@ -87,7 +91,7 @@
                 window.history.pushState({}, '', `?torneo=${partidoData?.torneo_id || torneoId}`);
                 
                 if (document.exitFullscreen && document.fullscreenElement) document.exitFullscreen().catch(()=>{});
-                else if (document.webkitExitFullscreen) document.webkitExitFullscreen().catch(()=>{});
+                else if (document.webkitExitFullscreen && document.fullscreenElement) document.webkitExitFullscreen().catch(()=>{});
             };
 
             const getApellido = (nombreCompleto) => {
@@ -110,7 +114,6 @@
                 window.speechSynthesis.speak(utterance);
             };
 
-            // UTILIDAD PARA ORDENAR HORARIOS
             const timeStringToMinutes = (timeStr) => {
                 if (!timeStr) return 0;
                 let match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
@@ -127,13 +130,14 @@
                 let channel;
 
                 if (!activePartidoId) {
-                    // MODO LOBBY (CARTELERA SILENCIOSA)
                     setView('loading');
                     async function fetchLobby() {
                         const { data } = await clienteSupabase
                             .from('partidos')
                             .select('*, j1:jugador1_id(nombre), j2:jugador2_id(nombre), categorias(nombre)')
-                            .eq('torneo_id', torneoId);
+                            .eq('torneo_id', torneoId)
+                            .order('hora', { ascending: true })
+                            .order('mesa', { ascending: true });
                         
                         setLobbyMatches(data || []);
                         setView('lobby');
@@ -145,9 +149,8 @@
                         .subscribe();
 
                 } else {
-                    // MODO PARTIDO (VISTA INDIVIDUAL ACTIVA)
                     setView('loading');
-                    setWinner(null); // Reset winner state on entry
+                    setWinner(null); 
                     
                     async function fetchMatch() {
                         const { data, error } = await clienteSupabase
@@ -231,7 +234,7 @@
             if (view === 'error') return <div className="min-h-screen flex items-center justify-center text-rose-500 font-bold uppercase">{errorMsg}</div>;
 
             // ==========================================
-            // VISTA: LOBBY CARTELERA DE PARTIDOS (SILENCIOSO)
+            // VISTA CARTELERA
             // ==========================================
             if (view === 'lobby') {
                 
@@ -240,20 +243,19 @@
                 else if (estadoFiltro === 'pendiente') filtrados = lobbyMatches.filter(p => p.estado === 'pendiente');
                 else if (estadoFiltro === 'finalizado') filtrados = lobbyMatches.filter(p => p.estado === 'finalizado');
 
-                // Ordenar cronológicamente para que 1:30 PM no salga antes de 9:00 AM
                 filtrados.sort((a, b) => timeStringToMinutes(a.hora) - timeStringToMinutes(b.hora));
 
                 return (
                     <div className="min-h-screen bg-[#04060a] overflow-x-hidden text-white pb-10">
                         
-                        {/* ENCABEZADO STICKY QUE NO SE PIERDE AL HACER SCROLL */}
                         <div className="sticky-header">
                             <div className="text-center mb-4">
                                 <div className="text-rose-500 font-bold uppercase tracking-widest text-[9px] mb-1 animate-pulse">🔴 Transmisiones Oficiales</div>
                                 <h1 className="text-lg font-black text-cyan-400 uppercase tracking-widest">Cartelera</h1>
                             </div>
                             
-                            <div className="flex justify-center gap-2 px-4 overflow-x-auto hide-scrollbar">
+                            {/* AQUÍ ESTÁ EL ARREGLO: justify-start para móviles y padding, quita el problema de elementos ocultos */}
+                            <div className="flex justify-start sm:justify-center gap-2 px-6 overflow-x-auto no-scrollbar pb-2">
                                 <button className={`tab-filter ${estadoFiltro === 'en_curso' ? 'active' : ''}`} onClick={() => setEstadoFiltro('en_curso')}>🔴 En Vivo</button>
                                 <button className={`tab-filter ${estadoFiltro === 'pendiente' ? 'active' : ''}`} onClick={() => setEstadoFiltro('pendiente')}>⏳ Pendientes</button>
                                 <button className={`tab-filter ${estadoFiltro === 'finalizado' ? 'active' : ''}`} onClick={() => setEstadoFiltro('finalizado')}>🏁 Finalizados</button>
@@ -263,7 +265,7 @@
                         
                         <div className="p-4 max-w-3xl mx-auto space-y-4">
                             {filtrados.length === 0 ? (
-                                <div className="text-center text-zinc-500 font-bold text-xs uppercase tracking-widest italic py-8 border border-white/5 rounded-2xl bg-white/5 mt-10">No hay partidos activos en este momento.</div>
+                                <div className="text-center text-zinc-500 font-bold text-xs uppercase tracking-widest italic py-8 border border-white/5 rounded-2xl bg-white/5 mt-10">No hay partidos en esta categoría.</div>
                             ) : (
                                 filtrados.map(p => {
                                     let estadoColor = p.estado === 'en_curso' ? '#34d399' : (p.estado === 'finalizado' ? '#94a3b8' : '#fbbf24');
@@ -298,6 +300,7 @@
                                                     <span className="text-xs text-zinc-500 font-bold">({p.sets_j2})</span>
                                                 </div>
                                             </div>
+                                            
                                         </div>
                                     )
                                 })
@@ -307,7 +310,7 @@
                 )
             }
 
-            // VISTA: H2H PÚBLICO (PREVIO AL PARTIDO)
+            // VISTA: H2H PÚBLICO
             if (view === 'h2h') {
                 let p1Wins = 0, p2Wins = 0;
                 h2hHistory.forEach(h => {
@@ -363,17 +366,23 @@
                 )
             }
 
-            // VISTA: SCOREBOARD INDIVIDUAL EN VIVO
+            // VISTA: SCOREBOARD PÚBLICO EN VIVO (CON BOTÓN VOLVER)
             return (
                 <div className="fixed inset-0 flex flex-col z-50 bg-[#04060a] overflow-hidden">
-                    <div className="glass-dark py-3 px-6 flex justify-between items-center text-white shrink-0 z-20 border-b border-white/5">
-                        <div>
-                            <span className="text-[10px] font-bold tracking-[0.2em] text-rose-500 uppercase animate-pulse">🔴 EN VIVO • MESA {partidoData?.mesa || 1}</span>
-                            <div className="text-[9px] text-cyan-400 font-bold uppercase mt-1">Formato: {mode === '2-3' ? '2 de 3 Sets' : (mode === '3-5' ? '3 de 5 Sets' : '4 de 7 Sets')}</div>
+                    
+                    {/* ENCABEZADO MEJORADO CON BOTÓN DE REGRESAR */}
+                    <div className="glass-dark py-2 px-3 flex justify-between items-center text-white shrink-0 z-20 border-b border-white/5">
+                        <button onClick={volverACartelera} className="flex items-center gap-1 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white transition-colors shrink-0">
+                            <i className="fa-solid fa-arrow-left"></i> <span className="hidden sm:inline ml-1">Volver</span>
+                        </button>
+
+                        <div className="text-center flex-1 px-2">
+                            <span className="text-[10px] font-bold tracking-[0.2em] text-rose-500 uppercase animate-pulse block truncate">🔴 MESA {partidoData?.mesa || 1}</span>
+                            <div className="text-[8px] text-cyan-400 font-bold uppercase mt-0.5 truncate">Formato: {mode === '2-3' ? '2 de 3' : (mode === '3-5' ? '3 de 5' : '4 de 7')} Sets</div>
                         </div>
 
-                        <button onClick={() => setIsMuted(!isMuted)} className={`flex items-center gap-2 px-3 py-1.5 rounded-full font-bold text-[9px] uppercase tracking-widest transition-colors ${isMuted ? 'bg-rose-500/20 text-rose-500 border border-rose-500/50' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'}`}>
-                            {isMuted ? <><i className="fa-solid fa-volume-xmark"></i> Voz Apagada</> : <><i className="fa-solid fa-volume-high"></i> Voz Encendida</>}
+                        <button onClick={() => setIsMuted(!isMuted)} className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors shrink-0 ${isMuted ? 'bg-rose-500/20 text-rose-500 border border-rose-500/50' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'}`}>
+                            {isMuted ? <i className="fa-solid fa-volume-xmark"></i> : <i className="fa-solid fa-volume-high"></i>}
                         </button>
                     </div>
 
@@ -384,7 +393,7 @@
                                 <div className="w-10"></div> 
                                 <div className="flex flex-col items-center">
                                     <h2 className="text-white text-center font-extrabold text-xl landscape:text-2xl tracking-wider uppercase leading-none">{p1}</h2>
-                                    <span className="text-[10px] font-black text-cyan-200 mt-1 uppercase tracking-widest">Sets Ganados: {sets1}</span>
+                                    <span className="text-[10px] font-black text-cyan-200 mt-1 uppercase tracking-widest">Sets: {sets1}</span>
                                 </div>
                                 <div className="w-10 h-10 bg-black/30 border border-white/20 rounded-lg flex items-center justify-center text-white font-digital font-bold text-xl">{sets1}</div>
                             </div>
@@ -403,7 +412,7 @@
                                 <div className="w-10 h-10 bg-black/30 border border-white/20 rounded-lg flex items-center justify-center text-white font-digital font-bold text-xl">{sets2}</div>
                                 <div className="flex flex-col items-center">
                                     <h2 className="text-white text-center font-extrabold text-xl landscape:text-2xl tracking-wider uppercase leading-none">{p2}</h2>
-                                    <span className="text-[10px] font-black text-fuchsia-200 mt-1 uppercase tracking-widest">Sets Ganados: {sets2}</span>
+                                    <span className="text-[10px] font-black text-fuchsia-200 mt-1 uppercase tracking-widest">Sets: {sets2}</span>
                                 </div>
                                 <div className="w-10"></div>
                             </div>
@@ -413,10 +422,10 @@
                         </div>
                     </div>
 
-                    {/* CAJA DESGLOSE DE SETS ANTERIORES EN EL ESPECTADOR */}
+                    {/* HISTORIAL DE SETS */}
                     {historialSets.length > 0 && (
                         <div className="bg-slate-900/90 border-t border-white/10 p-3 flex justify-center items-center gap-3 flex-wrap shrink-0">
-                            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Historial de Sets:</span>
+                            <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Historial:</span>
                             {historialSets.map((s, idx) => (
                                 <div key={idx} className="bg-black/50 border border-white/10 px-3 py-1.5 rounded-lg text-center font-semibold text-xs">
                                     <span className="text-zinc-500 text-[8px] block font-bold uppercase mb-0.5">Set {s.numSet}</span>
@@ -427,10 +436,6 @@
                             ))}
                         </div>
                     )}
-
-                    <div className="bg-black py-3 px-6 flex justify-center shrink-0 border-t border-white/5">
-                        <button onClick={volverACartelera} className="text-zinc-500 font-bold text-[10px] uppercase tracking-widest hover:text-white transition-colors"><i className="fa-solid fa-list mr-2"></i> Volver a Cartelera Completa</button>
-                    </div>
 
                     {winner && (
                         <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[600] flex flex-col items-center justify-center text-center p-6 animate-in zoom-in duration-500">
