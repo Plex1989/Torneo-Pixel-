@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sorteo y Rol de Partidos - Pixel Studio</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        if (localStorage.getItem('admin_autenticado') !== 'true') {
+            alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
+            window.location.href = "torneos.html";
+        }
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
 
@@ -78,6 +84,7 @@
 
         .btn-console:hover { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 25px rgba(6, 182, 212, 0.85); transform: translateY(-2px); }
         .btn-gold:hover { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 25px rgba(245, 158, 11, 0.85); }
+        .btn-purple:hover { background: #8b5cf6; color: #ffffff; border-color: #c084fc; box-shadow: 0 0 25px rgba(139, 92, 246, 0.85); }
         .btn-green:hover { background: #10b981; color: #000000; border-color: #34d399; box-shadow: 0 0 25px rgba(16, 185, 129, 0.85); }
         .btn-red:hover { background: #ef4444; color: #ffffff; border-color: #f87171; box-shadow: 0 0 25px rgba(239, 68, 68, 0.85); }
         .btn-ws-style { border-color: rgba(34, 197, 94, 0.5); color: #4ade80; }
@@ -123,7 +130,8 @@
             <a href="torneos.html" class="nav-btn">Mis Torneos</a>
             <a href="admin.html" class="nav-btn">Administrador</a>
             <a href="sorteo.html" class="nav-btn active">Sorteo y Rol</a>
-            <a href="mesas.html" target="_blank" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Central de Mesas</a>
+            <a href="mesas.html" target="_blank" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
+            <a href="espectador.html" target="_blank" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador</a>
             <a href="index.html" target="_blank" class="nav-btn public">Portal Público</a>
         </div>
     </nav>
@@ -204,7 +212,7 @@
                         <th>Jugador 1</th>
                         <th style="text-align:center;">VS</th>
                         <th>Jugador 2</th>
-                        <th class="no-print">Estatus / Scoreboard</th>
+                        <th class="no-print" style="width: 200px;">Estatus / Scoreboard</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-partidos-rr">
@@ -324,6 +332,12 @@
             dibujarTablaPartidosBD(filtrados);
         }
 
+        function compartirPartidoVivo(id, p1, p2) {
+            const url = `${window.location.origin}/espectador.html?partido=${id}`;
+            const texto = `🔴 *TRANSMISIÓN EN VIVO*\n\n🏓 ${p1} vs ${p2}\n\nSigue el marcador en tiempo real aquí:\n👉 ${url}`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+
         function compartirAgendaWhatsApp() {
             const nombre = document.getElementById('filtro-jugador-agenda').value;
             let texto = `🏓 *ROL DE PARTIDOS - ${torneoActivoObj ? torneoActivoObj.nombre : ''}* 🏓\n\n`;
@@ -339,7 +353,7 @@
             if(lista.length === 0) { alert("No hay partidos para enviar."); return; }
 
             lista.forEach(p => {
-                texto += `⏰ ${p.hora || '09:00'} | Mesa ${p.mesa}\n` +
+                texto += `⏰ ${p.hora || '09:00 AM'} | Mesa ${p.mesa}\n` +
                          `   ${p.j1 ? p.j1.nombre : 'J1'} vs ${p.j2 ? p.j2.nombre : 'J2'}\n\n`;
             });
 
@@ -355,7 +369,7 @@
             if (nombre) lista = lista.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre));
 
             lista.forEach(p => {
-                csv += `"${p.hora || '09:00'}","Mesa ${p.mesa}","Gpo ${p.grupo_nombre}","${p.j1 ? p.j1.nombre : ''}","${p.j2 ? p.j2.nombre : ''}"\n`;
+                csv += `"${p.hora || '09:00 AM'}","Mesa ${p.mesa}","Gpo ${p.grupo_nombre}","${p.j1 ? p.j1.nombre : ''}","${p.j2 ? p.j2.nombre : ''}"\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a"); 
@@ -401,7 +415,7 @@
             tbody.innerHTML = '';
 
             partidosBD.forEach(p => {
-                let horaStr = p.hora || '09:00';
+                let horaStr = p.hora || '09:00 AM';
                 tbody.innerHTML += `
                     <tr>
                         <td><strong>⏰ ${horaStr}</strong></td>
@@ -411,7 +425,11 @@
                         <td style="text-align:center;">VS</td>
                         <td><strong>${p.j2 ? p.j2.nombre : 'J2'}</strong></td>
                         <td class="no-print">
-                            <a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 10px; font-size:9px; text-decoration:none;">🏓 Arbitrar</a>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                <a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 8px; font-size:9px; text-decoration:none;">🏓 Juez</a>
+                                <a href="espectador.html?partido=${p.id}" target="_blank" class="btn-console btn-purple" style="padding:4px 8px; font-size:9px; text-decoration:none;">👁️ Ver</a>
+                                <button onclick="compartirPartidoVivo(${p.id}, '${p.j1 ? p.j1.nombre : 'J1'}', '${p.j2 ? p.j2.nombre : 'J2'}')" class="btn-console btn-green" style="padding:4px 8px; font-size:9px;">📲 WApp</button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -495,7 +513,6 @@
             document.getElementById('btn-guardar-grupos').style.display = 'block';
         }
 
-        // CORRECCIÓN PRINCIPAL: SUMA DEL TIEMPO POR CADA BLOQUE DE PARTIDOS
         function recalcularRolPartidos() {
             partidosGeneradosRR = [];
             const horaInicioStr = document.getElementById('rr-hora-inicio').value || '09:00';
@@ -518,7 +535,6 @@
                             let matchIndex = partidosGeneradosRR.length;
                             let mesaAsignada = (matchIndex % numMesas) + 1;
                             
-                            // Calcula cuántos bloques de partidos han pasado para sumar el tiempo
                             let bloques = Math.floor(matchIndex / numMesas);
                             let horaPartido = minutesToTimeStr(minsInicio + (bloques * duracionPartido));
 
@@ -599,7 +615,15 @@
         }
 
         function timeToMinutes(t) { let [h, m] = t.split(':').map(Number); return h * 60 + m; }
-        function minutesToTimeStr(m) { let hrs = Math.floor(m / 60) % 24, mins = m % 60; return `${hrs % 12 || 12}:${mins < 10 ? '0' + mins : mins} ${hrs >= 12 ? 'PM' : 'AM'}`; }
+        
+        function minutesToTimeStr(m) { 
+            let hrs = Math.floor(m / 60) % 24;
+            let mins = m % 60; 
+            let ampm = hrs >= 12 ? 'PM' : 'AM';
+            let displayHrs = hrs % 12 || 12;
+            let hrsStr = displayHrs < 10 ? '0' + displayHrs : displayHrs;
+            return `${hrsStr}:${mins < 10 ? '0' + mins : mins} ${ampm}`; 
+        }
 
         inicializarSorteo();
     </script>
