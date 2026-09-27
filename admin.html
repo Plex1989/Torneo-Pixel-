@@ -179,7 +179,7 @@
             <button class="btn-console btn-ws-style" onclick="compartirLinkInscripcionWS()">📲 LINK DE INSCRIPCIÓN</button>
         </div>
 
-        <!-- MÓDULO DE FECHAS, HORARIOS, LUGARES E INSCRIPCIÓN SINCRONIZADO EN SUPABASE -->
+        <!-- MÓDULO DE FECHAS, HORARIOS, LUGARES E INSCRIPCIÓN -->
         <div class="panel-3d panel-cyan no-print">
             <h2>📅 Programación de Fechas, Horarios e Inscripción por Categoría</h2>
             <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px; font-weight: 600;">Configura el día, hora de llamada, mesas/sede y cuota de inscripción ($) guardados directamente en la nube:</p>
@@ -231,6 +231,16 @@
             </table>
         </div>
 
+        <!-- MÓDULO NUEVO: ALERTA DE JUGADORES PENDIENTES DE RANKING -->
+        <div class="panel-3d panel-amber no-print" id="modulo-pendientes-ranking" style="display:none; border-color: #f59e0b;">
+            <h2 style="color: #fbbf24;">⚠️ Nuevos Jugadores (Esperando Ranking)</h2>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px;">Estos jugadores se acaban de registrar en el portal. Asígnales sus puntos oficiales para que el sistema les libere sus categorías.</p>
+            <table>
+                <thead><tr><th>Jugador</th><th>Club / Entidad</th><th>Asignar Puntos</th><th style="width: 100px;">Acción</th></tr></thead>
+                <tbody id="tabla-pendientes-ranking"></tbody>
+            </table>
+        </div>
+
         <div class="panel-3d panel-purple no-print">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 14px; flex-wrap: wrap; gap: 12px;">
                 <h2 style="border: none; margin: 0; padding: 0;">👥 Base de Datos de Jugadores</h2>
@@ -242,7 +252,7 @@
                 </div>
             </div>
             
-            <p style="font-size: 10px; color: #64748b; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; font-weight: 800;">Escribe un nombre para buscar y editar:</p>
+            <p style="font-size: 10px; color: #64748b; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; font-weight: 800;">Escribe un nombre para buscar, editar puntos o consultar su NIP:</p>
             
             <div class="form-row">
                 <input type="text" id="buscador-jugador" placeholder="🔎 Buscar por nombre..." onkeyup="filtrarYAutoSeleccionarAdmin()" style="max-width: 280px;">
@@ -367,6 +377,47 @@
             generarRankingPorCategorias();
             cargarInscritosEnVivo();
             dibujarTablaProgramacionCategorias();
+            cargarPendientesRanking();
+        }
+
+        async function cargarPendientesRanking() {
+            const { data } = await clienteSupabase.from('jugadores').select('*').eq('puntos_ranking', 0).order('created_at', { ascending: false });
+            const modulo = document.getElementById('modulo-pendientes-ranking');
+            const tbody = document.getElementById('tabla-pendientes-ranking');
+
+            if (!data || data.length === 0) {
+                modulo.style.display = 'none';
+                return;
+            }
+
+            modulo.style.display = 'block';
+            tbody.innerHTML = '';
+            
+            data.forEach(j => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong style="color:#ffffff; font-size:12px;">${j.nombre}</strong></td>
+                        <td style="color:#94a3b8; font-size:11px; font-weight: 600;">${j.club || 'Sin Club'}</td>
+                        <td><input type="number" id="input-ranking-${j.id}" placeholder="Puntos" style="width:90px; padding:8px; text-align:center;"></td>
+                        <td><button class="btn-console btn-gold" style="padding:6px 12px; font-size:9px;" onclick="asignarRankingInicial(${j.id}, '${j.nombre}')">Guardar</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function asignarRankingInicial(idJugador, nombreJugador) {
+            const pts = parseInt(document.getElementById(`input-ranking-${idJugador}`).value);
+            if (!pts || pts <= 0) {
+                alert("Por favor, ingresa un puntaje válido mayor a 0 para clasificarlo.");
+                return;
+            }
+
+            const { error } = await clienteSupabase.from('jugadores').update({ puntos_ranking: pts }).eq('id', idJugador);
+            
+            if (error) { alert("Error al asignar puntos."); return; }
+
+            alert(`✅ Ranking asignado a ${nombreJugador}. Ya puede inscribirse en su categoría.`);
+            cargarDatosIniciales();
         }
 
         function dibujarTablaProgramacionCategorias() {
@@ -807,7 +858,7 @@
             alert('✅ Bono guardado.');
         }
 
-        cargarDatosIniciales(); cargarPendientes(); cargarCategorias(); cargarReglas(); cargarBono();
+        cargarDatosIniciales();
     </script>
 </body>
 </html>
