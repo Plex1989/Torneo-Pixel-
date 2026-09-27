@@ -25,7 +25,6 @@
         .card-partido { background: rgba(10, 15, 26, 0.65); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 4px solid #0e7490; border-radius: 18px; padding: 20px; transition: all 0.3s ease; }
         .card-partido:hover { transform: translateY(-3px); border-bottom-color: #06b6d4; box-shadow: 0 12px 30px rgba(6, 182, 212, 0.25); }
         
-        /* ESTILO PARA PARTIDOS TERMINADOS */
         .card-finalizado { opacity: 0.5; filter: grayscale(80%); border-bottom-color: #334155 !important; }
         .card-finalizado:hover { transform: none; box-shadow: none; opacity: 0.8; }
         .card-finalizado .btn-arbitrar { background: #1e293b; border-color: #334155; color: #94a3b8; }
@@ -58,7 +57,6 @@
         <button class="btn-mesa-filter active" onclick="filtrarMesa('todas')">Todas las Mesas</button>
     </div>
 
-    <!-- PESTAÑAS DE ESTADO -->
     <div class="filtro-estado">
         <button class="btn-estado-filter active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Todos</button>
         <button class="btn-estado-filter" id="tab-pendientes" onclick="filtrarEstado('pendientes_vivo')">⏳ Pendientes / En Vivo</button>
@@ -98,8 +96,7 @@
                 .from('partidos')
                 .select('*, j1:jugador1_id(nombre), j2:jugador2_id(nombre), categorias(nombre)')
                 .eq('torneo_id', idTorneoActivo)
-                .order('hora', { ascending: true })
-                .order('mesa', { ascending: true });
+                .order('id', { ascending: true });
 
             todosLosPartidos = data || [];
             generarBotonesMesas();
@@ -130,6 +127,21 @@
             dibujarPartidos();
         }
 
+        // FUNCIÓN CLAVE: CONVIERTE "09:30 AM" O "01:30 PM" A MINUTOS ABSOLUTOS PARA ORDENAR CRONOLÓGICAMENTE
+        function timeStringToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            let match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+            if (!match) return 0;
+            let hrs = parseInt(match[1]);
+            let mins = parseInt(match[2]);
+            let ampm = match[3] ? match[3].toUpperCase() : null;
+
+            if (ampm === 'PM' && hrs < 12) hrs += 12;
+            if (ampm === 'AM' && hrs === 12) hrs = 0;
+
+            return hrs * 60 + mins;
+        }
+
         function dibujarPartidos() {
             const contenedor = document.getElementById('contenedor-partidos');
             contenedor.innerHTML = '';
@@ -143,11 +155,11 @@
             }
 
             if (filtrados.length === 0) {
-                contenedor.innerHTML = '<div style="text-align:center; color:#64748b; grid-column:1/-1;">No hay partidos en esta categoría.</div>';
+                contenedor.innerHTML = '<div style="text-align:center; color:#64748b; grid-column:1/-1;">No hay partidos bajo este filtro.</div>';
                 return;
             }
 
-            // Agrupar por hora
+            // Agrupar partidos por hora
             const gruposPorHora = {};
             filtrados.forEach(p => {
                 const h = p.hora || '09:00 AM';
@@ -155,8 +167,13 @@
                 gruposPorHora[h].push(p);
             });
 
+            // ORDENAR LAS HORAS CRONOLÓGICAMENTE (Del más temprano al más tarde)
+            const horasOrdenadas = Object.keys(gruposPorHora).sort((a, b) => {
+                return timeStringToMinutes(a) - timeStringToMinutes(b);
+            });
+
             // Dibujar cada bloque de hora
-            Object.keys(gruposPorHora).forEach(hora => {
+            horasOrdenadas.forEach(hora => {
                 contenedor.innerHTML += `<div class="header-hora">⏰ ${hora}</div>`;
                 
                 gruposPorHora[hora].forEach(p => {
@@ -184,7 +201,9 @@
                                 </div>
                             </div>
 
-                            <button class="btn-arbitrar" onclick="abrirScoreboardJuez(${p.id})">🏓 Arbitrar Partido</button>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn-arbitrar" onclick="abrirScoreboardJuez(${p.id})">🏓 Arbitrar</button>
+                            </div>
                         </div>
                     `;
                 });
