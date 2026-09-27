@@ -142,7 +142,8 @@
             <a href="torneos.html" class="nav-btn">Mis Torneos</a>
             <a href="admin.html" class="nav-btn active">Administrador</a>
             <a href="sorteo.html" class="nav-btn">Sorteo y Rol</a>
-            <a href="mesas.html" target="_blank" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Central de Mesas</a>
+            <a href="mesas.html" target="_blank" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
+            <a href="espectador.html" target="_blank" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador</a>
             <a href="index.html" target="_blank" class="nav-btn public">Portal Público</a>
             <button onclick="cerrarSesionAdmin()" class="nav-btn" style="border-color: rgba(239,68,68,0.4); color: #f87171; cursor:pointer;">SALIR</button>
         </div>
@@ -155,7 +156,10 @@
                 <span style="font-size: 9px; font-weight: 800; text-transform: uppercase; color:#a855f7; letter-spacing: 2px;">Torneo Activo en el Sistema</span>
                 <h3 id="nombre-torneo-banner" style="margin: 4px 0 0 0; border: none; padding: 0; color:#ffffff; font-size:18px; letter-spacing: 1px;">Cargando...</h3>
             </div>
-            <button class="btn-console btn-ws-style" onclick="compartirLinkInscripcionWS()">📲 LINK DE INSCRIPCIÓN</button>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn-console btn-ws-style" onclick="compartirLinkInscripcionWS()">📲 LINK INSCRIPCIÓN</button>
+                <button class="btn-console btn-purple" onclick="compartirLinkTransmisionWS()">📺 LINK TRANSMISIÓN (FANS)</button>
+            </div>
         </div>
 
         <div class="panel-3d panel-cyan no-print" id="panel-monitoreo-vivo">
@@ -460,18 +464,27 @@
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
         }
 
+        function compartirLinkTransmisionWS() {
+            if (!torneoActivoObj) { alert("Selecciona un torneo activo primero."); return; }
+            const urlTransmision = `${window.location.origin}/espectador.html?torneo=${torneoActivoObj.id}`;
+            const texto = `🔴 *¡CARTELERA EN VIVO!* 🔴\n\n🏆 Torneo: *${torneoActivoObj.nombre}*\n\nSigue los marcadores en tiempo real de todas las mesas ingresando aquí:\n👉 ${urlTransmision}`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+
+        function compartirLinkInscripcionWS() {
+            if (!torneoActivoObj) { alert("Selecciona un torneo activo primero."); return; }
+            const urlPublicaConID = `${window.location.origin}/index.html?torneo=${torneoActivoObj.id}`;
+            let textoWS = `🏓 *¡INSCRIPCIONES ABIERTAS!* 🏓\n\n🏆 Torneo: *${torneoActivoObj.nombre}*\n\nReserva tu lugar en línea ingresando aquí:\n👉 ${urlPublicaConID}\n\n¡Te esperamos! 🏆`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWS)}`, '_blank');
+        }
+
         async function cargarPendientesRanking() {
             const { data } = await clienteSupabase.from('jugadores').select('*').eq('puntos_ranking', 0).order('created_at', { ascending: false });
             const modulo = document.getElementById('modulo-pendientes-ranking');
             const tbody = document.getElementById('tabla-pendientes-ranking');
 
-            if (!data || data.length === 0) {
-                modulo.style.display = 'none';
-                return;
-            }
-
-            modulo.style.display = 'block';
-            tbody.innerHTML = '';
+            if (!data || data.length === 0) { modulo.style.display = 'none'; return; }
+            modulo.style.display = 'block'; tbody.innerHTML = '';
             
             data.forEach(j => {
                 tbody.innerHTML += `
@@ -487,31 +500,19 @@
 
         async function asignarRankingInicial(idJugador, nombreJugador) {
             const pts = parseInt(document.getElementById(`input-ranking-${idJugador}`).value);
-            if (!pts || pts <= 0) {
-                alert("Por favor, ingresa un puntaje válido mayor a 0 para clasificarlo.");
-                return;
-            }
-
+            if (!pts || pts <= 0) { alert("Por favor, ingresa un puntaje válido mayor a 0."); return; }
             const { error } = await clienteSupabase.from('jugadores').update({ puntos_ranking: pts }).eq('id', idJugador);
-            
             if (error) { alert("Error al asignar puntos."); return; }
-
             alert(`✅ Ranking asignado a ${nombreJugador}. Ya puede inscribirse en su categoría.`);
             cargarDatosIniciales();
         }
 
         function dibujarTablaProgramacionCategorias() {
-            const tbody = document.getElementById('tabla-programacion-categorias');
-            tbody.innerHTML = '';
-
-            if (todasLasCategoriasAdmin.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="mensaje-vacio">No hay categorías configuradas.</td></tr>';
-                return;
-            }
+            const tbody = document.getElementById('tabla-programacion-categorias'); tbody.innerHTML = '';
+            if (todasLasCategoriasAdmin.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="mensaje-vacio">No hay categorías configuradas.</td></tr>'; return; }
 
             todasLasCategoriasAdmin.forEach(cat => {
                 const prog = programacionCategoriasNube.find(p => p.categoria_id === cat.id) || {};
-                
                 const fechaVal = prog.fecha || (torneoActivoObj ? torneoActivoObj.fecha_evento || '' : '');
                 const horaVal = prog.hora || '09:00';
                 const lugarVal = prog.lugar || (torneoActivoObj ? torneoActivoObj.lugar_evento || 'Sede Principal' : 'Sede Principal');
@@ -537,60 +538,32 @@
             const costo = parseFloat(document.getElementById(`cat-inscripcion-${catId}`).value) || 200;
 
             const { error } = await clienteSupabase.from('programacion_categorias').upsert({
-                torneo_id: parseInt(idTorneoActivo),
-                categoria_id: catId,
-                fecha: fecha,
-                hora: hora,
-                lugar: lugar,
-                costo_inscripcion: costo
+                torneo_id: parseInt(idTorneoActivo), categoria_id: catId, fecha: fecha, hora: hora, lugar: lugar, costo_inscripcion: costo
             }, { onConflict: 'torneo_id,categoria_id' });
 
-            if (error) {
-                alert("Error al guardar en Supabase.");
-                return;
-            }
-
-            alert("✅ Guardado en Supabase con éxito.");
-            cargarDatosIniciales();
+            if (error) { alert("Error al guardar en Supabase."); return; }
+            alert("✅ Guardado en Supabase con éxito."); cargarDatosIniciales();
         }
 
         async function cargarInscritosEnVivo() {
-            const { data, error } = await clienteSupabase
-                .from('inscripciones')
-                .select(`id, categoria_id, estatus_pago, jugadores ( id, nombre, club, puntos_ranking ), categorias ( id, nombre )`)
-                .eq('torneo_id', idTorneoActivo);
-
-            const tbody = document.getElementById('tabla-inscritos-vivo');
-            const cantReg = document.getElementById('cant-registrados');
-            const cantPag = document.getElementById('cant-pagados');
-            
+            const { data, error } = await clienteSupabase.from('inscripciones').select(`id, categoria_id, estatus_pago, jugadores ( id, nombre, club, puntos_ranking ), categorias ( id, nombre )`).eq('torneo_id', idTorneoActivo);
+            const tbody = document.getElementById('tabla-inscritos-vivo'); const cantReg = document.getElementById('cant-registrados'); const cantPag = document.getElementById('cant-pagados');
             tbody.innerHTML = '';
-
-            if (error || !data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="mensaje-vacio">Aún no hay inscritos en este torneo.</td></tr>';
-                cantReg.innerText = '0'; cantPag.innerText = '0';
-                return;
-            }
+            if (error || !data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="mensaje-vacio">Aún no hay inscritos en este torneo.</td></tr>'; cantReg.innerText = '0'; cantPag.innerText = '0'; return; }
 
             let validData = data.filter(ins => ins.categorias && ins.jugadores);
-
             validData.sort((a, b) => {
                 if (a.categorias.nombre < b.categorias.nombre) return -1;
                 if (a.categorias.nombre > b.categorias.nombre) return 1;
                 return b.jugadores.puntos_ranking - a.jugadores.puntos_ranking;
             });
 
-            cantReg.innerText = data.length;
-            const pagados = data.filter(i => i.estatus_pago === 'Pagado');
-            cantPag.innerText = pagados.length;
+            cantReg.innerText = data.length; cantPag.innerText = data.filter(i => i.estatus_pago === 'Pagado').length;
 
             validData.forEach(ins => {
                 const esPagado = ins.estatus_pago === 'Pagado';
-                
                 let selectCatHtml = `<select id="select-cambiar-cat-${ins.id}" style="padding: 6px; font-size: 10px; margin-right: 6px; width: 110px; font-weight: 700;">`;
-                todasLasCategoriasAdmin.forEach(c => {
-                    selectCatHtml += `<option value="${c.id}" ${c.id === ins.categoria_id ? 'selected' : ''}>${c.nombre}</option>`;
-                });
+                todasLasCategoriasAdmin.forEach(c => { selectCatHtml += `<option value="${c.id}" ${c.id === ins.categoria_id ? 'selected' : ''}>${c.nombre}</option>`; });
                 selectCatHtml += `</select>`;
 
                 tbody.innerHTML += `
@@ -614,73 +587,21 @@
         async function cambiarCategoriaInscripcion(idInscripcion) {
             const nuevaCatId = document.getElementById(`select-cambiar-cat-${idInscripcion}`).value;
             const { error } = await clienteSupabase.from('inscripciones').update({ categoria_id: parseInt(nuevaCatId) }).eq('id', idInscripcion);
-            
             if (error) { alert("Error al cambiar categoría."); return; }
-            
-            alert("✅ Categoría cambiada correctamente.");
-            cargarDatosIniciales();
+            alert("✅ Categoría cambiada correctamente."); cargarDatosIniciales();
         }
 
         async function eliminarInscripcion(idInscripcion, nombreJugador) {
             if (!confirm(`¿Eliminar la inscripción de "${nombreJugador}" para este torneo?`)) return;
-
             const { error } = await clienteSupabase.from('inscripciones').delete().eq('id', idInscripcion);
             if (error) { alert("Error al eliminar la inscripción."); return; }
-
-            alert("✅ Inscripción eliminada.");
-            cargarDatosIniciales();
-        }
-
-        function compartirLinkInscripcionWS() {
-            if (!torneoActivoObj) { alert("Selecciona un torneo activo primero."); return; }
-            
-            const nombre = torneoActivoObj.nombre;
-            const urlPublicaConID = `${window.location.origin}/index.html?torneo=${torneoActivoObj.id}`;
-
-            let textoWS = `🏓 *¡INSCRIPCIONES ABIERTAS!* 🏓\n\n` +
-                          `🏆 Torneo: *${nombre}*\n\n` +
-                          `📅 *PROGRAMACIÓN Y CUOTAS DE INSCRIPCIÓN:* \n` +
-                          `────────────────────────────\n`;
-
-            todasLasCategoriasAdmin.forEach(cat => {
-                const prog = programacionCategoriasNube.find(p => p.categoria_id === cat.id) || {};
-                
-                const fechaVal = prog.fecha || torneoActivoObj.fecha_evento || 'Por confirmar';
-                const horaVal = prog.hora || '09:00';
-                const lugarVal = prog.lugar || torneoActivoObj.lugar_evento || 'Sede Principal';
-                const costoVal = prog.costo_inscripcion || cat.costo_inscripcion || 200;
-
-                let horaFormateada = horaVal;
-                if (horaVal && horaVal.includes(':')) {
-                    let [hrs, mins] = horaVal.split(':');
-                    let hNum = parseInt(hrs);
-                    let ampm = hNum >= 12 ? 'PM' : 'AM';
-                    hNum = hNum % 12 || 12;
-                    horaFormateada = `${hNum}:${mins} ${ampm}`;
-                }
-
-                textoWS += `🏆 *${cat.nombre.toUpperCase()}*\n` +
-                           `   📅 Fecha: _${fechaVal}_\n` +
-                           `   ⏰ Hora: _${horaFormateada}_\n` +
-                           `   📍 Lugar: _${lugarVal}_\n` +
-                           `   💵 Inscripción: *$${costoVal}*\n\n`;
-            });
-
-            textoWS += `────────────────────────────\n` +
-                       `Reserva tu lugar en línea ingresando aquí:\n` +
-                       `👉 ${urlPublicaConID}\n\n` +
-                       `¡Te esperamos! 🏆`;
-
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWS)}`, '_blank');
+            alert("✅ Inscripción eliminada."); cargarDatosIniciales();
         }
 
         function poblarDropdownClubs() {
-            const select = document.getElementById('nuevo-club');
-            select.innerHTML = '';
+            const select = document.getElementById('nuevo-club'); select.innerHTML = '';
             if (todosLosClubsAdmin.length === 0) { select.innerHTML = '<option value="Sin Club">Sin Club</option>'; return; }
-            todosLosClubsAdmin.forEach(club => {
-                let opt = document.createElement('option'); opt.value = club.nombre; opt.textContent = club.nombre; select.appendChild(opt);
-            });
+            todosLosClubsAdmin.forEach(club => { let opt = document.createElement('option'); opt.value = club.nombre; opt.textContent = club.nombre; select.appendChild(opt); });
         }
 
         function dibujarTablaClubs() {
@@ -697,16 +618,13 @@
         }
 
         async function crearClub() {
-            const nombre = document.getElementById('nuevo-nombre-club').value.trim();
-            if (!nombre) return;
+            const nombre = document.getElementById('nuevo-nombre-club').value.trim(); if (!nombre) return;
             await clienteSupabase.from('clubs').insert([{ nombre: nombre }]);
-            document.getElementById('nuevo-nombre-club').value = '';
-            cargarDatosIniciales();
+            document.getElementById('nuevo-nombre-club').value = ''; cargarDatosIniciales();
         }
 
         async function actualizarClub(id, nombreAntiguo) {
-            const nuevoNombre = document.getElementById(`club-nombre-${id}`).value.trim();
-            if (!nuevoNombre || nuevoNombre === nombreAntiguo) return;
+            const nuevoNombre = document.getElementById(`club-nombre-${id}`).value.trim(); if (!nuevoNombre || nuevoNombre === nombreAntiguo) return;
             await clienteSupabase.from('clubs').update({ nombre: nuevoNombre }).eq('id', id);
             await clienteSupabase.from('jugadores').update({ club: nuevoNombre }).eq('club', nombreAntiguo);
             cargarDatosIniciales();
@@ -715,28 +633,20 @@
         async function eliminarClub(id, nombreClub) {
             if (nombreClub === 'Sin Club' || !confirm(`¿Eliminar el club "${nombreClub}"?`)) return;
             await clienteSupabase.from('jugadores').update({ club: 'Sin Club' }).eq('club', nombreClub);
-            await clienteSupabase.from('clubs').delete().eq('id', id);
-            cargarDatosIniciales();
+            await clienteSupabase.from('clubs').delete().eq('id', id); cargarDatosIniciales();
         }
 
         function toggleTablaRanking() {
-            const panel = document.getElementById('seccion-print');
-            const btn = document.getElementById('btn-toggle-ranking');
-            if (panel.style.display === 'none' || panel.style.display === '') {
-                panel.style.display = 'block'; btn.innerText = 'Ocultar Ranking';
-            } else {
-                panel.style.display = 'none'; btn.innerText = 'Mostrar Ranking';
-            }
+            const panel = document.getElementById('seccion-print'); const btn = document.getElementById('btn-toggle-ranking');
+            if (panel.style.display === 'none' || panel.style.display === '') { panel.style.display = 'block'; btn.innerText = 'Ocultar Ranking'; } 
+            else { panel.style.display = 'none'; btn.innerText = 'Mostrar Ranking'; }
         }
 
         function filtrarYAutoSeleccionarAdmin() {
             const texto = document.getElementById('buscador-jugador').value.toLowerCase().trim();
-            const select = document.getElementById('select-jugador-admin');
-            select.innerHTML = '<option value="">-- Nuevo Jugador (Modo Crear) --</option>';
+            const select = document.getElementById('select-jugador-admin'); select.innerHTML = '<option value="">-- Nuevo Jugador (Modo Crear) --</option>';
             const filtrados = todosLosJugadoresAdmin.filter(j => j.nombre.toLowerCase().includes(texto));
-            filtrados.forEach(j => {
-                let opt = document.createElement('option'); opt.value = j.id; opt.textContent = `${j.nombre} [${j.club || 'Sin Club'}] (${j.puntos_ranking} pts)`; select.appendChild(opt);
-            });
+            filtrados.forEach(j => { let opt = document.createElement('option'); opt.value = j.id; opt.textContent = `${j.nombre} [${j.club || 'Sin Club'}] (${j.puntos_ranking} pts)`; select.appendChild(opt); });
             if (texto.length > 0 && filtrados.length > 0) { select.value = filtrados[0].id; cargarDatosJugadorEditar(); }
             else if (texto.length === 0) resetFormularioJugador();
         }
@@ -746,82 +656,47 @@
             if (!idSel) { resetFormularioJugador(); return; }
             const j = todosLosJugadoresAdmin.find(item => item.id == idSel);
             if (j) {
-                document.getElementById('nuevo-nombre').value = j.nombre;
-                document.getElementById('nuevo-club').value = j.club || 'Sin Club';
-                document.getElementById('nuevo-ranking').value = j.puntos_ranking;
-                document.getElementById('nuevo-nip').value = j.nip_seguridad || '1234';
+                document.getElementById('nuevo-nombre').value = j.nombre; document.getElementById('nuevo-club').value = j.club || 'Sin Club';
+                document.getElementById('nuevo-ranking').value = j.puntos_ranking; document.getElementById('nuevo-nip').value = j.nip_seguridad || '1234';
                 document.getElementById('titulo-modo-jugador').innerText = `✏️ Editando a: ${j.nombre}`;
-                
-                const btnGuardar = document.getElementById('btn-guardar-jugador'); 
-                btnGuardar.innerText = "Actualizar Cambios"; 
-                btnGuardar.className = "btn-console btn-green";
-
-                document.getElementById('btn-eliminar-jugador').style.display = "inline-flex";
-                document.getElementById('btn-cancelar-jugador').style.display = "inline-flex";
+                const btnGuardar = document.getElementById('btn-guardar-jugador'); btnGuardar.innerText = "Actualizar Cambios"; btnGuardar.className = "btn-console btn-green";
+                document.getElementById('btn-eliminar-jugador').style.display = "inline-flex"; document.getElementById('btn-cancelar-jugador').style.display = "inline-flex";
             }
         }
 
         function resetFormularioJugador() {
-            document.getElementById('select-jugador-admin').value = "";
-            document.getElementById('nuevo-nombre').value = ""; document.getElementById('nuevo-club').value = "Sin Club";
+            document.getElementById('select-jugador-admin').value = ""; document.getElementById('nuevo-nombre').value = ""; document.getElementById('nuevo-club').value = "Sin Club";
             document.getElementById('nuevo-ranking').value = ""; document.getElementById('nuevo-nip').value = "1234";
             document.getElementById('titulo-modo-jugador').innerText = "➕ Registrando Nuevo Jugador";
-            
-            const btnGuardar = document.getElementById('btn-guardar-jugador'); 
-            btnGuardar.innerText = "Crear Jugador"; 
-            btnGuardar.className = "btn-console btn-gold";
-
-            document.getElementById('btn-eliminar-jugador').style.display = "none";
-            document.getElementById('btn-cancelar-jugador').style.display = "none";
+            const btnGuardar = document.getElementById('btn-guardar-jugador'); btnGuardar.innerText = "Crear Jugador"; btnGuardar.className = "btn-console btn-gold";
+            document.getElementById('btn-eliminar-jugador').style.display = "none"; document.getElementById('btn-cancelar-jugador').style.display = "none";
         }
 
         async function guardarJugador() {
-            const idSel = document.getElementById('select-jugador-admin').value;
-            const nombre = document.getElementById('nuevo-nombre').value.trim();
-            const club = document.getElementById('nuevo-club').value;
-            const puntos = document.getElementById('nuevo-ranking').value;
+            const idSel = document.getElementById('select-jugador-admin').value; const nombre = document.getElementById('nuevo-nombre').value.trim();
+            const club = document.getElementById('nuevo-club').value; const puntos = document.getElementById('nuevo-ranking').value;
             const nip = document.getElementById('nuevo-nip').value.trim() || '1234';
             if (!nombre || !puntos) return;
-            if (idSel) {
-                await clienteSupabase.from('jugadores').update({ nombre: nombre, club: club, puntos_ranking: parseInt(puntos), nip_seguridad: nip }).eq('id', idSel);
-            } else {
-                await clienteSupabase.from('jugadores').insert([{ nombre: nombre, club: club, puntos_ranking: parseInt(puntos), nip_seguridad: nip }]);
-            }
+            if (idSel) { await clienteSupabase.from('jugadores').update({ nombre: nombre, club: club, puntos_ranking: parseInt(puntos), nip_seguridad: nip }).eq('id', idSel); } 
+            else { await clienteSupabase.from('jugadores').insert([{ nombre: nombre, club: club, puntos_ranking: parseInt(puntos), nip_seguridad: nip }]); }
             document.getElementById('buscador-jugador').value = ''; resetFormularioJugador(); cargarDatosIniciales();
         }
 
         async function eliminarJugador() {
-            const idSel = document.getElementById('select-jugador-admin').value;
-            if (!idSel) return;
-
-            const j = todosLosJugadoresAdmin.find(item => item.id == idSel);
-            if (!j) return;
-
+            const idSel = document.getElementById('select-jugador-admin').value; if (!idSel) return;
+            const j = todosLosJugadoresAdmin.find(item => item.id == idSel); if (!j) return;
             if (!confirm(`⚠️ ¿Estás seguro de que deseas eliminar a "${j.nombre}" de la base de datos?\n\nEsta acción borrará su historial de inscripciones y no se podrá deshacer.`)) return;
-
             await clienteSupabase.from('inscripciones').delete().eq('jugador_id', idSel);
-
             const { error } = await clienteSupabase.from('jugadores').delete().eq('id', idSel);
-
-            if (error) {
-                alert("Error al eliminar el jugador: " + error.message);
-                return;
-            }
-
+            if (error) { alert("Error al eliminar el jugador: " + error.message); return; }
             alert(`✅ Jugador "${j.nombre}" eliminado correctamente.`);
-            document.getElementById('buscador-jugador').value = '';
-            resetFormularioJugador();
-            cargarDatosIniciales();
+            document.getElementById('buscador-jugador').value = ''; resetFormularioJugador(); cargarDatosIniciales();
         }
 
         function generarRankingPorCategorias() {
             const contenedor = document.getElementById('contenedor-ranking-categorias'); contenedor.innerHTML = '';
             document.getElementById('fecha-impresion').innerText = "Actualizado al: " + new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
-            
-            const categoriasFuerza = todasLasCategoriasAdmin
-                .filter(c => c.nombre.toLowerCase() !== 'libre')
-                .sort((a, b) => b.puntos_minimos - a.puntos_minimos);
-
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
             categoriasFuerza.forEach(cat => {
                 const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos);
                 let htmlCat = `<div class="header-categoria-ranking">${cat.nombre} <span style="color:#64748b; font-size:9px; font-weight:700; margin-left:10px;">(${cat.puntos_minimos} A ${cat.puntos_maximos} PTS)</span></div><table><thead><tr><th style="width: 60px; text-align: center;">Pos</th><th>Jugador</th><th>Club / Entidad</th><th style="width: 120px;">Puntos</th></tr></thead><tbody>`;
@@ -835,10 +710,7 @@
 
         function exportarExcel() {
             let csv = 'Posicion,Jugador,Club,Puntos_Ranking,Categoria\n';
-            const categoriasFuerza = todasLasCategoriasAdmin
-                .filter(c => c.nombre.toLowerCase() !== 'libre')
-                .sort((a, b) => b.puntos_minimos - a.puntos_minimos);
-
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
             categoriasFuerza.forEach(cat => {
                 const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos);
                 jugadoresCat.forEach((j, idx) => { csv += `${idx + 1},"${j.nombre}","${j.club || 'Sin Club'}",${j.puntos_ranking},"${cat.nombre}"\n`; });
@@ -850,10 +722,7 @@
 
         function compartirRankingWhatsApp() {
             let textoWS = `🏓 *RANKING OFICIAL DE JUGADORES* 🏓\n\n`;
-            const categoriasFuerza = todasLasCategoriasAdmin
-                .filter(c => c.nombre.toLowerCase() !== 'libre')
-                .sort((a, b) => b.puntos_minimos - a.puntos_minimos);
-
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
             categoriasFuerza.forEach(cat => {
                 const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos);
                 if (jugadoresCat.length > 0) {
@@ -886,30 +755,16 @@
         }
 
         async function actualizarCategoria(id) {
-            const min = document.getElementById(`cat-min-${id}`).value;
-            const max = document.getElementById(`cat-max-${id}`).value;
-            const costo = document.getElementById(`cat-precio-${id}`).value;
-            
-            let objUpdate = { puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) };
-            if (costo) objUpdate.costo_inscripcion = parseFloat(costo);
-
-            await clienteSupabase.from('categorias').update(objUpdate).eq('id', id);
-            cargarDatosIniciales();
+            const min = document.getElementById(`cat-min-${id}`).value; const max = document.getElementById(`cat-max-${id}`).value; const costo = document.getElementById(`cat-precio-${id}`).value;
+            let objUpdate = { puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) }; if (costo) objUpdate.costo_inscripcion = parseFloat(costo);
+            await clienteSupabase.from('categorias').update(objUpdate).eq('id', id); cargarDatosIniciales();
         }
 
         async function crearCategoria() {
-            const nombre = document.getElementById('nueva-cat-nombre').value.trim();
-            const min = document.getElementById('nueva-cat-min').value;
-            const max = document.getElementById('nueva-cat-max').value;
-            const costo = document.getElementById('nueva-cat-precio').value;
-
+            const nombre = document.getElementById('nueva-cat-nombre').value.trim(); const min = document.getElementById('nueva-cat-min').value; const max = document.getElementById('nueva-cat-max').value; const costo = document.getElementById('nueva-cat-precio').value;
             if (!nombre || !min || !max) return;
-
-            let objInsert = { nombre: nombre, puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) };
-            if (costo) objInsert.costo_inscripcion = parseFloat(costo);
-
-            await clienteSupabase.from('categorias').insert([objInsert]);
-            location.reload();
+            let objInsert = { nombre: nombre, puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) }; if (costo) objInsert.costo_inscripcion = parseFloat(costo);
+            await clienteSupabase.from('categorias').insert([objInsert]); location.reload();
         }
 
         async function cargarReglas() {
@@ -934,8 +789,7 @@
 
         async function guardarBono() {
             const activo = document.getElementById('bono-activo').checked, valor = parseInt(document.getElementById('bono-puntos').value) || 0;
-            await clienteSupabase.from('configuracion').update({ activo: activo, valor: valor }).eq('clave', 'bono_pase_grupos');
-            alert('✅ Bono guardado.');
+            await clienteSupabase.from('configuracion').update({ activo: activo, valor: valor }).eq('clave', 'bono_pase_grupos'); alert('✅ Bono guardado.');
         }
 
         cargarDatosIniciales(); 
