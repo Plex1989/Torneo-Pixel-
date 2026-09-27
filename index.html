@@ -43,6 +43,8 @@
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
+        .formulario:hover { border-bottom-color: #06b6d4; box-shadow: 0 25px 45px -10px rgba(6, 182, 212, 0.35); }
+
         .banner-torneo { 
             background: rgba(15, 23, 42, 0.6); 
             border: 1px solid rgba(255, 255, 255, 0.08); 
@@ -141,14 +143,41 @@
             line-height: 1.6;
         }
 
+        .tarjeta-pendiente-ranking {
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            border-left: 4px solid #f59e0b;
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-top: 14px;
+            display: none;
+            font-size: 11px;
+            color: #fef08a;
+            line-height: 1.6;
+        }
+
         .seccion-plegable {
             background: rgba(15, 23, 42, 0.4);
             border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 12px;
-            padding: 14px;
+            padding: 18px;
             margin-top: 18px;
             display: none;
         }
+
+        /* ESTILO PARA EL JUGADOR SELECCIONADO */
+        .banner-jugador-seleccionado {
+            display: none; 
+            background: rgba(16, 185, 129, 0.1); 
+            border: 1px solid rgba(16, 185, 129, 0.4); 
+            border-radius: 12px; 
+            padding: 14px; 
+            margin-top: 15px; 
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .banner-jugador-seleccionado .etiqueta { font-size: 10px; color: #34d399; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; }
+        .banner-jugador-seleccionado .nombre { font-size: 15px; font-weight: 800; color: #ffffff; margin-top: 4px; margin-bottom: 10px; text-transform: uppercase; }
     </style>
 </head>
 <body>
@@ -161,55 +190,81 @@
             <div id="info-fecha-lugar" class="detalles-evento"></div>
         </div>
         
-        <div style="display: flex; justify-content: space-between; align-items: center;">
+        <!-- BOTÓN GENERAL "SOY NUEVO" -->
+        <button id="btn-abrir-nuevo" class="btn-secondary" style="width: 100%; padding: 12px; font-size: 11px; margin-bottom: 20px; border-color: #06b6d4; color: #38bdf8;" onclick="abrirNuevoJugador()">➕ SOY NUEVO JUGADOR (CREAR PERFIL)</button>
+
+        <!-- SECCIÓN REGISTRO DE NUEVO JUGADOR (OCULTA HASTA HACER CLIC) -->
+        <div id="caja-nuevo-jugador" class="seccion-plegable" style="margin-top: 0;">
+            <div style="font-size: 12px; font-weight: 800; color: #38bdf8; margin-bottom: 15px; text-transform: uppercase; text-align:center;">➕ Registro de Nuevo Jugador</div>
+            <p style="font-size: 11px; color:#94a3b8; text-align:center; margin-bottom: 15px; line-height: 1.5;">Ingresa tus datos para integrarte a la base de datos. El administrador validará tu perfil y te asignará tu ranking inicial.</p>
+            
+            <input type="text" id="reg-nombre" placeholder="Nombre Completo" style="margin-bottom: 12px;">
+            <select id="reg-club" style="margin-bottom: 12px;"><option value="Sin Club">Cargando clubs...</option></select>
+            <input type="password" id="reg-nip" maxlength="4" placeholder="Crea tu NIP de 4 dígitos (Ej. 1234)" style="margin-bottom: 15px;">
+            
+            <button class="btn-submit" style="margin-top:0; padding:12px;" onclick="registrarNuevoJugador()">Crear Perfil de Jugador</button>
+            <button class="btn-secondary" style="width: 100%; margin-top:10px; border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.1);" onclick="cerrarNuevoJugador()">❌ Cancelar y Volver al Buscador</button>
+        </div>
+
+        <!-- BLOQUE PRINCIPAL (SE OCULTA AL CREAR NUEVO JUGADOR) -->
+        <div id="bloque-principal">
+            
             <label style="margin-top:0;">1. Busca y selecciona tu nombre:</label>
-            <button class="btn-secondary" onclick="toggleSeccion('caja-nuevo-jugador')">➕ Soy Nuevo</button>
+            <input type="text" id="buscador" placeholder="🔎 Escribe tu nombre o apellido..." onkeyup="filtrarJugadores()" style="margin-bottom: 8px;">
+            <select id="select-jugador" onchange="evaluarCategorias()" size="4" style="margin-bottom: 8px;">
+                <option value="">Cargando base de datos...</option>
+            </select>
+
+            <!-- BANNER DE CONFIRMACIÓN DEL JUGADOR ELEGIDO -->
+            <div id="banner-jugador-seleccionado" class="banner-jugador-seleccionado">
+                <div class="etiqueta">✅ Jugador Seleccionado</div>
+                <div id="texto-jugador-seleccionado" class="nombre">ARTURO</div>
+                <button class="btn-secondary" style="border-color: #fbbf24; color: #fbbf24;" onclick="abrirCambioNip()">🔑 Cambiar mi NIP</button>
+            </div>
+
+            <!-- SECCIÓN CAMBIO DE NIP (BLOQUEA LA INSCRIPCIÓN MIENTRAS ESTÉ ABIERTA) -->
+            <div id="caja-cambiar-nip" class="seccion-plegable">
+                <div style="font-size: 11px; font-weight: 800; color: #fbbf24; margin-bottom: 15px; text-transform: uppercase; text-align:center;">
+                    🔑 Modificando NIP de:<br><span id="nombre-cambio-nip" style="color:#ffffff; font-size:14px; display:block; margin-top:6px;"></span>
+                </div>
+                <input type="password" id="nip-actual" maxlength="4" placeholder="NIP Actual (Por defecto: 1234)" style="margin-bottom: 12px;">
+                <input type="password" id="nip-nuevo" maxlength="4" placeholder="Nuevo NIP de 4 dígitos" style="margin-bottom: 15px;">
+                
+                <button class="btn-submit" style="margin-top:0; padding:12px; background:rgba(6,182,212,0.2); color:#38bdf8; border-color:#06b6d4;" onclick="actualizarNIP()">Actualizar mi NIP</button>
+                <button class="btn-secondary" style="width: 100%; margin-top:10px; border-color: #64748b; color: #94a3b8;" onclick="cerrarCambioNip()">Cancelar Edición</button>
+            </div>
+
+            <!-- BLOQUE DE INSCRIPCIÓN (SE OCULTA SI ESTÁ CAMBIANDO NIP) -->
+            <div id="bloque-inscripcion">
+                <div id="info-puntos"></div>
+                <div id="info-inscripciones"></div>
+
+                <label for="select-categoria">2. Categorías disponibles para tu nivel:</label>
+                <select id="select-categoria" disabled>
+                    <option value="">Primero selecciona tu nombre</option>
+                </select>
+
+                <!-- TARJETA ESPERA APROBACIÓN ADMIN -->
+                <div id="tarjeta-pendiente-ranking" class="tarjeta-pendiente-ranking">
+                    ⏳ <strong>Perfil en Proceso de Clasificación Oficial</strong><br>
+                    Tu registro ha sido recibido exitosamente. Para garantizar un torneo equitativo, el comité organizador debe asignar tu nivel de ranking inicial antes de habilitar tus categorías.<br><br>
+                    📌 <em>Por favor vuelve a consultar en unos minutos o contacta al administrador del torneo.</em>
+                </div>
+
+                <!-- TARJETA HORARIO Y COSTO -->
+                <div id="tarjeta-horario-cat" class="tarjeta-horario-cat"></div>
+
+                <div id="caja-nip" class="caja-seguridad">
+                    <label for="nip-jugador" style="margin-top: 0; color:#f87171;">🔒 3. Ingresa tu NIP de seguridad:</label>
+                    <input type="password" id="nip-jugador" maxlength="4" placeholder="Ej. 1234">
+                    <div style="font-size: 10px; color: #94a3b8; margin-top: 6px; font-weight:600;">*Tu NIP por defecto es 1234.</div>
+                </div>
+
+                <button id="btn-inscribir" class="btn-submit" disabled onclick="inscribirJugador()">Reservar mi lugar (Pendiente de Pago)</button>
+            </div>
+
         </div>
 
-        <div style="margin-bottom: 8px;">
-            <input type="text" id="buscador" placeholder="🔎 Escribe tu nombre o apellido..." onkeyup="filtrarJugadores()">
-        </div>
-        <select id="select-jugador" onchange="evaluarCategorias()" size="4" style="margin-bottom: 8px;">
-            <option value="">Cargando base de datos...</option>
-        </select>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
-            <div id="info-puntos"></div>
-            <button class="btn-secondary" style="padding: 4px 10px; font-size: 9px;" onclick="toggleSeccion('caja-cambiar-nip')">🔑 Cambiar mi NIP</button>
-        </div>
-        <div id="info-inscripciones"></div>
-
-        <!-- SECCIÓN REGISTRO DE NUEVO JUGADOR -->
-        <div id="caja-nuevo-jugador" class="seccion-plegable">
-            <div style="font-size: 11px; font-weight: 800; color: #38bdf8; margin-bottom: 10px; text-transform: uppercase;">➕ Registro de Nuevo Jugador</div>
-            <input type="text" id="reg-nombre" placeholder="Nombre Completo" style="margin-bottom: 8px;">
-            <select id="reg-club" style="margin-bottom: 8px;"><option value="Sin Club">Cargando clubs...</option></select>
-            <input type="password" id="reg-nip" maxlength="4" placeholder="Crea tu NIP de 4 dígitos (Ej. 1234)" style="margin-bottom: 10px;">
-            <button class="btn-submit" style="margin-top:0; padding:10px;" onclick="registrarNuevoJugador()">Crear Perfil de Jugador</button>
-        </div>
-
-        <!-- SECCIÓN CAMBIO DE NIP -->
-        <div id="caja-cambiar-nip" class="seccion-plegable">
-            <div style="font-size: 11px; font-weight: 800; color: #fbbf24; margin-bottom: 10px; text-transform: uppercase;">🔑 Cambiar mi NIP de Seguridad</div>
-            <input type="password" id="nip-actual" maxlength="4" placeholder="NIP Actual (Por defecto: 1234)" style="margin-bottom: 8px;">
-            <input type="password" id="nip-nuevo" maxlength="4" placeholder="Nuevo NIP de 4 dígitos" style="margin-bottom: 10px;">
-            <button class="btn-submit" style="margin-top:0; padding:10px; background:rgba(6,182,212,0.2); color:#38bdf8; border-color:#06b6d4;" onclick="actualizarNIP()">Actualizar mi NIP</button>
-        </div>
-
-        <label for="select-categoria">2. Categorías disponibles para tu nivel:</label>
-        <select id="select-categoria" disabled>
-            <option value="">Primero selecciona tu nombre</option>
-        </select>
-
-        <div id="tarjeta-horario-cat" class="tarjeta-horario-cat"></div>
-
-        <div id="caja-nip" class="caja-seguridad">
-            <label for="nip-jugador" style="margin-top: 0; color:#f87171;">🔒 3. Ingresa tu NIP de seguridad:</label>
-            <input type="password" id="nip-jugador" maxlength="4" placeholder="Ej. 1234">
-            <div style="font-size: 10px; color: #94a3b8; margin-top: 6px; font-weight:600;">*Tu NIP por defecto es 1234.</div>
-        </div>
-
-        <button id="btn-inscribir" class="btn-submit" disabled onclick="inscribirJugador()">Reservar mi lugar (Pendiente de Pago)</button>
     </div>
 
     <script>
@@ -254,7 +309,6 @@
                 
                 document.getElementById('info-fecha-lugar').innerText = detalles.length > 0 ? detalles.join('  •  ') : '📅 Fecha y Sede por confirmar';
 
-                // Cargar programación sincronizada desde Supabase
                 const { data: progData } = await clienteSupabase.from('programacion_categorias').select('*').eq('torneo_id', torneoActivo.id);
                 programacionCategoriasNube = progData || [];
             } else {
@@ -285,9 +339,29 @@
             todosLosClubs.forEach(c => select.innerHTML += `<option value="${c.nombre}">${c.nombre}</option>`);
         }
 
-        function toggleSeccion(id) {
-            const el = document.getElementById(id);
-            el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+        // CONTROL DE PANELES (ISOLATION UX)
+        function abrirNuevoJugador() {
+            document.getElementById('bloque-principal').style.display = 'none';
+            document.getElementById('caja-nuevo-jugador').style.display = 'block';
+            document.getElementById('btn-abrir-nuevo').style.display = 'none';
+        }
+
+        function cerrarNuevoJugador() {
+            document.getElementById('bloque-principal').style.display = 'block';
+            document.getElementById('caja-nuevo-jugador').style.display = 'none';
+            document.getElementById('btn-abrir-nuevo').style.display = 'block';
+        }
+
+        function abrirCambioNip() {
+            document.getElementById('caja-cambiar-nip').style.display = 'block';
+            document.getElementById('bloque-inscripcion').style.display = 'none';
+        }
+
+        function cerrarCambioNip() {
+            document.getElementById('caja-cambiar-nip').style.display = 'none';
+            document.getElementById('bloque-inscripcion').style.display = 'block';
+            document.getElementById('nip-actual').value = '';
+            document.getElementById('nip-nuevo').value = '';
         }
 
         function filtrarJugadores() {
@@ -317,15 +391,47 @@
             const btnInscribir = document.getElementById('btn-inscribir');
             const cajaNip = document.getElementById('caja-nip');
             const tarjetaHorario = document.getElementById('tarjeta-horario-cat');
+            const tarjetaPendiente = document.getElementById('tarjeta-pendiente-ranking');
+            const bannerJugador = document.getElementById('banner-jugador-seleccionado');
             
+            // RESETEAR PANELES
+            cerrarCambioNip(); 
+
             if (!idSeleccionado) {
+                bannerJugador.style.display = 'none';
                 selectCategoria.innerHTML = '<option value="">Primero selecciona tu nombre</option>';
-                selectCategoria.disabled = true; btnInscribir.disabled = true; cajaNip.style.display = 'none'; tarjetaHorario.style.display = 'none';
-                infoPuntos.innerText = ""; infoInscripciones.innerHTML = ""; return;
+                selectCategoria.disabled = true; 
+                btnInscribir.disabled = true; 
+                cajaNip.style.display = 'none'; 
+                tarjetaHorario.style.display = 'none';
+                tarjetaPendiente.style.display = 'none';
+                infoPuntos.innerText = ""; 
+                infoInscripciones.innerHTML = ""; 
+                return;
             }
 
             const jugador = todosLosJugadores.find(j => j.id == idSeleccionado);
             const pts = jugador.puntos_ranking;
+
+            // MOSTRAR BANNER DE JUGADOR SELECCIONADO
+            document.getElementById('texto-jugador-seleccionado').innerText = jugador.nombre;
+            document.getElementById('nombre-cambio-nip').innerText = jugador.nombre;
+            bannerJugador.style.display = 'block';
+
+            // JUGADOR CON 0 PUNTOS (ESPERANDO APROBACIÓN ADMIN)
+            if (pts === 0) {
+                infoPuntos.innerText = `Estado: Perfil Nuevo (Sin Clasificación Oficial) | Club: ${jugador.club || 'Sin Club'}`;
+                selectCategoria.innerHTML = '<option value="" disabled selected>⏳ En espera de asignación de ranking por el Administrador</option>';
+                selectCategoria.disabled = true;
+                btnInscribir.disabled = true;
+                cajaNip.style.display = 'none';
+                tarjetaHorario.style.display = 'none';
+                tarjetaPendiente.style.display = 'block';
+                return;
+            }
+
+            // JUGADOR YA CLASIFICADO CON PUNTOS > 0
+            tarjetaPendiente.style.display = 'none';
             infoPuntos.innerText = `Ranking actual: ${pts} pts | Club: ${jugador.club || 'Sin Club'}`;
 
             const misInscripciones = todasLasInscripciones.filter(ins => ins.jugador_id == idSeleccionado).map(ins => ins.categoria_id);
@@ -416,17 +522,17 @@
             const { data, error } = await clienteSupabase.from('jugadores').insert([{
                 nombre: nombre,
                 club: club,
-                puntos_ranking: 0, // INICIA CON 0 PUNTOS (SIN RANKING)
+                puntos_ranking: 0, // Se registra con 0 para requerir aprobación
                 nip_seguridad: nip
             }]).select();
 
             if (error || !data) { alert("Error al registrar jugador."); return; }
 
-            alert(`✅ ¡Bienvenido ${nombre}!\n\nTu perfil se creó exitosamente con 0 puntos de ranking iniciales.\n\n⚠️ NOTA: Si requieres una clasificación mayor para tu categoría, contacta al administrador para que asigne tus puntos oficiales.`);
+            alert(`✅ ¡Bienvenido ${nombre}!\n\nTu perfil fue creado con éxito.\n\n⏳ Para mantener un torneo equitativo, el administrador asignará tus puntos de ranking oficial en breve. Una vez asignados podrás elegir tu categoría.`);
             
-            document.getElementById('caja-nuevo-jugador').style.display = 'none';
+            cerrarNuevoJugador();
             document.getElementById('buscador').value = nombre;
-            inicializar(); // Recargar para que aparezca en la lista
+            inicializar();
         }
 
         async function actualizarNIP() {
@@ -450,7 +556,7 @@
             if (error) { alert("Error al actualizar NIP."); return; }
 
             alert("✅ ¡Tu NIP ha sido actualizado con éxito!");
-            document.getElementById('caja-cambiar-nip').style.display = 'none';
+            cerrarCambioNip();
             inicializar();
         }
 
