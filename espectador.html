@@ -104,9 +104,24 @@
                 return () => { clienteSupabase.removeChannel(room); };
             }, [torneoId]);
 
+            // ==========================================
+            // FUNCIÓN PARA DESBLOQUEAR AUDIO EN IPHONE
+            // ==========================================
+            const unlockAudioIPhone = () => {
+                if (window.speechSynthesis) {
+                    const silentUtterance = new SpeechSynthesisUtterance("");
+                    silentUtterance.volume = 0; // Sin volumen para que no haga ruido
+                    window.speechSynthesis.speak(silentUtterance);
+                }
+            };
+
             const entrarAlPartido = (id) => {
                 setActivePartidoId(id);
                 setIsMuted(false); 
+                
+                // TRUCO IPHONE: Activamos la voz aprovechando el click del usuario
+                unlockAudioIPhone();
+
                 window.history.pushState({}, '', `?partido=${id}`);
                 
                 let docEl = document.documentElement;
@@ -321,8 +336,8 @@
                 let catNombreActual = categoriaResumenSel || (listaCategoriasNombres[0] || null);
 
                 const partidosCat = lobbyMatches.filter(m => (m.categorias?.nombre || 'General') === catNombreActual);
-                const totalPartidosGpo = partidosCat.length;
-                const finalizadosGpo = partidosCat.filter(m => (m.estado || '').trim().toLowerCase() === 'finalizado').length;
+                const totalPartidosGpo = partidosCat.filter(m => m.grupo_nombre).length; 
+                const finalizadosGpo = partidosCat.filter(m => m.grupo_nombre && (m.estado || '').trim().toLowerCase() === 'finalizado').length;
                 const gpoCompleto = totalPartidosGpo > 0 && totalPartidosGpo === finalizadosGpo;
 
                 const categoriasUnicasCartelera = [...new Set(lobbyMatches.map(m => m.categorias?.nombre).filter(Boolean))];
@@ -431,7 +446,6 @@
                                             );
                                         })}
 
-                                        {/* LLAVES ELIMINATORIAS CON PROYECCIÓN SEGURA */}
                                         {(() => {
                                             const gpoA_arr = resumenData[catNombreActual]?.grupos['A'] ? Object.values(resumenData[catNombreActual].grupos['A']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
                                             const gpoB_arr = resumenData[catNombreActual]?.grupos['B'] ? Object.values(resumenData[catNombreActual].grupos['B']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
@@ -454,7 +468,7 @@
                                                         </div>
                                                     ) : (
                                                         <div className="bg-amber-500/20 border border-amber-500/50 text-amber-400 p-3 rounded-xl text-center font-extrabold text-[10px] uppercase tracking-widest mb-6">
-                                                            ⏳ PROYECCIÓN EN TIEMPO REAL (Resultados preliminares según partidos jugados hasta el momento)
+                                                            ⏳ PROYECCIÓN EN TIEMPO REAL (Resultados preliminares)
                                                         </div>
                                                     )}
 
@@ -638,7 +652,7 @@
                                             <h3 className="font-black text-lg text-cyan-400 uppercase">{jugadorModal.nombre}</h3>
                                             <span className="text-[10px] text-zinc-400 font-bold">{jugadorModal.club || 'Sin Club'}</span>
                                         </div>
-                                        <button onClick={() => setJugadorModal(null)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-zinc-400 hover:text-white font-bold">✕</button>
+                                        <button onClick={() => setJugadorModal(null)} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-zinc-400 hover:text-white font-bold transition-colors hover:bg-rose-500/20 hover:text-rose-500">✕</button>
                                     </div>
 
                                     <div className="space-y-3">
@@ -662,16 +676,16 @@
                                                         <div className="flex justify-between items-center text-xs">
                                                             <span className="font-bold text-zinc-300">vs <strong className="text-white">{rival}</strong></span>
                                                             {esFin ? (
-                                                                <span className={`px-2 py-0.5 rounded font-black text-[9px] uppercase ${gano ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+                                                                <span className={`px-2 py-0.5 rounded font-black text-[9px] uppercase ${gano ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50' : 'bg-rose-500/20 text-rose-400 border border-rose-500/50'}`}>
                                                                     {gano ? '¡GANÓ!' : 'PERDIÓ'} ({misSets} - {rivalSets})
                                                                 </span>
-                                                            ) : <span className="text-[9px] text-amber-400 font-bold bg-amber-500/10 px-2 py-0.5 rounded">⏳ {m.hora}</span>}
+                                                            ) : <span className="text-[9px] text-amber-400 font-bold bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 rounded">⏳ {m.hora}</span>}
                                                         </div>
 
                                                         {m.historial_sets && m.historial_sets.length > 0 && (
-                                                            <div className="flex gap-2 flex-wrap pt-1 border-t border-white/5">
+                                                            <div className="flex gap-2 flex-wrap pt-1 border-t border-white/5 mt-2">
                                                                 {m.historial_sets.map((s, idx) => (
-                                                                    <span key={idx} className="text-[9px] bg-white/5 px-2 py-1 rounded font-bold">
+                                                                    <span key={idx} className="text-[9px] bg-white/5 px-2 py-1 rounded font-bold border border-white/10">
                                                                         Set {s.numSet}: <span className="text-cyan-400">{esJ1 ? s.s1 : s.s2}</span> - <span className="text-fuchsia-400">{esJ1 ? s.s2 : s.s1}</span>
                                                                     </span>
                                                                 ))}
@@ -683,7 +697,7 @@
                                         })()}
                                     </div>
 
-                                    <button onClick={() => setJugadorModal(null)} className="w-full mt-6 py-3 bg-cyan-500 text-black font-black uppercase text-xs rounded-xl tracking-widest">
+                                    <button onClick={() => setJugadorModal(null)} className="w-full mt-6 py-3 bg-cyan-500 hover:bg-cyan-400 transition-colors text-black font-black uppercase text-xs rounded-xl tracking-widest shadow-[0_0_15px_rgba(6,182,212,0.3)]">
                                         Cerrar Detalle
                                     </button>
                                 </div>
@@ -694,72 +708,11 @@
                 )
             }
 
-            // VISTA: H2H PÚBLICO
-            if (view === 'h2h') {
-                let p1Wins = 0, p2Wins = 0;
-                h2hHistory.forEach(h => {
-                    if (h.ganador_id === partidoData.jugador1_id) p1Wins++;
-                    if (h.ganador_id === partidoData.jugador2_id) p2Wins++;
-                });
-
-                return (
-                    <div className="fixed inset-0 bg-[#04060a] p-6 overflow-y-auto z-50 text-white flex flex-col items-center">
-                        <div className="mt-8 text-center text-rose-500 font-bold uppercase tracking-widest text-xs mb-2 flex items-center justify-center gap-3">
-                            <span className="animate-pulse">🔴 Transmisión Oficial</span>
-                            <span className="text-zinc-400 font-bold text-[9px] uppercase tracking-widest bg-white/5 border border-white/10 px-2 py-0.5 rounded-full not-italic">
-                                <i className="fa-solid fa-eye text-cyan-400 mr-1"></i> {viewerCount}
-                            </span>
-                        </div>
-                        <h1 className="text-2xl md:text-3xl font-black text-cyan-400 mb-6 uppercase tracking-widest text-center">Frente a Frente</h1>
-                        
-                        <div className="flex w-full max-w-md justify-between items-center bg-slate-900/50 p-6 rounded-[30px] border border-white/10 mb-8 shadow-[0_0_30px_rgba(6,182,212,0.1)]">
-                            <div className="text-center w-1/3">
-                                <div className="text-5xl font-digital text-cyan-400 font-bold mb-2">{p1Wins}</div>
-                                <div className="text-xs font-bold uppercase truncate">{p1}</div>
-                            </div>
-                            <div className="text-2xl font-black italic text-zinc-600">VS</div>
-                            <div className="text-center w-1/3">
-                                <div className="text-5xl font-digital text-fuchsia-400 font-bold mb-2">{p2Wins}</div>
-                                <div className="text-xs font-bold uppercase truncate">{p2}</div>
-                            </div>
-                        </div>
-
-                        <div className="w-full max-w-md mb-10">
-                            {h2hHistory.length === 0 ? (
-                                <div className="text-center text-zinc-500 font-bold text-xs uppercase tracking-widest italic py-8 border border-white/5 rounded-2xl bg-white/5">
-                                    ES LA PRIMERA VEZ QUE SE ENFRENTAN EN TORNEOS.
-                                </div>
-                            ) : (
-                                <div className="space-y-3">
-                                    <h3 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest border-b border-white/10 pb-2 mb-4">Últimos Enfrentamientos</h3>
-                                    {h2hHistory.map(h => (
-                                        <div key={h.id} className="bg-white/5 p-4 rounded-xl flex justify-between items-center border border-white/5">
-                                            <div>
-                                                <div className="text-[11px] font-bold text-cyan-200 uppercase">{h.torneos?.nombre || 'Torneo Anterior'}</div>
-                                                <div className="text-[9px] text-zinc-500 font-bold tracking-widest mt-1">{h.torneos?.fecha_evento || ''}</div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-[10px] font-bold uppercase text-white mb-1">🏆 Ganó: {h.ganador_id === partidoData.jugador1_id ? p1 : p2}</div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="mt-auto mb-6 text-center text-zinc-400 font-bold text-[10px] tracking-[0.2em] uppercase">
-                            <i className="fa-solid fa-hourglass-half animate-spin mr-2"></i> Esperando que el juez inicie el partido...
-                        </div>
-                        <button onClick={volverACartelera} className="mt-4 w-full max-w-md py-4 rounded-xl border border-white/20 text-[10px] font-bold uppercase tracking-widest hover:bg-white/10 transition-colors">Volver a Cartelera</button>
-                    </div>
-                )
-            }
-
             // VISTA: SCOREBOARD PÚBLICO EN VIVO
             return (
                 <div className="fixed inset-0 flex flex-col z-50 bg-[#04060a] overflow-hidden">
                     <div className="glass-dark py-2 px-3 flex justify-between items-center text-white shrink-0 z-20 border-b border-white/5">
-                        <button onClick={volverACartelera} className="flex items-center gap-1 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white transition-colors shrink-0">
+                        <button onClick={volverACartelera} className="flex items-center gap-1 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest text-white transition-colors shrink-0 border border-white/10">
                             <i className="fa-solid fa-arrow-left"></i> <span className="hidden sm:inline ml-1">Volver</span>
                         </button>
 
@@ -772,7 +725,13 @@
                             <div className="text-zinc-400 font-bold text-[9px] uppercase tracking-widest bg-white/5 border border-white/10 px-2 py-1.5 rounded-full flex items-center">
                                 <i className="fa-solid fa-eye text-cyan-400 mr-1"></i> {viewerCount}
                             </div>
-                            <button onClick={() => setIsMuted(!isMuted)} className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors shrink-0 ${isMuted ? 'bg-rose-500/20 text-rose-500 border border-rose-500/50' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50'}`}>
+                            
+                            {/* BOTÓN PARA DESBLOQUEAR AUDIO EN IPHONE MANUALMENTE SI HACE FALTA */}
+                            <button onClick={() => {
+                                const nextMuted = !isMuted;
+                                setIsMuted(nextMuted);
+                                if (!nextMuted) unlockAudioIPhone();
+                            }} className={`flex items-center justify-center w-8 h-8 rounded-full transition-colors shrink-0 ${isMuted ? 'bg-rose-500/20 text-rose-500 border border-rose-500/50' : 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/50 shadow-[0_0_10px_rgba(6,182,212,0.3)]'}`}>
                                 {isMuted ? <i className="fa-solid fa-volume-xmark"></i> : <i className="fa-solid fa-volume-high"></i>}
                             </button>
                         </div>
@@ -828,10 +787,10 @@
 
                     {winner && (
                         <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[600] flex flex-col items-center justify-center text-center p-6 animate-in zoom-in duration-500">
-                            <div className="w-20 h-20 rounded-full bg-cyan-600 flex items-center justify-center mb-6"><i className="fa-solid fa-trophy text-3xl text-white"></i></div>
+                            <div className="w-20 h-20 rounded-full bg-cyan-600 flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(6,182,212,0.5)]"><i className="fa-solid fa-trophy text-3xl text-white"></i></div>
                             <p className="text-cyan-400 font-bold uppercase tracking-[0.4em] text-[10px] mb-3">Ganador del Partido</p>
                             <h2 className="text-[6vh] font-black text-white mb-12 uppercase tracking-widest leading-none">{winner}</h2>
-                            <button onClick={volverACartelera} className="py-4 px-8 rounded-xl font-black uppercase tracking-widest text-xs bg-white text-black">Ver Cartelera de Partidos</button>
+                            <button onClick={volverACartelera} className="py-4 px-8 rounded-xl font-black uppercase tracking-widest text-xs bg-white text-black hover:bg-zinc-200 transition-colors">Ver Cartelera de Partidos</button>
                         </div>
                     )}
                 </div>
