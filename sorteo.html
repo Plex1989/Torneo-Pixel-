@@ -368,53 +368,63 @@
                 if(s.length > maxRounds) maxRounds = s.length;
             });
 
-            let sequentialMatches = [];
+            let pendingMatches = [];
             for(let r=0; r < maxRounds; r++) {
                 gruposGlobal.forEach(g => {
                     let s = scheds[g.nombre];
                     if(s && s[r]) {
                         s[r].matches.forEach(m => {
-                            sequentialMatches.push({ r: r, grupo: g.nombre, j1: m.j1, j2: m.j2 });
+                            pendingMatches.push({ r: r, grupoNombre: g.nombre, j1: m.j1, j2: m.j2 });
                         });
                     }
                 });
             }
 
-            let currentBlock = 0;
-            let tableCounter = 1;
-            let usedRefsInBlock = [];
             let blockNeeds = {};
+            let currentBlock = 0;
 
-            for(let i=0; i<sequentialMatches.length; i++) {
-                let match = sequentialMatches[i];
-                match.timeBlock = currentBlock;
-                
-                let restingPool = [];
-                gruposGlobal.forEach(g => {
-                    let s = scheds[g.nombre];
-                    if(s && s[match.r] && s[match.r].resting) restingPool.push(s[match.r].resting);
-                });
-                
-                let availableRefs = restingPool.filter(p => !usedRefsInBlock.includes(p.id));
-                if(availableRefs.length > 0) {
-                    usedRefsInBlock.push(availableRefs[0].id);
-                    match.needsExternal = false;
-                } else {
-                    match.needsExternal = true;
+            while(pendingMatches.length > 0) {
+                let playersBusyInBlock = new Set();
+                let tableCounter = 0;
+                let matchesAssignedInBlock = [];
+
+                for (let i = 0; i < pendingMatches.length; i++) {
+                    if (tableCounter >= numMesas) break;
+                    let match = pendingMatches[i];
+                    let p1Id = match.j1 ? match.j1.id : null;
+                    let p2Id = match.j2 ? match.j2.id : null;
+
+                    if ((p1Id && playersBusyInBlock.has(p1Id)) || (p2Id && playersBusyInBlock.has(p2Id))) {
+                        continue; // Evitar conflicto de jugador
+                    }
+
+                    if (p1Id) playersBusyInBlock.add(p1Id);
+                    if (p2Id) playersBusyInBlock.add(p2Id);
+
+                    matchesAssignedInBlock.push(match);
+                    tableCounter++;
+
+                    pendingMatches.splice(i, 1);
+                    i--;
                 }
-                
-                tableCounter++;
-                if(tableCounter > numMesas) {
-                    tableCounter = 1;
-                    currentBlock++;
-                    usedRefsInBlock = []; 
+
+                if (matchesAssignedInBlock.length === 0 && pendingMatches.length > 0) {
+                    let match = pendingMatches.shift();
+                    matchesAssignedInBlock.push(match);
                 }
+
+                let categoryPlayersCount = 0;
+                gruposGlobal.forEach(g => categoryPlayersCount += g.jugadores.length);
+                let restingCount = categoryPlayersCount - playersBusyInBlock.size;
+
+                let neededExternal = matchesAssignedInBlock.length - restingCount;
+                if (neededExternal > 0) {
+                    blockNeeds[currentBlock] = neededExternal;
+                }
+
+                currentBlock++;
             }
 
-            sequentialMatches.forEach(m => {
-                if(m.needsExternal) blockNeeds[m.timeBlock] = (blockNeeds[m.timeBlock] || 0) + 1;
-            });
-            
             let maxExt = 0;
             Object.values(blockNeeds).forEach(v => { if(v > maxExt) maxExt = v; });
             maxJuecesFaltantesSistema = maxExt;
@@ -525,6 +535,9 @@
             simularJuecesYActualizarUI();
         }
 
+        // ==========================================
+        // ALGORITMO SIN CONFLITOS DE JUGADORES (CORREGIDO)
+        // ==========================================
         function recalcularRolPartidos() {
             let scheds = {};
             let maxRounds = 0;
@@ -551,13 +564,13 @@
                 externalNames.push(val || `Juez Externo ${i+1}`);
             }
             
-            let sequentialMatches = [];
+            let pendingMatches = [];
             for(let r=0; r < maxRounds; r++) {
                 gruposGlobal.forEach(g => {
                     let s = scheds[g.nombre];
                     if(s && s[r]) {
                         s[r].matches.forEach(m => {
-                            sequentialMatches.push({
+                            pendingMatches.push({
                                 r: r,
                                 grupoNombre: g.nombre,
                                 j1: m.j1,
@@ -573,68 +586,88 @@
             let minsBreak = horaBreakStr ? timeToMinutes(horaBreakStr) : null;
             let breakApplied = false;
             
-            let totalBlocks = Math.ceil(sequentialMatches.length / numMesas);
-            let blockTimes = [];
             let currentTimeMins = minsInicio;
-            
-            for(let b=0; b<totalBlocks; b++) {
+            partidosGeneradosRR = [];
+
+            while (pendingMatches.length > 0) {
                 if (minsBreak !== null && !breakApplied && currentTimeMins >= minsBreak) {
                     currentTimeMins += duracionBreak;
                     breakApplied = true;
                 }
-                blockTimes.push(minutesToTimeStr(currentTimeMins));
+                let blockHoraStr = minutesToTimeStr(currentTimeMins);
+
+                let playersBusyInBlock = new Set();
+                let tableCounter = 0;
+                let externalRefCounter = 0;
+                let matchesAssignedInBlock = [];
+
+                // Asignar partidos a mesas dentro del mismo bloque evitando cruces de jugadores
+                for (let i = 0; i < pendingMatches.length; i++) {
+                    if (tableCounter >= numMesas) break;
+
+                    let match = pendingMatches[i];
+                    let p1Id = match.j1 ? match.j1.id : null;
+                    let p2Id = match.j2 ? match.j2.id : null;
+
+                    // Si alguno de los dos está jugando en este bloque, saltamos este partido
+                    if ((p1Id && playersBusyInBlock.has(p1Id)) || (p2Id && playersBusyInBlock.has(p2Id))) {
+                        continue; 
+                    }
+
+                    match.mesa = mesaInicio + tableCounter;
+                    match.hora = blockHoraStr;
+
+                    if (p1Id) playersBusyInBlock.add(p1Id);
+                    if (p2Id) playersBusyInBlock.add(p2Id);
+
+                    matchesAssignedInBlock.push(match);
+                    tableCounter++;
+
+                    pendingMatches.splice(i, 1);
+                    i--; // Ajustar índice tras eliminar de la lista pendiente
+                }
+
+                // Si no se pudo asignar ningún partido sin conflicto, forzamos el primero para avanzar
+                if (matchesAssignedInBlock.length === 0 && pendingMatches.length > 0) {
+                    let match = pendingMatches.shift();
+                    match.mesa = mesaInicio;
+                    match.hora = blockHoraStr;
+                    matchesAssignedInBlock.push(match);
+                }
+
+                // Asignar árbitros para los partidos de este bloque
+                let categoryPlayers = [];
+                gruposGlobal.forEach(g => {
+                    g.jugadores.forEach(j => {
+                        if (j && !playersBusyInBlock.has(j.id)) {
+                            categoryPlayers.push(j);
+                        }
+                    });
+                });
+
+                let usedRefsInBlock = new Set();
+                matchesAssignedInBlock.forEach(m => {
+                    let availableRef = categoryPlayers.find(p => !usedRefsInBlock.has(p.id));
+                    if (availableRef) {
+                        m.juez = `${availableRef.nombre} (Descansa)`;
+                        usedRefsInBlock.add(availableRef.id);
+                    } else {
+                        if (externalNames.length > 0) {
+                            m.juez = externalNames[externalRefCounter % externalNames.length];
+                            externalRefCounter++;
+                        } else {
+                            m.juez = 'Comité / Libre';
+                        }
+                    }
+                    partidosGeneradosRR.push(m);
+                });
+
                 currentTimeMins += duracionPartido;
             }
-            
-            let currentBlock = 0;
-            let tableCounter = 0;
-            let usedRefsInBlock = [];
-            let extRefUsageCounter = 0;
-            
-            partidosGeneradosRR = [];
-            
-            for(let i=0; i<sequentialMatches.length; i++) {
-                let match = sequentialMatches[i];
-                
-                match.mesa = mesaInicio + tableCounter;
-                match.hora = blockTimes[currentBlock];
-                
-                let restingPool = [];
-                gruposGlobal.forEach(g => {
-                    let s = scheds[g.nombre];
-                    if(s && s[match.r] && s[match.r].resting) {
-                        restingPool.push(s[match.r].resting);
-                    }
-                });
-                
-                let availableRefs = restingPool.filter(p => !usedRefsInBlock.includes(p.id));
-                if(availableRefs.length > 0) {
-                    let ref = availableRefs[0];
-                    match.juez = `${ref.nombre} (Descansa)`;
-                    usedRefsInBlock.push(ref.id);
-                } else {
-                    if(externalNames.length > 0) {
-                        match.juez = externalNames[extRefUsageCounter % externalNames.length];
-                        extRefUsageCounter++;
-                    } else {
-                        match.juez = 'Comité / Libre';
-                    }
-                }
-                
-                partidosGeneradosRR.push(match);
-                
-                tableCounter++;
-                if(tableCounter >= numMesas) {
-                    tableCounter = 0;
-                    currentBlock++;
-                    usedRefsInBlock = []; 
-                    extRefUsageCounter = 0; 
-                }
-            }
 
-            let ultimaHoraMins = currentTimeMins;
-            let horaSemiStr = minutesToTimeStr(ultimaHoraMins);
-            let horaFinalStr = minutesToTimeStr(ultimaHoraMins + duracionPartido);
+            // FASE ELIMINATORIA POSTERIOR A GRUPOS
+            let horaSemiStr = minutesToTimeStr(currentTimeMins);
+            let horaFinalStr = minutesToTimeStr(currentTimeMins + duracionPartido);
 
             partidosGeneradosRR.push({
                 mesa: mesaInicio,
@@ -769,9 +802,6 @@
             dibujarTablaPartidosBD(filtrados);
         }
 
-        // ==========================================
-        // COMPARTIR AGENDA CON SEDE Y FECHA INCLUIDAS
-        // ==========================================
         function compartirAgendaWhatsApp() {
             const filtroEl = document.getElementById('filtro-jugador-agenda');
             const nombre = filtroEl ? filtroEl.value : '';
