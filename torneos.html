@@ -65,6 +65,14 @@
         .t-info i { color: #f59e0b; width: 12px; text-align: center; }
         
         .acciones-torneo { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+
+        /* MÓDULO MONITOR DE ALERTAS */
+        .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 15px; }
+        .kpi-card { background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 12px 16px; text-align: center; }
+        .kpi-val { font-size: 22px; font-weight: 800; font-family: 'Orbitron', sans-serif; color: #38bdf8; margin-top: 4px; }
+        .kpi-lbl { font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
+        .kpi-alert { color: #f59e0b !important; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -84,7 +92,7 @@
 
     <div class="main-content">
 
-        <!-- MÓDULO DE LOGIN (Se muestra solo si no hay sesión iniciada) -->
+        <!-- MÓDULO DE LOGIN (Se muestra si no hay sesión iniciada) -->
         <div id="panel-login" class="panel-3d" style="border-bottom: 5px solid #ef4444; text-align: center; max-width: 450px; margin: 40px auto; display: none;">
             <i class="fa-solid fa-shield-halved" style="font-size: 40px; color: #ef4444; margin-bottom: 15px;"></i>
             <h2 style="border:none; margin-bottom:5px;">ACCESO RESTRINGIDO</h2>
@@ -93,18 +101,40 @@
             <button class="btn-console btn-red" style="width: 100%; justify-content: center;" onclick="loginAdmin()">ENTRAR AL SISTEMA</button>
         </div>
 
-        <!-- MÓDULOS DEL SISTEMA (Se ocultan si no hay sesión iniciada) -->
+        <!-- MÓDULOS DEL SISTEMA (Se muestran tras iniciar sesión) -->
         <div id="panel-sistema" style="display: none;">
             
-            <!-- MÓDULO: BANNER TORNEO ACTIVO -->
-            <div class="panel-3d" style="border-bottom: 5px solid #8b5cf6; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding: 20px 28px;">
-                <div>
-                    <span style="font-size: 9px; font-weight: 800; text-transform: uppercase; color:#a855f7; letter-spacing: 2px;">Torneo Activo en el Sistema</span>
-                    <h3 id="nombre-torneo-banner" style="margin: 4px 0 0 0; border: none; padding: 0; color:#ffffff; font-size:18px; letter-spacing: 1px;">Ninguno</h3>
+            <!-- MÓDULO: BANNER Y MONITOR DE ADVERTENCIAS DEL TORNEO ACTIVO -->
+            <div class="panel-3d" style="border-bottom: 5px solid #8b5cf6;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+                    <div>
+                        <span style="font-size: 9px; font-weight: 800; text-transform: uppercase; color:#a855f7; letter-spacing: 2px;">Torneo Activo Seleccionado</span>
+                        <h3 id="nombre-torneo-banner" style="margin: 4px 0 0 0; border: none; padding: 0; color:#ffffff; font-size:18px; letter-spacing: 1px;">Ninguno</h3>
+                    </div>
+                    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <button class="btn-console btn-ws-style" onclick="compartirLinkInscripcionWS()">📲 LINK INSCRIPCIÓN</button>
+                        <button class="btn-console btn-purple" onclick="compartirLinkTransmisionWS()">📺 LINK TRANSMISIÓN (FANS)</button>
+                    </div>
                 </div>
-                <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                    <button class="btn-console btn-ws-style" onclick="compartirLinkInscripcionWS()">📲 LINK INSCRIPCIÓN</button>
-                    <button class="btn-console btn-purple" onclick="compartirLinkTransmisionWS()">📺 LINK TRANSMISIÓN (FANS)</button>
+
+                <!-- CARDS DE ESTADO / ALERTAS -->
+                <div class="kpi-container">
+                    <div class="kpi-card">
+                        <div class="kpi-lbl">👥 Inscritos Totales</div>
+                        <div class="kpi-val" id="kpi-totales">0</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-lbl">✅ Confirmados (Pagados)</div>
+                        <div class="kpi-val" style="color:#34d399;" id="kpi-confirmados">0</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-lbl">💰 Pagos Pendientes</div>
+                        <div class="kpi-val" id="kpi-pendientes-pago">0</div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-lbl">⚠️ Esperando Ranking</div>
+                        <div class="kpi-val" id="kpi-sin-ranking">0</div>
+                    </div>
                 </div>
             </div>
 
@@ -179,7 +209,6 @@
 
         async function loginAdmin() {
             const pass = document.getElementById('admin-pass').value;
-            // Verifica la contraseña contra la configuración de la BD o un master PIN "admin" / "1234"
             const { data } = await clienteSupabase.from('configuracion').select('valor').eq('clave', 'admin_password').single();
             let validPass = data ? data.valor : '1234'; 
             
@@ -197,7 +226,7 @@
         }
 
         // ==========================================
-        // FUNCIONES DE WHATSAPP Y ENLACES (BANNER)
+        // FUNCIONES DE WHATSAPP Y ENLACES
         // ==========================================
         function compartirLinkTransmisionWS() {
             const activoId = localStorage.getItem('torneo_activo_id');
@@ -218,7 +247,7 @@
         }
 
         // ==========================================
-        // CARGA Y DIBUJO DE TORNEOS
+        // CARGA DE METRICAS Y TORNEOS
         // ==========================================
         async function cargarTorneos() {
             try {
@@ -229,19 +258,70 @@
 
                 if (error) throw error;
                 torneosCargados = data || [];
-                dibujarTorneos();
                 
-                // Actualizar Banner
-                const activoId = localStorage.getItem('torneo_activo_id');
-                const tActivo = torneosCargados.find(item => item.id == activoId);
-                if(tActivo) {
-                    document.getElementById('nombre-torneo-banner').innerText = `${tActivo.nombre} (${tActivo.fecha_evento || 'Sin Fecha'})`;
-                } else {
-                    document.getElementById('nombre-torneo-banner').innerText = `Ningún Torneo Seleccionado`;
+                const activoId = localStorage.getItem('torneo_activo_id') || (torneosCargados[0] ? torneosCargados[0].id : null);
+                if (activoId && !localStorage.getItem('torneo_activo_id')) {
+                    localStorage.setItem('torneo_activo_id', activoId);
                 }
+
+                dibujarTorneos();
+                cargarMetricasTorneoActivo(activoId);
 
             } catch (err) {
                 console.error("Error cargando torneos:", err);
+            }
+        }
+
+        async function cargarMetricasTorneoActivo(activoId) {
+            const banner = document.getElementById('nombre-torneo-banner');
+            const elTotales = document.getElementById('kpi-totales');
+            const elConfirmados = document.getElementById('kpi-confirmados');
+            const elPendientesPago = document.getElementById('kpi-pendientes-pago');
+            const elSinRanking = document.getElementById('kpi-sin-ranking');
+
+            if (!activoId) {
+                banner.innerText = "Ningún Torneo Seleccionado";
+                elTotales.innerText = "0"; elConfirmados.innerText = "0";
+                elPendientesPago.innerText = "0"; elSinRanking.innerText = "0";
+                return;
+            }
+
+            const tActivo = torneosCargados.find(item => item.id == activoId);
+            if(tActivo) {
+                banner.innerText = `${tActivo.nombre} (${tActivo.fecha_evento || 'Sin Fecha'})`;
+            }
+
+            try {
+                // 1. Cargar Inscripciones del Torneo
+                const { data: inscripciones } = await clienteSupabase
+                    .from('inscripciones')
+                    .select('id, estatus_pago')
+                    .eq('torneo_id', activoId);
+
+                const total = inscripciones ? inscripciones.length : 0;
+                const confirmados = inscripciones ? inscripciones.filter(i => i.estatus_pago === 'Pagado').length : 0;
+                const pendientesPago = inscripciones ? inscripciones.filter(i => i.estatus_pago === 'Pendiente de Pago').length : 0;
+
+                elTotales.innerText = total;
+                elConfirmados.innerText = confirmados;
+                
+                elPendientesPago.innerText = pendientesPago;
+                if(pendientesPago > 0) elPendientesPago.classList.add('kpi-alert');
+                else elPendientesPago.classList.remove('kpi-alert');
+
+                // 2. Cargar Jugadores Nuevos (Esperando Ranking)
+                const { data: jugSinRanking } = await clienteSupabase
+                    .from('jugadores')
+                    .select('id')
+                    .eq('puntos_ranking', 0);
+
+                const cantSinRanking = jugSinRanking ? jugSinRanking.length : 0;
+                elSinRanking.innerText = cantSinRanking;
+                if(cantSinRanking > 0) elSinRanking.classList.add('kpi-alert');
+                else elSinRanking.classList.remove('kpi-alert');
+
+            } catch (err) {
+                console.error("Error al cargar métricas:", err);
             }
         }
 
@@ -365,7 +445,7 @@
         }
 
         // ==========================================
-        // FUNCIÓN ELIMINAR (CON LIMPIEZA EN CASCADA)
+        // ELIMINACIÓN CON LIMPIEZA EN CASCADA
         // ==========================================
         async function eliminarTorneo(id, nombre) {
             const confirmacion = confirm(
