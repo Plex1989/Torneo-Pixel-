@@ -89,11 +89,7 @@
         .memoria-header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #000; padding-bottom: 20px; }
         .memoria-header h1 { margin: 0 0 10px 0; font-size: 24px; text-transform: uppercase; font-weight: 900; }
         .memoria-cat-title { background: #1e293b; color: #fff; padding: 10px; margin: 30px 0 15px 0; font-weight: bold; text-transform: uppercase; font-size: 14px; }
-        .memoria-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 11px; }
-        .memoria-table th, .memoria-table td { border: 1px solid #cbd5e1; padding: 6px; text-align: left; background: #fff !important; color: #000 !important; }
-        .memoria-table th { background: #f1f5f9 !important; font-weight: bold; }
-        .memoria-link { color: #2563eb; text-decoration: none; font-weight: bold; }
-
+        
         .expediente-card { border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; margin-bottom: 20px; page-break-inside: avoid; }
         .expediente-header { font-size: 14px; font-weight: bold; border-bottom: 1px solid #cbd5e1; padding-bottom: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; }
         .text-green { color: #16a34a !important; font-weight: bold; }
@@ -417,7 +413,6 @@
                 reglasRankingList = resReglas.status === 'fulfilled' ? (resReglas.value.data || []) : [];
             } catch(e) { console.error("Error en peticiones principales:", e); }
 
-            // EJECUCIÓN DEFENSIVA DE CADA MÓDULO INDEPENDIENTE
             try { poblarDropdownClubs(); } catch(e) { console.error(e); }
             try { dibujarTablaClubs(); } catch(e) { console.error(e); }
             try { filtrarYAutoSeleccionarAdmin(); } catch(e) { console.error(e); }
@@ -855,7 +850,7 @@
         }
 
         // ==========================================
-        // PROGRAMACIÓN CATEGORÍAS (FUNCIONAMIENTO CORREGIDO Y BLINDADO)
+        // PROGRAMACIÓN CATEGORÍAS (DEFENSIVO / PROTEGIDO)
         // ==========================================
         function dibujarTablaProgramacionCategorias() {
             const tbody = document.getElementById('tabla-programacion-categorias'); 
@@ -872,10 +867,18 @@
             todasLasCategoriasAdmin.forEach(cat => {
                 if (!cat || !cat.id) return;
                 const prog = progList.find(p => p && p.categoria_id === cat.id) || {};
+                
                 const fechaVal = prog.fecha || (torneoActivoObj ? torneoActivoObj.fecha_evento || '' : '');
                 const horaVal = prog.hora || '09:00';
-                const lugarVal = prog.lugar || (torneoActivoObj ? torneoActivoObj.lugar_evento || 'Sede Principal' : 'Sede Principal');
-                const costoVal = prog.costo_inscripcion || cat.costo_inscripcion || 200;
+                const lugarVal = prog.lugar || (torneoActivoObj ? torneoActivoObj.lugar_evento || 'LOBBY UV' : 'LOBBY UV');
+                
+                // LÓGICA DE PRECIO CORREGIDA: Si viene en prog o cat, se usa; si no, 200 por defecto
+                let costoVal = 200;
+                if (prog.costo_inscripcion !== undefined && prog.costo_inscripcion !== null && prog.costo_inscripcion !== '') {
+                    costoVal = prog.costo_inscripcion;
+                } else if (cat.costo_inscripcion !== undefined && cat.costo_inscripcion !== null && cat.costo_inscripcion !== '') {
+                    costoVal = cat.costo_inscripcion;
+                }
 
                 tbody.innerHTML += `
                     <tr>
@@ -890,17 +893,45 @@
             });
         }
 
+        // GUARDADO DOBLE SINCRO EN PROGRAMACION_CATEGORIAS Y CATEGORIAS BASE
         async function guardarHorarioCat(catId) {
-            const fecha = document.getElementById(`cat-fecha-${catId}`).value;
-            const hora = document.getElementById(`cat-hora-${catId}`).value;
-            const lugar = document.getElementById(`cat-lugar-${catId}`).value.trim();
-            const costo = parseFloat(document.getElementById(`cat-inscripcion-${catId}`).value) || 200;
-            await clienteSupabase.from('programacion_categorias').upsert({ torneo_id: parseInt(idTorneoActivo), categoria_id: catId, fecha: fecha, hora: hora, lugar: lugar, costo_inscripcion: costo }, { onConflict: 'torneo_id,categoria_id' });
-            alert("✅ Guardado con éxito."); cargarDatosIniciales();
+            try {
+                const fecha = document.getElementById(`cat-fecha-${catId}`).value;
+                const hora = document.getElementById(`cat-hora-${catId}`).value;
+                const lugar = document.getElementById(`cat-lugar-${catId}`).value.trim();
+                const costo = parseFloat(document.getElementById(`cat-inscripcion-${catId}`).value) || 200;
+
+                // 1. Guardar en tabla programacion_categorias
+                const { error: errProg } = await clienteSupabase
+                    .from('programacion_categorias')
+                    .upsert({ 
+                        torneo_id: parseInt(idTorneoActivo), 
+                        categoria_id: catId, 
+                        fecha: fecha, 
+                        hora: hora, 
+                        lugar: lugar, 
+                        costo_inscripcion: costo 
+                    }, { onConflict: 'torneo_id,categoria_id' });
+
+                if (errProg) console.error("Error programacion_categorias:", errProg);
+
+                // 2. Guardar en tabla base categorias
+                const { error: errCat } = await clienteSupabase
+                    .from('categorias')
+                    .update({ costo_inscripcion: costo })
+                    .eq('id', catId);
+
+                if (errCat) console.error("Error categorias:", errCat);
+
+                alert("✅ Guardado con éxito."); 
+                await cargarDatosIniciales();
+            } catch(e) {
+                alert("❌ Error al guardar: " + e.message);
+            }
         }
 
         // ==========================================
-        // CARGA INTELIGENTE DE INSCRITOS AGRUPADOS
+        // CARGA DE INSCRITOS AGRUPADOS POR CATEGORÍA
         // ==========================================
         async function cargarInscritosEnVivo() {
             try {
@@ -1061,6 +1092,7 @@
             await clienteSupabase.from('clubs').delete().eq('id', id); cargarDatosIniciales();
         }
 
+        // FUNCIONES BD JUGADORES Y RANKING
         function toggleTablaRanking() {
             const panel = document.getElementById('seccion-print'); 
             const btn = document.getElementById('btn-toggle-ranking');
