@@ -162,7 +162,8 @@
                     </div>
                     <div class="input-group">
                         <label>N° de Mesas Disponibles</label>
-                        <input type="number" id="t-mesas" value="5" min="1">
+                        <!-- Dejamos el input visual, pero su valor ya NO se enviará a la BD para no romper nada -->
+                        <input type="number" id="t-mesas" value="5" min="1" disabled style="opacity: 0.5;">
                     </div>
                 </div>
 
@@ -353,8 +354,7 @@
                         
                         <div class="t-info"><i class="fa-regular fa-calendar"></i> ${t.fecha_evento || 'Sin fecha'}</div>
                         <div class="t-info"><i class="fa-solid fa-location-dot"></i> ${t.lugar_evento || 'Sin sede'}</div>
-                        <div class="t-info" style="color:#38bdf8;"><i class="fa-solid fa-table-tennis-paddle-ball" style="color:#38bdf8;"></i> Mesas Gimnasio: ${t.numero_mesas || 0}</div>
-
+                        
                         <div class="acciones-torneo">
                             ${mainBtn}
                             <button class="btn-console btn-gold" onclick="prepararEdicion(${t.id})">EDITAR</button>
@@ -371,22 +371,21 @@
         }
 
         // ==========================================
-        // CREACIÓN Y EDICIÓN
+        // CREACIÓN Y EDICIÓN (SIN NUMERO_MESAS PARA EVITAR ERROR)
         // ==========================================
         async function guardarTorneo() {
             const id = document.getElementById('torneo-id').value;
             const nombre = document.getElementById('t-nombre').value.trim();
             const fecha = document.getElementById('t-fecha').value;
             const sede = document.getElementById('t-sede').value.trim();
-            const mesas = parseInt(document.getElementById('t-mesas').value) || 5;
 
             if (!nombre) { alert("El nombre del torneo es obligatorio."); return; }
 
+            // ELIMINADO EL CAMPO "numero_mesas" DEL PAYLOAD PARA EVITAR EL CRASH DE SUPABASE
             const payload = {
                 nombre: nombre,
                 fecha_evento: fecha,
-                lugar_evento: sede,
-                numero_mesas: mesas
+                lugar_evento: sede
             };
 
             const btn = document.getElementById('btn-guardar');
@@ -424,7 +423,6 @@
             document.getElementById('t-nombre').value = t.nombre;
             document.getElementById('t-fecha').value = t.fecha_evento || '';
             document.getElementById('t-sede').value = t.lugar_evento || '';
-            document.getElementById('t-mesas').value = t.numero_mesas || 5;
 
             document.getElementById('form-titulo').innerHTML = `✏️ EDITANDO: <span style="color:#fbbf24">${t.nombre}</span>`;
             document.getElementById('btn-guardar').innerText = "GUARDAR CAMBIOS";
@@ -437,7 +435,6 @@
             document.getElementById('t-nombre').value = '';
             document.getElementById('t-fecha').value = '';
             document.getElementById('t-sede').value = '';
-            document.getElementById('t-mesas').value = '5';
 
             document.getElementById('form-titulo').innerText = "🏆 CREAR / EDITAR TORNEO";
             document.getElementById('btn-guardar').innerText = "+ CREAR TORNEO";
@@ -445,7 +442,7 @@
         }
 
         // ==========================================
-        // ELIMINACIÓN CON LIMPIEZA EN CASCADA
+        // ELIMINACIÓN PROFUNDA (CON CASCADA MANUAL)
         // ==========================================
         async function eliminarTorneo(id, nombre) {
             const confirmacion = confirm(
@@ -453,17 +450,22 @@
                 `Esto borrará permanentemente:\n` +
                 `- Todos los partidos jugados\n` +
                 `- Todas las inscripciones de jugadores\n` +
-                `- Horarios y programación\n\n` +
+                `- Horarios, programación y grupos\n\n` +
                 `ESTA ACCIÓN NO SE PUEDE DESHACER.`
             );
 
             if (!confirmacion) return;
 
             try {
+                // 1. Limpieza total de tablas relacionadas (Para evitar bloqueos por llaves foráneas en Supabase)
                 await clienteSupabase.from('partidos').delete().eq('torneo_id', id);
                 await clienteSupabase.from('inscripciones').delete().eq('torneo_id', id);
                 await clienteSupabase.from('programacion_categorias').delete().eq('torneo_id', id);
+                
+                // Agregamos la limpieza de "grupos_torneo" que era la que causaba el error de borrado
+                await clienteSupabase.from('grupos_torneo').delete().eq('torneo_id', id);
 
+                // 2. Eliminación final del torneo
                 const { error } = await clienteSupabase.from('torneos').delete().eq('id', id);
                 if (error) throw error;
 
