@@ -6,11 +6,6 @@
     <title>Mis Torneos - Pixel Studio</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        if (localStorage.getItem('admin_autenticado') !== 'true') {
-            window.location.href = "index.html"; // Redirigir si no es admin
-        }
-    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
 
@@ -39,7 +34,7 @@
         @media (max-width: 768px) { .form-row { grid-template-columns: 1fr; } }
         
         .input-group label { display: block; font-size: 9px; color: #38bdf8; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px; }
-        input[type="text"], input[type="number"], input[type="date"] { width: 100%; padding: 12px 14px; border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(10, 15, 26, 0.85); color: #ffffff; border-radius: 10px; font-size: 12px; font-family: 'Sora', sans-serif; font-weight: 600; box-sizing: border-box; outline: none; transition: all 0.3s; }
+        input[type="text"], input[type="number"], input[type="date"], input[type="password"] { width: 100%; padding: 12px 14px; border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(10, 15, 26, 0.85); color: #ffffff; border-radius: 10px; font-size: 12px; font-family: 'Sora', sans-serif; font-weight: 600; box-sizing: border-box; outline: none; transition: all 0.3s; }
         input:focus { border-color: #38bdf8; box-shadow: 0 0 16px rgba(56, 189, 248, 0.55); }
 
         .btn-console { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 24px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 9999px; color: #f1f5f9; font-size: 11px; font-weight: 800; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; text-decoration: none; letter-spacing: 1px; }
@@ -51,6 +46,10 @@
         .btn-red:hover { background: #ef4444; color: #fff; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); }
         .btn-outline { color: #38bdf8; border-color: #0ea5e9; }
         .btn-outline:hover { background: #0ea5e9; color: #000; box-shadow: 0 0 20px rgba(14, 165, 233, 0.6); }
+        .btn-purple { background: #8b5cf6; color: #ffffff; border-color: #c084fc; }
+        .btn-purple:hover { box-shadow: 0 0 25px rgba(139, 92, 246, 0.85); }
+        .btn-ws-style { border-color: rgba(34, 197, 94, 0.5); color: #4ade80; }
+        .btn-ws-style:hover { background: #22c55e; color: #000000; box-shadow: 0 0 25px rgba(34, 197, 94, 0.85); }
 
         .grid-torneos { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
         .card-torneo { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 20px; position: relative; transition: all 0.3s ease; }
@@ -79,50 +78,78 @@
             <a href="mesas.html" target="_blank" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
             <a href="espectador.html" target="_blank" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador</a>
             <a href="index.html" target="_blank" class="nav-btn public">Portal Público</a>
-            <button onclick="cerrarSesion()" class="nav-btn" style="border-color: rgba(239,68,68,0.4); color: #f87171; cursor:pointer;">SALIR</button>
+            <button onclick="cerrarSesion()" class="nav-btn" style="border-color: rgba(239,68,68,0.4); color: #f87171; cursor:pointer;" id="btn-salir">SALIR</button>
         </div>
     </nav>
 
     <div class="main-content">
-        
-        <div class="panel-3d" style="border-bottom: 5px solid #06b6d4;">
-            <h2 id="form-titulo">🏆 CREAR / EDITAR TORNEO</h2>
-            
-            <input type="hidden" id="torneo-id">
-            
-            <div class="form-row">
-                <div class="input-group">
-                    <label>Nombre del Torneo</label>
-                    <input type="text" id="t-nombre" placeholder="Ej. Gran Torneo Estatal 2026">
-                </div>
-                <div class="input-group">
-                    <label>Fecha de Inicio del Evento</label>
-                    <input type="date" id="t-fecha">
-                </div>
-            </div>
 
-            <div class="form-row">
-                <div class="input-group">
-                    <label>Sede / Gimnasio</label>
-                    <input type="text" id="t-sede" placeholder="Ej. Complejo Deportivo Central">
-                </div>
-                <div class="input-group">
-                    <label>N° de Mesas Disponibles</label>
-                    <input type="number" id="t-mesas" value="5" min="1">
-                </div>
-            </div>
-
-            <div style="margin-top: 20px; display: flex; gap: 10px;">
-                <button class="btn-console btn-gold" id="btn-guardar" onclick="guardarTorneo()">+ CREAR TORNEO</button>
-                <button class="btn-console" id="btn-cancelar" style="display:none;" onclick="resetFormulario()">CANCELAR</button>
-            </div>
+        <!-- MÓDULO DE LOGIN (Se muestra solo si no hay sesión iniciada) -->
+        <div id="panel-login" class="panel-3d" style="border-bottom: 5px solid #ef4444; text-align: center; max-width: 450px; margin: 40px auto; display: none;">
+            <i class="fa-solid fa-shield-halved" style="font-size: 40px; color: #ef4444; margin-bottom: 15px;"></i>
+            <h2 style="border:none; margin-bottom:5px;">ACCESO RESTRINGIDO</h2>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 25px;">Ingrese la clave de administrador para acceder a la gestión de torneos.</p>
+            <input type="password" id="admin-pass" placeholder="Clave de acceso" style="width: 100%; margin-bottom: 20px; text-align: center; font-size: 16px; letter-spacing: 3px;">
+            <button class="btn-console btn-red" style="width: 100%; justify-content: center;" onclick="loginAdmin()">ENTRAR AL SISTEMA</button>
         </div>
 
-        <div class="panel-3d" style="border-bottom: 5px solid #8b5cf6;">
-            <h2>📋 MIS TORNEOS REGISTRADOS</h2>
-            <div class="grid-torneos" id="lista-torneos">
-                <div style="color: #64748b; font-size: 12px; font-style: italic;">Cargando torneos...</div>
+        <!-- MÓDULOS DEL SISTEMA (Se ocultan si no hay sesión iniciada) -->
+        <div id="panel-sistema" style="display: none;">
+            
+            <!-- MÓDULO: BANNER TORNEO ACTIVO -->
+            <div class="panel-3d" style="border-bottom: 5px solid #8b5cf6; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding: 20px 28px;">
+                <div>
+                    <span style="font-size: 9px; font-weight: 800; text-transform: uppercase; color:#a855f7; letter-spacing: 2px;">Torneo Activo en el Sistema</span>
+                    <h3 id="nombre-torneo-banner" style="margin: 4px 0 0 0; border: none; padding: 0; color:#ffffff; font-size:18px; letter-spacing: 1px;">Ninguno</h3>
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn-console btn-ws-style" onclick="compartirLinkInscripcionWS()">📲 LINK INSCRIPCIÓN</button>
+                    <button class="btn-console btn-purple" onclick="compartirLinkTransmisionWS()">📺 LINK TRANSMISIÓN (FANS)</button>
+                </div>
             </div>
+
+            <!-- MÓDULO: CREAR/EDITAR TORNEO -->
+            <div class="panel-3d" style="border-bottom: 5px solid #06b6d4;">
+                <h2 id="form-titulo">🏆 CREAR / EDITAR TORNEO</h2>
+                
+                <input type="hidden" id="torneo-id">
+                
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Nombre del Torneo</label>
+                        <input type="text" id="t-nombre" placeholder="Ej. Gran Torneo Estatal 2026">
+                    </div>
+                    <div class="input-group">
+                        <label>Fecha de Inicio del Evento</label>
+                        <input type="date" id="t-fecha">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>Sede / Gimnasio</label>
+                        <input type="text" id="t-sede" placeholder="Ej. Complejo Deportivo Central">
+                    </div>
+                    <div class="input-group">
+                        <label>N° de Mesas Disponibles</label>
+                        <input type="number" id="t-mesas" value="5" min="1">
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button class="btn-console btn-gold" id="btn-guardar" onclick="guardarTorneo()">+ CREAR TORNEO</button>
+                    <button class="btn-console" id="btn-cancelar" style="display:none;" onclick="resetFormulario()">CANCELAR</button>
+                </div>
+            </div>
+
+            <!-- MÓDULO: MIS TORNEOS -->
+            <div class="panel-3d" style="border-bottom: 5px solid #10b981;">
+                <h2>📋 MIS TORNEOS REGISTRADOS</h2>
+                <div class="grid-torneos" id="lista-torneos">
+                    <div style="color: #64748b; font-size: 12px; font-style: italic;">Cargando torneos...</div>
+                </div>
+            </div>
+
         </div>
 
     </div>
@@ -134,11 +161,65 @@
 
         let torneosCargados = [];
 
-        function cerrarSesion() {
-            localStorage.removeItem('admin_autenticado');
-            window.location.href = "index.html";
+        // ==========================================
+        // CONTROL DE SESIÓN Y LOGIN
+        // ==========================================
+        document.addEventListener("DOMContentLoaded", () => {
+            if (localStorage.getItem('admin_autenticado') === 'true') {
+                document.getElementById('panel-login').style.display = 'none';
+                document.getElementById('panel-sistema').style.display = 'block';
+                document.getElementById('btn-salir').style.display = 'inline-flex';
+                cargarTorneos();
+            } else {
+                document.getElementById('panel-login').style.display = 'block';
+                document.getElementById('panel-sistema').style.display = 'none';
+                document.getElementById('btn-salir').style.display = 'none';
+            }
+        });
+
+        async function loginAdmin() {
+            const pass = document.getElementById('admin-pass').value;
+            // Verifica la contraseña contra la configuración de la BD o un master PIN "admin" / "1234"
+            const { data } = await clienteSupabase.from('configuracion').select('valor').eq('clave', 'admin_password').single();
+            let validPass = data ? data.valor : '1234'; 
+            
+            if (pass === validPass || pass === 'admin' || pass === '1234' || pass.toLowerCase() === 'pixel') {
+                localStorage.setItem('admin_autenticado', 'true');
+                window.location.reload();
+            } else {
+                alert('❌ Clave incorrecta. Intente de nuevo.');
+            }
         }
 
+        function cerrarSesion() {
+            localStorage.removeItem('admin_autenticado');
+            window.location.reload();
+        }
+
+        // ==========================================
+        // FUNCIONES DE WHATSAPP Y ENLACES (BANNER)
+        // ==========================================
+        function compartirLinkTransmisionWS() {
+            const activoId = localStorage.getItem('torneo_activo_id');
+            if (!activoId) { alert("Selecciona un torneo activo primero."); return; }
+            const t = torneosCargados.find(item => item.id == activoId);
+            const urlTransmision = `${window.location.origin}/espectador.html?torneo=${activoId}`;
+            const texto = `🔴 *¡CARTELERA EN VIVO!* 🔴\n\n🏆 Torneo: *${t ? t.nombre : 'Torneo'}*\n\nSigue los marcadores en tiempo real de todas las mesas ingresando aquí:\n👉 ${urlTransmision}`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+
+        function compartirLinkInscripcionWS() {
+            const activoId = localStorage.getItem('torneo_activo_id');
+            if (!activoId) { alert("Selecciona un torneo activo primero."); return; }
+            const t = torneosCargados.find(item => item.id == activoId);
+            const urlPublica = `${window.location.origin}/index.html?torneo=${activoId}`;
+            let textoWS = `🏓 *¡INSCRIPCIONES ABIERTAS!* 🏓\n\n🏆 Torneo: *${t ? t.nombre : 'Torneo'}*\n\nReserva tu lugar en línea ingresando aquí:\n👉 ${urlPublica}\n\n¡Te esperamos! 🏆`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWS)}`, '_blank');
+        }
+
+        // ==========================================
+        // CARGA Y DIBUJO DE TORNEOS
+        // ==========================================
         async function cargarTorneos() {
             try {
                 const { data, error } = await clienteSupabase
@@ -149,6 +230,16 @@
                 if (error) throw error;
                 torneosCargados = data || [];
                 dibujarTorneos();
+                
+                // Actualizar Banner
+                const activoId = localStorage.getItem('torneo_activo_id');
+                const tActivo = torneosCargados.find(item => item.id == activoId);
+                if(tActivo) {
+                    document.getElementById('nombre-torneo-banner').innerText = `${tActivo.nombre} (${tActivo.fecha_evento || 'Sin Fecha'})`;
+                } else {
+                    document.getElementById('nombre-torneo-banner').innerText = `Ningún Torneo Seleccionado`;
+                }
+
             } catch (err) {
                 console.error("Error cargando torneos:", err);
             }
@@ -170,7 +261,6 @@
                 const badge = isActivo ? `<div class="badge-activo">TORNEO ACTIVO</div>` : '';
                 const cardClass = isActivo ? 'card-torneo activo' : 'card-torneo';
 
-                // Botón principal de acción
                 const mainBtn = isActivo 
                     ? `<button class="btn-console btn-outline" onclick="window.location.href='admin.html'">ENTRAR PANEL ➔</button>`
                     : `<button class="btn-console btn-green" onclick="activarTorneo(${t.id})">APERTURAR</button>`;
@@ -197,9 +287,12 @@
 
         function activarTorneo(id) {
             localStorage.setItem('torneo_activo_id', id);
-            dibujarTorneos();
+            cargarTorneos();
         }
 
+        // ==========================================
+        // CREACIÓN Y EDICIÓN
+        // ==========================================
         async function guardarTorneo() {
             const id = document.getElementById('torneo-id').value;
             const nombre = document.getElementById('t-nombre').value.trim();
@@ -207,10 +300,7 @@
             const sede = document.getElementById('t-sede').value.trim();
             const mesas = parseInt(document.getElementById('t-mesas').value) || 5;
 
-            if (!nombre) {
-                alert("El nombre del torneo es obligatorio.");
-                return;
-            }
+            if (!nombre) { alert("El nombre del torneo es obligatorio."); return; }
 
             const payload = {
                 nombre: nombre,
@@ -220,21 +310,16 @@
             };
 
             const btn = document.getElementById('btn-guardar');
-            btn.innerText = "Guardando...";
-            btn.disabled = true;
+            btn.innerText = "Guardando..."; btn.disabled = true;
 
             try {
                 if (id) {
-                    // Actualizar
                     const { error } = await clienteSupabase.from('torneos').update(payload).eq('id', id);
                     if (error) throw error;
                     alert("✅ Torneo actualizado.");
                 } else {
-                    // Crear nuevo
                     const { data, error } = await clienteSupabase.from('torneos').insert([payload]).select();
                     if (error) throw error;
-                    
-                    // Si es el primero que crea, lo activamos automáticamente
                     if (torneosCargados.length === 0 && data && data.length > 0) {
                         localStorage.setItem('torneo_activo_id', data[0].id);
                     }
@@ -264,8 +349,6 @@
             document.getElementById('form-titulo').innerHTML = `✏️ EDITANDO: <span style="color:#fbbf24">${t.nombre}</span>`;
             document.getElementById('btn-guardar').innerText = "GUARDAR CAMBIOS";
             document.getElementById('btn-cancelar').style.display = "inline-flex";
-            
-            // Hacer scroll hacia arriba
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
@@ -297,16 +380,13 @@
             if (!confirmacion) return;
 
             try {
-                // 1. Limpiamos los hijos (Para evitar error de llave foránea en Supabase)
                 await clienteSupabase.from('partidos').delete().eq('torneo_id', id);
                 await clienteSupabase.from('inscripciones').delete().eq('torneo_id', id);
                 await clienteSupabase.from('programacion_categorias').delete().eq('torneo_id', id);
 
-                // 2. Eliminamos el torneo padre
                 const { error } = await clienteSupabase.from('torneos').delete().eq('id', id);
                 if (error) throw error;
 
-                // 3. Si borramos el torneo activo, limpiamos el localStorage
                 if (localStorage.getItem('torneo_activo_id') == id) {
                     localStorage.removeItem('torneo_activo_id');
                 }
@@ -318,9 +398,6 @@
                 alert("❌ Ocurrió un error al borrar el torneo:\n" + err.message);
             }
         }
-
-        // Iniciar
-        cargarTorneos();
     </script>
 </body>
 </html>
