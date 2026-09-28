@@ -129,7 +129,7 @@
                 .channel(`juez-match-${partidoId}`)
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'partidos', filter: `id=eq.${partidoId}` }, payload => {
                     if (payload.new.estado === 'finalizado' && payload.new.ganador_id !== null) {
-                        // Notificación remota
+                        // Evento de actualización remota
                     }
                 })
                 .subscribe();
@@ -144,6 +144,12 @@
 
             if (error || !data) { alert("Error al cargar partido."); return; }
             partidoData = data;
+
+            // Si faltan IDs de jugadores en fase eliminatoria, los resolvemos automáticamente
+            if ((!data.jugador1_id || !data.jugador2_id) && (!data.grupo_nombre)) {
+                await resolverClasificadosLlave(data);
+                return; 
+            }
 
             p1.id = data.jugador1_id;
             p1.nombre = data.j1 ? data.j1.nombre : 'Jugador 1';
@@ -164,16 +170,85 @@
             numSetActual = historialSets.length + 1;
             mostrarRankingImpacto = data.mostrar_ranking || false;
 
-            // CÁLCULO DE RANKING ACUMULADO EN VIVO (Partidos anteriores en este torneo)
             await calcularRankingEnVivoAcumulado();
-
             actualizarUI();
+        }
+
+        async function resolverClasificadosLlave(p) {
+            const { data: partidosCat } = await clienteSupabase
+                .from('partidos')
+                .select('*, j1:jugador1_id(id, nombre, puntos_ranking), j2:jugador2_id(id, nombre, puntos_ranking)')
+                .eq('torneo_id', p.torneo_id)
+                .eq('categoria_id', p.categoria_id);
+
+            if (!partidosCat) return;
+
+            const standings = {};
+            partidosCat.filter(m => m.grupo_nombre).forEach(m => {
+                const g = m.grupo_nombre;
+                if (!standings[g]) standings[g] = {};
+
+                [m.j1, m.j2].forEach(j => {
+                    if (j && j.id && !standings[g][j.id]) {
+                        standings[g][j.id] = { id: j.id, nombre: j.nombre, pts: 0, pg: 0, pj: 0, setsG: 0, setsP: 0 };
+                    }
+                });
+
+                if ((m.estado || '').toLowerCase() === 'finalizado' && m.j1 && m.j2) {
+                    const obj1 = standings[g][m.j1.id];
+                    const obj2 = standings[g][m.j2.id];
+                    if (obj1 && obj2) {
+                        obj1.pj++; obj2.pj++;
+                        obj1.setsG += (m.sets_j1 || 0); obj1.setsP += (m.sets_j2 || 0);
+                        obj2.setsG += (m.sets_j2 || 0); obj2.setsP += (m.sets_j1 || 0);
+
+                        if (m.ganador_id === m.jugador1_id) { obj1.pg++; obj1.pts += 2; obj2.pts += 1; }
+                        else { obj2.pg++; obj2.pts += 2; obj1.pts += 1; }
+                    }
+                }
+            });
+
+            const ordenarITTF = (lista) => {
+                return [...lista].sort((a, b) => {
+                    if (b.pts !== a.pts) return b.pts - a.pts;
+                    const rSetA = a.setsG / (a.setsP || 0.0001);
+                    const rSetB = b.setsG / (b.setsP || 0.0001);
+                    return rSetB - rSetA;
+                });
+            };
+
+            const gA = standings['A'] ? ordenarITTF(Object.values(standings['A'])) : [];
+            const gB = standings['B'] ? ordenarITTF(Object.values(standings['B'])) : [];
+
+            let resJ1 = null, resJ2 = null;
+            const rondaLimpia = (p.ronda_fase || '').toLowerCase();
+
+            if (rondaLimpia.includes('semi') && (rondaLimpia.includes('1') || rondaLimpia.includes('cruce 1'))) {
+                resJ1 = gA[0]?.id;
+                resJ2 = gB[1]?.id;
+            } else if (rondaLimpia.includes('semi') && (rondaLimpia.includes('2') || rondaLimpia.includes('cruce 2'))) {
+                resJ1 = gB[0]?.id;
+                resJ2 = gA[1]?.id;
+            } else if (rondaLimpia.includes('final')) {
+                const semi1 = partidosCat.find(m => (m.ronda_fase || '').toLowerCase().includes('semi') && ((m.ronda_fase || '').includes('1') || (m.ronda_fase || '').includes('cruce 1')));
+                const semi2 = partidosCat.find(m => (m.ronda_fase || '').toLowerCase().includes('semi') && ((m.ronda_fase || '').includes('2') || (m.ronda_fase || '').includes('cruce 2')));
+                if (semi1 && semi1.ganador_id) resJ1 = semi1.ganador_id;
+                if (semi2 && semi2.ganador_id) resJ2 = semi2.ganador_id;
+            }
+
+            if (resJ1 || resJ2) {
+                let updateObj = {};
+                if (resJ1) updateObj.jugador1_id = resJ1;
+                if (resJ2) updateObj.jugador2_id = resJ2;
+
+                await clienteSupabase.from('partidos').update(updateObj).eq('id', p.id);
+                await cargarYResolverPartido();
+            }
         }
 
         async function calcularRankingEnVivoAcumulado() {
             if (!partidoData || !partidoData.torneo_id) return;
 
-            // Buscar todos los partidos finalizados en este torneo ANTES o DISTINTOS del partido actual
             const { data: finMatches } = await clienteSupabase
                 .from('partidos')
                 .select('*, j1:jugador1_id(id, puntos_ranking), j2:jugador2_id(id, puntos_ranking)')
@@ -185,11 +260,11 @@
 
             if (finMatches && finMatches.length > 0) {
                 finMatches.forEach(m => {
-                    if (m.id == partidoId) return; // Ignorar el partido actual en curso
+                    if (m.id == partidoId) return;
 
-                    let p1Inicial = m.j1 ? m.j1.puntos_ranking : 0;
-                    let p2Inicial = m.j2 ? m.j2.puntos_ranking : 0;
-                    let impacto = calcularImpactoPuntos(p1Inicial, p2Inicial);
+                    let p1Base = m.j1 ? m.j1.puntos_ranking : 0;
+                    let p2Base = m.j2 ? m.j2.puntos_ranking : 0;
+                    let impacto = calcularImpactoPuntos(p1Base, p2Base);
 
                     if (m.jugador1_id === p1.id) {
                         deltaP1 += (m.ganador_id === p1.id) ? impacto.j1Gana : impacto.j1Pierde;
@@ -254,7 +329,6 @@
             document.getElementById('info-mesa-fase').innerText = `MESA ${partidoData?.mesa || 1} • ${partidoData?.grupo_nombre ? 'GRUPO ' + partidoData.grupo_nombre : (partidoData?.ronda_fase || 'FASE FINAL')}`;
             document.getElementById('info-formato').innerText = `FORMATO: ${modoJuego === '2-3' ? '2 DE 3' : (modoJuego === '3-5' ? '3 DE 5' : '4 DE 7')} SETS`;
 
-            // CÁLCULO DE PROYECCIÓN CON EL RANKING ACUMULADO EN VIVO
             const impactoLive = calcularImpactoPuntos(p1.ptsLive, p2.ptsLive);
 
             const infoJ1El = document.getElementById('ranking-info-j1');
