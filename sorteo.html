@@ -239,7 +239,8 @@
                 const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
                 if (torneoData) {
                     torneoActivoObj = torneoData;
-                    document.getElementById('banner-torneo-info').innerText = `📌 Torneo Activo: ${torneoData.nombre}`;
+                    let infoLugar = torneoData.lugar_evento ? ` | 📍 ${torneoData.lugar_evento}` : '';
+                    document.getElementById('banner-torneo-info').innerText = `📌 Torneo Activo: ${torneoData.nombre}${infoLugar}`;
                     if(torneoData.pin_jueces) document.getElementById('rr-pin-jueces').value = torneoData.pin_jueces;
                 }
 
@@ -631,12 +632,10 @@
                 }
             }
 
-            // AGREGAR PARTIDOS DE LLAVES (SEMIFINALES Y FINAL) A LA LISTA GENERADA
             let ultimaHoraMins = currentTimeMins;
             let horaSemiStr = minutesToTimeStr(ultimaHoraMins);
             let horaFinalStr = minutesToTimeStr(ultimaHoraMins + duracionPartido);
 
-            // Semifinal 1
             partidosGeneradosRR.push({
                 mesa: mesaInicio,
                 hora: horaSemiStr,
@@ -647,7 +646,6 @@
                 juez: 'Comité Oficial'
             });
 
-            // Semifinal 2
             partidosGeneradosRR.push({
                 mesa: mesaInicio + 1 <= numMesas ? mesaInicio + 1 : mesaInicio,
                 hora: horaSemiStr,
@@ -658,7 +656,6 @@
                 juez: 'Comité Oficial'
             });
 
-            // Gran Final
             partidosGeneradosRR.push({
                 mesa: mesaInicio,
                 hora: horaFinalStr,
@@ -772,10 +769,19 @@
             dibujarTablaPartidosBD(filtrados);
         }
 
+        // ==========================================
+        // COMPARTIR AGENDA CON SEDE Y FECHA INCLUIDAS
+        // ==========================================
         function compartirAgendaWhatsApp() {
             const filtroEl = document.getElementById('filtro-jugador-agenda');
             const nombre = filtroEl ? filtroEl.value : '';
-            let texto = `🏓 *ROL DE PARTIDOS - ${torneoActivoObj ? torneoActivoObj.nombre : ''}* 🏓\n\n`;
+            
+            let sede = torneoActivoObj && torneoActivoObj.lugar_evento ? torneoActivoObj.lugar_evento : 'Sede Principal';
+            let fecha = torneoActivoObj && torneoActivoObj.fecha_evento ? torneoActivoObj.fecha_evento : '';
+
+            let texto = `🏓 *ROL DE PARTIDOS - ${torneoActivoObj ? torneoActivoObj.nombre : ''}* 🏓\n` +
+                        `📍 *Sede:* ${sede}\n` +
+                        (fecha ? `📅 *Fecha:* ${fecha}\n` : '') + `\n`;
 
             let lista = partidosCargadosGlobal;
             if (nombre) {
