@@ -66,7 +66,6 @@
         
         .acciones-torneo { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
 
-        /* MÓDULO MONITOR DE ALERTAS */
         .kpi-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 15px; }
         .kpi-card { background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 12px 16px; text-align: center; }
         .kpi-val { font-size: 22px; font-weight: 800; font-family: 'Orbitron', sans-serif; color: #38bdf8; margin-top: 4px; }
@@ -92,7 +91,7 @@
 
     <div class="main-content">
 
-        <!-- MÓDULO DE LOGIN (Se muestra si no hay sesión iniciada) -->
+        <!-- MÓDULO DE LOGIN -->
         <div id="panel-login" class="panel-3d" style="border-bottom: 5px solid #ef4444; text-align: center; max-width: 450px; margin: 40px auto; display: none;">
             <i class="fa-solid fa-shield-halved" style="font-size: 40px; color: #ef4444; margin-bottom: 15px;"></i>
             <h2 style="border:none; margin-bottom:5px;">ACCESO RESTRINGIDO</h2>
@@ -101,10 +100,10 @@
             <button class="btn-console btn-red" style="width: 100%; justify-content: center;" onclick="loginAdmin()">ENTRAR AL SISTEMA</button>
         </div>
 
-        <!-- MÓDULOS DEL SISTEMA (Se muestran tras iniciar sesión) -->
+        <!-- MÓDULOS DEL SISTEMA -->
         <div id="panel-sistema" style="display: none;">
             
-            <!-- MÓDULO: BANNER Y MONITOR DE ADVERTENCIAS DEL TORNEO ACTIVO -->
+            <!-- BANNER Y MONITOR DE ALERTAS DE TORNEO ACTIVO -->
             <div class="panel-3d" style="border-bottom: 5px solid #8b5cf6;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.08);">
                     <div>
@@ -117,7 +116,6 @@
                     </div>
                 </div>
 
-                <!-- CARDS DE ESTADO / ALERTAS -->
                 <div class="kpi-container">
                     <div class="kpi-card">
                         <div class="kpi-lbl">👥 Inscritos Totales</div>
@@ -138,7 +136,7 @@
                 </div>
             </div>
 
-            <!-- MÓDULO: CREAR/EDITAR TORNEO -->
+            <!-- CREAR/EDITAR TORNEO -->
             <div class="panel-3d" style="border-bottom: 5px solid #06b6d4;">
                 <h2 id="form-titulo">🏆 CREAR / EDITAR TORNEO</h2>
                 
@@ -161,9 +159,9 @@
                         <input type="text" id="t-sede" placeholder="Ej. Complejo Deportivo Central">
                     </div>
                     <div class="input-group">
-                        <label>N° de Mesas Disponibles</label>
-                        <!-- Dejamos el input visual, pero su valor ya NO se enviará a la BD para no romper nada -->
-                        <input type="number" id="t-mesas" value="5" min="1" disabled style="opacity: 0.5;">
+                        <label>N° de Mesas Disponibles en Sede</label>
+                        <!-- TOTALMENTE HABILITADO -->
+                        <input type="number" id="t-mesas" value="5" min="1">
                     </div>
                 </div>
 
@@ -173,7 +171,7 @@
                 </div>
             </div>
 
-            <!-- MÓDULO: MIS TORNEOS -->
+            <!-- MIS TORNEOS REGISTRADOS -->
             <div class="panel-3d" style="border-bottom: 5px solid #10b981;">
                 <h2>📋 MIS TORNEOS REGISTRADOS</h2>
                 <div class="grid-torneos" id="lista-torneos">
@@ -192,9 +190,6 @@
 
         let torneosCargados = [];
 
-        // ==========================================
-        // CONTROL DE SESIÓN Y LOGIN
-        // ==========================================
         document.addEventListener("DOMContentLoaded", () => {
             if (localStorage.getItem('admin_autenticado') === 'true') {
                 document.getElementById('panel-login').style.display = 'none';
@@ -226,9 +221,6 @@
             window.location.reload();
         }
 
-        // ==========================================
-        // FUNCIONES DE WHATSAPP Y ENLACES
-        // ==========================================
         function compartirLinkTransmisionWS() {
             const activoId = localStorage.getItem('torneo_activo_id');
             if (!activoId) { alert("Selecciona un torneo activo primero."); return; }
@@ -247,9 +239,6 @@
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWS)}`, '_blank');
         }
 
-        // ==========================================
-        // CARGA DE METRICAS Y TORNEOS
-        // ==========================================
         async function cargarTorneos() {
             try {
                 const { data, error } = await clienteSupabase
@@ -293,7 +282,6 @@
             }
 
             try {
-                // 1. Cargar Inscripciones del Torneo
                 const { data: inscripciones } = await clienteSupabase
                     .from('inscripciones')
                     .select('id, estatus_pago')
@@ -310,7 +298,6 @@
                 if(pendientesPago > 0) elPendientesPago.classList.add('kpi-alert');
                 else elPendientesPago.classList.remove('kpi-alert');
 
-                // 2. Cargar Jugadores Nuevos (Esperando Ranking)
                 const { data: jugSinRanking } = await clienteSupabase
                     .from('jugadores')
                     .select('id')
@@ -346,6 +333,8 @@
                     ? `<button class="btn-console btn-outline" onclick="window.location.href='admin.html'">ENTRAR PANEL ➔</button>`
                     : `<button class="btn-console btn-green" onclick="activarTorneo(${t.id})">APERTURAR</button>`;
 
+                const numMesas = t.numero_mesas || t.mesas || 5;
+
                 container.innerHTML += `
                     <div class="${cardClass}">
                         ${badge}
@@ -354,7 +343,8 @@
                         
                         <div class="t-info"><i class="fa-regular fa-calendar"></i> ${t.fecha_evento || 'Sin fecha'}</div>
                         <div class="t-info"><i class="fa-solid fa-location-dot"></i> ${t.lugar_evento || 'Sin sede'}</div>
-                        
+                        <div class="t-info" style="color:#38bdf8;"><i class="fa-solid fa-table-tennis-paddle-ball" style="color:#38bdf8;"></i> Mesas Gimnasio: ${numMesas}</div>
+
                         <div class="acciones-torneo">
                             ${mainBtn}
                             <button class="btn-console btn-gold" onclick="prepararEdicion(${t.id})">EDITAR</button>
@@ -371,21 +361,22 @@
         }
 
         // ==========================================
-        // CREACIÓN Y EDICIÓN (SIN NUMERO_MESAS PARA EVITAR ERROR)
+        // GUARDADO CON FALLBACK SI LA COLUMNA NO EXISTE
         // ==========================================
         async function guardarTorneo() {
             const id = document.getElementById('torneo-id').value;
             const nombre = document.getElementById('t-nombre').value.trim();
             const fecha = document.getElementById('t-fecha').value;
             const sede = document.getElementById('t-sede').value.trim();
+            const mesas = parseInt(document.getElementById('t-mesas').value) || 5;
 
             if (!nombre) { alert("El nombre del torneo es obligatorio."); return; }
 
-            // ELIMINADO EL CAMPO "numero_mesas" DEL PAYLOAD PARA EVITAR EL CRASH DE SUPABASE
-            const payload = {
+            let payload = {
                 nombre: nombre,
                 fecha_evento: fecha,
-                lugar_evento: sede
+                lugar_evento: sede,
+                numero_mesas: mesas
             };
 
             const btn = document.getElementById('btn-guardar');
@@ -393,16 +384,34 @@
 
             try {
                 if (id) {
-                    const { error } = await clienteSupabase.from('torneos').update(payload).eq('id', id);
-                    if (error) throw error;
-                    alert("✅ Torneo actualizado.");
+                    let { error } = await clienteSupabase.from('torneos').update(payload).eq('id', id);
+                    if (error && error.message.includes('numero_mesas')) {
+                        delete payload.numero_mesas;
+                        let resFallback = await clienteSupabase.from('torneos').update(payload).eq('id', id);
+                        if (resFallback.error) throw resFallback.error;
+                        alert("⚠️ Torneo actualizado con éxito (Si deseas guardar el N° de mesas, agrega la columna 'numero_mesas' en tu tabla de Supabase).");
+                    } else if (error) {
+                        throw error;
+                    } else {
+                        alert("✅ Torneo actualizado con éxito.");
+                    }
                 } else {
-                    const { data, error } = await clienteSupabase.from('torneos').insert([payload]).select();
-                    if (error) throw error;
+                    let { data, error } = await clienteSupabase.from('torneos').insert([payload]).select();
+                    if (error && error.message.includes('numero_mesas')) {
+                        delete payload.numero_mesas;
+                        let resFallback = await clienteSupabase.from('torneos').insert([payload]).select();
+                        if (resFallback.error) throw resFallback.error;
+                        data = resFallback.data;
+                        alert("⚠️ Torneo creado con éxito (Si deseas guardar el N° de mesas, agrega la columna 'numero_mesas' en tu tabla de Supabase).");
+                    } else if (error) {
+                        throw error;
+                    } else {
+                        alert("✅ Torneo creado con éxito.");
+                    }
+
                     if (torneosCargados.length === 0 && data && data.length > 0) {
                         localStorage.setItem('torneo_activo_id', data[0].id);
                     }
-                    alert("✅ Torneo creado con éxito.");
                 }
                 
                 resetFormulario();
@@ -423,6 +432,7 @@
             document.getElementById('t-nombre').value = t.nombre;
             document.getElementById('t-fecha').value = t.fecha_evento || '';
             document.getElementById('t-sede').value = t.lugar_evento || '';
+            document.getElementById('t-mesas').value = t.numero_mesas || t.mesas || 5;
 
             document.getElementById('form-titulo').innerHTML = `✏️ EDITANDO: <span style="color:#fbbf24">${t.nombre}</span>`;
             document.getElementById('btn-guardar').innerText = "GUARDAR CAMBIOS";
@@ -435,15 +445,13 @@
             document.getElementById('t-nombre').value = '';
             document.getElementById('t-fecha').value = '';
             document.getElementById('t-sede').value = '';
+            document.getElementById('t-mesas').value = '5';
 
             document.getElementById('form-titulo').innerText = "🏆 CREAR / EDITAR TORNEO";
             document.getElementById('btn-guardar').innerText = "+ CREAR TORNEO";
             document.getElementById('btn-cancelar').style.display = "none";
         }
 
-        // ==========================================
-        // ELIMINACIÓN PROFUNDA (CON CASCADA MANUAL)
-        // ==========================================
         async function eliminarTorneo(id, nombre) {
             const confirmacion = confirm(
                 `⚠️ ATENCIÓN: ¿Estás seguro de eliminar el torneo "${nombre}"?\n\n` +
@@ -457,15 +465,11 @@
             if (!confirmacion) return;
 
             try {
-                // 1. Limpieza total de tablas relacionadas (Para evitar bloqueos por llaves foráneas en Supabase)
                 await clienteSupabase.from('partidos').delete().eq('torneo_id', id);
                 await clienteSupabase.from('inscripciones').delete().eq('torneo_id', id);
                 await clienteSupabase.from('programacion_categorias').delete().eq('torneo_id', id);
-                
-                // Agregamos la limpieza de "grupos_torneo" que era la que causaba el error de borrado
                 await clienteSupabase.from('grupos_torneo').delete().eq('torneo_id', id);
 
-                // 2. Eliminación final del torneo
                 const { error } = await clienteSupabase.from('torneos').delete().eq('id', id);
                 if (error) throw error;
 
