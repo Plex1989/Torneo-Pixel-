@@ -160,7 +160,6 @@
                     </div>
                     <div class="input-group">
                         <label>N° de Mesas Disponibles en Sede</label>
-                        <!-- TOTALMENTE HABILITADO -->
                         <input type="number" id="t-mesas" value="5" min="1">
                     </div>
                 </div>
@@ -361,7 +360,7 @@
         }
 
         // ==========================================
-        // GUARDADO CON FALLBACK SI LA COLUMNA NO EXISTE
+        // GUARDADO CON SILENT FALLBACK SI NO EXISTE LA COLUMNA
         // ==========================================
         async function guardarTorneo() {
             const id = document.getElementById('torneo-id').value;
@@ -389,12 +388,10 @@
                         delete payload.numero_mesas;
                         let resFallback = await clienteSupabase.from('torneos').update(payload).eq('id', id);
                         if (resFallback.error) throw resFallback.error;
-                        alert("⚠️ Torneo actualizado con éxito (Si deseas guardar el N° de mesas, agrega la columna 'numero_mesas' en tu tabla de Supabase).");
                     } else if (error) {
                         throw error;
-                    } else {
-                        alert("✅ Torneo actualizado con éxito.");
                     }
+                    alert("✅ Torneo actualizado con éxito.");
                 } else {
                     let { data, error } = await clienteSupabase.from('torneos').insert([payload]).select();
                     if (error && error.message.includes('numero_mesas')) {
@@ -402,12 +399,10 @@
                         let resFallback = await clienteSupabase.from('torneos').insert([payload]).select();
                         if (resFallback.error) throw resFallback.error;
                         data = resFallback.data;
-                        alert("⚠️ Torneo creado con éxito (Si deseas guardar el N° de mesas, agrega la columna 'numero_mesas' en tu tabla de Supabase).");
                     } else if (error) {
                         throw error;
-                    } else {
-                        alert("✅ Torneo creado con éxito.");
                     }
+                    alert("✅ Torneo creado con éxito.");
 
                     if (torneosCargados.length === 0 && data && data.length > 0) {
                         localStorage.setItem('torneo_activo_id', data[0].id);
