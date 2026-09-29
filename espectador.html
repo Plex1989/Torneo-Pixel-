@@ -48,7 +48,6 @@
         .score-container { background: rgba(0,0,0,0.4); border-radius: 14px; padding: 12px 16px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.03); }
         .jugador-box { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
         .jugador-nombre { font-size: 13px; font-weight: 800; color: #ffffff; }
-        .jugador-club { font-size: 10px; color: #64748b; font-weight: 600; display: block; }
         .score-big { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 900; color: #06b6d4; }
         .score-big.p2 { color: #d946ef; }
 
@@ -84,19 +83,25 @@
 </head>
 <body>
 
-    <!-- MODAL JUGADOR EXPEDIENTE -->
+    <!-- MODAL EXPEDIENTE COMPLETO CON RANKING -->
     <div id="modal-jugador-admin" class="modal-overlay no-print" style="display: none;">
-        <div class="modal-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
+        <div class="modal-card relative">
+            <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
                 <div>
                     <h3 id="modal-jugador-nombre" style="margin: 0; color: #38bdf8; font-size: 16px; font-weight: 800; text-transform: uppercase;"></h3>
                     <span id="modal-jugador-club" style="font-size: 10px; color: #94a3b8; font-weight: 700;"></span>
                 </div>
+                <div style="text-align: right; margin-right: 15px;">
+                    <div id="modal-jugador-ranking-header" style="font-size: 16px; font-weight: 900; color: #fbbf24;"></div>
+                    <span id="modal-jugador-variacion" style="font-size: 10px; font-weight: 800; color:#94a3b8;"></span>
+                </div>
                 <button onclick="cerrarModalJugadorAdmin()" style="background: rgba(255,255,255,0.1); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-weight: 800;">✕</button>
             </div>
+            
             <div id="modal-jugador-partidos-list" style="display: flex; flex-direction: column; gap: 10px;">
                 <div class="mensaje-vacio">Cargando expediente...</div>
             </div>
+            
             <button onclick="cerrarModalJugadorAdmin()" style="width: 100%; justify-content: center; margin-top: 20px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; padding: 12px; border-radius: 9999px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease;">Cerrar Detalle</button>
         </div>
     </div>
@@ -480,22 +485,138 @@
         }
 
         // ==========================================
-        // DIBUJAR PANTALLA PRINCIPAL
+        // EXPEDIENTE MÓDULO CON CÁLCULO DE RANKING EN VIVO
         // ==========================================
-        function dibujarPantalla() {
-            const container = document.getElementById('contenedor-espectador');
-            container.innerHTML = '';
+        function abrirModalJugadorAdmin(jugadorId, nombre, club) {
+            document.getElementById('modal-jugador-nombre').innerText = nombre;
+            document.getElementById('modal-jugador-club').innerText = club || 'Sin Club';
 
-            const finMatches = todosLosPartidos.filter(p => (p.estado || '').toLowerCase() === 'finalizado');
+            const modalList = document.getElementById('modal-jugador-partidos-list');
+            modalList.innerHTML = '<div class="mensaje-vacio">Cargando expediente...</div>';
+
+            const partidosJugador = todosLosPartidos.filter(p => p.jugador1_id === jugadorId || p.jugador2_id === jugadorId);
+
+            let rInicial = 0;
+            let foundMatch = partidosJugador.find(p => p.jugador1_id === jugadorId || p.jugador2_id === jugadorId);
+            if (foundMatch) {
+                if (foundMatch.jugador1_id === jugadorId && foundMatch.j1) rInicial = foundMatch.j1.puntos_ranking || 0;
+                if (foundMatch.jugador2_id === jugadorId && foundMatch.j2) rInicial = foundMatch.j2.puntos_ranking || 0;
+            }
+
+            let deltaTotal = 0;
+            let rHeader = document.getElementById('modal-jugador-ranking-header');
+            let rVar = document.getElementById('modal-jugador-variacion');
+
+            if (partidosJugador.length === 0) {
+                if(rHeader) rHeader.innerText = `${rInicial} pts`;
+                if(rVar) rVar.innerHTML = `<span style="color:#64748b;">(Sin partidos)</span>`;
+                modalList.innerHTML = '<div class="mensaje-vacio">Este jugador no ha disputado partidos registrados aún.</div>';
+            } else {
+                let html = '';
+                
+                let estaEnLlaves = partidosJugador.some(p => !p.grupo_nombre && p.ronda_fase);
+                if (bonoPaseActivo && bonoPaseValor > 0 && estaEnLlaves) {
+                    deltaTotal += bonoPaseValor;
+                    html += `
+                        <div style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); padding:10px 14px; border-radius:12px; display:flex; justify-content:space-between; align-items:center;">
+                            <span style="font-size:11px; font-weight:800; color:#fbbf24;">🏆 Bono por Pase a Fase Final</span>
+                            <span style="font-size:12px; font-weight:900; color:#34d399;">+${bonoPaseValor} pts</span>
+                        </div>
+                    `;
+                }
+
+                partidosJugador.forEach(p => {
+                    const esJ1 = p.jugador1_id === jugadorId;
+                    const rivalNombre = esJ1 ? (p.j2 ? p.j2.nombre : 'Por definir') : (p.j1 ? p.j1.nombre : 'Por definir');
+                    const rivalClub = esJ1 ? (p.j2 ? p.j2.club : '') : (p.j1 ? p.j1.club : '');
+                    const rivalPts = esJ1 ? (p.j2 ? p.j2.puntos_ranking || 0 : 0) : (p.j1 ? p.j1.puntos_ranking || 0 : 0);
+
+                    const estLimpio = (p.estado || '').trim().toLowerCase();
+                    const esFin = estLimpio === 'finalizado';
+                    const esVivo = estLimpio === 'en_curso';
+
+                    const ganoPlayer = esFin && p.ganador_id === jugadorId;
+                    const perdioPlayer = esFin && p.ganador_id && p.ganador_id !== jugadorId;
+
+                    let deltaPartido = 0;
+                    if (esFin) {
+                        let diff = Math.abs(rInicial - rivalPts); 
+                        let favoritoEsJ1 = rInicial >= rivalPts;
+                        let esUpset = p.ganador_id !== (favoritoEsJ1 ? jugadorId : (esJ1 ? p.jugador2_id : p.jugador1_id)); 
+
+                        let reglaFin = reglasRankingList.find(r => 
+                            diff >= r.diferencia_min && diff <= r.diferencia_max && 
+                            ((esUpset && r.resultado_esperado === 'gana_retador') || (!esUpset && r.resultado_esperado === 'gana_favorito'))
+                        );
+
+                        deltaPartido = ganoPlayer ? (reglaFin ? reglaFin.puntos_ganador : 10) : (reglaFin ? -Math.abs(reglaFin.puntos_perdedor) : -5);
+                        deltaTotal += deltaPartido;
+                    }
+
+                    let estadoBadge = '<span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:3px 8px; border-radius:99px; font-weight:800;">⏳ PENDIENTE</span>';
+                    if (esVivo) estadoBadge = '<span style="font-size:9px; background:rgba(16,185,129,0.2); color:#34d399; padding:3px 8px; border-radius:99px; font-weight:800;">🔴 EN VIVO</span>';
+                    else if (ganoPlayer) estadoBadge = `<span style="font-size:9px; background:rgba(16,185,129,0.2); color:#34d399; padding:3px 8px; border-radius:99px; font-weight:800;">🏆 VICTORIA (+${deltaPartido} pts)</span>`;
+                    else if (perdioPlayer) estadoBadge = `<span style="font-size:9px; background:rgba(239,68,68,0.2); color:#f87171; padding:3px 8px; border-radius:99px; font-weight:800;">❌ DERROTA (${deltaPartido} pts)</span>`;
+
+                    let marcadorText = esFin ? (esJ1 ? `${p.sets_j1} - ${p.sets_j2}` : `${p.sets_j2} - ${p.sets_j1}`) + ' Sets' : (esVivo ? (esJ1 ? `${p.puntos_j1} - ${p.puntos_j2}` : `${p.puntos_j2} - ${p.puntos_j1}`) + ' Pts' : 'VS');
+
+                    let historialText = '';
+                    if (p.historial_sets && Array.isArray(p.historial_sets) && p.historial_sets.length > 0) {
+                        let parciales = p.historial_sets.map(s => esJ1 ? `${s.s1}-${s.s2}` : `${s.s2}-${s.s1}`);
+                        historialText = `<div style="font-size:10px; color:#94a3b8; margin-top:6px; font-weight:700;">Parciales: ${parciales.join(', ')}</div>`;
+                    }
+
+                    html += `
+                        <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); padding:12px 16px; border-radius:12px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                <span style="font-size:10px; color:#38bdf8; font-weight:800; text-transform:uppercase;">
+                                    ${p.grupo_nombre ? 'Grupo ' + p.grupo_nombre : (p.ronda_fase || 'Fase Final')} • Mesa ${p.mesa || 1}
+                                </span>
+                                ${estadoBadge}
+                            </div>
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <strong style="font-size:13px; color:#ffffff;">vs ${rivalNombre}</strong>
+                                    <small style="display:block; color:#64748b; font-size:10px;">${rivalClub || 'Sin Club'}</small>
+                                </div>
+                                <span style="font-family:'Orbitron', sans-serif; font-size:15px; font-weight:800; color:#fbbf24;">
+                                    ${marcadorText}
+                                </span>
+                            </div>
+                            ${historialText}
+                        </div>
+                    `;
+                });
+
+                let rFinal = rInicial + deltaTotal;
+                let difStr = deltaTotal >= 0 ? `<span style="color:#34d399;">+${deltaTotal}</span>` : `<span style="color:#f87171;">${deltaTotal}</span>`;
+
+                if(rHeader) rHeader.innerText = `${rFinal} pts`;
+                if(rVar) rVar.innerHTML = `${rInicial} ➔ ${rFinal} (${difStr})`;
+
+                modalList.innerHTML = html;
+            }
+
+            document.getElementById('modal-jugador-admin').style.display = 'flex';
+        }
+
+        function cerrarModalJugadorAdmin() {
+            document.getElementById('modal-jugador-admin').style.display = 'none';
+        }
+
+        function dibujarPantalla() {
+            const container = document.getElementById('contenedor-partidos');
+            container.innerHTML = '';
 
             if (estadoFiltro === 'resumen') {
                 container.style.display = 'block';
-                dibujarResumenYLlaves(container, finMatches);
+                dibujarResumenYLlaves(container);
                 return;
             }
 
             if (estadoFiltro === 'ranking') {
                 container.style.display = 'block';
+                const finMatches = todosLosPartidos.filter(p => (p.estado || '').toLowerCase() === 'finalizado');
                 dibujarRankingGlobal(container, finMatches);
                 return;
             }
@@ -524,6 +645,8 @@
                 container.innerHTML = `<div class="mensaje-vacio">No hay partidos registrados bajo este filtro.</div>`;
                 return;
             }
+
+            const finMatches = todosLosPartidos.filter(p => (p.estado || '').toLowerCase() === 'finalizado');
 
             const gruposPorHora = {};
             filtrados.forEach(p => {
@@ -632,14 +755,84 @@
             });
 
             if (mesaFiltro === 'todas') {
-                dibujarLlavesInferiores(container, finMatches);
+                dibujarLlavesInferiores(container);
             }
         }
 
-        // ==========================================
-        // DIBUJAR PANTALLA: RESUMEN Y LLAVES
-        // ==========================================
-        function dibujarResumenYLlaves(container, finMatches) {
+        function generarTarjetaLlaveEspectador(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2, colorDesc2) {
+            let isFin = partido && (partido.estado || '').trim().toLowerCase() === 'finalizado';
+            let isVivo = partido && (partido.estado || '').trim().toLowerCase() === 'en_curso';
+            
+            let opacidad = isFin ? 'opacity: 0.85;' : '';
+            let cursor = partido ? 'cursor:pointer;' : '';
+            
+            let badgeEst = isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : 
+                          (isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
+
+            let score1 = isFin || isVivo ? `<span class="score-big ml-3 text-lg">${isFin ? partido.sets_j1 : (partido.puntos_j1 || 0)}</span>` : '';
+            let score2 = isFin || isVivo ? `<span class="score-big p2 ml-3 text-lg">${isFin ? partido.sets_j2 : (partido.puntos_j2 || 0)}</span>` : '';
+
+            if (isVivo) {
+                score1 += `<span class="sets-badge">(${partido.sets_j1 || 0})</span>`;
+                score2 += `<span class="sets-badge">(${partido.sets_j2 || 0})</span>`;
+            }
+
+            let win1 = isFin && partido.ganador_id === partido.jugador1_id;
+            let win2 = isFin && partido.ganador_id === partido.jugador2_id;
+            
+            let styleN1 = isFin && !win1 ? 'color:#64748b;' : 'color:#ffffff;';
+            let styleN2 = isFin && !win2 ? 'color:#64748b;' : 'color:#ffffff;';
+            let icon1 = win1 ? '🏆 ' : '';
+            let icon2 = win2 ? '🏆 ' : '';
+
+            let clickAction = partido ? `onclick="abrirPartidoFullScreen(${partido.id})"` : '';
+            let hoverFX = partido ? 'hover:-translate-y-1 hover:border-white/20 transition-all' : '';
+
+            let clickAccion1 = partido && partido.jugador1_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador1_id}, '${nomJ1.replace(/'/g, "\\'")}', '')"` : '';
+            let clickAccion2 = partido && partido.jugador2_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador2_id}, '${nomJ2.replace(/'/g, "\\'")}', '')"` : '';
+
+            let flexWrapper = titulo === 'Gran Final' ? 'grid-column: 1 / -1; display:flex; justify-content:center; margin-top:10px;' : '';
+            let innerStyle = `background:rgba(0,0,0,0.4); padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); ${opacidad} width:100%; ${cursor}`;
+            if(titulo === 'Gran Final') innerStyle += ' max-width:450px; text-align:left;';
+
+            return `
+                ${titulo === 'Gran Final' ? `<div style="${flexWrapper}">` : ''}
+                <div style="${innerStyle}" class="${hoverFX}" ${clickAction}>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:${titulo==='Gran Final' ? '12px' : '10px'}; color:${colorTitulo}; font-weight:900; text-transform:uppercase;">${titulo==='Gran Final' ? '🏆 ' : ''}${titulo}</span>
+                            ${partido ? badgeEst : ''}
+                        </div>
+                        <span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partido?.mesa || mesaDefault}</span>
+                    </div>
+
+                    <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                        <div style="cursor:pointer; z-index:10;" ${clickAccion1}>
+                            <strong style="font-size:14px; ${styleN1}">${icon1}${nomJ1}</strong>
+                        </div>
+                        <div style="display:flex; align-items:center;">
+                            ${score1}
+                            <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800; margin-left:8px;">${descJ1}</span>
+                        </div>
+                    </div>
+
+                    <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
+
+                    <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                        <div style="cursor:pointer; z-index:10;" ${clickAccion2}>
+                            <strong style="font-size:14px; ${styleN2}">${icon2}${nomJ2}</strong>
+                        </div>
+                        <div style="display:flex; align-items:center;">
+                            ${score2}
+                            <span style="font-size:9px; background:${colorDesc2}; padding:2px 6px; border-radius:4px; font-weight:800; margin-left:8px;">${descJ2}</span>
+                        </div>
+                    </div>
+                </div>
+                ${titulo === 'Gran Final' ? `</div>` : ''}
+            `;
+        }
+
+        function dibujarResumenYLlaves(container) {
             const standings = calcularStandingsGrupos();
             const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
             let catsList = [...categoriasSet];
@@ -722,10 +915,10 @@
             });
 
             container.innerHTML = htmlContent;
-            dibujarLlavesInferiores(container, finMatches);
+            dibujarLlavesInferiores(container);
         }
 
-        function dibujarLlavesInferiores(container, finMatches) {
+        function dibujarLlavesInferiores(container) {
             const standings = calcularStandingsGrupos();
             const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
             let catsList = [...categoriasSet];
@@ -766,9 +959,9 @@
                 let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Ganador Semi 1');
                 let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Ganador Semi 2');
 
-                let cardS1 = generarTarjetaLlaveEspectador(partidoSemi1, 'Semifinal 1', '#38bdf8', 1, nomSemi1_j1, nomSemi1_j2, '1° Gpo A', '2° Gpo B', 'rgba(6,182,212,0.2); color:#38bdf8;', finMatches);
-                let cardS2 = generarTarjetaLlaveEspectador(partidoSemi2, 'Semifinal 2', '#f0abfc', 2, nomSemi2_j1, nomSemi2_j2, '1° Gpo B', '2° Gpo A', 'rgba(6,182,212,0.2); color:#38bdf8;', finMatches);
-                let cardFinal = generarTarjetaLlaveEspectador(partidoFinal, 'Gran Final', '#fbbf24', 1, nomFinal_j1, nomFinal_j2, 'Gana Semi 1', 'Gana Semi 2', 'rgba(217,70,239,0.2); color:#d946ef;', finMatches);
+                let cardS1 = generarTarjetaLlaveEspectador(partidoSemi1, 'Semifinal 1', '#38bdf8', 1, nomSemi1_j1, nomSemi1_j2, '1° Gpo A', '2° Gpo B', 'rgba(6,182,212,0.2); color:#38bdf8;');
+                let cardS2 = generarTarjetaLlaveEspectador(partidoSemi2, 'Semifinal 2', '#f0abfc', 2, nomSemi2_j1, nomSemi2_j2, '1° Gpo B', '2° Gpo A', 'rgba(6,182,212,0.2); color:#38bdf8;');
+                let cardFinal = generarTarjetaLlaveEspectador(partidoFinal, 'Gran Final', '#fbbf24', 1, nomFinal_j1, nomFinal_j2, 'Gana Semi 1', 'Gana Semi 2', 'rgba(217,70,239,0.2); color:#d946ef;');
 
                 container.innerHTML += `
                     <div class="seccion-llaves-footer">
@@ -778,8 +971,8 @@
                         </div>
 
                         ${gpoCompleto ? `
-                            <div style="background:rgba(16,185,129,0.2); border:1px solid rgba(16,185,129,0.5); color:#34d399; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase; margin-bottom:18px;">
-                                ✅ ¡LLAVE DEFINITIVA CONFIRMADA! (Grupos 100% completados)
+                            <div style="background:rgba(16,185,129,0.2); border:1px solid rgba(16,185,129,0.5); color:#34d399; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:11px; text-transform:uppercase; margin-bottom:18px;">
+                                ✅ ¡LLAVE DEFINITIVA CONFIRMADA! (Fase de grupos 100% completada)
                             </div>
                         ` : `
                             <div style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase; margin-bottom:18px;">
@@ -797,92 +990,6 @@
             });
         }
 
-        function generarTarjetaLlaveEspectador(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2, colorDesc2, finMatches) {
-            let isFin = partido && (partido.estado || '').trim().toLowerCase() === 'finalizado';
-            let isVivo = partido && (partido.estado || '').trim().toLowerCase() === 'en_curso';
-            
-            let opacidad = isFin ? 'opacity: 0.85;' : '';
-            let cursor = partido ? 'cursor:pointer;' : '';
-            
-            let badgeEst = isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : 
-                          (isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
-
-            let score1 = isFin || isVivo ? `<span class="score-big ml-3 text-lg">${isFin ? partido.sets_j1 : (partido.puntos_j1 || 0)}</span>` : '';
-            let score2 = isFin || isVivo ? `<span class="score-big p2 ml-3 text-lg">${isFin ? partido.sets_j2 : (partido.puntos_j2 || 0)}</span>` : '';
-
-            if (isVivo) {
-                score1 += `<span class="sets-badge">(${partido.sets_j1 || 0})</span>`;
-                score2 += `<span class="sets-badge">(${partido.sets_j2 || 0})</span>`;
-            }
-
-            let win1 = isFin && partido.ganador_id === partido.jugador1_id;
-            let win2 = isFin && partido.ganador_id === partido.jugador2_id;
-            
-            let styleN1 = isFin && !win1 ? 'color:#64748b;' : 'color:#ffffff;';
-            let styleN2 = isFin && !win2 ? 'color:#64748b;' : 'color:#ffffff;';
-            let icon1 = win1 ? '🏆 ' : '';
-            let icon2 = win2 ? '🏆 ' : '';
-
-            let rankTextJ1 = '';
-            let rankTextJ2 = '';
-
-            if (partido && partido.mostrar_ranking && partido.j1 && partido.j2) {
-                let rDetails = calcularDetallesRankingPartido(partido, finMatches);
-                let txtJ1 = isFin ? `${rDetails.ptsFinalJ1} pts (${rDetails.deltaJ1 >= 0 ? '+' + rDetails.deltaJ1 : rDetails.deltaJ1})` : `${rDetails.ptsPrevJ1} pts`;
-                let txtJ2 = isFin ? `${rDetails.ptsFinalJ2} pts (${rDetails.deltaJ2 >= 0 ? '+' + rDetails.deltaJ2 : rDetails.deltaJ2})` : `${rDetails.ptsPrevJ2} pts`;
-                rankTextJ1 = `<small style="font-size:9px; color:#38bdf8; display:block;">${txtJ1}</small>`;
-                rankTextJ2 = `<small style="font-size:9px; color:#f0abfc; display:block;">${txtJ2}</small>`;
-            }
-
-            let clickAction = partido ? `onclick="abrirPartidoFullScreen(${partido.id})"` : '';
-            let hoverFX = partido ? 'hover:-translate-y-1 hover:border-white/20 transition-all' : '';
-
-            let flexWrapper = titulo === 'Gran Final' ? 'grid-column: 1 / -1; display:flex; justify-content:center; margin-top:10px;' : '';
-            let innerStyle = `background:rgba(0,0,0,0.4); padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); ${opacidad} width:100%; ${cursor}`;
-            if(titulo === 'Gran Final') innerStyle += ' max-width:450px; text-align:left;';
-
-            return `
-                ${titulo === 'Gran Final' ? `<div style="${flexWrapper}">` : ''}
-                <div style="${innerStyle}" class="${hoverFX}" ${clickAction}>
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-size:${titulo==='Gran Final' ? '12px' : '10px'}; color:${colorTitulo}; font-weight:900; text-transform:uppercase;">${titulo==='Gran Final' ? '🏆 ' : ''}${titulo}</span>
-                            ${partido ? badgeEst : ''}
-                        </div>
-                        <span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partido?.mesa || mesaDefault}</span>
-                    </div>
-
-                    <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <strong style="font-size:14px; ${styleN1}">${icon1}${nomJ1}</strong>
-                            ${rankTextJ1}
-                        </div>
-                        <div style="display:flex; align-items:center;">
-                            ${score1}
-                            <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800; margin-left:8px;">${descJ1}</span>
-                        </div>
-                    </div>
-
-                    <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
-
-                    <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-                        <div>
-                            <strong style="font-size:14px; ${styleN2}">${icon2}${nomJ2}</strong>
-                            ${rankTextJ2}
-                        </div>
-                        <div style="display:flex; align-items:center;">
-                            ${score2}
-                            <span style="font-size:9px; background:${colorDesc2}; padding:2px 6px; border-radius:4px; font-weight:800; margin-left:8px;">${descJ2}</span>
-                        </div>
-                    </div>
-                </div>
-                ${titulo === 'Gran Final' ? `</div>` : ''}
-            `;
-        }
-
-        // ==========================================
-        // DIBUJAR PANTALLA: RANKING GLOBAL (NUEVO)
-        // ==========================================
         function obtenerCategoriaDePuntos(pts) {
             let catEncontrada = todasLasCategorias.find(c => {
                 let nom = c.nombre.toLowerCase();
@@ -934,7 +1041,7 @@
                 return {
                     id: j.id, nombre: j.nombre, club: j.club || 'Sin Club',
                     rInicial, rFinal, dif: rFinal - rInicial,
-                    catInicial, catFinal, subioCat
+                    catInicial, catFinal, subioCat, jugoTorneo: (rFinal !== rInicial || idsEnLlaves.has(j.id))
                 };
             });
 
@@ -974,15 +1081,18 @@
                                             </span>
                                         ` : '';
 
+                                        let accionClic = j.jugoTorneo ? `onclick="abrirModalJugadorAdmin(${j.id}, '${j.nombre.replace(/'/g, "\\'")}', '${(j.club || 'Sin Club').replace(/'/g, "\\'")}')"` : '';
+                                        let claseClic = j.jugoTorneo ? `cursor-pointer hover:bg-fuchsia-500/10 transition-colors` : `opacity-60`;
+
                                         return `
-                                            <tr>
+                                            <tr class="${claseClic}" ${accionClic}>
                                                 <td class="py-3 font-black text-zinc-500">#${idx + 1}</td>
                                                 <td class="py-3 font-bold text-white">${j.nombre}</td>
                                                 <td class="py-3 text-zinc-400 font-semibold">${j.club}</td>
                                                 <td class="py-3 text-center text-zinc-400 font-bold">${j.rInicial} pts</td>
                                                 <td class="py-3 text-center font-bold">${difHtml}</td>
                                                 <td class="py-3 text-center text-amber-400 font-black text-sm">${j.rFinal} pts</td>
-                                                <td class="py-3 text-right">${mencionAscenso}</td>
+                                                <td class="py-3 text-right">${mencionAscenso}${j.jugoTorneo ? '' : '<span class="text-[9px] text-zinc-600 ml-2">(No Jugó)</span>'}</td>
                                             </tr>
                                         `;
                                     }).join('')}
@@ -996,9 +1106,6 @@
             container.innerHTML = htmlContent;
         }
 
-        // ==========================================
-        // MÓDULO PANTALLA COMPLETA Y AUDIO ESPECTADOR
-        // ==========================================
         function abrirPartidoFullScreen(partidoId) {
             if (!partidoId || partidoId === 0) return;
             activePartidoFullScreenId = partidoId;
