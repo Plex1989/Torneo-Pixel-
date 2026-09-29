@@ -22,13 +22,24 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between p-3 md:p-6 bg-[#04060a]">
 
-    <!-- PANTALLA MODAL DE GANADOR (OCULTA POR DEFECTO) -->
-    <div id="modal-ganador" class="hidden fixed inset-0 z-[100] bg-black/95 flex-col items-center justify-center cursor-pointer" onclick="cerrarYRegresar()">
-        <img src="https://cdn-icons-png.flaticon.com/512/3112/3112946.png" class="w-40 h-40 mb-6 drop-shadow-[0_0_20px_rgba(251,191,36,0.8)] animate-pulse" alt="Trophy">
-        <h1 class="text-4xl md:text-6xl font-black text-amber-400 uppercase tracking-widest mb-2 text-center drop-shadow-lg">¡PARTIDO FINALIZADO!</h1>
-        <h2 id="winner-name-modal" class="text-3xl md:text-5xl font-bold text-white text-center mt-4 uppercase tracking-wider">Nombre del Ganador</h2>
-        <div class="mt-12 text-emerald-400 text-sm font-bold bg-emerald-400/10 px-6 py-3 rounded-full border border-emerald-400/30 animate-pulse">
-            Toca la pantalla para volver a las mesas
+    <!-- PANTALLA MODAL DE GANADOR (CON OPCIONES DE CORRECCIÓN) -->
+    <div id="modal-ganador" class="hidden fixed inset-0 z-[100] bg-black/95 flex-col items-center justify-center">
+        <img src="https://cdn-icons-png.flaticon.com/512/3112/3112946.png" class="w-32 h-32 md:w-40 md:h-40 mb-4 drop-shadow-[0_0_20px_rgba(251,191,36,0.8)] animate-pulse" alt="Trophy">
+        <h1 class="text-3xl md:text-5xl font-black text-amber-400 uppercase tracking-widest mb-1 text-center drop-shadow-lg">¡PARTIDO FINALIZADO!</h1>
+        <h2 id="winner-name-modal" class="text-2xl md:text-4xl font-bold text-white text-center mt-2 uppercase tracking-wider mb-8">Nombre del Ganador</h2>
+        
+        <div class="flex flex-col gap-4 items-center w-full max-w-sm px-6">
+            <button onclick="cerrarYRegresar()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-black px-6 py-3 rounded-full font-black text-sm md:text-base uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(16,185,129,0.4)]">
+                ✅ Volver a Mesas
+            </button>
+            
+            <button onclick="ocultarAvisoVictoria()" class="w-full bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-full font-bold text-xs md:text-sm uppercase tracking-widest transition-all border border-slate-600">
+                👁️ Ver Tablero (Activar Ranking)
+            </button>
+
+            <button onclick="cerrarModalYCorregir()" class="text-rose-400 hover:text-rose-300 text-[10px] md:text-xs font-bold uppercase underline tracking-widest cursor-pointer mt-4">
+                ⚙️ Deshacer Último Punto (Reabrir Partido)
+            </button>
         </div>
     </div>
 
@@ -59,7 +70,6 @@
         <!-- JUGADOR IZQUIERDA -->
         <div class="flex-1 flex flex-col min-h-0 relative">
             <div class="bg-cyan-600/30 border border-cyan-500/40 p-3 rounded-2xl mb-2 text-center relative">
-                <!-- INDICADOR DE SAQUE -->
                 <div id="badge-saque-left" onclick="forzarCambioSaqueInicial()" class="hidden absolute -top-3 left-1/2 transform -translate-x-1/2 bg-amber-500 text-black px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest cursor-pointer shadow-[0_0_10px_rgba(245,158,11,0.6)] transition-all animate-pulse">
                     🎾 Saque
                 </div>
@@ -86,7 +96,6 @@
         <!-- JUGADOR DERECHA -->
         <div class="flex-1 flex flex-col min-h-0 relative">
             <div class="bg-fuchsia-600/30 border border-fuchsia-500/40 p-3 rounded-2xl mb-2 text-center relative">
-                <!-- INDICADOR DE SAQUE -->
                 <div id="badge-saque-right" onclick="forzarCambioSaqueInicial()" class="hidden absolute -top-3 left-1/2 transform -translate-x-1/2 bg-amber-500 text-black px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest cursor-pointer shadow-[0_0_10px_rgba(245,158,11,0.6)] transition-all animate-pulse">
                     🎾 Saque
                 </div>
@@ -125,9 +134,8 @@
         let modoJuego = '3-5'; 
         let setsParaGanar = 3;
         
-        // Controles Visuales Dinámicos
-        let isSwapped = false; // Indica si visualmente están invertidos en pantalla
-        let firstServersBySet = [1]; // Arreglo que guarda qué jugador (1 o 2) comenzó sacando cada set
+        let isSwapped = false;
+        let firstServersBySet = [1];
         let audioMuted = false;
         let mostrarRankingImpacto = false;
         let historyStack = [];
@@ -140,10 +148,8 @@
 
         async function inicializarJuez() {
             if (!partidoId) { alert("ID de partido no especificado."); return; }
-
             const { data: reglas } = await clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true });
             reglasRanking = reglas || [];
-
             await cargarYResolverPartido();
         }
 
@@ -181,13 +187,11 @@
             numSetActual = historialSets.length + 1;
             mostrarRankingImpacto = data.mostrar_ranking || false;
 
-            // Rellenar arreglo de saques según el set actual (por si se recarga la página)
             firstServersBySet = [1];
             for (let i = 1; i < numSetActual; i++) {
                 firstServersBySet.push(firstServersBySet[i-1] === 1 ? 2 : 1);
             }
 
-            // Invertir automáticamente si es set impar (2, 4, 6) para respetar reglas ITTF al recargar
             if (numSetActual % 2 === 0) isSwapped = true;
             else isSwapped = false;
 
@@ -212,12 +216,7 @@
             partidosCat.filter(m => m.grupo_nombre).forEach(m => {
                 const g = m.grupo_nombre;
                 if (!standings[g]) standings[g] = {};
-
-                [m.j1, m.j2].forEach(j => {
-                    if (j && j.id && !standings[g][j.id]) {
-                        standings[g][j.id] = { id: j.id, nombre: j.nombre, pts: 0, pg: 0, pj: 0, setsG: 0, setsP: 0 };
-                    }
-                });
+                [m.j1, m.j2].forEach(j => { if (j && j.id && !standings[g][j.id]) { standings[g][j.id] = { id: j.id, nombre: j.nombre, pts: 0, pg: 0, pj: 0, setsG: 0, setsP: 0 }; } });
 
                 if ((m.estado || '').toLowerCase() === 'finalizado' && m.j1 && m.j2) {
                     const obj1 = standings[g][m.j1.id];
@@ -226,9 +225,7 @@
                         obj1.pj++; obj2.pj++;
                         obj1.setsG += (m.sets_j1 || 0); obj1.setsP += (m.sets_j2 || 0);
                         obj2.setsG += (m.sets_j2 || 0); obj2.setsP += (m.sets_j1 || 0);
-
-                        if (m.ganador_id === m.jugador1_id) { obj1.pg++; obj1.pts += 2; obj2.pts += 1; }
-                        else { obj2.pg++; obj2.pts += 2; obj1.pts += 1; }
+                        if (m.ganador_id === m.jugador1_id) { obj1.pg++; obj1.pts += 2; obj2.pts += 1; } else { obj2.pg++; obj2.pts += 2; obj1.pts += 1; }
                     }
                 }
             });
@@ -236,9 +233,7 @@
             const ordenarITTF = (lista) => {
                 return [...lista].sort((a, b) => {
                     if (b.pts !== a.pts) return b.pts - a.pts;
-                    const rSetA = a.setsG / (a.setsP || 0.0001);
-                    const rSetB = b.setsG / (b.setsP || 0.0001);
-                    return rSetB - rSetA;
+                    const rSetA = a.setsG / (a.setsP || 0.0001); const rSetB = b.setsG / (b.setsP || 0.0001); return rSetB - rSetA;
                 });
             };
 
@@ -263,7 +258,6 @@
                 let updateObj = {};
                 if (resJ1) updateObj.jugador1_id = resJ1;
                 if (resJ2) updateObj.jugador2_id = resJ2;
-
                 await clienteSupabase.from('partidos').update(updateObj).eq('id', p.id);
                 await cargarYResolverPartido();
             }
@@ -271,64 +265,37 @@
 
         async function calcularRankingEnVivoAcumulado() {
             if (!partidoData || !partidoData.torneo_id) return;
-
-            const { data: finMatches } = await clienteSupabase
-                .from('partidos')
-                .select('*, j1:jugador1_id(id, puntos_ranking), j2:jugador2_id(id, puntos_ranking)')
-                .eq('torneo_id', partidoData.torneo_id)
-                .eq('estado', 'finalizado');
+            const { data: finMatches } = await clienteSupabase.from('partidos').select('*, j1:jugador1_id(id, puntos_ranking), j2:jugador2_id(id, puntos_ranking)').eq('torneo_id', partidoData.torneo_id).eq('estado', 'finalizado');
 
             let deltaP1 = 0; let deltaP2 = 0;
-
             if (finMatches && finMatches.length > 0) {
                 finMatches.forEach(m => {
                     if (m.id == partidoId) return;
-
-                    let p1Base = m.j1 ? m.j1.puntos_ranking : 0;
-                    let p2Base = m.j2 ? m.j2.puntos_ranking : 0;
+                    let p1Base = m.j1 ? m.j1.puntos_ranking : 0; let p2Base = m.j2 ? m.j2.puntos_ranking : 0;
                     let impacto = calcularImpactoPuntos(p1Base, p2Base);
-
                     if (m.jugador1_id === p1.id) { deltaP1 += (m.ganador_id === p1.id) ? impacto.j1Gana : impacto.j1Pierde; } 
                     else if (m.jugador2_id === p1.id) { deltaP1 += (m.ganador_id === p1.id) ? impacto.j2Gana : impacto.j2Pierde; }
-
                     if (m.jugador1_id === p2.id) { deltaP2 += (m.ganador_id === p2.id) ? impacto.j1Gana : impacto.j1Pierde; } 
                     else if (m.jugador2_id === p2.id) { deltaP2 += (m.ganador_id === p2.id) ? impacto.j2Gana : impacto.j2Pierde; }
                 });
             }
-
             p1.ptsLive = p1.ptsBase + deltaP1; p2.ptsLive = p2.ptsBase + deltaP2;
         }
 
         function calcularImpactoPuntos(ptsA, ptsB) {
-            let diff = Math.abs(ptsA - ptsB);
-            let favoritoEsJ1 = ptsA >= ptsB;
-
+            let diff = Math.abs(ptsA - ptsB); let favoritoEsJ1 = ptsA >= ptsB;
             let reglaGanaJ1 = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((favoritoEsJ1 && r.resultado_esperado === 'gana_favorito') || (!favoritoEsJ1 && r.resultado_esperado === 'gana_retador')));
             let reglaGanaJ2 = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((!favoritoEsJ1 && r.resultado_esperado === 'gana_favorito') || (favoritoEsJ1 && r.resultado_esperado === 'gana_retador')));
-
-            return {
-                j1Gana: reglaGanaJ1 ? reglaGanaJ1.puntos_ganador : 10, j1Pierde: reglaGanaJ2 ? -Math.abs(reglaGanaJ2.puntos_perdedor) : -5,
-                j2Gana: reglaGanaJ2 ? reglaGanaJ2.puntos_ganador : 10, j2Pierde: reglaGanaJ1 ? -Math.abs(reglaGanaJ1.puntos_perdedor) : -5
-            };
+            return { j1Gana: reglaGanaJ1 ? reglaGanaJ1.puntos_ganador : 10, j1Pierde: reglaGanaJ2 ? -Math.abs(reglaGanaJ2.puntos_perdedor) : -5, j2Gana: reglaGanaJ2 ? reglaGanaJ2.puntos_ganador : 10, j2Pierde: reglaGanaJ1 ? -Math.abs(reglaGanaJ1.puntos_perdedor) : -5 };
         }
 
         function getCurrentServer() {
             let currentSetIdx = numSetActual - 1;
-            if(currentSetIdx >= firstServersBySet.length) {
-                firstServersBySet[currentSetIdx] = firstServersBySet[currentSetIdx-1] === 1 ? 2 : 1;
-            }
+            if(currentSetIdx >= firstServersBySet.length) { firstServersBySet[currentSetIdx] = firstServersBySet[currentSetIdx-1] === 1 ? 2 : 1; }
             let firstSrv = firstServersBySet[currentSetIdx];
-            
-            let s1 = p1.score, s2 = p2.score;
-            let total = s1 + s2;
-            
-            if(s1 >= 10 && s2 >= 10) {
-                let extra = total - 20;
-                return extra % 2 === 0 ? firstSrv : (firstSrv === 1 ? 2 : 1);
-            } else {
-                let blocks = Math.floor(total / 2);
-                return blocks % 2 === 0 ? firstSrv : (firstSrv === 1 ? 2 : 1);
-            }
+            let s1 = p1.score, s2 = p2.score; let total = s1 + s2;
+            if(s1 >= 10 && s2 >= 10) { let extra = total - 20; return extra % 2 === 0 ? firstSrv : (firstSrv === 1 ? 2 : 1); } 
+            else { let blocks = Math.floor(total / 2); return blocks % 2 === 0 ? firstSrv : (firstSrv === 1 ? 2 : 1); }
         }
 
         function forzarCambioSaqueInicial() {
@@ -341,142 +308,106 @@
             mostrarRankingImpacto = !mostrarRankingImpacto;
             const btn = document.getElementById('btn-toggle-ranking');
             btn.innerText = `📊 Ranking: ${mostrarRankingImpacto ? 'ON' : 'OFF'}`;
-            btn.className = mostrarRankingImpacto 
-                ? "bg-amber-500 text-black border border-amber-400 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-[0_0_12px_rgba(245,158,11,0.5)]"
-                : "bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest";
-
+            btn.className = mostrarRankingImpacto ? "bg-amber-500 text-black border border-amber-400 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-[0_0_12px_rgba(245,158,11,0.5)]" : "bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest";
             clienteSupabase.from('partidos').update({ mostrar_ranking: mostrarRankingImpacto }).eq('id', partidoId);
             actualizarUI();
         }
 
         function actualizarUI() {
-            // Manejo Visual de Lados Invertidos
-            let leftJ = isSwapped ? p2 : p1;
-            let rightJ = isSwapped ? p1 : p2;
-
-            document.getElementById('name-left').innerText = leftJ.nombre;
-            document.getElementById('name-right').innerText = rightJ.nombre;
-            document.getElementById('score-left').innerText = leftJ.score;
-            document.getElementById('score-right').innerText = rightJ.score;
-            document.getElementById('sets-left').innerText = leftJ.sets;
-            document.getElementById('sets-right').innerText = rightJ.sets;
-
+            let leftJ = isSwapped ? p2 : p1; let rightJ = isSwapped ? p1 : p2;
+            document.getElementById('name-left').innerText = leftJ.nombre; document.getElementById('name-right').innerText = rightJ.nombre;
+            document.getElementById('score-left').innerText = leftJ.score; document.getElementById('score-right').innerText = rightJ.score;
+            document.getElementById('sets-left').innerText = leftJ.sets; document.getElementById('sets-right').innerText = rightJ.sets;
             document.getElementById('info-mesa-fase').innerText = `MESA ${partidoData?.mesa || 1} • ${partidoData?.grupo_nombre ? 'GRUPO ' + partidoData.grupo_nombre : (partidoData?.ronda_fase || 'FASE FINAL')}`;
             document.getElementById('info-formato').innerText = `FORMATO: ${modoJuego === '2-3' ? '2 DE 3' : (modoJuego === '3-5' ? '3 DE 5' : '4 DE 7')} SETS`;
 
-            // Proyección del Ranking en Pantalla
-            const impactoLive = calcularImpactoPuntos(p1.ptsLive, p2.ptsLive);
-            let textRankP1 = mostrarRankingImpacto ? `<strong>${p1.ptsLive} pts (En Vivo)</strong> | <span class="text-emerald-400">🏆 +${impactoLive.j1Gana}</span> <span class="text-rose-400">❌ ${impactoLive.j1Pierde}</span>` : `${p1.ptsLive} pts (En Vivo)`;
-            let textRankP2 = mostrarRankingImpacto ? `<strong>${p2.ptsLive} pts (En Vivo)</strong> | <span class="text-emerald-400">🏆 +${impactoLive.j2Gana}</span> <span class="text-rose-400">❌ ${impactoLive.j2Pierde}</span>` : `${p2.ptsLive} pts (En Vivo)`;
+            let isFin = (partidoData?.estado || '').toLowerCase() === 'finalizado';
+            let impactoLive = calcularImpactoPuntos(p1.ptsLive, p2.ptsLive);
 
-            document.getElementById('ranking-info-left').innerHTML = isSwapped ? textRankP2 : textRankP1;
-            document.getElementById('ranking-info-right').innerHTML = isSwapped ? textRankP1 : textRankP2;
-
-            // Manejo Visual de Saque
-            let currServer = getCurrentServer();
-            let visualServerLeft = (!isSwapped && currServer === 1) || (isSwapped && currServer === 2);
+            let ptsShowP1 = p1.ptsLive;
+            let ptsShowP2 = p2.ptsLive;
             
-            if (visualServerLeft) {
-                document.getElementById('badge-saque-left').classList.remove('hidden');
-                document.getElementById('badge-saque-right').classList.add('hidden');
-            } else {
-                document.getElementById('badge-saque-left').classList.add('hidden');
-                document.getElementById('badge-saque-right').classList.remove('hidden');
+            if (isFin) {
+                if (partidoData.ganador_id === p1.id) {
+                    ptsShowP1 += impactoLive.j1Gana;
+                    ptsShowP2 += impactoLive.j2Pierde;
+                } else if (partidoData.ganador_id === p2.id) {
+                    ptsShowP1 += impactoLive.j1Pierde;
+                    ptsShowP2 += impactoLive.j2Gana;
+                }
             }
 
-            // Manejo de Historial de Sets
-            const listSetsEl = document.getElementById('list-sets');
-            listSetsEl.innerHTML = '';
-            historialSets.forEach(s => {
-                listSetsEl.innerHTML += `
-                    <span class="bg-black/60 border border-white/10 px-2.5 py-1 rounded-lg text-[10px] font-bold">
-                        Set ${s.numSet}: <span class="${s.s1 > s.s2 ? 'text-cyan-400' : 'text-zinc-400'}">${s.s1}</span> - <span class="${s.s2 > s.s1 ? 'text-fuchsia-400' : 'text-zinc-400'}">${s.s2}</span>
-                    </span>
-                `;
-            });
+            let textRankP1 = mostrarRankingImpacto ? `<strong>${ptsShowP1} pts ${isFin ? '(Final)' : '(En Vivo)'}</strong> | <span class="text-emerald-400">🏆 +${impactoLive.j1Gana}</span> <span class="text-rose-400">❌ ${impactoLive.j1Pierde}</span>` : `${ptsShowP1} pts ${isFin ? '(Final)' : '(En Vivo)'}`;
+            let textRankP2 = mostrarRankingImpacto ? `<strong>${ptsShowP2} pts ${isFin ? '(Final)' : '(En Vivo)'}</strong> | <span class="text-emerald-400">🏆 +${impactoLive.j2Gana}</span> <span class="text-rose-400">❌ ${impactoLive.j2Pierde}</span>` : `${ptsShowP2} pts ${isFin ? '(Final)' : '(En Vivo)'}`;
+
+            document.getElementById('ranking-info-left').innerHTML = isSwapped ? textRankP2 : textRankP1; 
+            document.getElementById('ranking-info-right').innerHTML = isSwapped ? textRankP1 : textRankP2;
+
+            let currServer = getCurrentServer();
+            let visualServerLeft = (!isSwapped && currServer === 1) || (isSwapped && currServer === 2);
+            if (visualServerLeft) { document.getElementById('badge-saque-left').classList.remove('hidden'); document.getElementById('badge-saque-right').classList.add('hidden'); } 
+            else { document.getElementById('badge-saque-left').classList.add('hidden'); document.getElementById('badge-saque-right').classList.remove('hidden'); }
+
+            const listSetsEl = document.getElementById('list-sets'); listSetsEl.innerHTML = '';
+            historialSets.forEach(s => { listSetsEl.innerHTML += `<span class="bg-black/60 border border-white/10 px-2.5 py-1 rounded-lg text-[10px] font-bold">Set ${s.numSet}: <span class="${s.s1 > s.s2 ? 'text-cyan-400' : 'text-zinc-400'}">${s.s1}</span> - <span class="${s.s2 > s.s1 ? 'text-fuchsia-400' : 'text-zinc-400'}">${s.s2}</span></span>`; });
         }
 
-        function saveSnapshot() {
-            historyStack.push(JSON.parse(JSON.stringify({ p1, p2, historialSets, numSetActual, isSwapped, firstServersBySet })));
-        }
+        function saveSnapshot() { historyStack.push(JSON.parse(JSON.stringify({ p1, p2, historialSets, numSetActual, isSwapped, firstServersBySet }))); }
 
-        // Click en Mitad Izquierda de Pantalla -> Punto para el jugador asignado
         function addPointLeft() { addPoint(isSwapped ? 2 : 1); }
-        // Click en Mitad Derecha de Pantalla -> Punto para el jugador asignado
         function addPointRight() { addPoint(isSwapped ? 1 : 2); }
 
         async function addPoint(jugadorOriginalNum) {
             saveSnapshot();
-
-            if (jugadorOriginalNum === 1) p1.score++;
-            else p2.score++;
-
+            if (jugadorOriginalNum === 1) p1.score++; else p2.score++;
             let s1 = p1.score, s2 = p2.score;
-            let setGanado = false;
-            let partidoGanado = false;
-            let ganadorId = null;
+            let setGanado = false; let partidoGanado = false; let ganadorId = null;
 
             if ((s1 >= 11 || s2 >= 11) && Math.abs(s1 - s2) >= 2) {
                 setGanado = true;
                 let ganadorSet = s1 > s2 ? 1 : 2;
                 if (ganadorSet === 1) p1.sets++; else p2.sets++;
-
                 historialSets.push({ numSet: numSetActual, s1: s1, s2: s2 });
                 numSetActual++;
 
-                // Verificar Victoria de Partido
                 if (p1.sets === setsParaGanar) { partidoGanado = true; ganadorId = p1.id; }
                 if (p2.sets === setsParaGanar) { partidoGanado = true; ganadorId = p2.id; }
 
                 if (!partidoGanado) {
                     p1.score = 0; p2.score = 0;
-                    // Cambio automático de Mesa
                     isSwapped = !isSwapped; 
-                    // Configurar quién saca primero en el siguiente set
                     let prevFirst = firstServersBySet[firstServersBySet.length - 1];
                     firstServersBySet.push(prevFirst === 1 ? 2 : 1);
                 }
+            }
+
+            if (partidoGanado) {
+                partidoData.estado = 'finalizado';
+                partidoData.ganador_id = ganadorId;
             }
 
             actualizarUI();
             anunciarMarcador(p1.nombre, p1.score, p2.nombre, p2.score, partidoGanado);
 
             await clienteSupabase.from('partidos').update({
-                puntos_j1: p1.score,
-                puntos_j2: p2.score,
-                sets_j1: p1.sets,
-                sets_j2: p2.sets,
-                historial_sets: historialSets,
-                estado: partidoGanado ? 'finalizado' : 'en_curso',
-                ganador_id: ganadorId
+                puntos_j1: p1.score, puntos_j2: p2.score, sets_j1: p1.sets, sets_j2: p2.sets, historial_sets: historialSets,
+                estado: partidoGanado ? 'finalizado' : 'en_curso', ganador_id: ganadorId
             }).eq('id', partidoId);
 
-            if (partidoGanado) {
-                mostrarOverlayGanador(ganadorId === p1.id ? p1.nombre : p2.nombre);
-            }
+            if (partidoGanado) mostrarOverlayGanador(ganadorId === p1.id ? p1.nombre : p2.nombre);
         }
 
         function undo() {
             if (historyStack.length === 0) return;
             const snap = historyStack.pop();
-            p1 = snap.p1; p2 = snap.p2;
-            historialSets = snap.historialSets;
-            numSetActual = snap.numSetActual;
-            isSwapped = snap.isSwapped;
-            firstServersBySet = snap.firstServersBySet;
-
+            p1 = snap.p1; p2 = snap.p2; historialSets = snap.historialSets; numSetActual = snap.numSetActual; isSwapped = snap.isSwapped; firstServersBySet = snap.firstServersBySet;
+            partidoData.estado = 'en_curso';
+            partidoData.ganador_id = null;
             actualizarUI();
-            clienteSupabase.from('partidos').update({
-                puntos_j1: p1.score, puntos_j2: p2.score,
-                sets_j1: p1.sets, sets_j2: p2.sets,
-                historial_sets: historialSets, estado: 'en_curso', ganador_id: null
-            }).eq('id', partidoId);
+            clienteSupabase.from('partidos').update({ puntos_j1: p1.score, puntos_j2: p2.score, sets_j1: p1.sets, sets_j2: p2.sets, historial_sets: historialSets, estado: 'en_curso', ganador_id: null }).eq('id', partidoId);
         }
 
-        function manualSwapSides() {
-            isSwapped = !isSwapped;
-            actualizarUI();
-        }
+        function manualSwapSides() { isSwapped = !isSwapped; actualizarUI(); }
 
         function mostrarOverlayGanador(nombre) {
             document.getElementById('winner-name-modal').innerText = nombre;
@@ -484,23 +415,36 @@
             document.getElementById('modal-ganador').classList.add('flex');
         }
 
-        function cerrarYRegresar() {
-            window.location.href = 'mesas.html';
+        function ocultarAvisoVictoria() {
+            document.getElementById('modal-ganador').classList.add('hidden');
+            document.getElementById('modal-ganador').classList.remove('flex');
         }
 
-        function toggleAudio() {
-            audioMuted = !audioMuted;
-            document.getElementById('btn-audio').innerHTML = audioMuted ? '<i class="fa-solid fa-volume-xmark text-rose-400"></i>' : '<i class="fa-solid fa-volume-high text-cyan-400"></i>';
+        function cerrarYRegresar() { window.location.href = 'mesas.html'; }
+
+        function cerrarModalYCorregir() {
+            document.getElementById('modal-ganador').classList.add('hidden');
+            document.getElementById('modal-ganador').classList.remove('flex');
+            
+            if (historyStack.length > 0) {
+                undo();
+            } else {
+                if (p1.id === partidoData.ganador_id) p1.sets = Math.max(0, p1.sets - 1);
+                else p2.sets = Math.max(0, p2.sets - 1);
+                
+                p1.score = 0; p2.score = 0;
+                if (historialSets.length > 0) { historialSets.pop(); numSetActual = Math.max(1, numSetActual - 1); }
+                
+                partidoData.estado = 'en_curso';
+                partidoData.ganador_id = null;
+
+                actualizarUI();
+                clienteSupabase.from('partidos').update({ sets_j1: p1.sets, sets_j2: p2.sets, puntos_j1: p1.score, puntos_j2: p2.score, historial_sets: historialSets, estado: 'en_curso', ganador_id: null }).eq('id', partidoId);
+            }
         }
 
-        function anunciarMarcador(n1, s1, n2, s2, fin) {
-            if (audioMuted || !window.speechSynthesis) return;
-            window.speechSynthesis.cancel();
-            let texto = fin ? `¡Juego finalizado!` : `${getApellido(n1)} ${s1}, ${getApellido(n2)} ${s2}`;
-            let u = new SpeechSynthesisUtterance(texto);
-            u.lang = 'es-MX';
-            window.speechSynthesis.speak(u);
-        }
+        function toggleAudio() { audioMuted = !audioMuted; document.getElementById('btn-audio').innerHTML = audioMuted ? '<i class="fa-solid fa-volume-xmark text-rose-400"></i>' : '<i class="fa-solid fa-volume-high text-cyan-400"></i>'; }
+        function anunciarMarcador(n1, s1, n2, s2, fin) { if (audioMuted || !window.speechSynthesis) return; window.speechSynthesis.cancel(); let u = new SpeechSynthesisUtterance(fin ? `¡Juego finalizado!` : `${getApellido(n1)} ${s1}, ${getApellido(n2)} ${s2}`); u.lang = 'es-MX'; window.speechSynthesis.speak(u); }
 
         inicializarJuez();
     </script>
