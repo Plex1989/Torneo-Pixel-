@@ -12,7 +12,6 @@
         .header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
         .header h1 { margin: 0; font-size: 18px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; font-weight: 800; }
 
-        /* CARRUSEL DE FILTROS PARA CELULAR */
         .scrolling-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none; -ms-overflow-style: none; }
         .scrolling-bar::-webkit-scrollbar { display: none; }
 
@@ -45,7 +44,6 @@
 
         .header-hora { grid-column: 1 / -1; font-size: 13px; color: #38bdf8; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid rgba(56, 189, 248, 0.3); padding-bottom: 6px; margin-top: 20px; margin-bottom: 5px; letter-spacing: 1.5px; }
 
-        /* SECCIÓN LLAVES AL FINAL */
         .seccion-llaves-footer { grid-column: 1 / -1; margin-top: 30px; background: rgba(10, 15, 26, 0.85); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 20px; padding: 20px; backdrop-filter: blur(15px); }
     </style>
 </head>
@@ -56,13 +54,11 @@
         <h1 id="nombre-torneo">CENTRAL DE MESAS</h1>
     </div>
 
-    <!-- FILTRO DE CATEGORÍAS -->
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">🏆 Filtrar por Categoría:</div>
     <div class="scrolling-bar" id="bar-categorias">
         <button class="btn-filter-pill btn-cat-pill active" onclick="filtrarCategoria('todas')">Todas las Categorías</button>
     </div>
 
-    <!-- FILTRO DE ESTADO -->
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">📌 Estado de Juego:</div>
     <div class="scrolling-bar">
         <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Todos</button>
@@ -70,7 +66,6 @@
         <button class="btn-filter-pill" id="tab-finalizados" onclick="filtrarEstado('finalizado')">🏁 Finalizados</button>
     </div>
 
-    <!-- FILTRO MESA -->
     <div class="scrolling-bar" id="bar-mesas">
         <button class="btn-filter-pill active" onclick="filtrarMesa('todas')">Todas las Mesas</button>
     </div>
@@ -96,17 +91,9 @@
                 { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.5)', text: '#fbbf24' },
                 { bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.5)', text: '#38bdf8' },
                 { bg: 'rgba(217, 70, 239, 0.15)', border: 'rgba(217, 70, 239, 0.5)', text: '#f0abfc' },
-                { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.5)', text: '#34d399' },
-                { bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.5)', text: '#c084fc' }
+                { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.5)', text: '#34d399' }
             ];
-            const idx = (catId || 0) % paleta.length;
-            return paleta[idx];
-        };
-
-        const getApellido = (nombreCompleto) => {
-            if(!nombreCompleto) return "";
-            const partes = nombreCompleto.trim().split(" ");
-            return partes[partes.length - 1];
+            return paleta[(catId || 0) % paleta.length];
         };
 
         async function inicializar() {
@@ -142,7 +129,6 @@
         function generarBotonesCategorias() {
             const bar = document.getElementById('bar-categorias');
             const catsMap = new Map();
-            
             todosLosPartidos.forEach(p => {
                 if (p.categorias && p.categorias.nombre) {
                     catsMap.set(p.categorias.nombre, p.categorias.id);
@@ -150,11 +136,9 @@
             });
 
             let html = `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === 'todas' ? 'active' : ''}" onclick="filtrarCategoria('todas')">Todas las Categorías</button>`;
-            
             catsMap.forEach((id, nombre) => {
                 html += `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === nombre ? 'active' : ''}" onclick="filtrarCategoria('${nombre}')">🏆 ${nombre}</button>`;
             });
-
             bar.innerHTML = html;
         }
 
@@ -206,7 +190,6 @@
             return hrs * 60 + mins;
         }
 
-        // CÁLCULO DE POSICIONES PARA LAS LLAVES ABAJO
         function calcularStandingsGrupos() {
             const porCategoria = {};
 
@@ -222,7 +205,7 @@
 
                 [m.j1, m.j2].forEach(j => {
                     if (j && j.id && !grupoObj[j.id]) {
-                        grupoObj[j.id] = { id: j.id, nombre: j.nombre, pj: 0, pg: 0, pp: 0, pts: 0 };
+                        grupoObj[j.id] = { id: j.id, nombre: j.nombre, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0 };
                     }
                 });
 
@@ -233,6 +216,9 @@
 
                     if (j1 && j2) {
                         j1.pj += 1; j2.pj += 1;
+                        j1.setsG += (m.sets_j1 || 0); j1.setsP += (m.sets_j2 || 0);
+                        j2.setsG += (m.sets_j2 || 0); j2.setsP += (m.sets_j1 || 0);
+
                         if (m.ganador_id === m.jugador1_id) {
                             j1.pg += 1; j1.pts += 2;
                             j2.pp += 1; j2.pts += 1;
@@ -256,11 +242,19 @@
             return fallbackText;
         }
 
+        function ordenarJugadoresITTF(lista) {
+            return [...lista].sort((a, b) => {
+                if (b.pts !== a.pts) return b.pts - a.pts;
+                const rSetA = a.setsG / (a.setsP || 0.0001);
+                const rSetB = b.setsG / (b.setsP || 0.0001);
+                return rSetB - rSetA;
+            });
+        }
+
         function dibujarPartidos() {
             const contenedor = document.getElementById('contenedor-partidos');
             contenedor.innerHTML = '';
 
-            // 1. DIBUJAR PARTIDOS DE GRUPOS ARRIBA
             let filtrados = todosLosPartidos.filter(p => p.grupo_nombre);
 
             if (mesaFiltro !== 'todas') {
@@ -333,14 +327,11 @@
                 });
             });
 
-            // 2. DIBUJAR SIEMPRE LAS LLAVES ELIMINATORIAS AL FINAL
             dibujarLlavesInferiores(contenedor);
         }
 
         function dibujarLlavesInferiores(contenedor) {
             const standings = calcularStandingsGrupos();
-            
-            // Extraer todas las categorías únicas presentes en el torneo
             const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
             let catsList = [...categoriasSet];
 
@@ -354,8 +345,8 @@
 
             catsList.forEach(catNombre => {
                 const gruposCat = standings[catNombre] || {};
-                const gpoA_arr = gruposCat['A'] ? Object.values(gruposCat['A']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
-                const gpoB_arr = gruposCat['B'] ? Object.values(gruposCat['B']).sort((a,b) => b.pts - a.pts || b.pg - a.pg) : [];
+                const gpoA_arr = gruposCat['A'] ? ordenarJugadoresITTF(Object.values(gruposCat['A'])) : [];
+                const gpoB_arr = gruposCat['B'] ? ordenarJugadoresITTF(Object.values(gruposCat['B'])) : [];
 
                 const primeroA = getPosNombre(gpoA_arr, 0, '1° Grupo A');
                 const segundoA = getPosNombre(gpoA_arr, 1, '2° Grupo A');
@@ -367,8 +358,19 @@
                 const finGpo = partidosCatGpo.filter(p => (p.estado || '').trim().toLowerCase() === 'finalizado').length;
                 const gpoCompleto = totalGpo > 0 && totalGpo === finGpo;
 
-                const partidoSemi1 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && (p.ronda_fase?.includes('1') || p.ronda_fase?.toLowerCase().includes('semi')));
-                const partidoSemi2 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && (p.ronda_fase?.includes('2') || p.ronda_fase?.toLowerCase().includes('semi')));
+                // CORRECCIÓN MATEMÁTICA Y LÓGICA PARA EVITAR REPETICIÓN
+                const partidoSemi1 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && p.ronda_fase?.toLowerCase().includes('semi') && (p.ronda_fase?.includes('1') || p.ronda_fase?.toLowerCase().includes('cruce 1')));
+                const partidoSemi2 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && p.ronda_fase?.toLowerCase().includes('semi') && (p.ronda_fase?.includes('2') || p.ronda_fase?.toLowerCase().includes('cruce 2')));
+                const partidoFinal = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && p.ronda_fase?.toLowerCase().includes('final') && !p.ronda_fase?.toLowerCase().includes('semi'));
+
+                let nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : primeroA;
+                let nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : segundoB;
+
+                let nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : primeroB;
+                let nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : segundoA;
+
+                let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Ganador Semi 1');
+                let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Ganador Semi 2');
 
                 contenedor.innerHTML += `
                     <div class="seccion-llaves-footer">
@@ -397,14 +399,14 @@
                                 </div>
 
                                 <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
-                                    <strong style="font-size:12px; color:#fff;">🥇 ${partidoSemi1?.j1 ? partidoSemi1.j1.nombre : primeroA}</strong>
+                                    <strong style="font-size:12px; color:#fff;">🥇 ${nomSemi1_j1}</strong>
                                     <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800;">1° Gpo A</span>
                                 </div>
 
                                 <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
 
                                 <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                                    <strong style="font-size:12px; color:#fff;">🥈 ${partidoSemi1?.j2 ? partidoSemi1.j2.nombre : segundoB}</strong>
+                                    <strong style="font-size:12px; color:#fff;">🥈 ${nomSemi1_j2}</strong>
                                     <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">2° Gpo B</span>
                                 </div>
 
@@ -421,14 +423,14 @@
                                 </div>
 
                                 <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
-                                    <strong style="font-size:12px; color:#fff;">🥇 ${partidoSemi2?.j1 ? partidoSemi2.j1.nombre : primeroB}</strong>
+                                    <strong style="font-size:12px; color:#fff;">🥇 ${nomSemi2_j1}</strong>
                                     <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800;">1° Gpo B</span>
                                 </div>
 
                                 <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
 
                                 <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                                    <strong style="font-size:12px; color:#fff;">🥈 ${partidoSemi2?.j2 ? partidoSemi2.j2.nombre : segundoA}</strong>
+                                    <strong style="font-size:12px; color:#fff;">🥈 ${nomSemi2_j2}</strong>
                                     <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">2° Gpo A</span>
                                 </div>
 
@@ -437,17 +439,44 @@
                                 </button>
                             </div>
 
+                            <!-- GRAN FINAL (NUEVO MÓDULO AGREGADO) -->
+                            <div style="grid-column: 1 / -1; display:flex; justify-content:center; margin-top: 10px;">
+                                <div style="background:rgba(245,158,11,0.1); padding:16px; border-radius:14px; border:1px solid rgba(245,158,11,0.3); width: 100%; max-width: 450px;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                        <span style="font-size:12px; color:#fbbf24; font-weight:900; text-transform:uppercase;">🏆 Gran Final</span>
+                                        <span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partidoFinal?.mesa || 1}</span>
+                                    </div>
+
+                                    <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                                        <strong style="font-size:14px; color:#fff;">🥇 ${nomFinal_j1}</strong>
+                                        <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">Gana Semi 1</span>
+                                    </div>
+
+                                    <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
+
+                                    <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                                        <strong style="font-size:14px; color:#fff;">🥈 ${nomFinal_j2}</strong>
+                                        <span style="font-size:9px; background:rgba(217,70,239,0.2); color:#d946ef; padding:2px 6px; border-radius:4px; font-weight:800;">Gana Semi 2</span>
+                                    </div>
+
+                                    <button class="btn-arbitrar" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24;" onclick="abrirScoreboardJuez(${partidoFinal ? partidoFinal.id : 0})">
+                                        🏆 Arbitrar Gran Final
+                                    </button>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                 `;
             });
         }
 
-        function abrirScoreboardJuez(partidoId) {
+        async function abrirScoreboardJuez(partidoId) {
             if (!partidoId || partidoId === 0) {
                 alert("⚠️ La fase final debe guardarse primero desde 'Sorteo y Rol' para activar el arbitraje oficial de esta llave.");
                 return;
             }
+
             let pin = prompt("🔒 Ingrese el PIN de Autorización para Arbitrar:");
             if (pin === pinJuecesActual) {
                 window.location.href = `juez.html?partido=${partidoId}`;
