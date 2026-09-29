@@ -68,9 +68,8 @@
 </head>
 <body>
 
-    <!-- MODAL EXPEDIENTE COMPLETO CON RANKING -->
     <div id="modal-jugador-admin" class="modal-overlay no-print" style="display: none;">
-        <div class="modal-card relative">
+        <div class="modal-card">
             <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
                 <div>
                     <h3 id="modal-jugador-nombre" style="margin: 0; color: #38bdf8; font-size: 16px; font-weight: 800; text-transform: uppercase;"></h3>
@@ -335,9 +334,6 @@
             return fallbackText;
         }
 
-        // ==========================================
-        // EXPEDIENTE MÓDULO CON CÁLCULO DE RANKING EN VIVO
-        // ==========================================
         function abrirModalJugadorAdmin(jugadorId, nombre, club) {
             document.getElementById('modal-jugador-nombre').innerText = nombre;
             document.getElementById('modal-jugador-club').innerText = club || 'Sin Club';
@@ -645,9 +641,6 @@
             `;
         }
 
-        // ==========================================
-        // DIBUJAR TABLAS CON LA FUNCIÓN ONCLICK RESTAURADA
-        // ==========================================
         function dibujarResumenYLlaves(container) {
             const standings = calcularStandingsGrupos();
             const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
@@ -806,6 +799,9 @@
             });
         }
 
+        // ==========================================
+        // CANDADO SEGURO PARA ABRIR LLAVES ELIMINATORIAS
+        // ==========================================
         async function abrirScoreboardJuez(partidoId) {
             if (!partidoId || partidoId === 0) {
                 alert("⚠️ La fase final debe guardarse primero desde 'Sorteo y Rol' para activar el arbitraje oficial de esta llave.");
@@ -816,13 +812,62 @@
             
             if (p && !p.grupo_nombre && p.ronda_fase) {
                 const catNombre = p.categorias?.nombre;
-                const partidosCatGpo = todosLosPartidos.filter(m => m.grupo_nombre && m.categorias?.nombre === catNombre);
+                const partidosCat = todosLosPartidos.filter(m => m.categorias?.nombre === catNombre);
+                
+                // 1. CANDADO GRUPOS
+                const partidosCatGpo = partidosCat.filter(m => m.grupo_nombre);
                 const totalGpo = partidosCatGpo.length;
                 const finGpo = partidosCatGpo.filter(m => (m.estado || '').trim().toLowerCase() === 'finalizado').length;
                 
                 if (totalGpo > 0 && totalGpo !== finGpo) {
                     alert(`⛔ ACCESO DENEGADO.\n\nNo puedes arbitrar las llaves eliminatorias de la categoría "${catNombre || ''}" porque aún hay partidos de grupo Pendientes o En Vivo.\n\nFinalízalos todos primero.`);
                     return;
+                }
+
+                // 2. CANDADO GRAN FINAL
+                const esFinal = p.ronda_fase.toLowerCase().includes('final') && !p.ronda_fase.toLowerCase().includes('semi');
+                if (esFinal) {
+                    const semis = partidosCat.filter(m => !m.grupo_nombre && m.ronda_fase && m.ronda_fase.toLowerCase().includes('semi'));
+                    const semisIncompletas = semis.some(m => (m.estado || '').trim().toLowerCase() !== 'finalizado');
+                    if (semisIncompletas) {
+                        alert(`⛔ ACCESO DENEGADO.\n\nNo puedes arbitrar la Gran Final porque las Semifinales aún no han terminado.`);
+                        return;
+                    }
+                }
+
+                // 3. ASIGNACIÓN FORZOSA A LA BASE DE DATOS ANTES DE ENTRAR
+                if (!p.jugador1_id || !p.jugador2_id) {
+                    const standings = calcularStandingsGrupos();
+                    const gruposCat = standings[catNombre] || {};
+                    const gpoA_arr = gruposCat['A'] ? ordenarJugadoresITTF(Object.values(gruposCat['A'])) : [];
+                    const gpoB_arr = gruposCat['B'] ? ordenarJugadoresITTF(Object.values(gruposCat['B'])) : [];
+
+                    let resJ1 = null, resJ2 = null;
+                    const rf = p.ronda_fase.toLowerCase();
+
+                    if (rf.includes('semi') && (rf.includes('1') || rf.includes('cruce 1'))) {
+                        resJ1 = gpoA_arr[0]?.id; resJ2 = gpoB_arr[1]?.id;
+                    } else if (rf.includes('semi') && (rf.includes('2') || rf.includes('cruce 2'))) {
+                        resJ1 = gpoB_arr[0]?.id; resJ2 = gpoA_arr[1]?.id;
+                    } else if (esFinal) {
+                        const semi1 = partidosCat.find(m => m.ronda_fase?.toLowerCase().includes('semi') && (m.ronda_fase?.includes('1') || m.ronda_fase?.includes('cruce 1')));
+                        const semi2 = partidosCat.find(m => m.ronda_fase?.toLowerCase().includes('semi') && (m.ronda_fase?.includes('2') || m.ronda_fase?.includes('cruce 2')));
+                        resJ1 = semi1?.ganador_id;
+                        resJ2 = semi2?.ganador_id;
+                    }
+
+                    if (resJ1 || resJ2) {
+                        let updates = {};
+                        if (resJ1 && !p.jugador1_id) updates.jugador1_id = resJ1;
+                        if (resJ2 && !p.jugador2_id) updates.jugador2_id = resJ2;
+
+                        if (Object.keys(updates).length > 0) {
+                            await clienteSupabase.from('partidos').update(updates).eq('id', p.id);
+                        }
+                    } else {
+                        alert("⚠️ No se pudieron determinar los jugadores para este partido. Asegúrate de que las fases anteriores tengan resultados válidos en el sistema.");
+                        return;
+                    }
                 }
             }
 
