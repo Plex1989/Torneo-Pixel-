@@ -2,10 +2,10 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Transmisión en Vivo - Pixel Studio</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
@@ -70,7 +70,7 @@
 </head>
 <body>
 
-    <!-- MODAL PANTALLA COMPLETA PARTIDO ESPECTADOR (OCULTO POR DEFECTO CON STYLE INLINE) -->
+    <!-- MODAL PANTALLA COMPLETA PARTIDO ESPECTADOR -->
     <div id="modal-fullscreen-partido" style="display: none;" class="fixed inset-0 z-[100] bg-[#04060a] p-4 flex-col justify-between overflow-y-auto">
         
         <div class="flex justify-between items-center bg-slate-900/80 p-3 rounded-2xl border border-white/10 shrink-0">
@@ -348,6 +348,32 @@
             };
         }
 
+        function calcularDetallesRankingPartido(p, finMatches) {
+            let ptsPrevJ1 = p.j1 ? calcularRankingEnVivo(p.j1.id, p.j1.puntos_ranking || 0, finMatches, p.id) : 0;
+            let ptsPrevJ2 = p.j2 ? calcularRankingEnVivo(p.j2.id, p.j2.puntos_ranking || 0, finMatches, p.id) : 0;
+            let impacto = calcularImpacto(ptsPrevJ1, ptsPrevJ2);
+
+            let isFin = (p.estado || '').toLowerCase() === 'finalizado';
+            let ptsFinalJ1 = ptsPrevJ1;
+            let ptsFinalJ2 = ptsPrevJ2;
+            let deltaJ1 = 0;
+            let deltaJ2 = 0;
+
+            if (isFin && p.j1 && p.j2) {
+                if (p.ganador_id === p.jugador1_id) {
+                    deltaJ1 = impacto.j1G;
+                    deltaJ2 = impacto.j2P;
+                } else if (p.ganador_id === p.jugador2_id) {
+                    deltaJ1 = impacto.j1P;
+                    deltaJ2 = impacto.j2G;
+                }
+                ptsFinalJ1 += deltaJ1;
+                ptsFinalJ2 += deltaJ2;
+            }
+
+            return { ptsPrevJ1, ptsPrevJ2, ptsFinalJ1, ptsFinalJ2, deltaJ1, deltaJ2, impacto, isFin };
+        }
+
         function calcularStandingsGrupos() {
             const porCategoria = {};
 
@@ -470,40 +496,27 @@
                     let iconJ1 = (isFin && p.ganador_id === p.jugador1_id) ? '🏆 ' : '';
                     let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '🏆 ' : '';
 
-                    let ptsPrevJ1 = p.j1 ? calcularRankingEnVivo(p.j1.id, p.j1.puntos_ranking || 0, finMatches, p.id) : 0;
-                    let ptsPrevJ2 = p.j2 ? calcularRankingEnVivo(p.j2.id, p.j2.puntos_ranking || 0, finMatches, p.id) : 0;
+                    let rDetails = calcularDetallesRankingPartido(p, finMatches);
 
-                    let impacto = calcularImpacto(ptsPrevJ1, ptsPrevJ2);
-
-                    let ptsShowJ1 = ptsPrevJ1;
-                    let ptsShowJ2 = ptsPrevJ2;
-
-                    if (isFin && p.j1 && p.j2) {
-                        if (p.ganador_id === p.jugador1_id) {
-                            ptsShowJ1 += impacto.j1G;
-                            ptsShowJ2 += impacto.j2P;
-                        } else if (p.ganador_id === p.jugador2_id) {
-                            ptsShowJ1 += impacto.j1P;
-                            ptsShowJ2 += impacto.j2G;
-                        }
-                    }
+                    let txtRankJ1 = isFin ? `${rDetails.ptsFinalJ1} pts (${rDetails.deltaJ1 >= 0 ? '+' + rDetails.deltaJ1 : rDetails.deltaJ1})` : `${rDetails.ptsPrevJ1} pts`;
+                    let txtRankJ2 = isFin ? `${rDetails.ptsFinalJ2} pts (${rDetails.deltaJ2 >= 0 ? '+' + rDetails.deltaJ2 : rDetails.deltaJ2})` : `${rDetails.ptsPrevJ2} pts`;
 
                     let proyeccionHtml = '';
                     if (p.mostrar_ranking && p.j1 && p.j2) {
                         if (isFin) {
                             proyeccionHtml = `
                                 <div class="proyeccion-bar" style="border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.1); color:#34d399;">
-                                    📈 Resultado de Ranking:<br>
-                                    ${p.j1.nombre.split(' ')[0]}: <strong>${p.ganador_id === p.jugador1_id ? '+'+impacto.j1G : impacto.j1P}</strong> | 
-                                    ${p.j2.nombre.split(' ')[0]}: <strong>${p.ganador_id === p.jugador2_id ? '+'+impacto.j2G : impacto.j2P}</strong>
+                                    📈 Resultado de Ranking Final:<br>
+                                    ${p.j1.nombre.split(' ')[0]}: <strong>${rDetails.deltaJ1 >= 0 ? '+' + rDetails.deltaJ1 : rDetails.deltaJ1}</strong> | 
+                                    ${p.j2.nombre.split(' ')[0]}: <strong>${rDetails.deltaJ2 >= 0 ? '+' + rDetails.deltaJ2 : rDetails.deltaJ2}</strong>
                                 </div>
                             `;
                         } else {
                             proyeccionHtml = `
                                 <div class="proyeccion-bar">
                                     📊 Proyección de Ranking:<br>
-                                    ${p.j1.nombre.split(' ')[0]}: <span style="color:#34d399;">+${impacto.j1G}</span> / <span style="color:#f87171;">${impacto.j1P}</span> | 
-                                    ${p.j2.nombre.split(' ')[0]}: <span style="color:#34d399;">+${impacto.j2G}</span> / <span style="color:#f87171;">${impacto.j2P}</span>
+                                    ${p.j1.nombre.split(' ')[0]}: <span style="color:#34d399;">+${rDetails.impacto.j1G}</span> / <span style="color:#f87171;">${rDetails.impacto.j1P}</span> | 
+                                    ${p.j2.nombre.split(' ')[0]}: <span style="color:#34d399;">+${rDetails.impacto.j2G}</span> / <span style="color:#f87171;">${rDetails.impacto.j2P}</span>
                                 </div>
                             `;
                         }
@@ -539,7 +552,7 @@
                                 <div class="jugador-box">
                                     <div>
                                         <span class="jugador-nombre">${iconJ1}${nomJ1}</span>
-                                        <span class="jugador-club">${p.j1?.club || ''} ${p.mostrar_ranking && ptsShowJ1 ? `(${ptsShowJ1} pts)` : ''}</span>
+                                        <span class="jugador-club">${p.j1?.club || ''} ${p.mostrar_ranking ? `(${txtRankJ1})` : ''}</span>
                                     </div>
                                     <div style="display:flex; align-items:center;">
                                         <span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>
@@ -550,7 +563,7 @@
                                 <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
                                     <div>
                                         <span class="jugador-nombre">${iconJ2}${nomJ2}</span>
-                                        <span class="jugador-club">${p.j2?.club || ''} ${p.mostrar_ranking && ptsShowJ2 ? `(${ptsShowJ2} pts)` : ''}</span>
+                                        <span class="jugador-club">${p.j2?.club || ''} ${p.mostrar_ranking ? `(${txtRankJ2})` : ''}</span>
                                     </div>
                                     <div style="display:flex; align-items:center;">
                                         <span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>
@@ -571,7 +584,7 @@
             }
         }
 
-        function generarTarjetaLlaveEspectador(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2, colorDesc2) {
+        function generarTarjetaLlaveEspectador(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2, colorDesc2, finMatches) {
             let isFin = partido && (partido.estado || '').trim().toLowerCase() === 'finalizado';
             let isVivo = partido && (partido.estado || '').trim().toLowerCase() === 'en_curso';
             
@@ -592,6 +605,18 @@
             let icon1 = win1 ? '🏆 ' : '';
             let icon2 = win2 ? '🏆 ' : '';
 
+            // Detalle de ranking
+            let rankTextJ1 = '';
+            let rankTextJ2 = '';
+
+            if (partido && partido.mostrar_ranking && partido.j1 && partido.j2) {
+                let rDetails = calcularDetallesRankingPartido(partido, finMatches);
+                let txtJ1 = isFin ? `${rDetails.ptsFinalJ1} pts (${rDetails.deltaJ1 >= 0 ? '+' + rDetails.deltaJ1 : rDetails.deltaJ1})` : `${rDetails.ptsPrevJ1} pts`;
+                let txtJ2 = isFin ? `${rDetails.ptsFinalJ2} pts (${rDetails.deltaJ2 >= 0 ? '+' + rDetails.deltaJ2 : rDetails.deltaJ2})` : `${rDetails.ptsPrevJ2} pts`;
+                rankTextJ1 = `<small style="font-size:9px; color:#38bdf8; display:block;">${txtJ1}</small>`;
+                rankTextJ2 = `<small style="font-size:9px; color:#f0abfc; display:block;">${txtJ2}</small>`;
+            }
+
             let clickAction = partido ? `onclick="abrirPartidoFullScreen(${partido.id})"` : '';
             let hoverFX = partido ? 'hover:-translate-y-1 hover:border-white/20 transition-all' : '';
 
@@ -611,21 +636,27 @@
                     </div>
 
                     <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center;">
+                        <div>
                             <strong style="font-size:14px; ${styleN1}">${icon1}${nomJ1}</strong>
-                            ${score1}
+                            ${rankTextJ1}
                         </div>
-                        <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800;">${descJ1}</span>
+                        <div style="display:flex; align-items:center;">
+                            ${score1}
+                            <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800; margin-left:8px;">${descJ1}</span>
+                        </div>
                     </div>
 
                     <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
 
                     <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center;">
+                        <div>
                             <strong style="font-size:14px; ${styleN2}">${icon2}${nomJ2}</strong>
-                            ${score2}
+                            ${rankTextJ2}
                         </div>
-                        <span style="font-size:9px; background:${colorDesc2}; padding:2px 6px; border-radius:4px; font-weight:800;">${descJ2}</span>
+                        <div style="display:flex; align-items:center;">
+                            ${score2}
+                            <span style="font-size:9px; background:${colorDesc2}; padding:2px 6px; border-radius:4px; font-weight:800; margin-left:8px;">${descJ2}</span>
+                        </div>
                     </div>
                 </div>
                 ${titulo === 'Gran Final' ? `</div>` : ''}
@@ -715,6 +746,7 @@
 
             if (catsList.length === 0) return;
 
+            const finMatches = todosLosPartidos.filter(p => (p.estado || '').toLowerCase() === 'finalizado');
             const partidosLlaveBD = todosLosPartidos.filter(p => !p.grupo_nombre || p.ronda_fase?.toLowerCase().includes('cruce') || p.ronda_fase?.toLowerCase().includes('semifinal') || p.ronda_fase?.toLowerCase().includes('final'));
 
             catsList.forEach(catNombre => {
@@ -745,9 +777,9 @@
                 let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Ganador Semi 1');
                 let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Ganador Semi 2');
 
-                let cardS1 = generarTarjetaLlaveEspectador(partidoSemi1, 'Semifinal 1', '#38bdf8', 1, nomSemi1_j1, nomSemi1_j2, '1° Gpo A', '2° Gpo B', 'rgba(6,182,212,0.2); color:#38bdf8;');
-                let cardS2 = generarTarjetaLlaveEspectador(partidoSemi2, 'Semifinal 2', '#f0abfc', 2, nomSemi2_j1, nomSemi2_j2, '1° Gpo B', '2° Gpo A', 'rgba(6,182,212,0.2); color:#38bdf8;');
-                let cardFinal = generarTarjetaLlaveEspectador(partidoFinal, 'Gran Final', '#fbbf24', 1, nomFinal_j1, nomFinal_j2, 'Gana Semi 1', 'Gana Semi 2', 'rgba(217,70,239,0.2); color:#d946ef;');
+                let cardS1 = generarTarjetaLlaveEspectador(partidoSemi1, 'Semifinal 1', '#38bdf8', 1, nomSemi1_j1, nomSemi1_j2, '1° Gpo A', '2° Gpo B', 'rgba(6,182,212,0.2); color:#38bdf8;', finMatches);
+                let cardS2 = generarTarjetaLlaveEspectador(partidoSemi2, 'Semifinal 2', '#f0abfc', 2, nomSemi2_j1, nomSemi2_j2, '1° Gpo B', '2° Gpo A', 'rgba(6,182,212,0.2); color:#38bdf8;', finMatches);
+                let cardFinal = generarTarjetaLlaveEspectador(partidoFinal, 'Gran Final', '#fbbf24', 1, nomFinal_j1, nomFinal_j2, 'Gana Semi 1', 'Gana Semi 2', 'rgba(217,70,239,0.2); color:#d946ef;', finMatches);
 
                 container.innerHTML += `
                     <div class="seccion-llaves-footer">
@@ -776,9 +808,6 @@
             });
         }
 
-        // ==========================================
-        // MÓDULO PANTALLA COMPLETA Y AUDIO ESPECTADOR
-        // ==========================================
         function abrirPartidoFullScreen(partidoId) {
             if (!partidoId || partidoId === 0) return;
             activePartidoFullScreenId = partidoId;
@@ -828,7 +857,6 @@
             document.getElementById('fs-sets-j1').innerText = p.sets_j1 || 0;
             document.getElementById('fs-sets-j2').innerText = p.sets_j2 || 0;
 
-            // Trofeos en Full Screen
             if (isFin && p.ganador_id === p.jugador1_id) {
                 document.getElementById('fs-winner-icon1').classList.remove('hidden');
                 document.getElementById('fs-winner-icon2').classList.add('hidden');
@@ -841,28 +869,14 @@
             }
 
             const finMatches = todosLosPartidos.filter(m => (m.estado || '').toLowerCase() === 'finalizado');
-            let ptsPrevJ1 = p.j1 ? calcularRankingEnVivo(p.j1.id, p.j1.puntos_ranking || 0, finMatches, p.id) : 0;
-            let ptsPrevJ2 = p.j2 ? calcularRankingEnVivo(p.j2.id, p.j2.puntos_ranking || 0, finMatches, p.id) : 0;
+            let rDetails = calcularDetallesRankingPartido(p, finMatches);
 
-            let impacto = calcularImpacto(ptsPrevJ1, ptsPrevJ2);
+            let txtRankJ1 = isFin ? `${rDetails.ptsFinalJ1} pts (${rDetails.deltaJ1 >= 0 ? '+' + rDetails.deltaJ1 : rDetails.deltaJ1})` : `${rDetails.ptsPrevJ1} pts`;
+            let txtRankJ2 = isFin ? `${rDetails.ptsFinalJ2} pts (${rDetails.deltaJ2 >= 0 ? '+' + rDetails.deltaJ2 : rDetails.deltaJ2})` : `${rDetails.ptsPrevJ2} pts`;
 
-            let ptsShowJ1 = ptsPrevJ1;
-            let ptsShowJ2 = ptsPrevJ2;
+            document.getElementById('fs-ranking-j1').innerText = p.mostrar_ranking ? txtRankJ1 : '';
+            document.getElementById('fs-ranking-j2').innerText = p.mostrar_ranking ? txtRankJ2 : '';
 
-            if (isFin && p.j1 && p.j2) {
-                if (p.ganador_id === p.jugador1_id) {
-                    ptsShowJ1 += impacto.j1G;
-                    ptsShowJ2 += impacto.j2P;
-                } else if (p.ganador_id === p.jugador2_id) {
-                    ptsShowJ1 += impacto.j1P;
-                    ptsShowJ2 += impacto.j2G;
-                }
-            }
-
-            document.getElementById('fs-ranking-j1').innerText = p.mostrar_ranking && ptsShowJ1 ? `${ptsShowJ1} pts` : '';
-            document.getElementById('fs-ranking-j2').innerText = p.mostrar_ranking && ptsShowJ2 ? `${ptsShowJ2} pts` : '';
-
-            // Proyección Full Screen
             const proyBox = document.getElementById('fs-proyeccion-box');
             if (p.mostrar_ranking && p.j1 && p.j2) {
                 if (isFin) {
@@ -870,9 +884,9 @@
                     proyBox.style.background = 'rgba(16,185,129,0.1)';
                     proyBox.style.color = '#34d399';
                     proyBox.innerHTML = `
-                        📈 RESULTADO DE RANKING:<br>
-                        ${p.j1.nombre}: <strong>${p.ganador_id === p.jugador1_id ? '+'+impacto.j1G : impacto.j1P}</strong> | 
-                        ${p.j2.nombre}: <strong>${p.ganador_id === p.jugador2_id ? '+'+impacto.j2G : impacto.j2P}</strong>
+                        📈 RESULTADO DE RANKING FINAL:<br>
+                        ${p.j1.nombre}: <strong>${rDetails.deltaJ1 >= 0 ? '+' + rDetails.deltaJ1 : rDetails.deltaJ1}</strong> | 
+                        ${p.j2.nombre}: <strong>${rDetails.deltaJ2 >= 0 ? '+' + rDetails.deltaJ2 : rDetails.deltaJ2}</strong>
                     `;
                 } else {
                     proyBox.style.borderColor = 'rgba(245, 158, 11, 0.3)';
@@ -880,8 +894,8 @@
                     proyBox.style.color = '#fbbf24';
                     proyBox.innerHTML = `
                         📊 PROYECCIÓN DE RANKING:<br>
-                        ${p.j1.nombre}: <span class="text-emerald-400">+${impacto.j1G}</span> / <span class="text-rose-400">${impacto.j1P}</span> | 
-                        ${p.j2.nombre}: <span class="text-emerald-400">+${impacto.j2G}</span> / <span class="text-rose-400">${impacto.j2P}</span>
+                        ${p.j1.nombre}: <span class="text-emerald-400">+${rDetails.impacto.j1G}</span> / <span class="text-rose-400">${rDetails.impacto.j1P}</span> | 
+                        ${p.j2.nombre}: <span class="text-emerald-400">+${rDetails.impacto.j2G}</span> / <span class="text-rose-400">${rDetails.impacto.j2P}</span>
                     `;
                 }
                 proyBox.style.display = 'block';
@@ -889,7 +903,6 @@
                 proyBox.style.display = 'none';
             }
 
-            // Historial de Sets Modal
             const fsListSets = document.getElementById('fs-list-sets');
             fsListSets.innerHTML = '';
             if (p.historial_sets && p.historial_sets.length > 0) {
@@ -904,7 +917,6 @@
                 });
             }
 
-            // Anuncio por voz al cambiar marcador en pantalla completa
             let currentScoreStr = `${scoreJ1}-${scoreJ2}`;
             if (lastAnnouncedScore !== currentScoreStr && !isFin) {
                 lastAnnouncedScore = currentScoreStr;
