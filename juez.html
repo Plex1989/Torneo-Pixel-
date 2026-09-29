@@ -61,7 +61,8 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <div id="badge-espectadores" class="hidden bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all gap-1" title="Espectadores conectados en el torneo">
+            <!-- VISOR DE ESPECTADORES SIEMPRE VISIBLE -->
+            <div id="badge-espectadores" class="flex items-center bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all gap-1" title="Espectadores conectados en el torneo">
                 <i class="fa-solid fa-eye animate-pulse"></i> <span id="contador-espectadores">0</span>
             </div>
 
@@ -77,7 +78,6 @@
     <!-- MARCADOR PRINCIPAL -->
     <div class="flex-1 flex flex-col md:flex-row gap-4 my-2 min-h-0">
         
-        <!-- JUGADOR IZQUIERDA -->
         <div class="flex-1 flex flex-col min-h-0 relative">
             <div class="bg-cyan-600/30 border border-cyan-500/40 p-3 rounded-2xl mb-2 text-center relative">
                 <div id="badge-saque-left" onclick="forzarCambioSaqueInicial()" class="hidden absolute -top-3 left-1/2 transform -translate-x-1/2 bg-amber-500 text-black px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest cursor-pointer shadow-[0_0_10px_rgba(245,158,11,0.6)] transition-all animate-pulse">
@@ -93,7 +93,6 @@
             </div>
         </div>
 
-        <!-- CONTROLES CENTRALES -->
         <div class="flex md:flex-col justify-center items-center gap-2 py-1 shrink-0 px-2 md:px-0">
             <button onclick="undo()" class="bg-slate-800 hover:bg-slate-700 text-zinc-300 p-3 rounded-xl border border-white/10 text-xs font-bold uppercase tracking-wider btn-action w-full" title="Deshacer último punto">
                 <i class="fa-solid fa-rotate-left md:mr-1"></i> <span class="hidden md:inline">Deshacer</span>
@@ -106,7 +105,6 @@
             </button>
         </div>
 
-        <!-- JUGADOR DERECHA -->
         <div class="flex-1 flex flex-col min-h-0 relative">
             <div class="bg-fuchsia-600/30 border border-fuchsia-500/40 p-3 rounded-2xl mb-2 text-center relative">
                 <div id="badge-saque-right" onclick="forzarCambioSaqueInicial()" class="hidden absolute -top-3 left-1/2 transform -translate-x-1/2 bg-amber-500 text-black px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest cursor-pointer shadow-[0_0_10px_rgba(245,158,11,0.6)] transition-all animate-pulse">
@@ -162,14 +160,11 @@
 
         async function inicializarJuez() {
             if (!partidoId) { alert("ID de partido no especificado."); return; }
-            
             try {
                 const { data: reglas } = await clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true });
                 reglasRanking = reglas || [];
                 await cargarYResolverPartido();
-            } catch (err) {
-                console.error("Error inicializando:", err);
-            }
+            } catch (err) { console.error("Error inicializando:", err); }
         }
 
         async function cargarYResolverPartido() {
@@ -229,9 +224,7 @@
                 
                 iniciarPresenciaEspectadores();
 
-            } catch (err) {
-                console.error("Crash:", err);
-            }
+            } catch (err) { console.error("Crash:", err); }
         }
 
         async function calcularRankingEnVivoAcumulado() {
@@ -280,15 +273,7 @@
             canalEspectadores = clienteSupabase.channel(`espectadores_torneo_${partidoData.torneo_id}`);
             canalEspectadores.on('presence', { event: 'sync' }, () => {
                 const newState = canalEspectadores.presenceState();
-                const numSpectators = Object.keys(newState).length;
-                const badge = document.getElementById('badge-espectadores');
-                const contador = document.getElementById('contador-espectadores');
-                if (numSpectators > 0) {
-                    badge.classList.remove('hidden'); badge.classList.add('flex');
-                    contador.innerText = numSpectators;
-                } else {
-                    badge.classList.add('hidden'); badge.classList.remove('flex');
-                }
+                document.getElementById('contador-espectadores').innerText = Object.keys(newState).length;
             }).subscribe(async (status) => {
                 if (status === 'SUBSCRIBED') {
                     await canalEspectadores.track({ rol: 'juez', partidoId: partidoId, timestamp: Date.now() });
@@ -421,9 +406,10 @@
         }
 
         // ==========================================
-        // DESHACER INTELIGENTE A PRUEBA DE FALLOS
+        // BOTÓN DESHACER BLINDADO Y A PRUEBA DE FALLOS
         // ==========================================
         async function undo(skipConfirm = false) {
+            // Caso 1: Hay memoria local reciente (sin recargar la página)
             if (historyStack.length > 0) {
                 const snap = historyStack.pop();
                 p1 = snap.p1; p2 = snap.p2; historialSets = snap.historialSets; numSetActual = snap.numSetActual; isSwapped = snap.isSwapped; firstServersBySet = snap.firstServersBySet;
@@ -431,54 +417,78 @@
                 if (partidoData) { partidoData.estado = 'en_curso'; partidoData.ganador_id = null; }
                 actualizarUI();
                 await clienteSupabase.from('partidos').update({ puntos_j1: p1.score, puntos_j2: p2.score, sets_j1: p1.sets, sets_j2: p2.sets, historial_sets: historialSets, estado: 'en_curso', ganador_id: null }).eq('id', partidoId);
-            } else {
-                if (p1.score === 0 && p2.score === 0 && historialSets.length === 0) {
-                    alert("El marcador está en 0-0 y no hay historial de sets.");
-                    return;
-                }
-
-                if (p1.score > 0 || p2.score > 0) {
-                    let resp = prompt(`No hay memoria reciente en caché.\n¿A quién le restamos 1 punto?\n\n[ 1 ] para ${p1.nombre}\n[ 2 ] para ${p2.nombre}\n\n(Deja en blanco para cancelar)`);
-                    if (resp === '1' && p1.score > 0) p1.score--;
-                    else if (resp === '2' && p2.score > 0) p2.score--;
-                    else return;
-
-                    if (partidoData) { partidoData.estado = 'en_curso'; partidoData.ganador_id = null; }
-                    actualizarUI();
-                    await clienteSupabase.from('partidos').update({ puntos_j1: p1.score, puntos_j2: p2.score, estado: 'en_curso', ganador_id: null }).eq('id', partidoId);
-                } 
-                else if (p1.sets > 0 || p2.sets > 0 || (partidoData && partidoData.estado === 'finalizado')) {
+            } 
+            // Caso 2: Memoria borrada (Recargaron página o vienen de Mesas)
+            else {
+                // Si el partido está FINALIZADO
+                if (partidoData && partidoData.estado === 'finalizado') {
                     if (!skipConfirm) {
-                        let confirmacion = confirm("⚠️ El marcador está 0-0. ¿Deseas ANULAR el último SET ganado y reabrir el marcador manual?");
+                        let confirmacion = confirm("⚠️ ¿Deseas reabrir este partido finalizado?");
                         if (!confirmacion) return;
                     }
                     
-                    if (partidoData && partidoData.ganador_id === p1.id) p1.sets = Math.max(0, p1.sets - 1);
-                    else if (partidoData && partidoData.ganador_id === p2.id) p2.sets = Math.max(0, p2.sets - 1);
+                    // Restar el Set del ganador definitivo
+                    if (partidoData.ganador_id === p1.id) p1.sets = Math.max(0, p1.sets - 1);
+                    else if (partidoData.ganador_id === p2.id) p2.sets = Math.max(0, p2.sets - 1);
                     else {
-                        if (p1.sets > p2.sets) p1.sets = Math.max(0, p1.sets - 1); 
-                        else if (p2.sets > p1.sets) p2.sets = Math.max(0, p2.sets - 1);
-                        else {
-                            let rSet = prompt(`Ambos tienen ${p1.sets} sets. ¿A quién le quitamos el set?\n[ 1 ] ${p1.nombre}\n[ 2 ] ${p2.nombre}`);
-                            if(rSet === '1') p1.sets = Math.max(0, p1.sets - 1);
-                            else if (rSet === '2') p2.sets = Math.max(0, p2.sets - 1);
-                            else return;
-                        }
+                        if (p1.sets > p2.sets) p1.sets = Math.max(0, p1.sets - 1);
+                        else p2.sets = Math.max(0, p2.sets - 1);
                     }
                     
+                    // Restaurar los puntos del último set
                     if (historialSets.length > 0) {
                         let lastSet = historialSets.pop();
                         numSetActual = Math.max(1, numSetActual - 1);
-                        p1.score = lastSet.s1; p2.score = lastSet.s2;
-                        if (p1.score > p2.score) p1.score--; else p2.score--;
-                    } else {
-                        p1.score = 0; p2.score = 0;
+                        p1.score = lastSet.s1; 
+                        p2.score = lastSet.s2;
+                        
+                        // Quitarle 1 punto al que había ganado
+                        if (p1.score > p2.score) p1.score = Math.max(0, p1.score - 1);
+                        else p2.score = Math.max(0, p2.score - 1);
                     }
 
-                    if (partidoData) { partidoData.estado = 'en_curso'; partidoData.ganador_id = null; }
-                    actualizarUI();
-                    await clienteSupabase.from('partidos').update({ sets_j1: p1.sets, sets_j2: p2.sets, puntos_j1: p1.score, puntos_j2: p2.score, historial_sets: historialSets, estado: 'en_curso', ganador_id: null }).eq('id', partidoId);
+                    partidoData.estado = 'en_curso';
+                    partidoData.ganador_id = null;
+                } 
+                // Si el partido está 0-0 (Acaban de empezar o acaban de ganar un Set anterior)
+                else if (p1.score === 0 && p2.score === 0) {
+                    if (p1.sets > 0 || p2.sets > 0) {
+                        if (!skipConfirm) {
+                            let confirmacion = confirm("⚠️ El marcador está 0-0. ¿Deseas ANULAR el último SET ganado?");
+                            if (!confirmacion) return;
+                        }
+                        
+                        if (historialSets.length > 0) {
+                            let lastSet = historialSets.pop();
+                            numSetActual = Math.max(1, numSetActual - 1);
+                            p1.score = lastSet.s1; 
+                            p2.score = lastSet.s2;
+                            
+                            // Revertir
+                            if (p1.score > p2.score) {
+                                p1.sets = Math.max(0, p1.sets - 1);
+                                p1.score--;
+                            } else {
+                                p2.sets = Math.max(0, p2.sets - 1);
+                                p2.score--;
+                            }
+                        }
+                    } else {
+                        alert("El marcador ya está en 0-0.");
+                        return;
+                    }
+                } 
+                // Si el partido está a la mitad (Ej. 10-2)
+                else {
+                    let resp = prompt(`¿A quién le restamos 1 punto?\n\n[ 1 ] para ${p1.nombre}\n[ 2 ] para ${p2.nombre}\n\n(Deja en blanco para cancelar)`);
+                    if (resp === '1' && p1.score > 0) p1.score--;
+                    else if (resp === '2' && p2.score > 0) p2.score--;
+                    else return;
                 }
+
+                if (partidoData) { partidoData.estado = 'en_curso'; partidoData.ganador_id = null; }
+                actualizarUI();
+                await clienteSupabase.from('partidos').update({ sets_j1: p1.sets, sets_j2: p2.sets, puntos_j1: p1.score, puntos_j2: p2.score, historial_sets: historialSets, estado: 'en_curso', ganador_id: null }).eq('id', partidoId);
             }
         }
 
@@ -487,6 +497,7 @@
             document.getElementById('modal-ganador').classList.remove('flex');
             await undo(true);
         }
+        // ==========================================
 
         function manualSwapSides() { isSwapped = !isSwapped; actualizarUI(); }
 
