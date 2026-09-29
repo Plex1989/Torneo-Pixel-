@@ -77,6 +77,7 @@
     <!-- MARCADOR PRINCIPAL -->
     <div class="flex-1 flex flex-col md:flex-row gap-4 my-2 min-h-0">
         
+        <!-- JUGADOR IZQUIERDA -->
         <div class="flex-1 flex flex-col min-h-0 relative">
             <div class="bg-cyan-600/30 border border-cyan-500/40 p-3 rounded-2xl mb-2 text-center relative">
                 <div id="badge-saque-left" onclick="forzarCambioSaqueInicial()" class="hidden absolute -top-3 left-1/2 transform -translate-x-1/2 bg-amber-500 text-black px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest cursor-pointer shadow-[0_0_10px_rgba(245,158,11,0.6)] transition-all animate-pulse">
@@ -92,6 +93,7 @@
             </div>
         </div>
 
+        <!-- CONTROLES CENTRALES -->
         <div class="flex md:flex-col justify-center items-center gap-2 py-1 shrink-0 px-2 md:px-0">
             <button onclick="undo()" class="bg-slate-800 hover:bg-slate-700 text-zinc-300 p-3 rounded-xl border border-white/10 text-xs font-bold uppercase tracking-wider btn-action w-full" title="Deshacer último punto">
                 <i class="fa-solid fa-rotate-left md:mr-1"></i> <span class="hidden md:inline">Deshacer</span>
@@ -104,6 +106,7 @@
             </button>
         </div>
 
+        <!-- JUGADOR DERECHA -->
         <div class="flex-1 flex flex-col min-h-0 relative">
             <div class="bg-fuchsia-600/30 border border-fuchsia-500/40 p-3 rounded-2xl mb-2 text-center relative">
                 <div id="badge-saque-right" onclick="forzarCambioSaqueInicial()" class="hidden absolute -top-3 left-1/2 transform -translate-x-1/2 bg-amber-500 text-black px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest cursor-pointer shadow-[0_0_10px_rgba(245,158,11,0.6)] transition-all animate-pulse">
@@ -180,11 +183,6 @@
                 if (error || !data) throw new Error("No se encontró el partido.");
                 partidoData = data;
 
-                if ((!data.jugador1_id || !data.jugador2_id) && (!data.grupo_nombre)) {
-                    await resolverClasificadosLlave(data);
-                    return; 
-                }
-
                 p1.id = data.jugador1_id; p1.nombre = data.j1 ? data.j1.nombre : 'Jugador 1'; p1.ptsBase = data.j1 ? data.j1.puntos_ranking || 0 : 0;
                 p2.id = data.jugador2_id; p2.nombre = data.j2 ? data.j2.nombre : 'Jugador 2'; p2.ptsBase = data.j2 ? data.j2.puntos_ranking || 0 : 0;
 
@@ -234,39 +232,6 @@
             } catch (err) {
                 console.error("Crash:", err);
             }
-        }
-
-        async function resolverClasificadosLlave(p) {
-            const { data: partidosCat } = await clienteSupabase.from('partidos').select('*, j1:jugador1_id(id, nombre, puntos_ranking), j2:jugador2_id(id, nombre, puntos_ranking)').eq('torneo_id', p.torneo_id).eq('categoria_id', p.categoria_id);
-            if (!partidosCat) return;
-
-            const standings = {};
-            partidosCat.filter(m => m.grupo_nombre).forEach(m => {
-                const g = m.grupo_nombre; if (!standings[g]) standings[g] = {};
-                [m.j1, m.j2].forEach(j => { if (j && j.id && !standings[g][j.id]) { standings[g][j.id] = { id: j.id, nombre: j.nombre, pts: 0, pg: 0, pj: 0, setsG: 0, setsP: 0 }; } });
-
-                if ((m.estado || '').toLowerCase() === 'finalizado' && m.j1 && m.j2) {
-                    const obj1 = standings[g][m.j1.id]; const obj2 = standings[g][m.j2.id];
-                    if (obj1 && obj2) {
-                        obj1.pj++; obj2.pj++; obj1.setsG += (m.sets_j1 || 0); obj1.setsP += (m.sets_j2 || 0); obj2.setsG += (m.sets_j2 || 0); obj2.setsP += (m.sets_j1 || 0);
-                        if (m.ganador_id === m.jugador1_id) { obj1.pg++; obj1.pts += 2; obj2.pts += 1; } else { obj2.pg++; obj2.pts += 2; obj1.pts += 1; }
-                    }
-                }
-            });
-
-            const ordenarITTF = (lista) => { return [...lista].sort((a, b) => { if (b.pts !== a.pts) return b.pts - a.pts; const rSetA = a.setsG / (a.setsP || 0.0001); const rSetB = b.setsG / (b.setsP || 0.0001); return rSetB - rSetA; }); };
-            const gA = standings['A'] ? ordenarITTF(Object.values(standings['A'])) : []; const gB = standings['B'] ? ordenarITTF(Object.values(standings['B'])) : [];
-
-            let resJ1 = null, resJ2 = null; const rondaLimpia = (p.ronda_fase || '').toLowerCase();
-            if (rondaLimpia.includes('semi') && (rondaLimpia.includes('1') || rondaLimpia.includes('cruce 1'))) { resJ1 = gA[0]?.id; resJ2 = gB[1]?.id; } 
-            else if (rondaLimpia.includes('semi') && (rondaLimpia.includes('2') || rondaLimpia.includes('cruce 2'))) { resJ1 = gB[0]?.id; resJ2 = gA[1]?.id; } 
-            else if (rondaLimpia.includes('final')) {
-                const semi1 = partidosCat.find(m => (m.ronda_fase || '').toLowerCase().includes('semi') && ((m.ronda_fase || '').includes('1') || (m.ronda_fase || '').includes('cruce 1')));
-                const semi2 = partidosCat.find(m => (m.ronda_fase || '').toLowerCase().includes('semi') && ((m.ronda_fase || '').includes('2') || (m.ronda_fase || '').includes('cruce 2')));
-                if (semi1 && semi1.ganador_id) resJ1 = semi1.ganador_id; if (semi2 && semi2.ganador_id) resJ2 = semi2.ganador_id;
-            }
-
-            if (resJ1 || resJ2) { let updateObj = {}; if (resJ1) updateObj.jugador1_id = resJ1; if (resJ2) updateObj.jugador2_id = resJ2; await clienteSupabase.from('partidos').update(updateObj).eq('id', p.id); await cargarYResolverPartido(); }
         }
 
         async function calcularRankingEnVivoAcumulado() {
@@ -456,11 +421,10 @@
         }
 
         // ==========================================
-        // CÓDIGO CORREGIDO PARA BOTÓN DESHACER (UNDO)
+        // DESHACER INTELIGENTE A PRUEBA DE FALLOS
         // ==========================================
         async function undo(skipConfirm = false) {
             if (historyStack.length > 0) {
-                // Hay memoria reciente guardada en la RAM
                 const snap = historyStack.pop();
                 p1 = snap.p1; p2 = snap.p2; historialSets = snap.historialSets; numSetActual = snap.numSetActual; isSwapped = snap.isSwapped; firstServersBySet = snap.firstServersBySet;
                 
@@ -468,52 +432,61 @@
                 actualizarUI();
                 await clienteSupabase.from('partidos').update({ puntos_j1: p1.score, puntos_j2: p2.score, sets_j1: p1.sets, sets_j2: p2.sets, historial_sets: historialSets, estado: 'en_curso', ganador_id: null }).eq('id', partidoId);
             } else {
-                // No hay memoria (ej. se recargó la página o se abrió desde la tabla de Mesas)
-                if (p1.score === 0 && p2.score === 0 && historialSets.length === 0) return; // Nada que deshacer
-
-                if (!skipConfirm) {
-                    let confirmacion = confirm("⚠️ No hay memoria reciente. ¿Deseas anular el último set y reabrir el marcador manual?");
-                    if (!confirmacion) return;
+                if (p1.score === 0 && p2.score === 0 && historialSets.length === 0) {
+                    alert("El marcador está en 0-0 y no hay historial de sets.");
+                    return;
                 }
 
-                if (p1.sets > 0 || p2.sets > 0 || (partidoData && partidoData.estado === 'finalizado')) {
+                if (p1.score > 0 || p2.score > 0) {
+                    let resp = prompt(`No hay memoria reciente en caché.\n¿A quién le restamos 1 punto?\n\n[ 1 ] para ${p1.nombre}\n[ 2 ] para ${p2.nombre}\n\n(Deja en blanco para cancelar)`);
+                    if (resp === '1' && p1.score > 0) p1.score--;
+                    else if (resp === '2' && p2.score > 0) p2.score--;
+                    else return;
+
+                    if (partidoData) { partidoData.estado = 'en_curso'; partidoData.ganador_id = null; }
+                    actualizarUI();
+                    await clienteSupabase.from('partidos').update({ puntos_j1: p1.score, puntos_j2: p2.score, estado: 'en_curso', ganador_id: null }).eq('id', partidoId);
+                } 
+                else if (p1.sets > 0 || p2.sets > 0 || (partidoData && partidoData.estado === 'finalizado')) {
+                    if (!skipConfirm) {
+                        let confirmacion = confirm("⚠️ El marcador está 0-0. ¿Deseas ANULAR el último SET ganado y reabrir el marcador manual?");
+                        if (!confirmacion) return;
+                    }
                     
-                    // Restamos el set al ganador
                     if (partidoData && partidoData.ganador_id === p1.id) p1.sets = Math.max(0, p1.sets - 1);
                     else if (partidoData && partidoData.ganador_id === p2.id) p2.sets = Math.max(0, p2.sets - 1);
                     else {
                         if (p1.sets > p2.sets) p1.sets = Math.max(0, p1.sets - 1); 
-                        else p2.sets = Math.max(0, p2.sets - 1);
+                        else if (p2.sets > p1.sets) p2.sets = Math.max(0, p2.sets - 1);
+                        else {
+                            let rSet = prompt(`Ambos tienen ${p1.sets} sets. ¿A quién le quitamos el set?\n[ 1 ] ${p1.nombre}\n[ 2 ] ${p2.nombre}`);
+                            if(rSet === '1') p1.sets = Math.max(0, p1.sets - 1);
+                            else if (rSet === '2') p2.sets = Math.max(0, p2.sets - 1);
+                            else return;
+                        }
                     }
                     
-                    // Recuperamos el marcador exacto de donde se quedaron antes de terminar el set
                     if (historialSets.length > 0) {
                         let lastSet = historialSets.pop();
                         numSetActual = Math.max(1, numSetActual - 1);
-                        p1.score = lastSet.s1;
-                        p2.score = lastSet.s2;
-                        // Le restamos el punto de victoria
+                        p1.score = lastSet.s1; p2.score = lastSet.s2;
                         if (p1.score > p2.score) p1.score--; else p2.score--;
                     } else {
                         p1.score = 0; p2.score = 0;
                     }
-                } else {
-                    alert("Para corregir puntos a mitad de un set sin historial, por favor usa el botón de Editar o la base de datos.");
-                    return;
-                }
 
-                if (partidoData) { partidoData.estado = 'en_curso'; partidoData.ganador_id = null; }
-                actualizarUI();
-                await clienteSupabase.from('partidos').update({ sets_j1: p1.sets, sets_j2: p2.sets, puntos_j1: p1.score, puntos_j2: p2.score, historial_sets: historialSets, estado: 'en_curso', ganador_id: null }).eq('id', partidoId);
+                    if (partidoData) { partidoData.estado = 'en_curso'; partidoData.ganador_id = null; }
+                    actualizarUI();
+                    await clienteSupabase.from('partidos').update({ sets_j1: p1.sets, sets_j2: p2.sets, puntos_j1: p1.score, puntos_j2: p2.score, historial_sets: historialSets, estado: 'en_curso', ganador_id: null }).eq('id', partidoId);
+                }
             }
         }
 
         async function cerrarModalYCorregir() {
             document.getElementById('modal-ganador').classList.add('hidden');
             document.getElementById('modal-ganador').classList.remove('flex');
-            await undo(true); // Mandamos 'true' para saltarnos la pregunta de confirmación
+            await undo(true);
         }
-        // ==========================================
 
         function manualSwapSides() { isSwapped = !isSwapped; actualizarUI(); }
 
