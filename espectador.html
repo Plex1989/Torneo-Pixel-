@@ -47,7 +47,8 @@
 
         .score-container { background: rgba(0,0,0,0.4); border-radius: 14px; padding: 12px 16px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.03); }
         .jugador-box { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
-        .jugador-nombre { font-size: 13px; font-weight: 800; color: #ffffff; }
+        .jugador-nombre { font-size: 13px; font-weight: 800; color: #ffffff; cursor: pointer; transition: color 0.2s; }
+        .jugador-nombre:hover { color: #38bdf8; }
         .score-big { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 900; color: #06b6d4; }
         .score-big.p2 { color: #d946ef; }
 
@@ -66,11 +67,9 @@
 
         .card-score-fs { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(15px); border-radius: 24px; }
 
-        /* Estilos del Modal Expediente */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .modal-card { background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; width: 100%; max-width: 520px; padding: 24px; color: white; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
 
-        /* ESTILOS DE IMPRESIÓN LIMPIOS (Para la pestaña Ranking Global) */
         @media print {
             body { background: #ffffff !important; color: #000000 !important; }
             body::before, body::after, .header, .scrolling-bar, .no-print { display: none !important; }
@@ -132,7 +131,7 @@
         <div class="flex-1 flex flex-col md:flex-row gap-4 my-4 min-h-0">
             <div class="flex-1 flex flex-col min-h-0">
                 <div class="bg-cyan-600/30 border border-cyan-500/40 p-4 rounded-2xl mb-2 text-center">
-                    <h2 id="fs-name-j1" class="text-xl md:text-3xl font-black uppercase tracking-wider text-white truncate">JUGADOR 1</h2>
+                    <h2 id="fs-name-j1" class="text-xl md:text-3xl font-black uppercase tracking-wider text-white truncate cursor-pointer hover:text-cyan-300 transition-colors">JUGADOR 1</h2>
                     <span id="fs-club-j1" class="text-xs text-zinc-400 font-bold block">CLUB</span>
                     <div id="fs-ranking-j1" class="text-xs font-extrabold text-cyan-300 mt-1">-- pts</div>
                 </div>
@@ -150,7 +149,7 @@
 
             <div class="flex-1 flex flex-col min-h-0">
                 <div class="bg-fuchsia-600/30 border border-fuchsia-500/40 p-4 rounded-2xl mb-2 text-center">
-                    <h2 id="fs-name-j2" class="text-xl md:text-3xl font-black uppercase tracking-wider text-white truncate">JUGADOR 2</h2>
+                    <h2 id="fs-name-j2" class="text-xl md:text-3xl font-black uppercase tracking-wider text-white truncate cursor-pointer hover:text-fuchsia-300 transition-colors">JUGADOR 2</h2>
                     <span id="fs-club-j2" class="text-xs text-zinc-400 font-bold block">CLUB</span>
                     <div id="fs-ranking-j2" class="text-xs font-extrabold text-fuchsia-300 mt-1">-- pts</div>
                 </div>
@@ -241,36 +240,45 @@
         };
 
         async function inicializarEspectador() {
-            const [resTorneo, resReglas, resConfig, resCat, resJugadores] = await Promise.all([
-                clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).single(),
-                clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true }),
-                clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').single(),
-                clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: false }),
-                clienteSupabase.from('jugadores').select('*').order('puntos_ranking', { ascending: false })
-            ]);
+            try {
+                // BLINDADO: Usamos Promise.allSettled para que nunca se trabe si falta la tabla de configuración
+                const [resTorneo, resReglas, resConfig, resCat, resJugadores] = await Promise.allSettled([
+                    clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).single(),
+                    clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true }),
+                    clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').single(),
+                    clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: false }),
+                    clienteSupabase.from('jugadores').select('*').order('puntos_ranking', { ascending: false })
+                ]);
 
-            if (resTorneo.data) document.getElementById('torneo-nombre-header').innerText = resTorneo.data.nombre;
-            reglasRankingList = resReglas.data || [];
-            todasLasCategorias = resCat.data || [];
-            todosLosJugadores = resJugadores.data || [];
+                if (resTorneo.status === 'fulfilled' && resTorneo.value.data) {
+                    document.getElementById('torneo-nombre-header').innerText = resTorneo.value.data.nombre;
+                }
 
-            if (resConfig.data) {
-                bonoPaseActivo = resConfig.data.activo;
-                bonoPaseValor = resConfig.data.valor;
+                reglasRankingList = resReglas.status === 'fulfilled' ? (resReglas.value.data || []) : [];
+                todasLasCategorias = resCat.status === 'fulfilled' ? (resCat.value.data || []) : [];
+                todosLosJugadores = resJugadores.status === 'fulfilled' ? (resJugadores.value.data || []) : [];
+
+                if (resConfig.status === 'fulfilled' && resConfig.value.data) {
+                    bonoPaseActivo = resConfig.value.data.activo;
+                    bonoPaseValor = resConfig.value.data.valor;
+                }
+
+                await cargarMarcadores();
+
+                if (partidoUrlId) {
+                    abrirPartidoFullScreen(partidoUrlId);
+                }
+
+                clienteSupabase
+                    .channel('espectador-realtime')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => {
+                        cargarMarcadores();
+                    })
+                    .subscribe();
+            } catch (err) {
+                console.error("Error inicializando espectador:", err);
+                document.getElementById('contenedor-espectador').innerHTML = `<div class="mensaje-vacio text-rose-500">Error conectando con el torneo.</div>`;
             }
-
-            await cargarMarcadores();
-
-            if (partidoUrlId) {
-                abrirPartidoFullScreen(partidoUrlId);
-            }
-
-            clienteSupabase
-                .channel('espectador-realtime')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => {
-                    cargarMarcadores();
-                })
-                .subscribe();
         }
 
         async function cargarMarcadores() {
@@ -646,8 +654,6 @@
                 return;
             }
 
-            const finMatches = todosLosPartidos.filter(p => (p.estado || '').toLowerCase() === 'finalizado');
-
             const gruposPorHora = {};
             filtrados.forEach(p => {
                 const h = p.hora || '09:00 AM';
@@ -674,17 +680,6 @@
                     let iconJ1 = (isFin && p.ganador_id === p.jugador1_id) ? '🏆 ' : '';
                     let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '🏆 ' : '';
 
-                    let rDetails = calcularDetallesRankingPartido(p, finMatches);
-
-                    let txtRankJ1 = '';
-                    let txtRankJ2 = '';
-
-                    if (p.mostrar_ranking) {
-                        txtRankJ1 = `<small style="font-size:9px; color:#38bdf8; display:block;">${isFin ? rDetails.ptsFinalJ1 + ' pts' : rDetails.ptsPrevJ1 + ' pts'}</small>`;
-                        txtRankJ2 = `<small style="font-size:9px; color:#f0abfc; display:block;">${isFin ? rDetails.ptsFinalJ2 + ' pts' : rDetails.ptsPrevJ2 + ' pts'}</small>`;
-                    }
-
-                    let opacidadClass = isFin ? 'card-finalizado' : (isVivo ? 'vivo' : '');
                     let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
 
                     let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : '';
@@ -696,13 +691,13 @@
                     }
 
                     container.innerHTML += `
-                        <div class="card-mesa ${opacidadClass}" onclick="abrirPartidoFullScreen(${p.id})">
+                        <div class="card-mesa ${isVivo ? 'vivo' : (isFin ? 'finalizado' : '')}" onclick="abrirPartidoFullScreen(${p.id})">
                             <div class="top-bar">
                                 <span class="mesa-title">MESA ${p.mesa || 1}</span>
                                 ${badgeEst}
                             </div>
 
-                            <div style="margin-bottom:10px;">
+                            <div style="margin-bottom:12px;">
                                 <span class="cat-badge" style="color:${catStyle.text}; background:${catStyle.bg}; border:1px solid ${catStyle.border};">
                                     🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'} • Gpo ${p.grupo_nombre}
                                 </span>
@@ -711,44 +706,18 @@
                             <div class="score-container">
                                 <div class="jugador-box">
                                     <div>
-                                        <span class="jugador-nombre">${iconJ1}${nomJ1}</span>
-                                        ${txtRankJ1}
+                                        <span class="jugador-nombre" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador1_id}, '${nomJ1.replace(/'/g, "\\'")}', '${(p.j1?.club || '').replace(/'/g, "\\'")}')">${iconJ1}${nomJ1}</span>
                                     </div>
-                                    <div style="display:flex; align-items:center;">
-                                        ${score1}
-                                    </div>
+                                    <div style="display:flex; align-items:center;">${score1}</div>
                                 </div>
 
                                 <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
                                     <div>
-                                        <span class="jugador-nombre">${iconJ2}${nomJ2}</span>
-                                        ${txtRankJ2}
+                                        <span class="jugador-nombre" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador2_id}, '${nomJ2.replace(/'/g, "\\'")}', '${(p.j2?.club || '').replace(/'/g, "\\'")}')">${iconJ2}${nomJ2}</span>
                                     </div>
-                                    <div style="display:flex; align-items:center;">
-                                        ${score2}
-                                    </div>
+                                    <div style="display:flex; align-items:center;">${score2}</div>
                                 </div>
                             </div>
-
-                            ${p.mostrar_ranking ? (isFin ? `
-                                <div class="proyeccion-bar" style="border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.1); color:#34d399;">
-                                    📈 Resultado de Ranking Final:<br>
-                                    ${p.j1.nombre.split(' ')[0]}: <strong>${rDetails.deltaJ1 >= 0 ? '+' + rDetails.deltaJ1 : rDetails.deltaJ1}</strong> | 
-                                    ${p.j2.nombre.split(' ')[0]}: <strong>${rDetails.deltaJ2 >= 0 ? '+' + rDetails.deltaJ2 : rDetails.deltaJ2}</strong>
-                                </div>
-                            ` : `
-                                <div class="proyeccion-bar">
-                                    📊 Proyección de Ranking:<br>
-                                    ${p.j1.nombre.split(' ')[0]}: <span style="color:#34d399;">+${rDetails.impacto.j1G}</span> / <span style="color:#f87171;">${rDetails.impacto.j1P}</span> | 
-                                    ${p.j2.nombre.split(' ')[0]}: <span style="color:#34d399;">+${rDetails.impacto.j2G}</span> / <span style="color:#f87171;">${rDetails.impacto.j2P}</span>
-                                </div>
-                            `) : ''}
-                            
-                            ${p.historial_sets && p.historial_sets.length > 0 ? `
-                                <div class="sets-history">
-                                    ${p.historial_sets.map(s => `<div class="set-chip">Set ${s.numSet}: <span style="color:${s.s1 > s.s2 ? '#22d3ee' : '#64748b'}">${s.s1}</span> - <span style="color:${s.s2 > s.s1 ? '#e879f9' : '#64748b'}">${s.s2}</span></div>`).join('')}
-                                </div>
-                            ` : ''}
                         </div>
                     `;
                 });
@@ -757,6 +726,141 @@
             if (mesaFiltro === 'todas') {
                 dibujarLlavesInferiores(container);
             }
+        }
+
+        // ==========================================
+        // DIBUJAR CUADRO DE HONOR Y RESUMEN
+        // ==========================================
+        function obtenerCuadroDeHonorHtml(catNombre) {
+            const pCat = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre);
+            const pF = pCat.find(p => p.ronda_fase?.toLowerCase().includes('final') && !p.ronda_fase?.toLowerCase().includes('semi'));
+            const s1 = pCat.find(p => p.ronda_fase?.toLowerCase().includes('semi') && (p.ronda_fase?.includes('1') || p.ronda_fase?.toLowerCase().includes('cruce 1')));
+            const s2 = pCat.find(p => p.ronda_fase?.toLowerCase().includes('semi') && (p.ronda_fase?.includes('2') || p.ronda_fase?.toLowerCase().includes('cruce 2')));
+            
+            if (!pF || !pF.ganador_id) return ''; 
+
+            const cObj = pF.ganador_id === pF.jugador1_id ? pF.j1 : pF.j2;
+            const subObj = pF.ganador_id === pF.jugador1_id ? pF.j2 : pF.j1;
+            
+            let ter = [];
+            if (s1 && s1.ganador_id) ter.push(s1.ganador_id === s1.jugador1_id ? s1.j2 : s1.j1);
+            if (s2 && s2.ganador_id) ter.push(s2.ganador_id === s2.jugador1_id ? s2.j2 : s2.j1);
+
+            let clC = cObj ? `onclick="abrirModalJugadorAdmin(${cObj.id}, '${(cObj.nombre||'').replace(/'/g, "\\'")}', '${(cObj.club||'').replace(/'/g, "\\'")}')"` : '';
+            let clS = subObj ? `onclick="abrirModalJugadorAdmin(${subObj.id}, '${(subObj.nombre||'').replace(/'/g, "\\'")}', '${(subObj.club||'').replace(/'/g, "\\'")}')"` : '';
+
+            return `
+                <div style="margin-bottom:20px; border:1px solid rgba(245,158,11,0.3); border-radius:16px; background:linear-gradient(135deg, rgba(245,158,11,0.15), rgba(120,53,15,0.05)); padding:20px; text-align:center; box-shadow:0 0 20px rgba(245,158,11,0.1);">
+                    <h3 style="font-size:12px; font-weight:900; color:#f59e0b; text-transform:uppercase; letter-spacing:2px; margin-bottom:15px; border-bottom:1px solid rgba(245,158,11,0.2); padding-bottom:8px; display:inline-block;"><i class="fa-solid fa-crown mr-2"></i> Cuadro de Honor</h3>
+                    <div style="margin-bottom:15px;">
+                        <div style="font-size:10px; color:#94a3b8; font-weight:800; text-transform:uppercase; letter-spacing:2px; margin-bottom:4px;">🥇 Campeón Absoluto</div>
+                        <div style="font-size:24px; font-weight:900; color:#fbbf24; text-transform:uppercase; letter-spacing:1px; cursor:pointer; display:inline-block; transition:0.2s;" ${clC} onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#fbbf24'">${cObj?.nombre || 'Por definir'}</div>
+                        <div style="font-size:11px; color:rgba(245,158,11,0.7); font-weight:800; text-transform:uppercase;">${cObj?.club || 'Sin Club'}</div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; border-top:1px solid rgba(245,158,11,0.1); padding-top:15px; margin-top:15px;">
+                        <div>
+                            <div style="font-size:9px; color:#64748b; font-weight:800; text-transform:uppercase; letter-spacing:2px; margin-bottom:4px;">🥈 Subcampeón</div>
+                            <div style="font-size:16px; font-weight:900; color:#cbd5e1; text-transform:uppercase; cursor:pointer; display:inline-block; transition:0.2s;" ${clS} onmouseover="this.style.color='#67e8f9'" onmouseout="this.style.color='#cbd5e1'">${subObj?.nombre || 'Por definir'}</div>
+                        </div>
+                        ${ter.length > 0 ? `<div>
+                            <div style="font-size:9px; color:#64748b; font-weight:800; text-transform:uppercase; letter-spacing:2px; margin-bottom:4px;">🥉 3ros Lugares</div>
+                            <div style="display:flex; flex-direction:column; gap:4px;">
+                                ${ter.map(t => {
+                                    let cl = t ? `onclick="abrirModalJugadorAdmin(${t.id}, '${(t.nombre||'').replace(/'/g, "\\'")}', '${(t.club||'').replace(/'/g, "\\'")}')"` : '';
+                                    return `<div style="font-size:13px; font-weight:800; color:#fb923c; text-transform:uppercase; cursor:pointer; display:inline-block; transition:0.2s;" ${cl} onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#fb923c'">${t?.nombre || ''}</div>`;
+                                }).join('')}
+                            </div>
+                        </div>` : ''}
+                    </div>
+                </div>`;
+        }
+
+        function dibujarResumenYLlaves(container) {
+            const standings = calcularStandingsGrupos();
+            const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
+            let catsList = [...categoriasSet];
+
+            if (categoriaFiltro !== 'todas') {
+                catsList = catsList.filter(c => c === categoriaFiltro);
+            }
+
+            if (catsList.length === 0) {
+                container.innerHTML = `<div class="mensaje-vacio">No hay información de grupos o categorías para mostrar.</div>`;
+                return;
+            }
+
+            let htmlContent = '';
+
+            catsList.forEach(catNombre => {
+                const gruposCat = standings[catNombre] || {};
+                
+                htmlContent += `
+                    <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">
+                        <div style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; margin-bottom:15px;">
+                            <span style="font-size:14px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:1.5px;">🏆 Categoría: ${catNombre}</span>
+                        </div>
+                `;
+
+                htmlContent += obtenerCuadroDeHonorHtml(catNombre);
+
+                Object.keys(gruposCat).sort().forEach(gpoNombre => {
+                    const listaJugadores = ordenarJugadoresITTF(Object.values(gruposCat[gpoNombre]));
+
+                    htmlContent += `
+                        <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:15px; margin-bottom:15px;">
+                            <span style="font-weight:800; font-size:12px; color:#fbbf24; text-transform:uppercase; display:block; margin-bottom:10px;">👥 Tabla de Posiciones - Grupo ${gpoNombre}</span>
+                            <div style="overflow-x:auto;">
+                                <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+                                    <thead>
+                                        <tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);">
+                                            <th style="padding:6px;">Pos</th>
+                                            <th style="padding:6px;">Jugador</th>
+                                            <th style="padding:6px; text-align:center;">PJ</th>
+                                            <th style="padding:6px; text-align:center;">PG</th>
+                                            <th style="padding:6px; text-align:center;">PP</th>
+                                            <th style="padding:6px; text-align:center;">Sets (G - P)</th>
+                                            <th style="padding:6px; text-align:center;">Dif</th>
+                                            <th style="padding:6px; text-align:center; color:#fbbf24;">Pts</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${listaJugadores.map((j, idx) => {
+                                            let dif = j.setsG - j.setsP;
+                                            let difStr = dif >= 0 ? '+' + dif : dif;
+                                            let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
+
+                                            return `
+                                                <tr style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'" onclick="abrirModalJugadorAdmin(${j.id}, '${(j.nombre\vert{}\vert{}'').replace(/'/g, "\\'")}', '${(j.club || 'Sin Club').replace(/'/g, "\\'")}')">
+                                                    <td style="padding:8px 6px; font-weight:800; color:#64748b;">#${idx + 1}</td>
+                                                    <td style="padding:8px 6px;">
+                                                        <strong style="color:#ffffff;">${j.nombre}</strong>
+                                                        <small style="color:#64748b; display:block; font-size:9px;">${j.club || 'Sin Club'}</small>
+                                                    </td>
+                                                    <td style="padding:8px 6px; text-align:center; color:#94a3b8; font-weight:700;">${j.pj}</td>
+                                                    <td style="padding:8px 6px; text-align:center; color:#34d399; font-weight:700;">${j.pg}</td>
+                                                    <td style="padding:8px 6px; text-align:center; color:#f87171; font-weight:700;">${j.pp}</td>
+                                                    <td style="padding:8px 6px; text-align:center;">
+                                                        <span style="color:#34d399; font-weight:800;">${j.setsG}</span>
+                                                        <span style="color:#64748b; margin:0 2px;">:</span>
+                                                        <span style="color:#f87171; font-weight:800;">${j.setsP}</span>
+                                                    </td>
+                                                    <td style="padding:8px 6px; text-align:center; font-weight:800; color:${colorDif};">${difStr}</td>
+                                                    <td style="padding:8px 6px; text-align:center; color:#fbbf24; font-weight:800; font-size:14px;">${j.pts}</td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                htmlContent += `</div>`;
+            });
+
+            container.innerHTML = htmlContent;
+            dibujarLlavesInferiores(container);
         }
 
         function generarTarjetaLlaveEspectador(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2, colorDesc2) {
@@ -788,8 +892,8 @@
             let clickAction = partido ? `onclick="abrirPartidoFullScreen(${partido.id})"` : '';
             let hoverFX = partido ? 'hover:-translate-y-1 hover:border-white/20 transition-all' : '';
 
-            let clickAccion1 = partido && partido.jugador1_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador1_id}, '${nomJ1.replace(/'/g, "\\'")}', '')"` : '';
-            let clickAccion2 = partido && partido.jugador2_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador2_id}, '${nomJ2.replace(/'/g, "\\'")}', '')"` : '';
+            let clickAccion1 = partido && partido.jugador1_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador1_id}, '${(nomJ1||'').replace(/'/g, "\\'")}', '')"` : '';
+            let clickAccion2 = partido && partido.jugador2_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador2_id}, '${(nomJ2||'').replace(/'/g, "\\'")}', '')"` : '';
 
             let flexWrapper = titulo === 'Gran Final' ? 'grid-column: 1 / -1; display:flex; justify-content:center; margin-top:10px;' : '';
             let innerStyle = `background:rgba(0,0,0,0.4); padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); ${opacidad} width:100%; ${cursor}`;
@@ -830,92 +934,6 @@
                 </div>
                 ${titulo === 'Gran Final' ? `</div>` : ''}
             `;
-        }
-
-        function dibujarResumenYLlaves(container) {
-            const standings = calcularStandingsGrupos();
-            const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
-            let catsList = [...categoriasSet];
-
-            if (categoriaFiltro !== 'todas') {
-                catsList = catsList.filter(c => c === categoriaFiltro);
-            }
-
-            if (catsList.length === 0) {
-                container.innerHTML = `<div class="mensaje-vacio">No hay información de grupos o categorías para mostrar.</div>`;
-                return;
-            }
-
-            let htmlContent = '';
-
-            catsList.forEach(catNombre => {
-                const gruposCat = standings[catNombre] || {};
-                
-                htmlContent += `
-                    <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">
-                        <div style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; margin-bottom:15px;">
-                            <span style="font-size:14px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:1.5px;">🏆 Categoría: ${catNombre}</span>
-                        </div>
-                `;
-
-                Object.keys(gruposCat).sort().forEach(gpoNombre => {
-                    const listaJugadores = ordenarJugadoresITTF(Object.values(gruposCat[gpoNombre]));
-
-                    htmlContent += `
-                        <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:15px; margin-bottom:15px;">
-                            <span style="font-weight:800; font-size:12px; color:#fbbf24; text-transform:uppercase; display:block; margin-bottom:10px;">👥 Tabla de Posiciones - Grupo ${gpoNombre}</span>
-                            <div style="overflow-x:auto;">
-                                <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
-                                    <thead>
-                                        <tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);">
-                                            <th style="padding:6px;">Pos</th>
-                                            <th style="padding:6px;">Jugador</th>
-                                            <th style="padding:6px; text-align:center;">PJ</th>
-                                            <th style="padding:6px; text-align:center;">PG</th>
-                                            <th style="padding:6px; text-align:center;">PP</th>
-                                            <th style="padding:6px; text-align:center;">Sets (G - P)</th>
-                                            <th style="padding:6px; text-align:center;">Dif</th>
-                                            <th style="padding:6px; text-align:center; color:#fbbf24;">Pts</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        ${listaJugadores.map((j, idx) => {
-                                            let dif = j.setsG - j.setsP;
-                                            let difStr = dif >= 0 ? '+' + dif : dif;
-                                            let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
-
-                                            return `
-                                                <tr style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'" onclick="abrirModalJugadorAdmin(${j.id}, '${j.nombre.replace(/'/g, "\\'")}', '${(j.club || 'Sin Club').replace(/'/g, "\\'")}')">
-                                                    <td style="padding:8px 6px; font-weight:800; color:#64748b;">#${idx + 1}</td>
-                                                    <td style="padding:8px 6px;">
-                                                        <strong style="color:#ffffff;">${j.nombre}</strong>
-                                                        <small style="color:#64748b; display:block; font-size:9px;">${j.club || 'Sin Club'}</small>
-                                                    </td>
-                                                    <td style="padding:8px 6px; text-align:center; color:#94a3b8; font-weight:700;">${j.pj}</td>
-                                                    <td style="padding:8px 6px; text-align:center; color:#34d399; font-weight:700;">${j.pg}</td>
-                                                    <td style="padding:8px 6px; text-align:center; color:#f87171; font-weight:700;">${j.pp}</td>
-                                                    <td style="padding:8px 6px; text-align:center;">
-                                                        <span style="color:#34d399; font-weight:800;">${j.setsG}</span>
-                                                        <span style="color:#64748b; margin:0 2px;">:</span>
-                                                        <span style="color:#f87171; font-weight:800;">${j.setsP}</span>
-                                                    </td>
-                                                    <td style="padding:8px 6px; text-align:center; font-weight:800; color:${colorDif};">${difStr}</td>
-                                                    <td style="padding:8px 6px; text-align:center; color:#fbbf24; font-weight:800; font-size:14px;">${j.pts}</td>
-                                                </tr>
-                                            `;
-                                        }).join('')}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    `;
-                });
-
-                htmlContent += `</div>`;
-            });
-
-            container.innerHTML = htmlContent;
-            dibujarLlavesInferiores(container);
         }
 
         function dibujarLlavesInferiores(container) {
@@ -1081,7 +1099,7 @@
                                             </span>
                                         ` : '';
 
-                                        let accionClic = j.jugoTorneo ? `onclick="abrirModalJugadorAdmin(${j.id}, '${j.nombre.replace(/'/g, "\\'")}', '${(j.club || 'Sin Club').replace(/'/g, "\\'")}')"` : '';
+                                        let accionClic = j.jugoTorneo ? `onclick="abrirModalJugadorAdmin(${j.id}, '${(j.nombre\vert{}\vert{}'').replace(/'/g, "\\'")}', '${(j.club || 'Sin Club').replace(/'/g, "\\'")}')"` : '';
                                         let claseClic = j.jugoTorneo ? `cursor-pointer hover:bg-fuchsia-500/10 transition-colors` : `opacity-60`;
 
                                         return `
@@ -1092,7 +1110,7 @@
                                                 <td class="py-3 text-center text-zinc-400 font-bold">${j.rInicial} pts</td>
                                                 <td class="py-3 text-center font-bold">${difHtml}</td>
                                                 <td class="py-3 text-center text-amber-400 font-black text-sm">${j.rFinal} pts</td>
-                                                <td class="py-3 text-right">${mencionAscenso}${j.jugoTorneo ? '' : '<span class="text-[9px] text-zinc-600 ml-2">(No Jugó)</span>'}</td>
+                                                <td class="py-3 text-right">${mencionAscenso}</td>
                                             </tr>
                                         `;
                                     }).join('')}
