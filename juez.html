@@ -51,7 +51,11 @@
 
         <div class="text-center">
             <span id="info-mesa-fase" class="text-[10px] font-black text-cyan-400 uppercase tracking-widest block">MESA -- • FASE</span>
-            <span id="info-formato" class="text-[8px] text-zinc-400 font-bold uppercase">FORMATO: 3 DE 5 SETS</span>
+            <select id="select-formato" onchange="cambiarFormato(this.value)" class="bg-slate-800 text-[9px] text-zinc-300 font-bold uppercase outline-none cursor-pointer border border-zinc-600 rounded px-2 py-1 mt-1 text-center">
+                <option value="2-3">FORMATO: 2 DE 3 SETS</option>
+                <option value="3-5">FORMATO: 3 DE 5 SETS</option>
+                <option value="4-7">FORMATO: 4 DE 7 SETS</option>
+            </select>
         </div>
 
         <div class="flex items-center gap-2">
@@ -86,12 +90,15 @@
         </div>
 
         <!-- CONTROLES CENTRALES -->
-        <div class="flex md:flex-col justify-center items-center gap-2 py-1 shrink-0">
-            <button onclick="undo()" class="bg-slate-800 hover:bg-slate-700 text-zinc-300 p-3 rounded-xl border border-white/10 text-xs font-bold uppercase tracking-wider btn-action" title="Deshacer último punto">
+        <div class="flex md:flex-col justify-center items-center gap-2 py-1 shrink-0 flex-wrap">
+            <button onclick="undo()" class="bg-slate-800 hover:bg-slate-700 text-zinc-300 p-3 rounded-xl border border-white/10 text-xs font-bold uppercase tracking-wider btn-action flex-1 md:flex-none" title="Deshacer último punto">
                 <i class="fa-solid fa-rotate-left md:mr-1"></i> <span class="hidden md:inline">Deshacer</span>
             </button>
-            <button onclick="manualSwapSides()" class="bg-slate-800 hover:bg-slate-700 text-zinc-300 p-3 rounded-xl border border-white/10 text-xs font-bold uppercase tracking-wider btn-action" title="Cambiar lados manualmente">
+            <button onclick="manualSwapSides()" class="bg-slate-800 hover:bg-slate-700 text-zinc-300 p-3 rounded-xl border border-white/10 text-xs font-bold uppercase tracking-wider btn-action flex-1 md:flex-none" title="Cambiar lados manualmente">
                 <i class="fa-solid fa-arrows-rotate md:mr-1"></i> <span class="hidden md:inline">Lados</span>
+            </button>
+            <button onclick="forzarFinalizar()" class="bg-amber-600/30 hover:bg-amber-600/50 text-amber-400 p-3 rounded-xl border border-amber-500/30 text-xs font-bold uppercase tracking-wider btn-action flex-1 md:flex-none" title="Finalizar partido manualmente">
+                <i class="fa-solid fa-flag-checkered md:mr-1"></i> <span class="hidden md:inline">Finalizar</span>
             </button>
         </div>
 
@@ -184,11 +191,12 @@
             p1.sets = data.sets_j1 || 0;
             p2.sets = data.sets_j2 || 0;
 
-            // CORRECCIÓN MATEMÁTICA: Sets para ganar asegurados
             modoJuego = data.modo_juego || '3-5';
             setsParaGanar = 3; 
             if (modoJuego === '2-3') setsParaGanar = 2;
             if (modoJuego === '4-7') setsParaGanar = 4;
+            
+            document.getElementById('select-formato').value = modoJuego;
 
             historialSets = data.historial_sets || [];
             numSetActual = historialSets.length + 1;
@@ -209,6 +217,47 @@
             await calcularRankingEnVivoAcumulado();
             actualizarBotonRankingUI();
             actualizarUI();
+        }
+
+        async function cambiarFormato(val) {
+            modoJuego = val;
+            if (modoJuego === '2-3') setsParaGanar = 2;
+            if (modoJuego === '3-5') setsParaGanar = 3;
+            if (modoJuego === '4-7') setsParaGanar = 4;
+            
+            await clienteSupabase.from('partidos').update({ modo_juego: val }).eq('id', partidoId);
+            
+            // Si al cambiar el formato el jugador ya alcanzó los sets para ganar, finalizar
+            if (p1.sets >= setsParaGanar || p2.sets >= setsParaGanar) {
+                partidoData.estado = 'finalizado';
+                let ganadorId = p1.sets > p2.sets ? p1.id : p2.id;
+                partidoData.ganador_id = ganadorId;
+                mostrarOverlayGanador(ganadorId === p1.id ? p1.nombre : p2.nombre);
+                await clienteSupabase.from('partidos').update({ estado: 'finalizado', ganador_id: ganadorId }).eq('id', partidoId);
+            }
+            actualizarUI();
+        }
+
+        async function forzarFinalizar() {
+            if (confirm("¿Estás seguro de finalizar el partido ahora? Ganará quien tenga más sets o puntos.")) {
+                let ganadorId = null;
+                if (p1.sets > p2.sets) ganadorId = p1.id;
+                else if (p2.sets > p1.sets) ganadorId = p2.id;
+                else if (p1.score > p2.score) ganadorId = p1.id;
+                else if (p2.score > p1.score) ganadorId = p2.id;
+                else ganadorId = p1.id; // Empate técnico, gana j1 por defecto
+
+                partidoData.estado = 'finalizado';
+                partidoData.ganador_id = ganadorId;
+
+                actualizarUI();
+                mostrarOverlayGanador(ganadorId === p1.id ? p1.nombre : p2.nombre);
+
+                await clienteSupabase.from('partidos').update({
+                    estado: 'finalizado', 
+                    ganador_id: ganadorId
+                }).eq('id', partidoId);
+            }
         }
 
         async function resolverClasificadosLlave(p) {
@@ -292,7 +341,6 @@
 
         function calcularImpactoPuntos(ptsA, ptsB) {
             let diff = Math.abs(ptsA - ptsB); 
-            // CORRECCIÓN: Se renombró la variable correctamente para evitar el cuelgue silencioso.
             let favJ1 = ptsA >= ptsB; 
             
             let reglaGanaJ1 = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((favJ1 && r.resultado_esperado === 'gana_favorito') || (!favJ1 && r.resultado_esperado === 'gana_retador')));
@@ -348,8 +396,7 @@
             document.getElementById('name-left').innerText = leftJ.nombre; document.getElementById('name-right').innerText = rightJ.nombre;
             document.getElementById('score-left').innerText = leftJ.score; document.getElementById('score-right').innerText = rightJ.score;
             document.getElementById('sets-left').innerText = leftJ.sets; document.getElementById('sets-right').innerText = rightJ.sets;
-            document.getElementById('info-mesa-fase').innerText = `MESA ${partidoData?.mesa || 1} • ${partidoData?.grupo_nombre ? 'GRUPO ' + partidoData.grupo_nombre : (partidoData?.ronda_fase || 'FASE FINAL')}`;
-            document.getElementById('info-formato').innerText = `FORMATO: ${modoJuego === '2-3' ? '2 DE 3' : (modoJuego === '3-5' ? '3 DE 5' : '4 DE 7')} SETS`;
+            document.getElementById('info-mesa-fase').innerText = `MESA ${partidoData?.mesa \vert{}\vert{} 1} •${partidoData?.grupo_nombre ? 'GRUPO ' + partidoData.grupo_nombre : (partidoData?.ronda_fase || 'FASE FINAL')}`;
 
             let isFin = (partidoData?.estado || '').toLowerCase() === 'finalizado';
             let impactoLive = calcularImpactoPuntos(p1.ptsLive, p2.ptsLive);
@@ -367,8 +414,9 @@
                 }
             }
 
-            let textRankP1 = mostrarRankingImpacto ? `<strong>${ptsShowP1} pts ${isFin ? '(Final)' : '(En Vivo)'}</strong> | <span class="text-emerald-400">🏆 +${impactoLive.j1Gana}</span> <span class="text-rose-400">❌ ${impactoLive.j1Pierde}</span>` : `${ptsShowP1} pts ${isFin ? '(Final)' : '(En Vivo)'}`;
-            let textRankP2 = mostrarRankingImpacto ? `<strong>${ptsShowP2} pts ${isFin ? '(Final)' : '(En Vivo)'}</strong> | <span class="text-emerald-400">🏆 +${impactoLive.j2Gana}</span> <span class="text-rose-400">❌ ${impactoLive.j2Pierde}</span>` : `${ptsShowP2} pts ${isFin ? '(Final)' : '(En Vivo)'}`;
+            // CORRECCIÓN: Si el Ranking está en OFF, el texto queda completamente en blanco para no mostrar absolutamente nada
+            let textRankP1 = mostrarRankingImpacto ? `<strong>${ptsShowP1} pts${isFin ? '(Final)' : '(En Vivo)'}</strong> | <span class="text-emerald-400">🏆 +${impactoLive.j1Gana}</span> <span class="text-rose-400">❌ ${Math.abs(impactoLive.j1Pierde)}</span>` : ``;
+            let textRankP2 = mostrarRankingImpacto ? `<strong>${ptsShowP2} pts${isFin ? '(Final)' : '(En Vivo)'}</strong> | <span class="text-emerald-400">🏆 +${impactoLive.j2Gana}</span> <span class="text-rose-400">❌ ${Math.abs(impactoLive.j2Pierde)}</span>` : ``;
 
             document.getElementById('ranking-info-left').innerHTML = isSwapped ? textRankP2 : textRankP1; 
             document.getElementById('ranking-info-right').innerHTML = isSwapped ? textRankP1 : textRankP2;
@@ -434,28 +482,27 @@
             if (partidoGanado) mostrarOverlayGanador(ganadorId === p1.id ? p1.nombre : p2.nombre);
         }
 
-        // CORRECCIÓN: Función Deshacer rediseñada para funcionar aunque se recargue la página.
+        // CORRECCIÓN: Función Deshacer mejorada para restaurar el set correcto incluso si se recargó la página
         function undo() {
             if (historyStack.length > 0) {
                 const snap = historyStack.pop();
                 p1 = snap.p1; p2 = snap.p2; historialSets = snap.historialSets; numSetActual = snap.numSetActual; isSwapped = snap.isSwapped; firstServersBySet = snap.firstServersBySet;
             } else {
-                // Si recargaron la página, analizamos el marcador para saber exactamente a dónde regresar.
                 if (p1.score === 0 && p2.score === 0) {
                     if (historialSets.length > 0) {
                         let lastSet = historialSets.pop();
                         numSetActual = Math.max(1, numSetActual - 1);
                         if (lastSet.s1 > lastSet.s2) {
                             p1.sets = Math.max(0, p1.sets - 1);
-                            p1.score = lastSet.s1 - 1; // Si ganó 11-9, regresa el score a 10.
-                            p2.score = lastSet.s2;     // Y el perdedor se queda en 9.
+                            p1.score = lastSet.s1 - 1; 
+                            p2.score = lastSet.s2;     
                         } else {
                             p2.sets = Math.max(0, p2.sets - 1);
                             p1.score = lastSet.s1;
                             p2.score = lastSet.s2 - 1; 
                         }
                     } else {
-                        return; // Nada que deshacer
+                        return; 
                     }
                 } else {
                     if (p1.score > p2.score) {
@@ -463,7 +510,7 @@
                     } else if (p2.score > p1.score) {
                         p2.score = Math.max(0, p2.score - 1);
                     } else {
-                        if (p1.score > 0) p1.score--; // Respaldo en caso de empate técnico
+                        if (p1.score > 0) p1.score--; 
                     }
                 }
             }
