@@ -529,10 +529,13 @@
             const porCategoria = {};
 
             partidosMonitoreo.forEach(m => {
+                // CORRECCIÓN: Filtrar estrictamente solo partidos de fase de grupos
+                if (!m.grupo_nombre) return;
+
                 const catNombre = m.categorias?.nombre || 'General';
                 if (!porCategoria[catNombre]) porCategoria[catNombre] = { id: m.categorias?.id || 0, grupos: {} };
                 
-                const gpoNombre = m.grupo_nombre || 'A';
+                const gpoNombre = m.grupo_nombre;
                 if (!porCategoria[catNombre].grupos[gpoNombre]) {
                     porCategoria[catNombre].grupos[gpoNombre] = {};
                 }
@@ -751,7 +754,6 @@
                                     </div>
                                 </div>
                                 
-                                <!-- GRAN FINAL MÓDULO -->
                                 <div style="grid-column: 1 / -1; display:flex; justify-content:center; margin-top:10px;">
                                     <div style="background:rgba(245,158,11,0.1); padding:16px; border-radius:14px; border:1px solid rgba(245,158,11,0.3); width:100%; max-width:450px; text-align:left;">
                                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -875,7 +877,6 @@
             });
         }
 
-        // ... resto del script de admin.html ...
         function dibujarTablaProgramacionCategorias() {
             const tbody = document.getElementById('tabla-programacion-categorias'); 
             if (!tbody) return;
