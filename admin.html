@@ -693,6 +693,20 @@
                     const primeroB = getPosicionGrupoNombreAdmin(gpoB_arr, 0, '1° Grupo B');
                     const segundoB = getPosicionGrupoNombreAdmin(gpoB_arr, 1, '2° Grupo B');
 
+                    const partidosLlaveBD = partidosCat.filter(p => !p.grupo_nombre || p.ronda_fase?.toLowerCase().includes('cruce') || p.ronda_fase?.toLowerCase().includes('semifinal') || p.ronda_fase?.toLowerCase().includes('final'));
+                    const partidoSemi1 = partidosLlaveBD.find(p => p.ronda_fase?.toLowerCase().includes('semi') && (p.ronda_fase?.includes('1') || p.ronda_fase?.toLowerCase().includes('cruce 1')));
+                    const partidoSemi2 = partidosLlaveBD.find(p => p.ronda_fase?.toLowerCase().includes('semi') && (p.ronda_fase?.includes('2') || p.ronda_fase?.toLowerCase().includes('cruce 2')));
+                    const partidoFinal = partidosLlaveBD.find(p => p.ronda_fase?.toLowerCase().includes('final') && !p.ronda_fase?.toLowerCase().includes('semi'));
+
+                    let nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : primeroA;
+                    let nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : segundoB;
+
+                    let nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : primeroB;
+                    let nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : segundoA;
+
+                    let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Ganador Semi 1');
+                    let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Ganador Semi 2');
+
                     htmlContent += `
                         <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(245,158,11,0.3); border-radius:18px; padding:22px; margin-top:25px;">
                             <div style="text-align:center; margin-bottom:16px;">
@@ -706,45 +720,53 @@
                                 </div>
                             ` : `
                                 <div style="background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.5); color:#fbbf24; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase; margin-bottom:20px;">
-                                    ⏳ PROYECCIÓN EN TIEMPO REAL (Resultados preliminares)
+                                    ⏳ PROYECCIÓN PRELIMINAR EN TIEMPO REAL (Resultados preliminares)
                                 </div>
                             `}
 
                             <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
                                 <div style="background:rgba(0,0,0,0.4); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
-                                    <span style="font-size:9px; color:#38bdf8; font-weight:800; text-transform:uppercase; display:block; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:10px;">Semifinal / Cruce 1</span>
+                                    <span style="font-size:9px; color:#38bdf8; font-weight:800; text-transform:uppercase; display:block; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:10px;">Semifinal 1</span>
                                     <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:8px;">
-                                        <strong style="font-size:12px; color:#fff;">🥇 ${primeroA}</strong>
+                                        <strong style="font-size:12px; color:#fff;">🥇 ${nomSemi1_j1}</strong>
                                         <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800;">1° Gpo A</span>
                                     </div>
                                     <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
                                     <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">
-                                        <strong style="font-size:12px; color:#fff;">🥈 ${segundoB}</strong>
+                                        <strong style="font-size:12px; color:#fff;">🥈 ${nomSemi1_j2}</strong>
                                         <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">2° Gpo B</span>
                                     </div>
                                 </div>
 
                                 <div style="background:rgba(0,0,0,0.4); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
-                                    <span style="font-size:9px; color:#f0abfc; font-weight:800; text-transform:uppercase; display:block; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:10px;">Semifinal / Cruce 2</span>
+                                    <span style="font-size:9px; color:#f0abfc; font-weight:800; text-transform:uppercase; display:block; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:10px;">Semifinal 2</span>
                                     <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:8px;">
-                                        <strong style="font-size:12px; color:#fff;">🥇 ${primeroB}</strong>
+                                        <strong style="font-size:12px; color:#fff;">🥇 ${nomSemi2_j1}</strong>
                                         <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800;">1° Gpo B</span>
                                     </div>
                                     <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
                                     <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">
-                                        <strong style="font-size:12px; color:#fff;">🥈 ${segundoA}</strong>
+                                        <strong style="font-size:12px; color:#fff;">🥈 ${nomSemi2_j2}</strong>
                                         <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">2° Gpo A</span>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div style="margin-top:20px; text-align:center;">
-                                <div style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.4); padding:14px; border-radius:12px; display:inline-block; width:100%; max-width:400px; box-sizing:border-box;">
-                                    <span style="color:#fbbf24; font-weight:800; font-size:11px; text-transform:uppercase; display:block; margin-bottom:6px;">🏆 Gran Final de Categoría</span>
-                                    <div style="display:flex; justify-content:space-around; font-size:11px; font-weight:800;">
-                                        <span>Ganador Cruce 1</span>
-                                        <span style="color:#fbbf24;">VS</span>
-                                        <span>Ganador Cruce 2</span>
+                                
+                                <!-- GRAN FINAL MÓDULO -->
+                                <div style="grid-column: 1 / -1; display:flex; justify-content:center; margin-top:10px;">
+                                    <div style="background:rgba(245,158,11,0.1); padding:16px; border-radius:14px; border:1px solid rgba(245,158,11,0.3); width:100%; max-width:450px; text-align:left;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                            <span style="font-size:12px; color:#fbbf24; font-weight:900; text-transform:uppercase;">🏆 Gran Final</span>
+                                            <span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partidoFinal?.mesa || 1}</span>
+                                        </div>
+                                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                                            <strong style="font-size:14px; color:#fff;">🥇 ${nomFinal_j1}</strong>
+                                            <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">Gana Semi 1</span>
+                                        </div>
+                                        <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
+                                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                                            <strong style="font-size:14px; color:#fff;">🥈 ${nomFinal_j2}</strong>
+                                            <span style="font-size:9px; background:rgba(217,70,239,0.2); color:#d946ef; padding:2px 6px; border-radius:4px; font-weight:800;">Gana Semi 2</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -853,9 +875,7 @@
             });
         }
 
-        // ==========================================
-        // PROGRAMACIÓN CATEGORÍAS (LÓGICA DOS PASOS BUSCAR/ACTUALIZAR/INSERTAR)
-        // ==========================================
+        // ... resto del script de admin.html ...
         function dibujarTablaProgramacionCategorias() {
             const tbody = document.getElementById('tabla-programacion-categorias'); 
             if (!tbody) return;
@@ -903,7 +923,6 @@
                 const lugar = document.getElementById(`cat-lugar-${catId}`).value.trim();
                 const costo = parseFloat(document.getElementById(`cat-inscripcion-${catId}`).value) || 200;
 
-                // 1. Buscar si ya existe la fila en programacion_categorias
                 const { data: existe, error: errSearch } = await clienteSupabase
                     .from('programacion_categorias')
                     .select('id')
@@ -918,29 +937,18 @@
                         .from('programacion_categorias')
                         .update({ fecha: fecha, hora: hora, lugar: lugar, costo_inscripcion: costo })
                         .eq('id', existe.id);
-
                     if (errUp) throw new Error("No se pudo actualizar el horario: " + errUp.message);
                 } else {
                     const { error: errIn } = await clienteSupabase
                         .from('programacion_categorias')
-                        .insert([{ 
-                            torneo_id: parseInt(idTorneoActivo), 
-                            categoria_id: catId, 
-                            fecha: fecha, 
-                            hora: hora, 
-                            lugar: lugar, 
-                            costo_inscripcion: costo 
-                        }]);
-
-                    if (errIn) throw new Error("No se pudo guardar el horario: " + errIn.message);
+                        .insert([{ torneo_id: parseInt(idTorneoActivo), categoria_id: catId, fecha: fecha, hora: hora, lugar: lugar, costo_inscripcion: costo }]);
+                    if (errIn) console.warn("Advertencia al insertar en programacion_categorias:", errIn.message);
                 }
 
-                // 2. Guardar también en la tabla base de categorias
                 const { error: errCat } = await clienteSupabase
                     .from('categorias')
                     .update({ costo_inscripcion: costo })
                     .eq('id', catId);
-
                 if (errCat) console.error("Error al actualizar precio en categorias base:", errCat);
 
                 alert("✅ Programación de categoría guardada con éxito."); 
@@ -950,9 +958,6 @@
             }
         }
 
-        // ==========================================
-        // CARGA DE INSCRITOS AGRUPADOS POR CATEGORÍA
-        // ==========================================
         async function cargarInscritosEnVivo() {
             try {
                 const { data } = await clienteSupabase.from('inscripciones').select(`id, categoria_id, estatus_pago, jugadores ( id, nombre, club, puntos_ranking ), categorias ( id, nombre )`).eq('torneo_id', idTorneoActivo);
@@ -1392,7 +1397,7 @@
                 </div>
             `;
 
-            htmlPrint += `2. POSICIONES DE GRUPOS`;
+            htmlPrint += `<h2>1. POSICIONES DE GRUPOS</h2>`;
             Object.keys(dataMemoriaGlobal.categorias).forEach(cat => {
                 htmlPrint += `<div class="memoria-cat-title">Categoría: ${cat}</div>`;
                 let grupos = dataMemoriaGlobal.categorias[cat].grupos;
