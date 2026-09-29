@@ -2,14 +2,17 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Transmisión en Vivo - Pixel Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;700;800&family=Orbitron:wght@700;900&display=swap');
-
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 15px; background-color: #04060a; color: #f8fafc; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
+        .font-digital { font-family: 'Orbitron', sans-serif; }
         
         body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
         body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
@@ -62,14 +65,13 @@
 
         .mensaje-vacio { text-align: center; color: #475569; font-style: italic; grid-column: 1/-1; padding: 40px; }
 
-        /* MODAL PANTALLA COMPLETA PARA ESPECTADOR */
         .card-score-fs { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(15px); border-radius: 24px; }
     </style>
 </head>
 <body>
 
-    <!-- MODAL PANTALLA COMPLETA PARTIDO ESPECTADOR -->
-    <div id="modal-fullscreen-partido" class="hidden fixed inset-0 z-[100] bg-[#04060a] p-4 flex-col justify-between overflow-y-auto">
+    <!-- MODAL PANTALLA COMPLETA PARTIDO ESPECTADOR (OCULTO POR DEFECTO CON STYLE INLINE) -->
+    <div id="modal-fullscreen-partido" style="display: none;" class="fixed inset-0 z-[100] bg-[#04060a] p-4 flex-col justify-between overflow-y-auto">
         
         <div class="flex justify-between items-center bg-slate-900/80 p-3 rounded-2xl border border-white/10 shrink-0">
             <button onclick="cerrarPartidoFullScreen()" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest text-white transition-colors">
@@ -141,11 +143,13 @@
         <h1 id="torneo-nombre-header">CARTELERA DE MARCADORES</h1>
     </div>
 
+    <!-- FILTRO POR CATEGORÍA -->
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">🏆 Filtrar por Categoría:</div>
     <div class="scrolling-bar" id="bar-categorias">
         <button class="btn-filter-pill btn-cat-pill active" onclick="filtrarCategoria('todas')">Todas las Categorías</button>
     </div>
 
+    <!-- FILTRO POR ESTADO DE JUEGO -->
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">📌 Estado de Juego / Vista:</div>
     <div class="scrolling-bar">
         <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Todos</button>
@@ -155,10 +159,12 @@
         <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')">📊 Resumen y Llaves</button>
     </div>
 
+    <!-- FILTRO POR MESA -->
     <div class="scrolling-bar" id="bar-mesas">
         <button class="btn-filter-pill active" onclick="filtrarMesa('todas')">Todas las Mesas</button>
     </div>
 
+    <!-- CONTENEDOR PRINCIPAL DE MARCADORES -->
     <div class="grid-espectador" id="contenedor-espectador">
         <div class="mensaje-vacio">Cargando marcadores en vivo...</div>
     </div>
@@ -205,7 +211,7 @@
             const { data: reglas } = await clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true });
             reglasRankingList = reglas || [];
 
-            cargarMarcadores();
+            await cargarMarcadores();
 
             if (partidoUrlId) {
                 abrirPartidoFullScreen(partidoUrlId);
@@ -401,7 +407,6 @@
             return fallbackText;
         }
 
-        // GENERADOR DE HTML PARA TARJETAS ESPECTADOR (GRUPOS)
         function dibujarPantalla() {
             const container = document.getElementById('contenedor-espectador');
             container.innerHTML = '';
@@ -472,10 +477,8 @@
 
                     let ptsShowJ1 = ptsPrevJ1;
                     let ptsShowJ2 = ptsPrevJ2;
-                    let txtRankState = "En Vivo";
 
                     if (isFin && p.j1 && p.j2) {
-                        txtRankState = "Final";
                         if (p.ganador_id === p.jugador1_id) {
                             ptsShowJ1 += impacto.j1G;
                             ptsShowJ2 += impacto.j2P;
@@ -568,7 +571,6 @@
             }
         }
 
-        // GENERADOR PARA TARJETAS LLAVES ESPECTADOR
         function generarTarjetaLlaveEspectador(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2, colorDesc2) {
             let isFin = partido && (partido.estado || '').trim().toLowerCase() === 'finalizado';
             let isVivo = partido && (partido.estado || '').trim().toLowerCase() === 'en_curso';
@@ -780,17 +782,16 @@
         function abrirPartidoFullScreen(partidoId) {
             if (!partidoId || partidoId === 0) return;
             activePartidoFullScreenId = partidoId;
-            document.getElementById('modal-fullscreen-partido').classList.remove('hidden');
-            document.getElementById('modal-fullscreen-partido').classList.add('flex');
+            const modal = document.getElementById('modal-fullscreen-partido');
+            modal.style.display = 'flex';
             actualizarModalFullScreen();
         }
 
         function cerrarPartidoFullScreen() {
             activePartidoFullScreenId = null;
-            document.getElementById('modal-fullscreen-partido').classList.add('hidden');
-            document.getElementById('modal-fullscreen-partido').classList.remove('flex');
+            const modal = document.getElementById('modal-fullscreen-partido');
+            modal.style.display = 'none';
             
-            // Si hay un param en la URL, limpiarlo para evitar que se vuelva a abrir al recargar
             if(partidoUrlId) {
                 const url = new URL(window.location);
                 url.searchParams.delete('partido');
@@ -870,8 +871,8 @@
                     proyBox.style.color = '#34d399';
                     proyBox.innerHTML = `
                         📈 RESULTADO DE RANKING:<br>
-                        ${p.j1.nombre.split(' ')[0]}: <strong>${p.ganador_id === p.jugador1_id ? '+'+impacto.j1G : impacto.j1P}</strong> | 
-                        ${p.j2.nombre.split(' ')[0]}: <strong>${p.ganador_id === p.jugador2_id ? '+'+impacto.j2G : impacto.j2P}</strong>
+                        ${p.j1.nombre}: <strong>${p.ganador_id === p.jugador1_id ? '+'+impacto.j1G : impacto.j1P}</strong> | 
+                        ${p.j2.nombre}: <strong>${p.ganador_id === p.jugador2_id ? '+'+impacto.j2G : impacto.j2P}</strong>
                     `;
                 } else {
                     proyBox.style.borderColor = 'rgba(245, 158, 11, 0.3)';
@@ -879,13 +880,13 @@
                     proyBox.style.color = '#fbbf24';
                     proyBox.innerHTML = `
                         📊 PROYECCIÓN DE RANKING:<br>
-                        ${p.j1.nombre.split(' ')[0]}: <span class="text-emerald-400">+${impacto.j1G}</span> / <span class="text-rose-400">${impacto.j1P}</span> | 
-                        ${p.j2.nombre.split(' ')[0]}: <span class="text-emerald-400">+${impacto.j2G}</span> / <span class="text-rose-400">${impacto.j2P}</span>
+                        ${p.j1.nombre}: <span class="text-emerald-400">+${impacto.j1G}</span> / <span class="text-rose-400">${impacto.j1P}</span> | 
+                        ${p.j2.nombre}: <span class="text-emerald-400">+${impacto.j2G}</span> / <span class="text-rose-400">${impacto.j2P}</span>
                     `;
                 }
-                proyBox.classList.remove('hidden');
+                proyBox.style.display = 'block';
             } else {
-                proyBox.classList.add('hidden');
+                proyBox.style.display = 'none';
             }
 
             // Historial de Sets Modal
