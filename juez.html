@@ -184,8 +184,12 @@
             p1.sets = data.sets_j1 || 0;
             p2.sets = data.sets_j2 || 0;
 
+            // CORRECCIÓN MATEMÁTICA: Sets para ganar asegurados
             modoJuego = data.modo_juego || '3-5';
-            setsParaGanar = modoJuego === '2-3' ? 2 : (modoJuego === '3-5' ? 3 : 4);
+            setsParaGanar = 3; // Fallback seguro por si en BD se guarda un dato corrupto
+            if (modoJuego === '2-3') setsParaGanar = 2;
+            if (modoJuego === '4-7') setsParaGanar = 4;
+
             historialSets = data.historial_sets || [];
             numSetActual = historialSets.length + 1;
             mostrarRankingImpacto = data.mostrar_ranking || false;
@@ -287,25 +291,10 @@
         }
 
         function calcularImpactoPuntos(ptsA, ptsB) {
-            let diff = Math.abs(ptsA - ptsB); 
-            let favJ1 = ptsA >= ptsB;
-            
-            let reglaGanaJ1 = reglasRanking.find(r => 
-                diff >= r.diferencia_min && diff <= r.diferencia_max && 
-                ((favJ1 && r.resultado_esperado === 'gana_favorito') || (!favJ1 && r.resultado_esperado === 'gana_retador'))
-            );
-            
-            let reglaGanaJ2 = reglasRanking.find(r => 
-                diff >= r.diferencia_min && diff <= r.diferencia_max && 
-                ((!favJ1 && r.resultado_esperado === 'gana_favorito') || (favJ1 && r.resultado_esperado === 'gana_retador'))
-            );
-            
-            return { 
-                j1Gana: reglaGanaJ1 ? reglaGanaJ1.puntos_ganador : 10, 
-                j1Pierde: reglaGanaJ2 ? -Math.abs(reglaGanaJ2.puntos_perdedor) : -5, 
-                j2Gana: reglaGanaJ2 ? reglaGanaJ2.puntos_ganador : 10, 
-                j2Pierde: reglaGanaJ1 ? -Math.abs(reglaGanaJ1.puntos_perdedor) : -5 
-            };
+            let diff = Math.abs(ptsA - ptsB); let favoritoEsJ1 = ptsA >= ptsB;
+            let reglaGanaJ1 = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((favoritoEsJ1 && r.resultado_esperado === 'gana_favorito') || (!favoritoEsJ1 && r.resultado_esperado === 'gana_retador')));
+            let reglaGanaJ2 = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((!favJ1 && r.resultado_esperado === 'gana_favorito') || (favJ1 && r.resultado_esperado === 'gana_retador')));
+            return { j1Gana: reglaGanaJ1 ? reglaGanaJ1.puntos_ganador : 10, j1Pierde: reglaGanaJ2 ? -Math.abs(reglaGanaJ2.puntos_perdedor) : -5, j2Gana: reglaGanaJ2 ? reglaGanaJ2.puntos_ganador : 10, j2Pierde: reglaGanaJ1 ? -Math.abs(reglaGanaJ1.puntos_perdedor) : -5 };
         }
 
         function getCurrentServer() {
@@ -334,7 +323,15 @@
         async function toggleMostrarRanking() {
             mostrarRankingImpacto = !mostrarRankingImpacto;
             actualizarBotonRankingUI();
-            await clienteSupabase.from('partidos').update({ mostrar_ranking: mostrarRankingImpacto }).eq('id', partidoId);
+            
+            const { error } = await clienteSupabase.from('partidos').update({ mostrar_ranking: mostrarRankingImpacto }).eq('id', partidoId);
+            
+            // Advertencia visual si falla porque falta la columna en Supabase
+            if (error) {
+                console.error("Error BD:", error);
+                alert("⚠️ ATENCIÓN: El sistema no pudo guardar el estado de Ranking (Volverá a OFF al recargar).\n\nPara arreglarlo, por favor ingresa al SQL Editor de Supabase y corre este comando:\n\nALTER TABLE partidos ADD COLUMN IF NOT EXISTS mostrar_ranking boolean DEFAULT false;");
+            }
+            
             actualizarUI();
         }
 
@@ -383,11 +380,10 @@
         function addPointRight() { addPoint(isSwapped ? 1 : 2); }
 
         async function addPoint(jugadorOriginalNum) {
-            // BLOQUEO DURO DE SEGURIDAD: Evita sumar puntos si el partido ya terminó
+            // BLOQUEO DURO DE SEGURIDAD ABSOLUTA
             if (p1.sets >= setsParaGanar || p2.sets >= setsParaGanar || (partidoData && partidoData.estado === 'finalizado')) {
-                if (partidoData && partidoData.ganador_id) {
-                    mostrarOverlayGanador(partidoData.ganador_id === p1.id ? p1.nombre : p2.nombre);
-                }
+                let ganadorFinal = p1.sets > p2.sets ? p1.nombre : p2.nombre;
+                mostrarOverlayGanador(ganadorFinal);
                 return;
             }
 
@@ -404,8 +400,8 @@
                 historialSets.push({ numSet: numSetActual, s1: s1, s2: s2 });
                 numSetActual++;
 
-                if (p1.sets === setsParaGanar) { partidoGanado = true; ganadorId = p1.id; }
-                if (p2.sets === setsParaGanar) { partidoGanado = true; ganadorId = p2.id; }
+                if (p1.sets >= setsParaGanar) { partidoGanado = true; ganadorId = p1.id; }
+                if (p2.sets >= setsParaGanar) { partidoGanado = true; ganadorId = p2.id; }
 
                 if (!partidoGanado) {
                     p1.score = 0; p2.score = 0;
@@ -463,7 +459,7 @@
             if (historyStack.length > 0) {
                 undo();
             } else {
-                if (p1.id === partidoData.ganador_id) p1.sets = Math.max(0, p1.sets - 1);
+                if (p1.sets >= setsParaGanar || p1.id === partidoData.ganador_id) p1.sets = Math.max(0, p1.sets - 1);
                 else p2.sets = Math.max(0, p2.sets - 1);
                 
                 p1.score = 0; p2.score = 0;
