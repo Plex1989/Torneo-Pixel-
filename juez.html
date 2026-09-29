@@ -34,7 +34,7 @@
             </button>
             
             <button onclick="ocultarAvisoVictoria()" class="w-full bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-full font-bold text-xs md:text-sm uppercase tracking-widest transition-all border border-slate-600">
-                👁️ Ver Tablero (Activar Ranking)
+                👁️ Ver Tablero (Opciones)
             </button>
 
             <button onclick="cerrarModalYCorregir()" class="text-rose-400 hover:text-rose-300 text-[10px] md:text-xs font-bold uppercase underline tracking-widest cursor-pointer mt-4">
@@ -55,6 +55,7 @@
         </div>
 
         <div class="flex items-center gap-2">
+            <!-- BOTÓN INTERRUPTOR DE RANKING PARA ESPECTADORES -->
             <button id="btn-toggle-ranking" onclick="toggleMostrarRanking()" class="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all">
                 📊 Ranking: OFF
             </button>
@@ -70,6 +71,7 @@
         <!-- JUGADOR IZQUIERDA -->
         <div class="flex-1 flex flex-col min-h-0 relative">
             <div class="bg-cyan-600/30 border border-cyan-500/40 p-3 rounded-2xl mb-2 text-center relative">
+                <!-- INDICADOR DE SAQUE -->
                 <div id="badge-saque-left" onclick="forzarCambioSaqueInicial()" class="hidden absolute -top-3 left-1/2 transform -translate-x-1/2 bg-amber-500 text-black px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest cursor-pointer shadow-[0_0_10px_rgba(245,158,11,0.6)] transition-all animate-pulse">
                     🎾 Saque
                 </div>
@@ -96,6 +98,7 @@
         <!-- JUGADOR DERECHA -->
         <div class="flex-1 flex flex-col min-h-0 relative">
             <div class="bg-fuchsia-600/30 border border-fuchsia-500/40 p-3 rounded-2xl mb-2 text-center relative">
+                <!-- INDICADOR DE SAQUE -->
                 <div id="badge-saque-right" onclick="forzarCambioSaqueInicial()" class="hidden absolute -top-3 left-1/2 transform -translate-x-1/2 bg-amber-500 text-black px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest cursor-pointer shadow-[0_0_10px_rgba(245,158,11,0.6)] transition-all animate-pulse">
                     🎾 Saque
                 </div>
@@ -134,6 +137,7 @@
         let modoJuego = '3-5'; 
         let setsParaGanar = 3;
         
+        // Controles Visuales Dinámicos
         let isSwapped = false;
         let firstServersBySet = [1];
         let audioMuted = false;
@@ -200,6 +204,7 @@
             }
 
             await calcularRankingEnVivoAcumulado();
+            actualizarBotonRankingUI();
             actualizarUI();
         }
 
@@ -285,7 +290,7 @@
         function calcularImpactoPuntos(ptsA, ptsB) {
             let diff = Math.abs(ptsA - ptsB); let favoritoEsJ1 = ptsA >= ptsB;
             let reglaGanaJ1 = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((favoritoEsJ1 && r.resultado_esperado === 'gana_favorito') || (!favoritoEsJ1 && r.resultado_esperado === 'gana_retador')));
-            let reglaGanaJ2 = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((!favoritoEsJ1 && r.resultado_esperado === 'gana_favorito') || (favoritoEsJ1 && r.resultado_esperado === 'gana_retador')));
+            let reglaGanaJ2 = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((!favJ1 && r.resultado_esperado === 'gana_favorito') || (favJ1 && r.resultado_esperado === 'gana_retador')));
             return { j1Gana: reglaGanaJ1 ? reglaGanaJ1.puntos_ganador : 10, j1Pierde: reglaGanaJ2 ? -Math.abs(reglaGanaJ2.puntos_perdedor) : -5, j2Gana: reglaGanaJ2 ? reglaGanaJ2.puntos_ganador : 10, j2Pierde: reglaGanaJ1 ? -Math.abs(reglaGanaJ1.puntos_perdedor) : -5 };
         }
 
@@ -304,12 +309,18 @@
             actualizarUI();
         }
 
-        function toggleMostrarRanking() {
-            mostrarRankingImpacto = !mostrarRankingImpacto;
+        function actualizarBotonRankingUI() {
             const btn = document.getElementById('btn-toggle-ranking');
             btn.innerText = `📊 Ranking: ${mostrarRankingImpacto ? 'ON' : 'OFF'}`;
-            btn.className = mostrarRankingImpacto ? "bg-amber-500 text-black border border-amber-400 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-[0_0_12px_rgba(245,158,11,0.5)]" : "bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest";
-            clienteSupabase.from('partidos').update({ mostrar_ranking: mostrarRankingImpacto }).eq('id', partidoId);
+            btn.className = mostrarRankingImpacto 
+                ? "bg-amber-500 text-black border border-amber-400 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-[0_0_12px_rgba(245,158,11,0.5)]" 
+                : "bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest";
+        }
+
+        async function toggleMostrarRanking() {
+            mostrarRankingImpacto = !mostrarRankingImpacto;
+            actualizarBotonRankingUI();
+            await clienteSupabase.from('partidos').update({ mostrar_ranking: mostrarRankingImpacto }).eq('id', partidoId);
             actualizarUI();
         }
 
@@ -358,7 +369,16 @@
         function addPointRight() { addPoint(isSwapped ? 1 : 2); }
 
         async function addPoint(jugadorOriginalNum) {
+            // BLOQUEO DURO DE SEGURIDAD: Evita sumar puntos si el partido ya terminó
+            if (p1.sets >= setsParaGanar || p2.sets >= setsParaGanar || (partidoData && partidoData.estado === 'finalizado')) {
+                if (partidoData && partidoData.ganador_id) {
+                    mostrarOverlayGanador(partidoData.ganador_id === p1.id ? p1.nombre : p2.nombre);
+                }
+                return;
+            }
+
             saveSnapshot();
+            
             if (jugadorOriginalNum === 1) p1.score++; else p2.score++;
             let s1 = p1.score, s2 = p2.score;
             let setGanado = false; let partidoGanado = false; let ganadorId = null;
