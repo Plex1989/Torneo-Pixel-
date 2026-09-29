@@ -18,6 +18,9 @@
         .score-p2 { border-top: 4px solid #d946ef; box-shadow: 0 10px 30px rgba(217, 70, 239, 0.2); }
         .btn-action { transition: all 0.2s active; }
         .btn-action:active { transform: scale(0.95); }
+        
+        /* Estilo para el selector de formato nativo oscuro */
+        select option { background-color: #0f172a; color: #fff; font-weight: bold; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between p-3 md:p-6 bg-[#04060a]">
@@ -52,10 +55,20 @@
 
         <div class="text-center">
             <span id="info-mesa-fase" class="text-[10px] font-black text-cyan-400 uppercase tracking-widest block">MESA -- • FASE</span>
-            <span id="info-formato" class="text-[8px] text-zinc-400 font-bold uppercase">FORMATO: 3 DE 5 SETS</span>
+            <!-- SELECTOR DE FORMATO RESTAURADO -->
+            <select id="select-formato" onchange="cambiarFormato()" class="bg-transparent border border-zinc-600 text-zinc-400 hover:border-cyan-400 hover:text-cyan-400 text-[9px] font-bold uppercase rounded mt-1 outline-none text-center cursor-pointer transition-colors py-0.5 px-1 appearance-none text-center">
+                <option value="2-3">Formato: 2 de 3 Sets</option>
+                <option value="3-5" selected>Formato: 3 de 5 Sets</option>
+                <option value="4-7">Formato: 4 de 7 Sets</option>
+            </select>
         </div>
 
         <div class="flex items-center gap-2">
+            <!-- VISOR DE ESPECTADORES EN VIVO -->
+            <div id="badge-espectadores" class="hidden bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all gap-1" title="Espectadores conectados en el torneo">
+                <i class="fa-solid fa-eye animate-pulse"></i> <span id="contador-espectadores">0</span>
+            </div>
+
             <button id="btn-toggle-ranking" onclick="toggleMostrarRanking()" class="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all">
                 📊 Ranking: OFF
             </button>
@@ -144,6 +157,7 @@
         let audioMuted = false;
         let mostrarRankingImpacto = false;
         let historyStack = [];
+        let canalEspectadores = null;
 
         const getApellido = (nom) => {
             if (!nom) return "";
@@ -192,12 +206,14 @@
                 if (modoJuego === '2-3') setsParaGanar = 2;
                 else if (modoJuego === '4-7') setsParaGanar = 4;
 
+                const selFormato = document.getElementById('select-formato');
+                if (selFormato) selFormato.value = modoJuego;
+
                 let hs = data.historial_sets;
                 if (typeof hs === 'string') { try { hs = JSON.parse(hs); } catch(e) { hs = []; } }
                 historialSets = Array.isArray(hs) ? hs : [];
                 numSetActual = historialSets.length + 1;
                 
-                // Leemos el ranking. Si en Supabase viene nulo (porque no existe la columna), forzamos leer la memoria local
                 let memoriaLocalRanking = localStorage.getItem('preferencia_ranking_pixel');
                 if (data.mostrar_ranking !== undefined && data.mostrar_ranking !== null) {
                     mostrarRankingImpacto = data.mostrar_ranking;
@@ -221,6 +237,8 @@
                 actualizarBotonRankingUI();
                 actualizarUI();
                 
+                iniciarPresenciaEspectadores(); // Encender el visor (el ojo mágico)
+
             } catch (err) {
                 console.error("Crash:", err);
             }
@@ -293,6 +311,46 @@
 
         function forzarCambioSaqueInicial() { let currentSetIdx = numSetActual - 1; firstServersBySet[currentSetIdx] = firstServersBySet[currentSetIdx] === 1 ? 2 : 1; actualizarUI(); }
 
+        // ==========================================
+        // NUEVAS FUNCIONES DE LA BARRA DE CONTROL
+        // ==========================================
+        async function cambiarFormato() {
+            const nuevoFormato = document.getElementById('select-formato').value;
+            modoJuego = nuevoFormato;
+            setsParaGanar = (modoJuego === '2-3') ? 2 : ((modoJuego === '4-7') ? 4 : 3);
+            
+            // Guardamos el nuevo formato del partido en la base de datos
+            await clienteSupabase.from('partidos').update({ modo_juego: modoJuego }).eq('id', partidoId);
+        }
+
+        function iniciarPresenciaEspectadores() {
+            if (!partidoData || canalEspectadores) return;
+            
+            canalEspectadores = clienteSupabase.channel(`espectadores_torneo_${partidoData.torneo_id}`);
+            
+            canalEspectadores.on('presence', { event: 'sync' }, () => {
+                const newState = canalEspectadores.presenceState();
+                const numSpectators = Object.keys(newState).length;
+                const badge = document.getElementById('badge-espectadores');
+                const contador = document.getElementById('contador-espectadores');
+                
+                if (numSpectators > 0) {
+                    badge.classList.remove('hidden');
+                    badge.classList.add('flex');
+                    contador.innerText = numSpectators;
+                } else {
+                    badge.classList.add('hidden');
+                    badge.classList.remove('flex');
+                }
+            }).subscribe(async (status) => {
+                if (status === 'SUBSCRIBED') {
+                    // El juez emite que está activo sumando al contador general
+                    await canalEspectadores.track({ rol: 'juez', partidoId: partidoId, timestamp: Date.now() });
+                }
+            });
+        }
+        // ==========================================
+
         function actualizarBotonRankingUI() {
             const btn = document.getElementById('btn-toggle-ranking');
             btn.innerText = `📊 Ranking: ${mostrarRankingImpacto ? 'ON' : 'OFF'}`;
@@ -305,9 +363,7 @@
             mostrarRankingImpacto = !mostrarRankingImpacto;
             actualizarBotonRankingUI();
             
-            // Forzamos guardar en LocalStorage por si Supabase lo rebota
             localStorage.setItem('preferencia_ranking_pixel', mostrarRankingImpacto);
-            
             await clienteSupabase.from('partidos').update({ mostrar_ranking: mostrarRankingImpacto }).eq('id', partidoId);
             actualizarUI();
         }
@@ -320,9 +376,6 @@
             
             let txtFase = partidoData?.grupo_nombre ? 'GRUPO ' + partidoData.grupo_nombre : (partidoData?.ronda_fase || 'FASE FINAL');
             document.getElementById('info-mesa-fase').innerText = `MESA ${partidoData?.mesa || 1} • ${txtFase}`;
-            
-            let stringModo = setsParaGanar === 2 ? '2 DE 3' : (setsParaGanar === 4 ? '4 DE 7' : '3 DE 5');
-            document.getElementById('info-formato').innerText = `FORMATO: ${stringModo} SETS`;
 
             let isFin = (partidoData?.estado || '').toLowerCase() === 'finalizado';
             let impactoLive = calcularImpactoPuntos(p1.ptsLive, p2.ptsLive);
@@ -353,7 +406,6 @@
         function addPointRight() { addPoint(isSwapped ? 1 : 2); }
 
         async function addPoint(jugadorOriginalNum) {
-            // BLOQUEO ABSOLUTO: Impide sumar puntos si el partido ya terminó.
             if (p1.sets >= setsParaGanar || p2.sets >= setsParaGanar || (partidoData && partidoData.estado === 'finalizado')) {
                 let ganadorFinal = (p1.sets > p2.sets) ? p1.nombre : p2.nombre;
                 if (partidoData && partidoData.ganador_id) {
@@ -400,9 +452,6 @@
             if (partidoGanado) mostrarOverlayGanador(ganadorId === p1.id ? p1.nombre : p2.nombre);
         }
 
-        // ==========================================
-        // NUEVA FUNCIÓN: FORZAR FINALIZACIÓN MANUAL
-        // ==========================================
         async function forzarFinalizacion() {
             if (partidoData && partidoData.estado === 'finalizado') {
                 mostrarOverlayGanador(partidoData.ganador_id === p1.id ? p1.nombre : p2.nombre);
@@ -413,7 +462,6 @@
             
             if (numRespuesta === '1' || numRespuesta === '2') {
                 saveSnapshot();
-                
                 let ganadorId = (numRespuesta === '1') ? p1.id : p2.id;
                 let nombreGanador = (numRespuesta === '1') ? p1.nombre : p2.nombre;
 
@@ -423,10 +471,7 @@
                 actualizarUI();
                 anunciarMarcador(p1.nombre, p1.score, p2.nombre, p2.score, true);
 
-                await clienteSupabase.from('partidos').update({
-                    estado: 'finalizado', ganador_id: ganadorId
-                }).eq('id', partidoId);
-
+                await clienteSupabase.from('partidos').update({ estado: 'finalizado', ganador_id: ganadorId }).eq('id', partidoId);
                 mostrarOverlayGanador(nombreGanador);
             }
         }
@@ -445,8 +490,6 @@
 
         function mostrarOverlayGanador(nombre) {
             document.getElementById('winner-name-modal').innerText = nombre;
-            
-            // Colocamos el texto "Ganó X a Y en Sets"
             let textoSets = "Victoria Asegurada";
             if (nombre === p1.nombre) textoSets = `Ganó ${p1.sets} a ${p2.sets} en Sets`;
             else if (nombre === p2.nombre) textoSets = `Ganó ${p2.sets} a ${p1.sets} en Sets`;
