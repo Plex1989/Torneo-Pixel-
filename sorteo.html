@@ -535,14 +535,10 @@
             simularJuecesYActualizarUI();
         }
 
-        // ==========================================
-        // ALGORITMO CON ROTACIÓN EQUITATIVA DE ÁRBITROS
-        // ==========================================
         function recalcularRolPartidos() {
             let scheds = {};
             let maxRounds = 0;
 
-            // Inicializar el contador de arbitrajes de cada jugador en 0
             let refereeDutyCount = {};
             gruposGlobal.forEach(g => {
                 g.jugadores.forEach(j => {
@@ -637,7 +633,6 @@
                     matchesAssignedInBlock.push(match);
                 }
 
-                // ASIGNACIÓN EQUITATIVA DE ÁRBITROS BASADA EN EL CONTADOR DE ARBITRAJES
                 let categoryPlayers = [];
                 gruposGlobal.forEach(g => {
                     g.jugadores.forEach(j => {
@@ -649,11 +644,9 @@
 
                 let usedRefsInBlock = new Set();
                 matchesAssignedInBlock.forEach(m => {
-                    // Buscar candidatos que no estén jugando y que no hayan sido asignados en este mismo bloque
                     let candidateRefs = categoryPlayers.filter(p => !usedRefsInBlock.has(p.id));
 
                     if (candidateRefs.length > 0) {
-                        // ORDENAR: Seleccionar al jugador que LLEVE MENOS PARTIDOS ARBITRADOS
                         candidateRefs.sort((a, b) => (refereeDutyCount[a.id] || 0) - (refereeDutyCount[b.id] || 0));
                         let chosenRef = candidateRefs[0];
 
@@ -674,7 +667,6 @@
                 currentTimeMins += duracionPartido;
             }
 
-            // FASE ELIMINATORIA POSTERIOR A GRUPOS
             let horaSemiStr = minutesToTimeStr(currentTimeMins);
             let horaFinalStr = minutesToTimeStr(currentTimeMins + duracionPartido);
 
