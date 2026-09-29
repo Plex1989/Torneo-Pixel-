@@ -43,7 +43,6 @@
         .est-curso { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; }
         .est-fin { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); color: #94a3b8; }
 
-        /* NUEVOS ESTILOS IDENTICOS A ESPECTADOR.HTML */
         .score-container { background: rgba(0,0,0,0.4); border-radius: 14px; padding: 12px 16px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.03); }
         .jugador-box { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
         .jugador-nombre { font-size: 13px; font-weight: 800; color: #ffffff; }
@@ -146,7 +145,7 @@
             todosLosPartidos = data || [];
             generarBotonesCategorias();
             generarBotonesMesas();
-            dibujarPartidos();
+            dibujarPantalla();
         }
 
         function generarBotonesCategorias() {
@@ -168,7 +167,7 @@
         function filtrarCategoria(catNombre) {
             categoriaFiltro = catNombre;
             generarBotonesCategorias();
-            dibujarPartidos();
+            dibujarPantalla();
         }
 
         function generarBotonesMesas() {
@@ -185,7 +184,7 @@
         function filtrarMesa(m) {
             mesaFiltro = m;
             generarBotonesMesas();
-            dibujarPartidos();
+            dibujarPantalla();
         }
 
         function filtrarEstado(est) {
@@ -198,7 +197,7 @@
             else if (est === 'finalizado') document.getElementById('tab-finalizados')?.classList.add('active');
             else if (est === 'resumen') document.getElementById('tab-resumen')?.classList.add('active');
 
-            dibujarPartidos();
+            dibujarPantalla();
         }
 
         function timeStringToMinutes(timeStr) {
@@ -213,9 +212,6 @@
             return hrs * 60 + mins;
         }
 
-        // ==========================================
-        // CÁLCULOS MATEMÁTICOS DEL RANKING
-        // ==========================================
         function calcularRankingEnVivo(jugadorId, basePts, finMatches, partidoActualId) {
             if (!jugadorId || !basePts) return 0;
             let delta = 0;
@@ -285,7 +281,7 @@
         }
 
         // ==========================================
-        // CÁLCULOS FASE DE GRUPOS
+        // CÁLCULO DE GRUPOS MATEMÁTICAMENTE CORREGIDO
         // ==========================================
         function calcularStandingsGrupos() {
             const porCategoria = {};
@@ -317,9 +313,11 @@
                         j2.setsG += (m.sets_j2 || 0); j2.setsP += (m.sets_j1 || 0);
 
                         if (m.ganador_id === m.jugador1_id) {
-                            j1.pg += 1; j1.pts += 2;
+                            j1.pg += 1; j1.pts += 2; // 2 pts por victoria
+                            j2.pp += 1; j2.pts += 1; // 1 pt por derrota
                         } else if (m.ganador_id === m.jugador2_id) {
-                            j2.pg += 1; j2.pts += 2;
+                            j2.pg += 1; j2.pts += 2; // 2 pts por victoria
+                            j1.pp += 1; j1.pts += 1; // 1 pt por derrota
                         }
                     }
                 }
@@ -346,8 +344,7 @@
             return fallbackText;
         }
 
-        // FUNCIÓN RENOMBRADA A DIBUJARPARTIDOS
-        function dibujarPartidos() {
+        function dibujarPantalla() {
             const container = document.getElementById('contenedor-partidos');
             container.innerHTML = '';
 
@@ -423,7 +420,6 @@
                     let opacidadClass = isFin ? 'card-finalizado' : (isVivo ? 'vivo' : '');
                     let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
 
-                    // PUNTOS Y SETS MATEMÁTICAMENTE CORRECTOS (Si Finalizó muestra el SET en grande)
                     let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : '';
                     let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
                     
@@ -482,7 +478,6 @@
             }
         }
 
-        // GENERADOR DE LLAVES PARA MESAS.HTML
         function generarTarjetaLlave(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2, colorDesc2, finMatches) {
             let isFin = partido && (partido.estado || '').trim().toLowerCase() === 'finalizado';
             let isVivo = partido && (partido.estado || '').trim().toLowerCase() === 'en_curso';
@@ -510,7 +505,6 @@
             let icon1 = win1 ? '🏆 ' : '';
             let icon2 = win2 ? '🏆 ' : '';
 
-            // Detalle de ranking
             let rankTextJ1 = '';
             let rankTextJ2 = '';
 
@@ -569,6 +563,9 @@
             `;
         }
 
+        // ==========================================
+        // DIBUJO DE TABLAS DE POSICIONES CON SETS (SG-SP) Y DIFERENCIA
+        // ==========================================
         function dibujarResumenYLlaves(container) {
             const standings = calcularStandingsGrupos();
             const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
@@ -610,23 +607,37 @@
                                             <th style="padding:6px; text-align:center;">PJ</th>
                                             <th style="padding:6px; text-align:center;">PG</th>
                                             <th style="padding:6px; text-align:center;">PP</th>
+                                            <th style="padding:6px; text-align:center;">Sets (G - P)</th>
+                                            <th style="padding:6px; text-align:center;">Dif</th>
                                             <th style="padding:6px; text-align:center; color:#fbbf24;">Pts</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        ${listaJugadores.map((j, idx) => `
-                                            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
-                                                <td style="padding:8px 6px; font-weight:800; color:#64748b;">#${idx + 1}</td>
-                                                <td style="padding:8px 6px;">
-                                                    <strong style="color:#ffffff;">${j.nombre}</strong>
-                                                    <small style="color:#64748b; display:block; font-size:9px;">${j.club || 'Sin Club'}</small>
-                                                </td>
-                                                <td style="padding:8px 6px; text-align:center; color:#94a3b8; font-weight:700;">${j.pj}</td>
-                                                <td style="padding:8px 6px; text-align:center; color:#34d399; font-weight:700;">${j.pg}</td>
-                                                <td style="padding:8px 6px; text-align:center; color:#f87171; font-weight:700;">${j.pp}</td>
-                                                <td style="padding:8px 6px; text-align:center; color:#fbbf24; font-weight:800; font-size:14px;">${j.pts}</td>
-                                            </tr>
-                                        `).join('')}
+                                        ${listaJugadores.map((j, idx) => {
+                                            let dif = j.setsG - j.setsP;
+                                            let difStr = dif >= 0 ? '+' + dif : dif;
+                                            let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
+
+                                            return `
+                                                <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                                                    <td style="padding:8px 6px; font-weight:800; color:#64748b;">#${idx + 1}</td>
+                                                    <td style="padding:8px 6px;">
+                                                        <strong style="color:#ffffff;">${j.nombre}</strong>
+                                                        <small style="color:#64748b; display:block; font-size:9px;">${j.club || 'Sin Club'}</small>
+                                                    </td>
+                                                    <td style="padding:8px 6px; text-align:center; color:#94a3b8; font-weight:700;">${j.pj}</td>
+                                                    <td style="padding:8px 6px; text-align:center; color:#34d399; font-weight:700;">${j.pg}</td>
+                                                    <td style="padding:8px 6px; text-align:center; color:#f87171; font-weight:700;">${j.pp}</td>
+                                                    <td style="padding:8px 6px; text-align:center;">
+                                                        <span style="color:#34d399; font-weight:800;">${j.setsG}</span>
+                                                        <span style="color:#64748b; margin:0 2px;">:</span>
+                                                        <span style="color:#f87171; font-weight:800;">${j.setsP}</span>
+                                                    </td>
+                                                    <td style="padding:8px 6px; text-align:center; font-weight:800; color:${colorDif};">${difStr}</td>
+                                                    <td style="padding:8px 6px; text-align:center; color:#fbbf24; font-weight:800; font-size:14px;">${j.pts}</td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
                                     </tbody>
                                 </table>
                             </div>
