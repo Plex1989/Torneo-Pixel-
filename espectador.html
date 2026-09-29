@@ -2,55 +2,179 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Transmisión en Vivo - Pixel Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;700;800&family=Orbitron:wght@700;900&display=swap');
-
-        body { font-family: 'Sora', sans-serif; margin: 0; padding: 20px; background-color: #04060a; color: #f8fafc; min-height: 100vh; box-sizing: border-box; }
+        body { font-family: 'Sora', sans-serif; margin: 0; padding: 15px; background-color: #04060a; color: #f8fafc; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
+        .font-digital { font-family: 'Orbitron', sans-serif; }
         
         body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
         body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
 
-        .header { text-align: center; margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 15px; }
-        .header h1 { font-size: 22px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #fff; margin: 0; }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; }
+        .header h1 { font-size: 20px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #fff; margin: 0; }
 
-        .grid-espectador { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; max-width: 1200px; margin: auto; }
+        .scrolling-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none; -ms-overflow-style: none; }
+        .scrolling-bar::-webkit-scrollbar { display: none; }
 
-        .card-mesa { background: rgba(10, 15, 26, 0.7); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); padding: 20px; position: relative; transition: all 0.3s ease; }
-        .card-mesa.vivo { border-top: 4px solid #34d399; box-shadow: 0 0 25px rgba(52, 211, 153, 0.15); }
-        .card-mesa.finalizado { border-top: 4px solid #64748b; opacity: 0.85; }
+        .btn-filter-pill { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 8px 16px; border-radius: 9999px; font-size: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; transition: all 0.2s ease; }
+        .btn-filter-pill.active { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 15px rgba(6, 182, 212, 0.5); }
+        
+        .btn-cat-pill { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; }
+        .btn-cat-pill.active { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.6); }
 
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-        .mesa-title { font-size: 13px; font-weight: 800; color: #38bdf8; letter-spacing: 1px; }
-        .cat-badge { font-size: 10px; font-weight: 800; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); padding: 3px 8px; border-radius: 6px; text-transform: uppercase; }
+        .grid-espectador { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; max-width: 1200px; margin: auto; }
 
-        .score-container { background: rgba(0,0,0,0.4); border-radius: 14px; padding: 15px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.03); }
-        .jugador-box { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
-        .jugador-nombre { font-size: 14px; font-weight: 800; color: #ffffff; }
+        .card-mesa { background: rgba(10, 15, 26, 0.7); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 4px solid #0e7490; padding: 18px; position: relative; transition: all 0.3s ease; cursor: pointer; }
+        .card-mesa:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.2); }
+        .card-mesa.vivo { border-bottom-color: #34d399 !important; box-shadow: 0 0 25px rgba(52, 211, 153, 0.15); }
+        .card-mesa.finalizado { border-bottom-color: #64748b !important; opacity: 0.85; }
+
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .mesa-title { font-size: 12px; font-weight: 800; color: #38bdf8; letter-spacing: 1px; }
+        .cat-badge { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; }
+
+        .badge-estado { padding: 3px 8px; border-radius: 9999px; font-weight: 800; font-size: 9px; text-transform: uppercase; }
+        .est-pendiente { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; }
+        .est-curso { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; }
+        .est-fin { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); color: #94a3b8; }
+
+        .score-container { background: rgba(0,0,0,0.4); border-radius: 14px; padding: 12px 16px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.03); }
+        .jugador-box { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
+        .jugador-nombre { font-size: 13px; font-weight: 800; color: #ffffff; }
         .jugador-club { font-size: 10px; color: #64748b; font-weight: 600; display: block; }
-        .score-big { font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 900; color: #06b6d4; }
+        .score-big { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 900; color: #06b6d4; }
         .score-big.p2 { color: #d946ef; }
 
-        .sets-badge { font-size: 11px; font-weight: 800; color: #94a3b8; background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 6px; margin-left: 8px; }
+        .sets-badge { font-size: 10px; font-weight: 800; color: #94a3b8; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 6px; margin-left: 6px; }
 
         .proyeccion-bar { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 8px 12px; margin-top: 10px; text-align: center; font-size: 10px; font-weight: 800; color: #fbbf24; }
 
-        .sets-history { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 12px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.08); }
+        .sets-history { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.08); }
         .set-chip { font-size: 9px; background: rgba(0,0,0,0.5); padding: 3px 8px; border-radius: 6px; font-weight: 800; border: 1px solid rgba(255,255,255,0.05); }
 
+        .header-hora { grid-column: 1 / -1; font-size: 12px; color: #38bdf8; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid rgba(56, 189, 248, 0.3); padding-bottom: 6px; margin-top: 15px; margin-bottom: 5px; letter-spacing: 1.5px; }
+
+        .seccion-llaves-footer { grid-column: 1 / -1; margin-top: 20px; background: rgba(10, 15, 26, 0.85); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 20px; padding: 20px; backdrop-filter: blur(15px); }
+
         .mensaje-vacio { text-align: center; color: #475569; font-style: italic; grid-column: 1/-1; padding: 40px; }
+
+        /* MODAL PANTALLA COMPLETA PARA ESPECTADOR */
+        .card-score-fs { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(15px); border-radius: 24px; }
     </style>
 </head>
 <body>
 
+    <!-- MODAL PANTALLA COMPLETA PARTIDO ESPECTADOR -->
+    <div id="modal-fullscreen-partido" class="hidden fixed inset-0 z-[100] bg-[#04060a] p-4 flex-col justify-between overflow-y-auto">
+        
+        <!-- HEADER PANTALLA COMPLETA -->
+        <div class="flex justify-between items-center bg-slate-900/80 p-3 rounded-2xl border border-white/10 shrink-0">
+            <button onclick="cerrarPartidoFullScreen()" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest text-white transition-colors">
+                <i class="fa-solid fa-arrow-left mr-1"></i> Volver a Cartelera
+            </button>
+
+            <div class="text-center">
+                <span id="fs-mesa-fase" class="text-xs font-black text-cyan-400 uppercase tracking-widest block">MESA -- • FASE</span>
+                <span id="fs-cat-nombre" class="text-[9px] text-amber-400 font-extrabold uppercase">CATEGORÍA</span>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <!-- BOTÓN COMPARTIR PARTIDO WHATSAPP -->
+                <button onclick="compartirPartidoWhatsAppActual()" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all hover:bg-emerald-500 hover:text-black">
+                    <i class="fa-brands fa-whatsapp text-sm mr-1"></i> <span class="hidden md:inline">Compartir</span>
+                </button>
+                <!-- BOTÓN NARRACIÓN DE VOZ -->
+                <button id="fs-btn-audio" onclick="toggleAudioEspectador()" class="bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 w-9 h-9 rounded-full flex items-center justify-center text-xs">
+                    <i class="fa-solid fa-volume-high"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- MARCADOR GIGANTE -->
+        <div class="flex-1 flex flex-col md:flex-row gap-4 my-4 min-h-0">
+            
+            <!-- JUGADOR 1 -->
+            <div class="flex-1 flex flex-col min-h-0">
+                <div class="bg-cyan-600/30 border border-cyan-500/40 p-4 rounded-2xl mb-2 text-center">
+                    <h2 id="fs-name-j1" class="text-xl md:text-3xl font-black uppercase tracking-wider text-white truncate">JUGADOR 1</h2>
+                    <span id="fs-club-j1" class="text-xs text-zinc-400 font-bold block">CLUB</span>
+                    <div id="fs-ranking-j1" class="text-xs font-extrabold text-cyan-300 mt-1">-- pts</div>
+                </div>
+                
+                <div class="flex-1 card-score-fs border-t-4 border-cyan-500 flex flex-col items-center justify-center p-4">
+                    <div id="fs-score-j1" class="font-digital text-[20vh] md:text-[32vh] font-black leading-none text-cyan-400 select-none">0</div>
+                    <div class="text-sm font-extrabold text-zinc-400 uppercase tracking-widest mt-2">Sets Ganados: <span id="fs-sets-j1" class="text-white font-digital text-2xl font-black ml-2">0</span></div>
+                </div>
+            </div>
+
+            <!-- VS DIVIDER -->
+            <div class="flex md:flex-col justify-center items-center shrink-0">
+                <span class="font-digital font-black text-2xl text-zinc-600">VS</span>
+            </div>
+
+            <!-- JUGADOR 2 -->
+            <div class="flex-1 flex flex-col min-h-0">
+                <div class="bg-fuchsia-600/30 border border-fuchsia-500/40 p-4 rounded-2xl mb-2 text-center">
+                    <h2 id="fs-name-j2" class="text-xl md:text-3xl font-black uppercase tracking-wider text-white truncate">JUGADOR 2</h2>
+                    <span id="fs-club-j2" class="text-xs text-zinc-400 font-bold block">CLUB</span>
+                    <div id="fs-ranking-j2" class="text-xs font-extrabold text-fuchsia-300 mt-1">-- pts</div>
+                </div>
+                
+                <div class="flex-1 card-score-fs border-t-4 border-fuchsia-500 flex flex-col items-center justify-center p-4">
+                    <div id="fs-score-j2" class="font-digital text-[20vh] md:text-[32vh] font-black leading-none text-fuchsia-400 select-none">0</div>
+                    <div class="text-sm font-extrabold text-zinc-400 uppercase tracking-widest mt-2">Sets Ganados: <span id="fs-sets-j2" class="text-white font-digital text-2xl font-black ml-2">0</span></div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- BARRA PROYECCIÓN Y SETS HISTORIAL -->
+        <div class="shrink-0 flex flex-col gap-2">
+            <div id="fs-proyeccion-box" class="hidden bg-amber-500/10 border border-amber-500/30 text-amber-400 p-3 rounded-2xl text-center text-xs font-bold"></div>
+
+            <div class="bg-slate-900/80 p-3 rounded-2xl border border-white/10 flex justify-center items-center gap-3 flex-wrap">
+                <span class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Historial de Sets:</span>
+                <div id="fs-list-sets" class="flex gap-2 flex-wrap"></div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- HEADER GENERAL -->
     <div class="header">
         <p style="color:#a855f7; font-weight:800; font-size:10px; text-transform:uppercase; margin:0 0 4px 0;">Transmisión en Tiempo Real para Fans</p>
         <h1 id="torneo-nombre-header">CARTELERA DE MARCADORES</h1>
     </div>
 
+    <!-- FILTRO POR CATEGORÍA -->
+    <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">🏆 Filtrar por Categoría:</div>
+    <div class="scrolling-bar" id="bar-categorias">
+        <button class="btn-filter-pill btn-cat-pill active" onclick="filtrarCategoria('todas')">Todas las Categorías</button>
+    </div>
+
+    <!-- FILTRO POR ESTADO DE JUEGO -->
+    <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">📌 Estado de Juego / Vista:</div>
+    <div class="scrolling-bar">
+        <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Todos</button>
+        <button class="btn-filter-pill" id="tab-vivo" onclick="filtrarEstado('en_curso')">🔴 En Vivo</button>
+        <button class="btn-filter-pill" id="tab-pendientes" onclick="filtrarEstado('pendiente')">⏳ Pendientes</button>
+        <button class="btn-filter-pill" id="tab-finalizados" onclick="filtrarEstado('finalizado')">🏁 Finalizados</button>
+        <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')">📊 Resumen y Llaves</button>
+    </div>
+
+    <!-- FILTRO POR MESA -->
+    <div class="scrolling-bar" id="bar-mesas">
+        <button class="btn-filter-pill active" onclick="filtrarMesa('todas')">Todas las Mesas</button>
+    </div>
+
+    <!-- CONTENEDOR PRINCIPAL DE MARCADORES -->
     <div class="grid-espectador" id="contenedor-espectador">
         <div class="mensaje-vacio">Cargando marcadores en vivo...</div>
     </div>
@@ -62,8 +186,33 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         let idTorneoActivo = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id') || 1;
+        let partidoUrlId = urlParams.get('partido');
 
+        let todosLosPartidos = [];
         let reglasRankingList = [];
+        let mesaFiltro = 'todas';
+        let estadoFiltro = 'todos';
+        let categoriaFiltro = 'todas';
+
+        let activePartidoFullScreenId = null;
+        let audioMuted = false;
+        let lastAnnouncedScore = "";
+
+        const obtenerEstiloCategoria = (catId) => {
+            const paleta = [
+                { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.5)', text: '#fbbf24' },
+                { bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.5)', text: '#38bdf8' },
+                { bg: 'rgba(217, 70, 239, 0.15)', border: 'rgba(217, 70, 239, 0.5)', text: '#f0abfc' },
+                { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.5)', text: '#34d399' }
+            ];
+            return paleta[(catId || 0) % paleta.length];
+        };
+
+        const getApellido = (nom) => {
+            if (!nom) return "";
+            const partes = nom.trim().split(" ");
+            return partes[partes.length - 1];
+        };
 
         async function inicializarEspectador() {
             const { data: torneo } = await clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).single();
@@ -72,7 +221,12 @@
             const { data: reglas } = await clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true });
             reglasRankingList = reglas || [];
 
-            cargarMarcadores();
+            await cargarMarcadores();
+
+            // Si la URL traía un partido específico en los parámetros, abrirlo directamente
+            if (partidoUrlId) {
+                abrirPartidoFullScreen(partidoUrlId);
+            }
 
             // Suscripción Realtime
             clienteSupabase
@@ -88,21 +242,81 @@
                 .from('partidos')
                 .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)')
                 .eq('torneo_id', idTorneoActivo)
-                .order('mesa', { ascending: true });
+                .order('id', { ascending: true });
 
-            if (!partidos || partidos.length === 0) {
-                document.getElementById('contenedor-espectador').innerHTML = `<div class="mensaje-vacio">No hay marcadores activos en este momento.</div>`;
-                return;
+            todosLosPartidos = partidos || [];
+            generarBotonesCategorias();
+            generarBotonesMesas();
+            dibujarPantalla();
+
+            // Actualizar Modal de Pantalla Completa si está abierto
+            if (activePartidoFullScreenId) {
+                actualizarModalFullScreen();
             }
+        }
 
-            // Cargar partidos finalizados para cálculo acumulado en vivo
-            const { data: finMatches } = await clienteSupabase
-                .from('partidos')
-                .select('*, j1:jugador1_id(id, puntos_ranking), j2:jugador2_id(id, puntos_ranking)')
-                .eq('torneo_id', idTorneoActivo)
-                .eq('estado', 'finalizado');
+        function generarBotonesCategorias() {
+            const bar = document.getElementById('bar-categorias');
+            const catsMap = new Map();
+            todosLosPartidos.forEach(p => {
+                if (p.categorias && p.categorias.nombre) {
+                    catsMap.set(p.categorias.nombre, p.categorias.id);
+                }
+            });
 
-            dibujarMarcadores(partidos, finMatches || []);
+            let html = `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === 'todas' ? 'active' : ''}" onclick="filtrarCategoria('todas')">Todas las Categorías</button>`;
+            catsMap.forEach((id, nombre) => {
+                html += `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === nombre ? 'active' : ''}" onclick="filtrarCategoria('${nombre}')">🏆 ${nombre}</button>`;
+            });
+            bar.innerHTML = html;
+        }
+
+        function filtrarCategoria(catNombre) {
+            categoriaFiltro = catNombre;
+            generarBotonesCategorias();
+            dibujarPantalla();
+        }
+
+        function generarBotonesMesas() {
+            const bar = document.getElementById('bar-mesas');
+            let mesasUnicas = [...new Set(todosLosPartidos.map(p => p.mesa))].sort((a,b) => a-b);
+
+            let html = `<button class="btn-filter-pill ${mesaFiltro === 'todas' ? 'active' : ''}" onclick="filtrarMesa('todas')">Todas las Mesas</button>`;
+            mesasUnicas.forEach(m => {
+                if(m) html += `<button class="btn-filter-pill ${mesaFiltro == m ? 'active' : ''}" onclick="filtrarMesa(${m})">Mesa ${m}</button>`;
+            });
+            bar.innerHTML = html;
+        }
+
+        function filtrarMesa(m) {
+            mesaFiltro = m;
+            generarBotonesMesas();
+            dibujarPantalla();
+        }
+
+        function filtrarEstado(est) {
+            estadoFiltro = est;
+            document.querySelectorAll('.scrolling-bar .btn-filter-pill:not(.btn-cat-pill)').forEach(b => b.classList.remove('active'));
+
+            if (est === 'todos') document.getElementById('tab-todos')?.classList.add('active');
+            else if (est === 'en_curso') document.getElementById('tab-vivo')?.classList.add('active');
+            else if (est === 'pendiente') document.getElementById('tab-pendientes')?.classList.add('active');
+            else if (est === 'finalizado') document.getElementById('tab-finalizados')?.classList.add('active');
+            else if (est === 'resumen') document.getElementById('tab-resumen')?.classList.add('active');
+
+            dibujarPantalla();
+        }
+
+        function timeStringToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            let match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+            if (!match) return 0;
+            let hrs = parseInt(match[1]);
+            let mins = parseInt(match[2]);
+            let ampm = match[3] ? match[3].toUpperCase() : null;
+            if (ampm === 'PM' && hrs < 12) hrs += 12;
+            if (ampm === 'AM' && hrs === 12) hrs = 0;
+            return hrs * 60 + mins;
         }
 
         function calcularRankingEnVivo(jugadorId, basePts, finMatches, partidoActualId) {
@@ -147,81 +361,509 @@
             };
         }
 
-        function dibujarMarcadores(partidos, finMatches) {
+        function calcularStandingsGrupos() {
+            const porCategoria = {};
+
+            todosLosPartidos.forEach(m => {
+                if (!m.grupo_nombre) return; 
+                const catNombre = m.categorias?.nombre || 'General';
+                if (!porCategoria[catNombre]) porCategoria[catNombre] = {};
+                
+                const gpoNombre = m.grupo_nombre;
+                if (!porCategoria[catNombre][gpoNombre]) porCategoria[catNombre][gpoNombre] = {};
+
+                const grupoObj = porCategoria[catNombre][gpoNombre];
+
+                [m.j1, m.j2].forEach(j => {
+                    if (j && j.id && !grupoObj[j.id]) {
+                        grupoObj[j.id] = { id: j.id, nombre: j.nombre, club: j.club, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0 };
+                    }
+                });
+
+                let estLimpio = (m.estado || '').trim().toLowerCase();
+                if (estLimpio === 'finalizado' && m.j1 && m.j2) {
+                    const j1 = grupoObj[m.j1.id];
+                    const j2 = grupoObj[m.j2.id];
+
+                    if (j1 && j2) {
+                        j1.pj += 1; j2.pj += 1;
+                        j1.setsG += (m.sets_j1 || 0); j1.setsP += (m.sets_j2 || 0);
+                        j2.setsG += (m.sets_j2 || 0); j2.setsP += (m.sets_j1 || 0);
+
+                        if (m.ganador_id === m.jugador1_id) {
+                            j1.pg += 1; j1.pts += 2;
+                            j2.pp += 1; j2.pts += 1;
+                        } else if (m.ganador_id === m.jugador2_id) {
+                            j2.pg += 1; j2.pts += 2;
+                            j1.pp += 1; j1.pts += 1;
+                        }
+                    }
+                }
+            });
+
+            return porCategoria;
+        }
+
+        function ordenarJugadoresITTF(lista) {
+            return [...lista].sort((a, b) => {
+                if (b.pts !== a.pts) return b.pts - a.pts;
+                const rSetA = a.setsG / (a.setsP || 0.0001);
+                const rSetB = b.setsG / (b.setsP || 0.0001);
+                return rSetB - rSetA;
+            });
+        }
+
+        function getPosNombre(grupoArr, posIndex, fallbackText) {
+            if (!grupoArr || grupoArr.length <= posIndex) return fallbackText;
+            const jugador = grupoArr[posIndex];
+            if (jugador && (jugador.pts > 0 || jugador.pj > 0)) {
+                return jugador.nombre;
+            }
+            return fallbackText;
+        }
+
+        function dibujarPantalla() {
             const container = document.getElementById('contenedor-espectador');
             container.innerHTML = '';
 
-            partidos.forEach(p => {
-                let est = (p.estado || '').toLowerCase();
-                let isFin = est === 'finalizado';
-                let isVivo = est === 'en_curso';
+            if (estadoFiltro === 'resumen') {
+                container.style.display = 'block';
+                dibujarResumenYLlaves(container);
+                return;
+            }
 
-                let nomJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
-                let nomJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
+            container.style.display = 'grid';
 
-                let ptsLiveJ1 = p.j1 ? calcularRankingEnVivo(p.j1.id, p.j1.puntos_ranking || 0, finMatches, p.id) : 0;
-                let ptsLiveJ2 = p.j2 ? calcularRankingEnVivo(p.j2.id, p.j2.puntos_ranking || 0, finMatches, p.id) : 0;
+            let filtrados = todosLosPartidos.filter(p => p.grupo_nombre);
 
-                let impacto = calcularImpacto(ptsLiveJ1, ptsLiveJ2);
+            if (mesaFiltro !== 'todas') {
+                filtrados = filtrados.filter(p => p.mesa == mesaFiltro);
+            }
 
-                let proyeccionHtml = '';
-                if (p.mostrar_ranking && p.j1 && p.j2) {
-                    proyeccionHtml = `
-                        <div class="proyeccion-bar">
-                            📊 Proyección de Ranking:<br>
-                            ${p.j1.nombre.split(' ')[0]}: <span style="color:#34d399;">+${impacto.j1G}</span> / <span style="color:#f87171;">${impacto.j1P}</span> | 
-                            ${p.j2.nombre.split(' ')[0]}: <span style="color:#34d399;">+${impacto.j2G}</span> / <span style="color:#f87171;">${impacto.j2P}</span>
+            if (categoriaFiltro !== 'todas') {
+                filtrados = filtrados.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
+            }
+
+            if (estadoFiltro === 'en_curso') {
+                filtrados = filtrados.filter(p => (p.estado || '').trim().toLowerCase() === 'en_curso');
+            } else if (estadoFiltro === 'pendiente') {
+                filtrados = filtrados.filter(p => (p.estado || '').trim().toLowerCase() === 'pendiente');
+            } else if (estadoFiltro === 'finalizado') {
+                filtrados = filtrados.filter(p => (p.estado || '').trim().toLowerCase() === 'finalizado');
+            }
+
+            if (filtrados.length === 0) {
+                container.innerHTML = `<div class="mensaje-vacio">No hay partidos registrados bajo este filtro.</div>`;
+                return;
+            }
+
+            const finMatches = todosLosPartidos.filter(p => (p.estado || '').toLowerCase() === 'finalizado');
+
+            const gruposPorHora = {};
+            filtrados.forEach(p => {
+                const h = p.hora || '09:00 AM';
+                if(!gruposPorHora[h]) gruposPorHora[h] = [];
+                gruposPorHora[h].push(p);
+            });
+
+            const horasOrdenadas = Object.keys(gruposPorHora).sort((a, b) => timeStringToMinutes(a) - timeStringToMinutes(b));
+
+            horasOrdenadas.forEach(hora => {
+                container.innerHTML += `<div class="header-hora">⏰ ${hora}</div>`;
+
+                gruposPorHora[hora].forEach(p => {
+                    let est = (p.estado || '').toLowerCase();
+                    let isFin = est === 'finalizado';
+                    let isVivo = est === 'en_curso';
+
+                    let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : 
+                                  (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
+
+                    let nomJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
+                    let nomJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
+
+                    let ptsLiveJ1 = p.j1 ? calcularRankingEnVivo(p.j1.id, p.j1.puntos_ranking || 0, finMatches, p.id) : 0;
+                    let ptsLiveJ2 = p.j2 ? calcularRankingEnVivo(p.j2.id, p.j2.puntos_ranking || 0, finMatches, p.id) : 0;
+
+                    let impacto = calcularImpacto(ptsLiveJ1, ptsLiveJ2);
+
+                    let proyeccionHtml = '';
+                    if (p.mostrar_ranking && p.j1 && p.j2) {
+                        proyeccionHtml = `
+                            <div class="proyeccion-bar">
+                                📊 Proyección de Ranking:<br>
+                                ${p.j1.nombre.split(' ')[0]}: <span style="color:#34d399;">+${impacto.j1G}</span> / <span style="color:#f87171;">${impacto.j1P}</span> | 
+                                ${p.j2.nombre.split(' ')[0]}: <span style="color:#34d399;">+${impacto.j2G}</span> / <span style="color:#f87171;">${impacto.j2P}</span>
+                            </div>
+                        `;
+                    }
+
+                    let historialHtml = '';
+                    if (p.historial_sets && p.historial_sets.length > 0) {
+                        historialHtml = `<div class="sets-history">`;
+                        p.historial_sets.forEach(s => {
+                            let c1 = s.s1 > s.s2 ? '#22d3ee' : '#64748b';
+                            let c2 = s.s2 > s.s1 ? '#e879f9' : '#64748b';
+                            historialHtml += `<div class="set-chip">Set ${s.numSet}: <span style="color:${c1}">${s.s1}</span> - <span style="color:${c2}">${s.s2}</span></div>`;
+                        });
+                        historialHtml += `</div>`;
+                    }
+
+                    let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
+
+                    container.innerHTML += `
+                        <div class="card-mesa ${isVivo ? 'vivo' : (isFin ? 'finalizado' : '')}" onclick="abrirPartidoFullScreen(${p.id})">
+                            <div class="top-bar">
+                                <span class="mesa-title">MESA ${p.mesa || 1}</span>
+                                ${badgeEst}
+                            </div>
+
+                            <div style="margin-bottom:10px;">
+                                <span class="cat-badge" style="color:${catStyle.text}; background:${catStyle.bg}; border:1px solid ${catStyle.border};">
+                                    🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'} • Gpo ${p.grupo_nombre}
+                                </span>
+                            </div>
+
+                            <div class="score-container">
+                                <div class="jugador-box">
+                                    <div>
+                                        <span class="jugador-nombre">${nomJ1}</span>
+                                        <span class="jugador-club">${p.j1?.club || ''} ${p.mostrar_ranking && ptsLiveJ1 ? `(${ptsLiveJ1} pts)` : ''}</span>
+                                    </div>
+                                    <div style="display:flex; align-items:center;">
+                                        <span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>
+                                        ${!isFin ? `<span class="sets-badge">(${p.sets_j1 || 0})</span>` : ''}
+                                    </div>
+                                </div>
+
+                                <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
+                                    <div>
+                                        <span class="jugador-nombre">${nomJ2}</span>
+                                        <span class="jugador-club">${p.j2?.club || ''} ${p.mostrar_ranking && ptsLiveJ2 ? `(${ptsLiveJ2} pts)` : ''}</span>
+                                    </div>
+                                    <div style="display:flex; align-items:center;">
+                                        <span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>
+                                        ${!isFin ? `<span class="sets-badge">(${p.sets_j2 || 0})</span>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+
+                            ${proyeccionHtml}
+                            ${historialHtml}
                         </div>
                     `;
-                }
+                });
+            });
 
-                let historialHtml = '';
-                if (p.historial_sets && p.historial_sets.length > 0) {
-                    historialHtml = `<div class="sets-history">`;
-                    p.historial_sets.forEach(s => {
-                        let c1 = s.s1 > s.s2 ? '#22d3ee' : '#64748b';
-                        let c2 = s.s2 > s.s1 ? '#e879f9' : '#64748b';
-                        historialHtml += `<div class="set-chip">Set ${s.numSet}: <span style="color:${c1}">${s.s1}</span> - <span style="color:${c2}">${s.s2}</span></div>`;
-                    });
-                    historialHtml += `</div>`;
-                }
+            if (mesaFiltro === 'todas') {
+                dibujarLlavesInferiores(container);
+            }
+        }
+
+        function dibujarResumenYLlaves(container) {
+            const standings = calcularStandingsGrupos();
+            const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
+            let catsList = [...categoriasSet];
+
+            if (categoriaFiltro !== 'todas') {
+                catsList = catsList.filter(c => c === categoriaFiltro);
+            }
+
+            if (catsList.length === 0) {
+                container.innerHTML = `<div class="mensaje-vacio">No hay información de grupos o categorías para mostrar.</div>`;
+                return;
+            }
+
+            let htmlContent = '';
+
+            catsList.forEach(catNombre => {
+                const gruposCat = standings[catNombre] || {};
+                
+                htmlContent += `
+                    <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">
+                        <div style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; margin-bottom:15px;">
+                            <span style="font-size:14px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:1.5px;">🏆 Categoría: ${catNombre}</span>
+                        </div>
+                `;
+
+                Object.keys(gruposCat).sort().forEach(gpoNombre => {
+                    const listaJugadores = ordenarJugadoresITTF(Object.values(gruposCat[gpoNombre]));
+
+                    htmlContent += `
+                        <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:15px; margin-bottom:15px;">
+                            <span style="font-weight:800; font-size:12px; color:#fbbf24; text-transform:uppercase; display:block; margin-bottom:10px;">👥 Tabla de Posiciones - Grupo ${gpoNombre}</span>
+                            <div style="overflow-x:auto;">
+                                <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                                    <thead>
+                                        <tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);">
+                                            <th style="padding:6px; text-align:left;">Pos</th>
+                                            <th style="padding:6px; text-align:left;">Jugador</th>
+                                            <th style="padding:6px; text-align:center;">PJ</th>
+                                            <th style="padding:6px; text-align:center;">PG</th>
+                                            <th style="padding:6px; text-align:center;">PP</th>
+                                            <th style="padding:6px; text-align:center; color:#fbbf24;">Pts</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${listaJugadores.map((j, idx) => `
+                                            <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                                                <td style="padding:8px 6px; font-weight:800; color:#64748b;">#${idx + 1}</td>
+                                                <td style="padding:8px 6px;">
+                                                    <strong style="color:#ffffff;">${j.nombre}</strong>
+                                                    <small style="color:#64748b; display:block; font-size:9px;">${j.club || 'Sin Club'}</small>
+                                                </td>
+                                                <td style="padding:8px 6px; text-align:center; color:#94a3b8; font-weight:700;">${j.pj}</td>
+                                                <td style="padding:8px 6px; text-align:center; color:#34d399; font-weight:700;">${j.pg}</td>
+                                                <td style="padding:8px 6px; text-align:center; color:#f87171; font-weight:700;">${j.pp}</td>
+                                                <td style="padding:8px 6px; text-align:center; color:#fbbf24; font-weight:800; font-size:14px;">${j.pts}</td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                htmlContent += `</div>`;
+            });
+
+            container.innerHTML = htmlContent;
+            dibujarLlavesInferiores(container);
+        }
+
+        function dibujarLlavesInferiores(container) {
+            const standings = calcularStandingsGrupos();
+            const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
+            let catsList = [...categoriasSet];
+
+            if (categoriaFiltro !== 'todas') {
+                catsList = catsList.filter(c => c === categoriaFiltro);
+            }
+
+            if (catsList.length === 0) return;
+
+            const partidosLlaveBD = todosLosPartidos.filter(p => !p.grupo_nombre || p.ronda_fase?.toLowerCase().includes('cruce') || p.ronda_fase?.toLowerCase().includes('semifinal') || p.ronda_fase?.toLowerCase().includes('final'));
+
+            catsList.forEach(catNombre => {
+                const gruposCat = standings[catNombre] || {};
+                const gpoA_arr = gruposCat['A'] ? ordenarJugadoresITTF(Object.values(gruposCat['A'])) : [];
+                const gpoB_arr = gruposCat['B'] ? ordenarJugadoresITTF(Object.values(gruposCat['B'])) : [];
+
+                const primeroA = getPosNombre(gpoA_arr, 0, '1° Grupo A');
+                const segundoA = getPosNombre(gpoA_arr, 1, '2° Grupo A');
+                const primeroB = getPosNombre(gpoB_arr, 0, '1° Grupo B');
+                const segundoB = getPosNombre(gpoB_arr, 1, '2° Grupo B');
+
+                const partidosCatGpo = todosLosPartidos.filter(p => p.grupo_nombre && p.categorias?.nombre === catNombre);
+                const totalGpo = partidosCatGpo.length;
+                const finGpo = partidosCatGpo.filter(p => (p.estado || '').trim().toLowerCase() === 'finalizado').length;
+                const gpoCompleto = totalGpo > 0 && totalGpo === finGpo;
+
+                const partidoSemi1 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && p.ronda_fase?.toLowerCase().includes('semi') && (p.ronda_fase?.includes('1') || p.ronda_fase?.toLowerCase().includes('cruce 1')));
+                const partidoSemi2 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && p.ronda_fase?.toLowerCase().includes('semi') && (p.ronda_fase?.includes('2') || p.ronda_fase?.toLowerCase().includes('cruce 2')));
+                const partidoFinal = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && p.ronda_fase?.toLowerCase().includes('final') && !p.ronda_fase?.toLowerCase().includes('semi'));
+
+                let nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : primeroA;
+                let nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : segundoB;
+
+                let nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : primeroB;
+                let nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : segundoA;
+
+                let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Ganador Semi 1');
+                let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Ganador Semi 2');
 
                 container.innerHTML += `
-                    <div class="card-mesa ${isVivo ? 'vivo' : (isFin ? 'finalizado' : '')}">
-                        <div class="top-bar">
-                            <span class="mesa-title">MESA ${p.mesa || 1}</span>
-                            <span class="cat-badge">🏆 ${p.categorias?.nombre || 'Categoría'}</span>
+                    <div class="seccion-llaves-footer">
+                        <div style="text-align:center; margin-bottom:15px;">
+                            <span style="font-size:10px; color:#fbbf24; font-weight:800; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:4px;">Fase Final de Eliminatoria Directa</span>
+                            <h3 style="margin:0; border:none; padding:0; font-size:16px; color:#ffffff;">🏆 LLAVES ELIMINATORIAS - ${catNombre}</h3>
                         </div>
 
-                        <div class="score-container">
-                            <div class="jugador-box">
-                                <div>
-                                    <span class="jugador-nombre">${nomJ1}</span>
-                                    <span class="jugador-club">${p.j1?.club || ''} ${p.mostrar_ranking && ptsLiveJ1 ? `(${ptsLiveJ1} pts)` : ''}</span>
+                        ${gpoCompleto ? `
+                            <div style="background:rgba(16,185,129,0.2); border:1px solid rgba(16,185,129,0.5); color:#34d399; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase; margin-bottom:18px;">
+                                ✅ ¡LLAVE DEFINITIVA CONFIRMADA! (Grupos 100% completados)
+                            </div>
+                        ` : `
+                            <div style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase; margin-bottom:18px;">
+                                ⏳ PROYECCIÓN PRELIMINAR EN TIEMPO REAL (En espera de finalizar grupos)
+                            </div>
+                        `}
+
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
+                            
+                            <!-- CRUCE 1 -->
+                            <div style="background:rgba(0,0,0,0.4); padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); cursor:pointer;" onclick="abrirPartidoFullScreen(${partidoSemi1 ? partidoSemi1.id : 0})">
+                                <span style="font-size:10px; color:#38bdf8; font-weight:800; text-transform:uppercase; display:block; margin-bottom:8px;">Semifinal 1 (Mesa ${partidoSemi1?.mesa || 1})</span>
+                                <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                                    <strong style="font-size:12px; color:#fff;">🥇 ${nomSemi1_j1}</strong>
+                                    <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800;">1° Gpo A</span>
                                 </div>
-                                <div style="display:flex; align-items:center;">
-                                    <span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>
-                                    ${!isFin ? `<span class="sets-badge">(${p.sets_j1 || 0})</span>` : ''}
+                                <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
+                                <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                                    <strong style="font-size:12px; color:#fff;">🥈 ${nomSemi1_j2}</strong>
+                                    <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">2° Gpo B</span>
                                 </div>
                             </div>
 
-                            <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
-                                <div>
-                                    <span class="jugador-nombre">${nomJ2}</span>
-                                    <span class="jugador-club">${p.j2?.club || ''} ${p.mostrar_ranking && ptsLiveJ2 ? `(${ptsLiveJ2} pts)` : ''}</span>
+                            <!-- CRUCE 2 -->
+                            <div style="background:rgba(0,0,0,0.4); padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); cursor:pointer;" onclick="abrirPartidoFullScreen(${partidoSemi2 ? partidoSemi2.id : 0})">
+                                <span style="font-size:10px; color:#f0abfc; font-weight:800; text-transform:uppercase; display:block; margin-bottom:8px;">Semifinal 2 (Mesa ${partidoSemi2?.mesa || 2})</span>
+                                <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                                    <strong style="font-size:12px; color:#fff;">🥇 ${nomSemi2_j1}</strong>
+                                    <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800;">1° Gpo B</span>
                                 </div>
-                                <div style="display:flex; align-items:center;">
-                                    <span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>
-                                    ${!isFin ? `<span class="sets-badge">(${p.sets_j2 || 0})</span>` : ''}
+                                <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
+                                <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                                    <strong style="font-size:12px; color:#fff;">🥈 ${nomSemi2_j2}</strong>
+                                    <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">2° Gpo A</span>
                                 </div>
                             </div>
-                        </div>
 
-                        ${proyeccionHtml}
-                        ${historialHtml}
+                            <!-- GRAN FINAL -->
+                            <div style="grid-column: 1 / -1; display:flex; justify-content:center; margin-top:10px;">
+                                <div style="background:rgba(245,158,11,0.1); padding:16px; border-radius:14px; border:1px solid rgba(245,158,11,0.3); width:100%; max-width:450px; cursor:pointer;" onclick="abrirPartidoFullScreen(${partidoFinal ? partidoFinal.id : 0})">
+                                    <span style="font-size:12px; color:#fbbf24; font-weight:900; text-transform:uppercase; display:block; margin-bottom:8px;">🏆 Gran Final (Mesa ${partidoFinal?.mesa || 1})</span>
+                                    <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                                        <strong style="font-size:14px; color:#fff;">🥇 ${nomFinal_j1}</strong>
+                                        <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">Gana Semi 1</span>
+                                    </div>
+                                    <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
+                                    <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                                        <strong style="font-size:14px; color:#fff;">🥈 ${nomFinal_j2}</strong>
+                                        <span style="font-size:9px; background:rgba(217,70,239,0.2); color:#d946ef; padding:2px 6px; border-radius:4px; font-weight:800;">Gana Semi 2</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
                     </div>
                 `;
             });
+        }
+
+        // ==========================================
+        // MÓDULO PANTALLA COMPLETA Y AUDIO ESPECTADOR
+        // ==========================================
+        function abrirPartidoFullScreen(partidoId) {
+            if (!partidoId || partidoId === 0) return;
+            activePartidoFullScreenId = partidoId;
+            document.getElementById('modal-fullscreen-partido').classList.remove('hidden');
+            document.getElementById('modal-fullscreen-partido').classList.add('flex');
+            actualizarModalFullScreen();
+        }
+
+        function cerrarPartidoFullScreen() {
+            activePartidoFullScreenId = null;
+            document.getElementById('modal-fullscreen-partido').classList.add('hidden');
+            document.getElementById('modal-fullscreen-partido').classList.remove('flex');
+        }
+
+        function actualizarModalFullScreen() {
+            if (!activePartidoFullScreenId) return;
+
+            const p = todosLosPartidos.find(item => item.id == activePartidoFullScreenId);
+            if (!p) return;
+
+            let est = (p.estado || '').toLowerCase();
+            let isFin = est === 'finalizado';
+
+            document.getElementById('fs-mesa-fase').innerText = `MESA ${p.mesa || 1} • ${p.grupo_nombre ? 'GRUPO ' + p.grupo_nombre : (p.ronda_fase || 'FASE FINAL')}`;
+            document.getElementById('fs-cat-nombre').innerText = `🏆 ${p.categorias?.nombre || 'CATEGORÍA'}`;
+
+            let nomJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
+            let nomJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
+
+            document.getElementById('fs-name-j1').innerText = nomJ1;
+            document.getElementById('fs-name-j2').innerText = nomJ2;
+            document.getElementById('fs-club-j1').innerText = p.j1?.club || 'Sin Club';
+            document.getElementById('fs-club-j2').innerText = p.j2?.club || 'Sin Club';
+
+            const scoreJ1 = isFin ? p.sets_j1 : p.puntos_j1 || 0;
+            const scoreJ2 = isFin ? p.sets_j2 : p.puntos_j2 || 0;
+
+            document.getElementById('fs-score-j1').innerText = scoreJ1;
+            document.getElementById('fs-score-j2').innerText = scoreJ2;
+            document.getElementById('fs-sets-j1').innerText = p.sets_j1 || 0;
+            document.getElementById('fs-sets-j2').innerText = p.sets_j2 || 0;
+
+            const finMatches = todosLosPartidos.filter(m => (m.estado || '').toLowerCase() === 'finalizado');
+            let ptsLiveJ1 = p.j1 ? calcularRankingEnVivo(p.j1.id, p.j1.puntos_ranking || 0, finMatches, p.id) : 0;
+            let ptsLiveJ2 = p.j2 ? calcularRankingEnVivo(p.j2.id, p.j2.puntos_ranking || 0, finMatches, p.id) : 0;
+
+            document.getElementById('fs-ranking-j1').innerText = p.mostrar_ranking && ptsLiveJ1 ? `${ptsLiveJ1} pts (En Vivo)` : '';
+            document.getElementById('fs-ranking-j2').innerText = p.mostrar_ranking && ptsLiveJ2 ? `${ptsLiveJ2} pts (En Vivo)` : '';
+
+            // Proyección
+            const proyBox = document.getElementById('fs-proyeccion-box');
+            if (p.mostrar_ranking && p.j1 && p.j2) {
+                let impacto = calcularImpacto(ptsLiveJ1, ptsLiveJ2);
+                proyBox.innerHTML = `
+                    📊 PROYECCIÓN DE RANKING:<br>
+                    ${p.j1.nombre}: <span class="text-emerald-400">+${impacto.j1G}</span> / <span class="text-rose-400">${impacto.j1P}</span> | 
+                    ${p.j2.nombre}: <span class="text-emerald-400">+${impacto.j2G}</span> / <span class="text-rose-400">${impacto.j2P}</span>
+                `;
+                proyBox.classList.remove('hidden');
+            } else {
+                proyeccionBox = proyBox.classList.add('hidden');
+            }
+
+            // Historial de Sets Modal
+            const fsListSets = document.getElementById('fs-list-sets');
+            fsListSets.innerHTML = '';
+            if (p.historial_sets && p.historial_sets.length > 0) {
+                p.historial_sets.forEach(s => {
+                    let c1 = s.s1 > s.s2 ? 'text-cyan-400' : 'text-zinc-400';
+                    let c2 = s.s2 > s.s1 ? 'text-fuchsia-400' : 'text-zinc-400';
+                    fsListSets.innerHTML += `
+                        <span class="bg-black/60 border border-white/10 px-3 py-1 rounded-lg text-xs font-bold">
+                            Set ${s.numSet}: <span class="${c1}">${s.s1}</span> - <span class="${c2}">${s.s2}</span>
+                        </span>
+                    `;
+                });
+            }
+
+            // Anuncio por voz al cambiar marcador en pantalla completa
+            let currentScoreStr = `${scoreJ1}-${scoreJ2}`;
+            if (lastAnnouncedScore !== currentScoreStr && !isFin) {
+                lastAnnouncedScore = currentScoreStr;
+                anunciarMarcadorEspectador(nomJ1, scoreJ1, nomJ2, scoreJ2);
+            }
+        }
+
+        function toggleAudioEspectador() {
+            audioMuted = !audioMuted;
+            document.getElementById('fs-btn-audio').innerHTML = audioMuted ? '<i class="fa-solid fa-volume-xmark text-rose-400"></i>' : '<i class="fa-solid fa-volume-high text-cyan-400"></i>';
+        }
+
+        function anunciarMarcadorEspectador(n1, s1, n2, s2) {
+            if (audioMuted || !window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            let texto = `${getApellido(n1)} ${s1}, ${getApellido(n2)} ${s2}`;
+            let u = new SpeechSynthesisUtterance(texto);
+            u.lang = 'es-MX';
+            window.speechSynthesis.speak(u);
+        }
+
+        function compartirPartidoWhatsAppActual() {
+            if (!activePartidoFullScreenId) return;
+            const p = todosLosPartidos.find(item => item.id == activePartidoFullScreenId);
+            if (!p) return;
+
+            let nomJ1 = p.j1 ? p.j1.nombre : 'J1';
+            let nomJ2 = p.j2 ? p.j2.nombre : 'J2';
+            let score1 = (p.estado || '').toLowerCase() === 'finalizado' ? p.sets_j1 : p.puntos_j1 || 0;
+            let score2 = (p.estado || '').toLowerCase() === 'finalizado' ? p.sets_j2 : p.puntos_j2 || 0;
+
+            const urlPartido = `${window.location.origin}/espectador.html?torneo=${idTorneoActivo}&partido=${p.id}`;
+            let textoWS = `🏓 *MARCADOR EN VIVO - PIXEL STUDIO* 🏓\n\n` +
+                          `🏆 Categoría: *${p.categorias?.nombre || 'Torneo'}*\n` +
+                          `📍 Mesa: *Mesa ${p.mesa || 1}*\n\n` +
+                          `👤 *${nomJ1}* (${score1})\n` +
+                          `👤 *${nomJ2}* (${score2})\n\n` +
+                          `Sigue los puntos en tiempo real ingresando aquí:\n👉 ${urlPartido}`;
+
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWS)}`, '_blank');
         }
 
         inicializarEspectador();
