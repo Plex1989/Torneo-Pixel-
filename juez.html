@@ -22,7 +22,7 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between p-3 md:p-6 bg-[#04060a]">
 
-    <!-- PANTALLA MODAL DE GANADOR (CON OPCIONES DE CORRECCIÓN) -->
+    <!-- PANTALLA MODAL DE GANADOR -->
     <div id="modal-ganador" class="hidden fixed inset-0 z-[100] bg-black/95 flex-col items-center justify-center">
         <img src="https://cdn-icons-png.flaticon.com/512/3112/3112946.png" class="w-32 h-32 md:w-40 md:h-40 mb-4 drop-shadow-[0_0_20px_rgba(251,191,36,0.8)] animate-pulse" alt="Trophy">
         <h1 class="text-3xl md:text-5xl font-black text-amber-400 uppercase tracking-widest mb-1 text-center drop-shadow-lg">¡PARTIDO FINALIZADO!</h1>
@@ -132,7 +132,7 @@
         let historialSets = [];
         let numSetActual = 1;
         let modoJuego = '3-5'; 
-        let setsParaGanar = 3; // Estricto
+        let setsParaGanar = 3;
         
         let isSwapped = false;
         let firstServersBySet = [1];
@@ -148,7 +148,6 @@
 
         async function inicializarJuez() {
             if (!partidoId) { alert("ID de partido no especificado."); return; }
-            
             try {
                 const { data: reglas } = await clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true });
                 reglasRanking = reglas || [];
@@ -167,7 +166,7 @@
                     .eq('id', partidoId)
                     .single();
 
-                if (error || !data) throw new Error("No se encontró el partido.");
+                if (error || !data) throw new Error("No se encontró el partido en la base de datos.");
                 partidoData = data;
 
                 if ((!data.jugador1_id || !data.jugador2_id) && (!data.grupo_nombre)) {
@@ -188,13 +187,11 @@
                 p1.sets = parseInt(data.sets_j1) || 0;
                 p2.sets = parseInt(data.sets_j2) || 0;
 
-                // CANDADO: Asegurar matemáticamente cuántos sets se ocupan (por defecto 3)
                 modoJuego = data.modo_juego || '3-5';
                 setsParaGanar = 3; 
                 if (modoJuego === '2-3') setsParaGanar = 2;
                 else if (modoJuego === '4-7') setsParaGanar = 4;
 
-                // LECTURA A PRUEBA DE BALAS DE HISTORIAL DE SETS
                 let hs = data.historial_sets;
                 if (typeof hs === 'string') {
                     try { hs = JSON.parse(hs); } catch(e) { hs = []; }
@@ -220,8 +217,8 @@
                 actualizarUI();
                 
             } catch (err) {
-                console.error("Crash en carga:", err);
-                alert("Error crítico cargando la base de datos de este partido.");
+                console.error("Detalle del error:", err);
+                alert("Error al cargar la base de datos de este partido: " + err.message);
             }
         }
 
@@ -313,16 +310,32 @@
                 }
                 p1.ptsLive = p1.ptsBase + deltaP1; p2.ptsLive = p2.ptsBase + deltaP2;
             } catch(e) {
-                console.error("Error en ranking en vivo:", e);
+                console.error("Error calculando ranking live:", e);
                 p1.ptsLive = p1.ptsBase; p2.ptsLive = p2.ptsBase;
             }
         }
 
+        // CORRECCIÓN CRÍTICA DE VARIABLE INEXISTENTE (favoritoEsJ1)
         function calcularImpactoPuntos(ptsA, ptsB) {
-            let diff = Math.abs(ptsA - ptsB); let favoritoEsJ1 = ptsA >= ptsB;
-            let reglaGanaJ1 = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((favoritoEsJ1 && r.resultado_esperado === 'gana_favorito') || (!favoritoEsJ1 && r.resultado_esperado === 'gana_retador')));
-            let reglaGanaJ2 = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((!favJ1 && r.resultado_esperado === 'gana_favorito') || (favJ1 && r.resultado_esperado === 'gana_retador')));
-            return { j1Gana: reglaGanaJ1 ? reglaGanaJ1.puntos_ganador : 10, j1Pierde: reglaGanaJ2 ? -Math.abs(reglaGanaJ2.puntos_perdedor) : -5, j2Gana: reglaGanaJ2 ? reglaGanaJ2.puntos_ganador : 10, j2Pierde: reglaGanaJ1 ? -Math.abs(reglaGanaJ1.puntos_perdedor) : -5 };
+            let diff = Math.abs(ptsA - ptsB); 
+            let favoritoEsJ1 = ptsA >= ptsB;
+            
+            let reglaGanaJ1 = reglasRanking.find(r => 
+                diff >= r.diferencia_min && diff <= r.diferencia_max && 
+                ((favoritoEsJ1 && r.resultado_esperado === 'gana_favorito') || (!favoritoEsJ1 && r.resultado_esperado === 'gana_retador'))
+            );
+            
+            let reglaGanaJ2 = reglasRanking.find(r => 
+                diff >= r.diferencia_min && diff <= r.diferencia_max && 
+                ((!favoritoEsJ1 && r.resultado_esperado === 'gana_favorito') || (favoritoEsJ1 && r.resultado_esperado === 'gana_retador'))
+            );
+            
+            return { 
+                j1Gana: reglaGanaJ1 ? reglaGanaJ1.puntos_ganador : 10, 
+                j1Pierde: reglaGanaJ2 ? -Math.abs(reglaGanaJ2.puntos_perdedor) : -5, 
+                j2Gana: reglaGanaJ2 ? reglaGanaJ2.puntos_ganador : 10, 
+                j2Pierde: reglaGanaJ1 ? -Math.abs(reglaGanaJ1.puntos_perdedor) : -5 
+            };
         }
 
         function getCurrentServer() {
@@ -355,8 +368,7 @@
             const { error } = await clienteSupabase.from('partidos').update({ mostrar_ranking: mostrarRankingImpacto }).eq('id', partidoId);
             
             if (error) {
-                console.error("Supabase rechazó guardar el ranking:", error);
-                alert("⚠️ AVISO: El botón visual funciona, pero Supabase lo borra al recargar la página.\n\nPara que se guarde de forma permanente, debes correr este comando en el SQL Editor de tu Supabase:\n\nALTER TABLE partidos ADD COLUMN IF NOT EXISTS mostrar_ranking boolean DEFAULT false;");
+                console.error("Aviso Supabase:", error);
             }
             
             actualizarUI();
@@ -409,7 +421,6 @@
         function addPointRight() { addPoint(isSwapped ? 1 : 2); }
 
         async function addPoint(jugadorOriginalNum) {
-            // BLOQUEO ABSOLUTO: Impide sumar puntos si el partido ya terminó.
             if (p1.sets >= setsParaGanar || p2.sets >= setsParaGanar || (partidoData && partidoData.estado === 'finalizado')) {
                 let ganadorFinal = (p1.sets > p2.sets) ? p1.nombre : p2.nombre;
                 if (partidoData && partidoData.ganador_id) {
@@ -495,13 +506,8 @@
             if (historyStack.length > 0) {
                 undo();
             } else {
-                // Modo manual de rollback si el historial se borró por refrescar pantalla
-                if (p1.id === partidoData.ganador_id) p1.sets = Math.max(0, p1.sets - 1);
-                else if (p2.id === partidoData.ganador_id) p2.sets = Math.max(0, p2.sets - 1);
-                else {
-                    if (p1.sets >= p2.sets) p1.sets = Math.max(0, p1.sets - 1);
-                    else p2.sets = Math.max(0, p2.sets - 1);
-                }
+                if (p1.sets >= setsParaGanar || p1.id === partidoData.ganador_id) p1.sets = Math.max(0, p1.sets - 1);
+                else p2.sets = Math.max(0, p2.sets - 1);
                 
                 p1.score = 0; p2.score = 0;
                 if (historialSets.length > 0) { historialSets.pop(); numSetActual = Math.max(1, numSetActual - 1); }
