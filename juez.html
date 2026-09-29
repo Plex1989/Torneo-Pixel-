@@ -137,7 +137,6 @@
         let modoJuego = '3-5'; 
         let setsParaGanar = 3;
         
-        // Controles Visuales Dinámicos
         let isSwapped = false;
         let firstServersBySet = [1];
         let audioMuted = false;
@@ -288,10 +287,25 @@
         }
 
         function calcularImpactoPuntos(ptsA, ptsB) {
-            let diff = Math.abs(ptsA - ptsB); let favoritoEsJ1 = ptsA >= ptsB;
-            let reglaGanaJ1 = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((favoritoEsJ1 && r.resultado_esperado === 'gana_favorito') || (!favoritoEsJ1 && r.resultado_esperado === 'gana_retador')));
-            let reglaGanaJ2 = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((!favJ1 && r.resultado_esperado === 'gana_favorito') || (favJ1 && r.resultado_esperado === 'gana_retador')));
-            return { j1Gana: reglaGanaJ1 ? reglaGanaJ1.puntos_ganador : 10, j1Pierde: reglaGanaJ2 ? -Math.abs(reglaGanaJ2.puntos_perdedor) : -5, j2Gana: reglaGanaJ2 ? reglaGanaJ2.puntos_ganador : 10, j2Pierde: reglaGanaJ1 ? -Math.abs(reglaGanaJ1.puntos_perdedor) : -5 };
+            let diff = Math.abs(ptsA - ptsB); 
+            let favJ1 = ptsA >= ptsB;
+            
+            let reglaGanaJ1 = reglasRanking.find(r => 
+                diff >= r.diferencia_min && diff <= r.diferencia_max && 
+                ((favJ1 && r.resultado_esperado === 'gana_favorito') || (!favJ1 && r.resultado_esperado === 'gana_retador'))
+            );
+            
+            let reglaGanaJ2 = reglasRanking.find(r => 
+                diff >= r.diferencia_min && diff <= r.diferencia_max && 
+                ((!favJ1 && r.resultado_esperado === 'gana_favorito') || (favJ1 && r.resultado_esperado === 'gana_retador'))
+            );
+            
+            return { 
+                j1Gana: reglaGanaJ1 ? reglaGanaJ1.puntos_ganador : 10, 
+                j1Pierde: reglaGanaJ2 ? -Math.abs(reglaGanaJ2.puntos_perdedor) : -5, 
+                j2Gana: reglaGanaJ2 ? reglaGanaJ2.puntos_ganador : 10, 
+                j2Pierde: reglaGanaJ1 ? -Math.abs(reglaGanaJ1.puntos_perdedor) : -5 
+            };
         }
 
         function getCurrentServer() {
