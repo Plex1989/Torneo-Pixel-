@@ -67,7 +67,6 @@
 
         .card-score-fs { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(15px); border-radius: 24px; }
 
-        /* Estilos del Modal Expediente */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .modal-card { background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; width: 100%; max-width: 520px; padding: 24px; color: white; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
     </style>
@@ -158,6 +157,7 @@
         </div>
     </div>
 
+    <!-- HEADER GENERAL -->
     <div class="header">
         <p style="color:#a855f7; font-weight:800; font-size:10px; text-transform:uppercase; margin:0 0 4px 0;">Transmisión en Tiempo Real para Fans</p>
         <h1 id="torneo-nombre-header">CARTELERA DE MARCADORES</h1>
@@ -227,7 +227,7 @@
             const { data: reglas } = await clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true });
             reglasRankingList = reglas || [];
 
-            await cargarMarcadores();
+            cargarMarcadores();
 
             if (partidoUrlId) {
                 abrirPartidoFullScreen(partidoUrlId);
@@ -420,11 +420,11 @@
                         j2.setsG += (m.sets_j2 || 0); j2.setsP += (m.sets_j1 || 0);
 
                         if (m.ganador_id === m.jugador1_id) {
-                            j1.pg += 1; j1.pts += 2; // 2 pts victoria
-                            j2.pp += 1; j2.pts += 1; // 1 pt derrota
+                            j1.pg += 1; j1.pts += 2;
+                            j2.pp += 1; j2.pts += 1;
                         } else if (m.ganador_id === m.jugador2_id) {
-                            j2.pg += 1; j2.pts += 2; // 2 pts victoria
-                            j1.pp += 1; j1.pts += 1; // 1 pt derrota
+                            j2.pg += 1; j2.pts += 2;
+                            j1.pp += 1; j1.pts += 1;
                         }
                     }
                 }
@@ -451,9 +451,6 @@
             return fallbackText;
         }
 
-        // ==========================================
-        // FUNCIONES DE EXPEDIENTE JUGADOR
-        // ==========================================
         function abrirModalJugadorAdmin(jugadorId, nombre, club) {
             document.getElementById('modal-jugador-nombre').innerText = nombre;
             document.getElementById('modal-jugador-club').innerText = club || 'Sin Club';
@@ -489,7 +486,7 @@
                     let historialText = '';
                     if (p.historial_sets && Array.isArray(p.historial_sets) && p.historial_sets.length > 0) {
                         let parciales = p.historial_sets.map(s => esJ1 ? `${s.s1}-${s.s2}` : `${s.s2}-${s.s1}`);
-                        historialText = `<div style="font-size:10px; color:#94a3b8; margin-top:6px; font-weight:700;">Parciales por Set: ${parciales.join(', ')}</div>`;
+                        historialText = `<div style="font-size:10px; color:#94a3b8; margin-top:6px; font-weight:700;">Parciales: ${parciales.join(', ')}</div>`;
                     }
 
                     html += `
@@ -588,27 +585,45 @@
 
                     let rDetails = calcularDetallesRankingPartido(p, finMatches);
 
-                    let txtRankJ1 = '';
-                    let txtRankJ2 = '';
+                    let txtRankJ1 = isFin ? `${rDetails.ptsFinalJ1} pts (${rDetails.deltaJ1 >= 0 ? '+' + rDetails.deltaJ1 : rDetails.deltaJ1})` : `${rDetails.ptsPrevJ1} pts`;
+                    let txtRankJ2 = isFin ? `${rDetails.ptsFinalJ2} pts (${rDetails.deltaJ2 >= 0 ? '+' + rDetails.deltaJ2 : rDetails.deltaJ2})` : `${rDetails.ptsPrevJ2} pts`;
 
-                    if (p.mostrar_ranking) {
-                        txtRankJ1 = `<small style="font-size:9px; color:#38bdf8; display:block;">${isFin ? rDetails.ptsFinalJ1 + ' pts' : rDetails.ptsPrevJ1 + ' pts'}</small>`;
-                        txtRankJ2 = `<small style="font-size:9px; color:#f0abfc; display:block;">${isFin ? rDetails.ptsFinalJ2 + ' pts' : rDetails.ptsPrevJ2 + ' pts'}</small>`;
+                    let proyeccionHtml = '';
+                    if (p.mostrar_ranking && p.j1 && p.j2) {
+                        if (isFin) {
+                            proyeccionHtml = `
+                                <div class="proyeccion-bar" style="border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.1); color:#34d399;">
+                                    📈 Resultado de Ranking Final:<br>
+                                    ${p.j1.nombre.split(' ')[0]}: <strong>${rDetails.deltaJ1 >= 0 ? '+' + rDetails.deltaJ1 : rDetails.deltaJ1}</strong> | 
+                                    ${p.j2.nombre.split(' ')[0]}: <strong>${rDetails.deltaJ2 >= 0 ? '+' + rDetails.deltaJ2 : rDetails.deltaJ2}</strong>
+                                </div>
+                            `;
+                        } else {
+                            proyeccionHtml = `
+                                <div class="proyeccion-bar">
+                                    📊 Proyección de Ranking:<br>
+                                    ${p.j1.nombre.split(' ')[0]}: <span style="color:#34d399;">+${rDetails.impacto.j1G}</span> / <span style="color:#f87171;">${rDetails.impacto.j1P}</span> | 
+                                    ${p.j2.nombre.split(' ')[0]}: <span style="color:#34d399;">+${rDetails.impacto.j2G}</span> / <span style="color:#f87171;">${rDetails.impacto.j2P}</span>
+                                </div>
+                            `;
+                        }
                     }
 
-                    let opacidadClass = isFin ? 'card-finalizado' : (isVivo ? 'vivo' : '');
+                    let historialHtml = '';
+                    if (p.historial_sets && p.historial_sets.length > 0) {
+                        historialHtml = `<div class="sets-history">`;
+                        p.historial_sets.forEach(s => {
+                            let c1 = s.s1 > s.s2 ? '#22d3ee' : '#64748b';
+                            let c2 = s.s2 > s.s1 ? '#e879f9' : '#64748b';
+                            historialHtml += `<div class="set-chip">Set ${s.numSet}: <span style="color:${c1}">${s.s1}</span> - <span style="color:${c2}">${s.s2}</span></div>`;
+                        });
+                        historialHtml += `</div>`;
+                    }
+
                     let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
 
-                    let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : '';
-                    let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
-                    
-                    if (isVivo) {
-                        score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`;
-                        score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`;
-                    }
-
                     container.innerHTML += `
-                        <div class="card-mesa ${opacidadClass}" onclick="abrirPartidoFullScreen(${p.id})">
+                        <div class="card-mesa ${isVivo ? 'vivo' : (isFin ? 'finalizado' : '')}" onclick="abrirPartidoFullScreen(${p.id})">
                             <div class="top-bar">
                                 <span class="mesa-title">MESA ${p.mesa || 1}</span>
                                 ${badgeEst}
@@ -624,50 +639,35 @@
                                 <div class="jugador-box">
                                     <div>
                                         <span class="jugador-nombre">${iconJ1}${nomJ1}</span>
-                                        ${txtRankJ1}
+                                        <span class="jugador-club">${p.j1?.club || ''} ${p.mostrar_ranking ? `(${txtRankJ1})` : ''}</span>
                                     </div>
                                     <div style="display:flex; align-items:center;">
-                                        ${score1}
+                                        <span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>
+                                        ${!isFin ? `<span class="sets-badge">(${p.sets_j1 || 0})</span>` : ''}
                                     </div>
                                 </div>
 
                                 <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
                                     <div>
                                         <span class="jugador-nombre">${iconJ2}${nomJ2}</span>
-                                        ${txtRankJ2}
+                                        <span class="jugador-club">${p.j2?.club || ''} ${p.mostrar_ranking ? `(${txtRankJ2})` : ''}</span>
                                     </div>
                                     <div style="display:flex; align-items:center;">
-                                        ${score2}
+                                        <span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>
+                                        ${!isFin ? `<span class="sets-badge">(${p.sets_j2 || 0})</span>` : ''}
                                     </div>
                                 </div>
                             </div>
 
-                            ${p.mostrar_ranking ? (isFin ? `
-                                <div class="proyeccion-bar" style="border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.1); color:#34d399;">
-                                    📈 Resultado de Ranking Final:<br>
-                                    ${p.j1.nombre.split(' ')[0]}: <strong>${rDetails.deltaJ1 >= 0 ? '+' + rDetails.deltaJ1 : rDetails.deltaJ1}</strong> | 
-                                    ${p.j2.nombre.split(' ')[0]}: <strong>${rDetails.deltaJ2 >= 0 ? '+' + rDetails.deltaJ2 : rDetails.deltaJ2}</strong>
-                                </div>
-                            ` : `
-                                <div class="proyeccion-bar">
-                                    📊 Proyección de Ranking:<br>
-                                    ${p.j1.nombre.split(' ')[0]}: <span style="color:#34d399;">+${rDetails.impacto.j1G}</span> / <span style="color:#f87171;">${rDetails.impacto.j1P}</span> | 
-                                    ${p.j2.nombre.split(' ')[0]}: <span style="color:#34d399;">+${rDetails.impacto.j2G}</span> / <span style="color:#f87171;">${rDetails.impacto.j2P}</span>
-                                </div>
-                            `) : ''}
-                            
-                            ${p.historial_sets && p.historial_sets.length > 0 ? `
-                                <div class="sets-history">
-                                    ${p.historial_sets.map(s => `<div class="set-chip">Set ${s.numSet}: <span style="color:${s.s1 > s.s2 ? '#22d3ee' : '#64748b'}">${s.s1}</span> - <span style="color:${s.s2 > s.s1 ? '#e879f9' : '#64748b'}">${s.s2}</span></div>`).join('')}
-                                </div>
-                            ` : ''}
+                            ${proyeccionHtml}
+                            ${historialHtml}
                         </div>
                     `;
                 });
             });
 
             if (mesaFiltro === 'todas') {
-                dibujarLlavesInferiores(container, finMatches);
+                dibujarLlavesInferiores(container);
             }
         }
 
@@ -683,11 +683,6 @@
 
             let score1 = isFin || isVivo ? `<span class="score-big ml-3 text-lg">${isFin ? partido.sets_j1 : (partido.puntos_j1 || 0)}</span>` : '';
             let score2 = isFin || isVivo ? `<span class="score-big p2 ml-3 text-lg">${isFin ? partido.sets_j2 : (partido.puntos_j2 || 0)}</span>` : '';
-
-            if (isVivo) {
-                score1 += `<span class="sets-badge">(${partido.sets_j1 || 0})</span>`;
-                score2 += `<span class="sets-badge">(${partido.sets_j2 || 0})</span>`;
-            }
 
             let win1 = isFin && partido.ganador_id === partido.jugador1_id;
             let win2 = isFin && partido.ganador_id === partido.jugador2_id;
