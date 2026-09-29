@@ -165,7 +165,6 @@
             display: none;
         }
 
-        /* ESTILO PARA EL JUGADOR SELECCIONADO */
         .banner-jugador-seleccionado {
             display: none; 
             background: rgba(16, 185, 129, 0.1); 
@@ -193,7 +192,7 @@
         <!-- BOTÓN GENERAL "SOY NUEVO" -->
         <button id="btn-abrir-nuevo" class="btn-secondary" style="width: 100%; padding: 12px; font-size: 11px; margin-bottom: 20px; border-color: #06b6d4; color: #38bdf8;" onclick="abrirNuevoJugador()">➕ SOY NUEVO JUGADOR (CREAR PERFIL)</button>
 
-        <!-- SECCIÓN REGISTRO DE NUEVO JUGADOR (OCULTA HASTA HACER CLIC) -->
+        <!-- SECCIÓN REGISTRO DE NUEVO JUGADOR -->
         <div id="caja-nuevo-jugador" class="seccion-plegable" style="margin-top: 0;">
             <div style="font-size: 12px; font-weight: 800; color: #38bdf8; margin-bottom: 15px; text-transform: uppercase; text-align:center;">➕ Registro de Nuevo Jugador</div>
             <p style="font-size: 11px; color:#94a3b8; text-align:center; margin-bottom: 15px; line-height: 1.5;">Ingresa tus datos para integrarte a la base de datos. El administrador validará tu perfil y te asignará tu ranking inicial.</p>
@@ -206,7 +205,7 @@
             <button class="btn-secondary" style="width: 100%; margin-top:10px; border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.1);" onclick="cerrarNuevoJugador()">❌ Cancelar y Volver al Buscador</button>
         </div>
 
-        <!-- BLOQUE PRINCIPAL (SE OCULTA AL CREAR NUEVO JUGADOR) -->
+        <!-- BLOQUE PRINCIPAL -->
         <div id="bloque-principal">
             
             <label style="margin-top:0;">1. Busca y selecciona tu nombre:</label>
@@ -222,7 +221,7 @@
                 <button class="btn-secondary" style="border-color: #fbbf24; color: #fbbf24;" onclick="abrirCambioNip()">🔑 Cambiar mi NIP</button>
             </div>
 
-            <!-- SECCIÓN CAMBIO DE NIP (BLOQUEA LA INSCRIPCIÓN MIENTRAS ESTÉ ABIERTA) -->
+            <!-- SECCIÓN CAMBIO DE NIP -->
             <div id="caja-cambiar-nip" class="seccion-plegable">
                 <div style="font-size: 11px; font-weight: 800; color: #fbbf24; margin-bottom: 15px; text-transform: uppercase; text-align:center;">
                     🔑 Modificando NIP de:<br><span id="nombre-cambio-nip" style="color:#ffffff; font-size:14px; display:block; margin-top:6px;"></span>
@@ -234,7 +233,7 @@
                 <button class="btn-secondary" style="width: 100%; margin-top:10px; border-color: #64748b; color: #94a3b8;" onclick="cerrarCambioNip()">Cancelar Edición</button>
             </div>
 
-            <!-- BLOQUE DE INSCRIPCIÓN (SE OCULTA SI ESTÁ CAMBIANDO NIP) -->
+            <!-- BLOQUE DE INSCRIPCIÓN -->
             <div id="bloque-inscripcion">
                 <div id="info-puntos"></div>
                 <div id="info-inscripciones"></div>
@@ -275,6 +274,7 @@
         let torneoActivo = null;
         let todosLosJugadores = [], todasLasCategorias = [], todasLasInscripciones = [], todosLosClubs = [];
         let programacionCategoriasNube = [];
+        let categoriasCerradasSet = new Set(); // Guarda las categorías que ya tienen partidos creados/en curso
 
         async function inicializar() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -317,6 +317,19 @@
                 return;
             }
 
+            // CARGAR Y DETECTAR CATEGORÍAS CERRADAS (PARTIDOS YA GENERADOS / EN CURSO)
+            const { data: partidosData } = await clienteSupabase
+                .from('partidos')
+                .select('categoria_id')
+                .eq('torneo_id', torneoActivo.id);
+
+            categoriasCerradasSet.clear();
+            if (partidosData && partidosData.length > 0) {
+                partidosData.forEach(p => {
+                    if (p.categoria_id) categoriasCerradasSet.add(p.categoria_id);
+                });
+            }
+
             const [resJugadores, resCategorias, resInscripciones, resClubs] = await Promise.all([
                 clienteSupabase.from('jugadores').select('*').order('nombre', { ascending: true }),
                 clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true }),
@@ -339,7 +352,6 @@
             todosLosClubs.forEach(c => select.innerHTML += `<option value="${c.nombre}">${c.nombre}</option>`);
         }
 
-        // CONTROL DE PANELES (ISOLATION UX)
         function abrirNuevoJugador() {
             document.getElementById('bloque-principal').style.display = 'none';
             document.getElementById('caja-nuevo-jugador').style.display = 'block';
@@ -394,7 +406,6 @@
             const tarjetaPendiente = document.getElementById('tarjeta-pendiente-ranking');
             const bannerJugador = document.getElementById('banner-jugador-seleccionado');
             
-            // RESETEAR PANELES
             cerrarCambioNip(); 
 
             if (!idSeleccionado) {
@@ -413,12 +424,10 @@
             const jugador = todosLosJugadores.find(j => j.id == idSeleccionado);
             const pts = jugador.puntos_ranking;
 
-            // MOSTRAR BANNER DE JUGADOR SELECCIONADO
             document.getElementById('texto-jugador-seleccionado').innerText = jugador.nombre;
             document.getElementById('nombre-cambio-nip').innerText = jugador.nombre;
             bannerJugador.style.display = 'block';
 
-            // JUGADOR CON 0 PUNTOS (ESPERANDO APROBACIÓN ADMIN)
             if (pts === 0) {
                 infoPuntos.innerText = `Estado: Perfil Nuevo (Sin Clasificación Oficial) | Club: ${jugador.club || 'Sin Club'}`;
                 selectCategoria.innerHTML = '<option value="" disabled selected>⏳ En espera de asignación de ranking por el Administrador</option>';
@@ -430,7 +439,6 @@
                 return;
             }
 
-            // JUGADOR YA CLASIFICADO CON PUNTOS > 0
             tarjetaPendiente.style.display = 'none';
             infoPuntos.innerText = `Ranking actual: ${pts} pts | Club: ${jugador.club || 'Sin Club'}`;
 
@@ -449,6 +457,7 @@
                 const nombreCatLower = cat.nombre.toLowerCase();
                 const esLibre = nombreCatLower === 'libre';
                 const esPrimera = nombreCatLower.includes('primera');
+                const esCerrada = categoriasCerradasSet.has(cat.id); // Candado de categoría iniciada
 
                 let permitido = false;
 
@@ -462,7 +471,9 @@
 
                 if (permitido) {
                     if (misInscripciones.includes(cat.id)) {
-                        htmlOpciones += `<option value="${cat.id}" disabled>${cat.nombre} (Ya inscrito)</option>`;
+                        htmlOpciones += `<option value="${cat.id}" disabled>✅ ${cat.nombre} (Ya inscrito)</option>`;
+                    } else if (esCerrada) {
+                        htmlOpciones += `<option value="${cat.id}" disabled>🔒 ${cat.nombre} (Inscripciones Cerradas - En Curso)</option>`;
                     } else {
                         htmlOpciones += `<option value="${cat.id}">${cat.nombre}</option>`;
                         opcionesDisponibles++;
@@ -470,7 +481,7 @@
                 }
             });
 
-            selectCategoria.innerHTML = opcionesDisponibles === 0 ? '<option value="">No cumples el ranking para más categorías</option>' : htmlOpciones;
+            selectCategoria.innerHTML = opcionesDisponibles === 0 ? '<option value="">No hay categorías disponibles abiertas para tu ranking</option>' : htmlOpciones;
             selectCategoria.disabled = false;
             
             selectCategoria.onchange = () => {
@@ -522,7 +533,7 @@
             const { data, error } = await clienteSupabase.from('jugadores').insert([{
                 nombre: nombre,
                 club: club,
-                puntos_ranking: 0, // Se registra con 0 para requerir aprobación
+                puntos_ranking: 0,
                 nip_seguridad: nip
             }]).select();
 
