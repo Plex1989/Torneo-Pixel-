@@ -2,17 +2,16 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Transmisión en Vivo - Pixel Studio</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Central de Mesas - Arbitraje Digital</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 15px; background-color: #04060a; color: #f8fafc; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
-        .font-digital { font-family: 'Orbitron', sans-serif; }
         
         body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
         body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
@@ -31,8 +30,7 @@
 
         .grid-espectador { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; max-width: 1200px; margin: auto; }
 
-        .card-mesa { background: rgba(10, 15, 26, 0.7); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 4px solid #0e7490; padding: 18px; position: relative; transition: all 0.3s ease; cursor: pointer; }
-        .card-mesa:hover { transform: translateY(-3px); border-color: rgba(255,255,255,0.2); }
+        .card-mesa { background: rgba(10, 15, 26, 0.7); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 4px solid #0e7490; padding: 18px; position: relative; transition: all 0.3s ease; }
         .card-mesa.vivo { border-bottom-color: #34d399 !important; box-shadow: 0 0 25px rgba(52, 211, 153, 0.15); }
         .card-mesa.finalizado { border-bottom-color: #64748b !important; opacity: 0.85; }
 
@@ -45,47 +43,33 @@
         .est-curso { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; }
         .est-fin { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); color: #94a3b8; }
 
-        .score-container { background: rgba(0,0,0,0.4); border-radius: 14px; padding: 12px 16px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.03); }
+        .score-container { background: rgba(0,0,0,0.4); border-radius: 14px; padding: 12px 16px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.03); }
         .jugador-box { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
         .jugador-nombre { font-size: 13px; font-weight: 800; color: #ffffff; cursor: pointer; transition: color 0.2s; }
         .jugador-nombre:hover { color: #38bdf8; }
+        .jugador-club { font-size: 10px; color: #64748b; font-weight: 600; display: block; }
         .score-big { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 900; color: #06b6d4; }
         .score-big.p2 { color: #d946ef; }
-
         .sets-badge { font-size: 10px; font-weight: 800; color: #94a3b8; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 6px; margin-left: 6px; }
 
-        .proyeccion-bar { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 10px; padding: 8px 12px; margin-top: 10px; text-align: center; font-size: 10px; font-weight: 800; color: #fbbf24; }
-
-        .sets-history { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.08); }
-        .set-chip { font-size: 9px; background: rgba(0,0,0,0.5); padding: 3px 8px; border-radius: 6px; font-weight: 800; border: 1px solid rgba(255,255,255,0.05); }
+        .btn-arbitrar { width: 100%; padding: 12px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; border-radius: 9999px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; }
+        .btn-arbitrar:hover { background: #f59e0b; color: #000000; box-shadow: 0 0 20px rgba(245, 158, 11, 0.6); }
+        .btn-reabrir { background: rgba(148, 163, 184, 0.1) !important; border: 1px solid rgba(148, 163, 184, 0.4) !important; color: #94a3b8 !important; }
+        .btn-reabrir:hover { background: rgba(148, 163, 184, 0.2) !important; color: #ffffff !important; box-shadow: none !important; }
 
         .header-hora { grid-column: 1 / -1; font-size: 12px; color: #38bdf8; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid rgba(56, 189, 248, 0.3); padding-bottom: 6px; margin-top: 15px; margin-bottom: 5px; letter-spacing: 1.5px; }
 
         .seccion-llaves-footer { grid-column: 1 / -1; margin-top: 20px; background: rgba(10, 15, 26, 0.85); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 20px; padding: 20px; backdrop-filter: blur(15px); }
-
         .mensaje-vacio { text-align: center; color: #475569; font-style: italic; grid-column: 1/-1; padding: 40px; }
 
-        .card-score-fs { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(15px); border-radius: 24px; }
-
-        /* Estilos del Modal Expediente */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .modal-card { background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; width: 100%; max-width: 520px; padding: 24px; color: white; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-
-        @media print {
-            body { background: #ffffff !important; color: #000000 !important; }
-            body::before, body::after, .header, .scrolling-bar, .no-print { display: none !important; }
-            .print-only { display: block !important; }
-            .glass-panel, .glass-card, .card-mesa { background: #ffffff !important; border: 1px solid #cbd5e1 !important; color: #000 !important; page-break-inside: avoid; box-shadow: none !important; }
-            * { color: #000 !important; text-shadow: none !important; }
-            .badge-ascenso { background: #dcfce7 !important; color: #15803d !important; border: 1px solid #86efac !important; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-        }
     </style>
 </head>
 <body>
 
-    <!-- MODAL EXPEDIENTE COMPLETO CON RANKING -->
     <div id="modal-jugador-admin" class="modal-overlay no-print" style="display: none;">
-        <div class="modal-card relative">
+        <div class="modal-card">
             <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
                 <div>
                     <h3 id="modal-jugador-nombre" style="margin: 0; color: #38bdf8; font-size: 16px; font-weight: 800; text-transform: uppercase;"></h3>
@@ -106,98 +90,35 @@
         </div>
     </div>
 
-    <!-- MODAL PANTALLA COMPLETA PARTIDO ESPECTADOR -->
-    <div id="modal-fullscreen-partido" class="fixed inset-0 z-[100] bg-[#04060a] p-4 flex-col justify-between overflow-y-auto no-print" style="display: none;">
-        
-        <div class="flex justify-between items-center bg-slate-900/80 p-3 rounded-2xl border border-white/10 shrink-0">
-            <button onclick="cerrarPartidoFullScreen()" class="bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest text-white transition-colors">
-                <i class="fa-solid fa-arrow-left mr-1"></i> Volver a Cartelera
-            </button>
-
-            <div class="text-center">
-                <span id="fs-mesa-fase" class="text-xs font-black text-cyan-400 uppercase tracking-widest block">MESA -- • FASE</span>
-                <span id="fs-cat-nombre" class="text-[9px] text-amber-400 font-extrabold uppercase">CATEGORÍA</span>
-            </div>
-
-            <div class="flex items-center gap-2">
-                <button onclick="compartirPartidoWhatsAppActual()" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all hover:bg-emerald-500 hover:text-black">
-                    <i class="fa-brands fa-whatsapp text-sm mr-1"></i> <span class="hidden md:inline">Compartir</span>
-                </button>
-                <button id="fs-btn-audio" onclick="toggleAudioEspectador()" class="bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 w-9 h-9 rounded-full flex items-center justify-center text-xs">
-                    <i class="fa-solid fa-volume-high"></i>
-                </button>
-            </div>
-        </div>
-
-        <div class="flex-1 flex flex-col md:flex-row gap-4 my-4 min-h-0">
-            <div class="flex-1 flex flex-col min-h-0">
-                <div class="bg-cyan-600/30 border border-cyan-500/40 p-4 rounded-2xl mb-2 text-center">
-                    <h2 id="fs-name-j1" class="text-xl md:text-3xl font-black uppercase tracking-wider text-white truncate cursor-pointer hover:text-cyan-300 transition-colors">JUGADOR 1</h2>
-                    <span id="fs-club-j1" class="text-xs text-zinc-400 font-bold block">CLUB</span>
-                    <div id="fs-ranking-j1" class="text-xs font-extrabold text-cyan-300 mt-1">-- pts</div>
-                </div>
-                
-                <div class="flex-1 card-score-fs border-t-4 border-cyan-500 flex flex-col items-center justify-center p-4 relative">
-                    <div id="fs-winner-icon1" class="hidden absolute top-4 right-4 text-4xl text-amber-400 animate-pulse">🏆</div>
-                    <div id="fs-score-j1" class="font-digital text-[20vh] md:text-[32vh] font-black leading-none text-cyan-400 select-none">0</div>
-                    <div class="text-sm font-extrabold text-zinc-400 uppercase tracking-widest mt-2">Sets Ganados: <span id="fs-sets-j1" class="text-white font-digital text-2xl font-black ml-2">0</span></div>
-                </div>
-            </div>
-
-            <div class="flex md:flex-col justify-center items-center shrink-0">
-                <span class="font-digital font-black text-2xl text-zinc-600">VS</span>
-            </div>
-
-            <div class="flex-1 flex flex-col min-h-0">
-                <div class="bg-fuchsia-600/30 border border-fuchsia-500/40 p-4 rounded-2xl mb-2 text-center">
-                    <h2 id="fs-name-j2" class="text-xl md:text-3xl font-black uppercase tracking-wider text-white truncate cursor-pointer hover:text-fuchsia-300 transition-colors">JUGADOR 2</h2>
-                    <span id="fs-club-j2" class="text-xs text-zinc-400 font-bold block">CLUB</span>
-                    <div id="fs-ranking-j2" class="text-xs font-extrabold text-fuchsia-300 mt-1">-- pts</div>
-                </div>
-                
-                <div class="flex-1 card-score-fs border-t-4 border-fuchsia-500 flex flex-col items-center justify-center p-4 relative">
-                    <div id="fs-winner-icon2" class="hidden absolute top-4 right-4 text-4xl text-amber-400 animate-pulse">🏆</div>
-                    <div id="fs-score-j2" class="font-digital text-[20vh] md:text-[32vh] font-black leading-none text-fuchsia-400 select-none">0</div>
-                    <div class="text-sm font-extrabold text-zinc-400 uppercase tracking-widest mt-2">Sets Ganados: <span id="fs-sets-j2" class="text-white font-digital text-2xl font-black ml-2">0</span></div>
-                </div>
-            </div>
-        </div>
-
-        <div class="shrink-0 flex flex-col gap-2">
-            <div id="fs-proyeccion-box" class="hidden bg-amber-500/10 border border-amber-500/30 text-amber-400 p-3 rounded-2xl text-center text-xs font-bold"></div>
-
-            <div class="bg-slate-900/80 p-3 rounded-2xl border border-white/10 flex justify-center items-center gap-3 flex-wrap">
-                <span class="text-xs font-bold text-zinc-400 uppercase tracking-widest">Historial de Sets:</span>
-                <div id="fs-list-sets" class="flex gap-2 flex-wrap"></div>
+    <div class="header">
+        <p style="color:#06b6d4; font-weight:800; font-size:10px; text-transform:uppercase; margin:0 0 4px 0;">Portal de Arbitraje Oficial</p>
+        <div class="flex justify-center items-center gap-4">
+            <h1 id="nombre-torneo" class="m-0">CENTRAL DE MESAS</h1>
+            <div id="badge-espectadores" class="hidden bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest items-center gap-1" title="Espectadores en vivo">
+                <i class="fa-solid fa-eye animate-pulse"></i> <span id="contador-espectadores">0</span>
             </div>
         </div>
     </div>
 
-    <!-- HEADER GENERAL -->
-    <div class="header no-print">
-        <p style="color:#a855f7; font-weight:800; font-size:10px; text-transform:uppercase; margin:0 0 4px 0;">Transmisión en Tiempo Real para Fans</p>
-        <h1 id="torneo-nombre-header">CARTELERA DE MARCADORES</h1>
-    </div>
-
-    <div class="scrolling-bar no-print" id="bar-categorias" style="margin-bottom:6px;">
+    <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">🏆 Filtrar por Categoría:</div>
+    <div class="scrolling-bar" id="bar-categorias">
         <button class="btn-filter-pill btn-cat-pill active" onclick="filtrarCategoria('todas')">Todas las Categorías</button>
     </div>
 
-    <div class="scrolling-bar no-print">
+    <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">📌 Estado de Juego / Vista:</div>
+    <div class="scrolling-bar">
         <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Todos</button>
         <button class="btn-filter-pill" id="tab-vivo" onclick="filtrarEstado('en_curso')">🔴 En Vivo</button>
         <button class="btn-filter-pill" id="tab-pendientes" onclick="filtrarEstado('pendiente')">⏳ Pendientes</button>
         <button class="btn-filter-pill" id="tab-finalizados" onclick="filtrarEstado('finalizado')">🏁 Finalizados</button>
         <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')">📊 Resumen y Llaves</button>
-        <button class="btn-filter-pill" id="tab-ranking" onclick="filtrarEstado('ranking')" style="border-color:#a855f7; color:#c084fc;">🏆 Ranking Global</button>
     </div>
 
-    <div class="scrolling-bar no-print" id="bar-mesas">
+    <div class="scrolling-bar" id="bar-mesas">
         <button class="btn-filter-pill active" onclick="filtrarMesa('todas')">Todas las Mesas</button>
     </div>
 
-    <!-- AQUÍ SE CORRIGIÓ EL ID PARA EVITAR EL CRASH -->
-    <div class="grid-espectador" id="contenedor-espectador">
+    <div class="grid-espectador" id="contenedor-partidos">
         <div class="mensaje-vacio">Cargando marcadores en vivo...</div>
     </div>
 
@@ -206,24 +127,17 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        const urlParams = new URLSearchParams(window.location.search);
-        let idTorneoActivo = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id') || 1;
-        let partidoUrlId = urlParams.get('partido');
-
+        let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
         let todosLosPartidos = [];
-        let reglasRankingList = [];
-        let todasLasCategorias = [];
-        let todosLosJugadores = [];
-        let bonoPaseActivo = false;
-        let bonoPaseValor = 0;
-
         let mesaFiltro = 'todas';
         let estadoFiltro = 'todos';
         let categoriaFiltro = 'todas';
-
-        let activePartidoFullScreenId = null;
-        let audioMuted = false;
-        let lastAnnouncedScore = "";
+        let pinJuecesActual = "1234";
+        let canalEspectadores = null;
+        
+        let reglasRankingList = [];
+        let bonoPaseActivo = false;
+        let bonoPaseValor = 0;
 
         const obtenerEstiloCategoria = (catId) => {
             const paleta = [
@@ -235,69 +149,68 @@
             return paleta[(catId || 0) % paleta.length];
         };
 
-        const getApellido = (nom) => {
-            if (!nom) return "";
-            const partes = nom.trim().split(" ");
-            return partes[partes.length - 1];
-        };
-
-        async function inicializarEspectador() {
+        async function inicializar() {
             try {
-                const [resTorneo, resReglas, resConfig, resCat, resJugadores] = await Promise.allSettled([
-                    clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).single(),
+                const [resTorneo, resReglas, resConfig] = await Promise.allSettled([
+                    clienteSupabase.from('torneos').select('nombre, pin_jueces').eq('id', idTorneoActivo).single(),
                     clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true }),
-                    clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').single(),
-                    clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: false }),
-                    clienteSupabase.from('jugadores').select('*').order('puntos_ranking', { ascending: false })
+                    clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').single()
                 ]);
 
                 if (resTorneo.status === 'fulfilled' && resTorneo.value.data) {
-                    document.getElementById('torneo-nombre-header').innerText = resTorneo.value.data.nombre;
+                    document.getElementById('nombre-torneo').innerText = resTorneo.value.data.nombre;
+                    if (resTorneo.value.data.pin_jueces) pinJuecesActual = resTorneo.value.data.pin_jueces;
                 }
 
                 reglasRankingList = resReglas.status === 'fulfilled' ? (resReglas.value.data || []) : [];
-                todasLasCategorias = resCat.status === 'fulfilled' ? (resCat.value.data || []) : [];
-                todosLosJugadores = resJugadores.status === 'fulfilled' ? (resJugadores.value.data || []) : [];
-
                 if (resConfig.status === 'fulfilled' && resConfig.value.data) {
                     bonoPaseActivo = resConfig.value.data.activo;
                     bonoPaseValor = resConfig.value.data.valor;
                 }
 
-                await cargarMarcadores();
-
-                if (partidoUrlId) {
-                    abrirPartidoFullScreen(partidoUrlId);
-                }
+                cargarPartidos();
+                iniciarPresenciaEspectadores();
 
                 clienteSupabase
-                    .channel('espectador-realtime')
+                    .channel('mesas-realtime')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => {
-                        cargarMarcadores();
+                        cargarPartidos();
                     })
                     .subscribe();
             } catch (err) {
-                console.error("Error inicializando espectador:", err);
-                const cont = document.getElementById('contenedor-espectador');
-                if (cont) cont.innerHTML = `<div class="mensaje-vacio text-rose-500">Error conectando con el torneo.</div>`;
+                console.error("Error inicializando mesas:", err);
             }
         }
 
-        async function cargarMarcadores() {
-            const { data: partidos } = await clienteSupabase
+        function iniciarPresenciaEspectadores() {
+            canalEspectadores = clienteSupabase.channel(`espectadores_torneo_${idTorneoActivo}`);
+            canalEspectadores.on('presence', { event: 'sync' }, () => {
+                const newState = canalEspectadores.presenceState();
+                const numSpectators = Object.keys(newState).length;
+                const badge = document.getElementById('badge-espectadores');
+                const contador = document.getElementById('contador-espectadores');
+                if (badge && contador) {
+                    if (numSpectators > 0) {
+                        badge.classList.remove('hidden'); badge.classList.add('flex');
+                        contador.innerText = numSpectators;
+                    } else {
+                        badge.classList.add('hidden'); badge.classList.remove('flex');
+                    }
+                }
+            }).subscribe();
+        }
+
+        async function cargarPartidos() {
+            const { data } = await clienteSupabase
                 .from('partidos')
                 .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)')
                 .eq('torneo_id', idTorneoActivo)
                 .order('id', { ascending: true });
 
-            todosLosPartidos = partidos || [];
+            todosLosPartidos = data || [];
             generarBotonesCategorias();
             generarBotonesMesas();
             dibujarPantalla();
-
-            if (activePartidoFullScreenId) {
-                actualizarModalFullScreen();
-            }
         }
 
         function generarBotonesCategorias() {
@@ -350,14 +263,13 @@
             else if (est === 'pendiente') document.getElementById('tab-pendientes')?.classList.add('active');
             else if (est === 'finalizado') document.getElementById('tab-finalizados')?.classList.add('active');
             else if (est === 'resumen') document.getElementById('tab-resumen')?.classList.add('active');
-            else if (est === 'ranking') document.getElementById('tab-ranking')?.classList.add('active');
 
             dibujarPantalla();
         }
 
         function timeStringToMinutes(timeStr) {
             if (!timeStr) return 0;
-            let match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+            let match = String(timeStr).match(/(\d+):(\d+)\s*(AM|PM)?/i);
             if (!match) return 0;
             let hrs = parseInt(match[1]);
             let mins = parseInt(match[2]);
@@ -365,74 +277,6 @@
             if (ampm === 'PM' && hrs < 12) hrs += 12;
             if (ampm === 'AM' && hrs === 12) hrs = 0;
             return hrs * 60 + mins;
-        }
-
-        function calcularRankingEnVivo(jugadorId, basePts, finMatches, partidoActualId) {
-            if (!jugadorId || !basePts) return 0;
-            let delta = 0;
-
-            finMatches.forEach(m => {
-                if (m.id == partidoActualId) return;
-                let p1Base = m.j1 ? m.j1.puntos_ranking : 0;
-                let p2Base = m.j2 ? m.j2.puntos_ranking : 0;
-                let diff = Math.abs(p1Base - p2Base);
-                let favJ1 = p1Base >= p2Base;
-
-                let rJ1 = reglasRankingList.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((favJ1 && r.resultado_esperado === 'gana_favorito') || (!favJ1 && r.resultado_esperado === 'gana_retador')));
-                let rJ2 = reglasRankingList.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((!favJ1 && r.resultado_esperado === 'gana_favorito') || (favJ1 && r.resultado_esperado === 'gana_retador')));
-
-                let j1Gana = rJ1 ? rJ1.puntos_ganador : 10;
-                let j1Pierde = rJ2 ? -Math.abs(rJ2.puntos_perdedor) : -5;
-                let j2Gana = rJ2 ? rJ2.puntos_ganador : 10;
-                let j2Pierde = rJ1 ? -Math.abs(rJ1.puntos_perdedor) : -5;
-
-                if (m.jugador1_id === jugadorId) {
-                    delta += (m.ganador_id === jugadorId) ? j1Gana : j1Pierde;
-                } else if (m.jugador2_id === jugadorId) {
-                    delta += (m.ganador_id === jugadorId) ? j2Gana : j2Pierde;
-                }
-            });
-
-            return basePts + delta;
-        }
-
-        function calcularImpacto(ptsA, ptsB) {
-            let diff = Math.abs(ptsA - ptsB);
-            let favJ1 = ptsA >= ptsB;
-
-            let rJ1 = reglasRankingList.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((favJ1 && r.resultado_esperado === 'gana_favorito') || (!favJ1 && r.resultado_esperado === 'gana_retador')));
-            let rJ2 = reglasRankingList.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((!favJ1 && r.resultado_esperado === 'gana_favorito') || (favJ1 && r.resultado_esperado === 'gana_retador')));
-
-            return {
-                j1G: rJ1 ? rJ1.puntos_ganador : 10, j1P: rJ2 ? -Math.abs(rJ2.puntos_perdedor) : -5,
-                j2G: rJ2 ? rJ2.puntos_ganador : 10, j2P: rJ1 ? -Math.abs(rJ1.puntos_perdedor) : -5
-            };
-        }
-
-        function calcularDetallesRankingPartido(p, finMatches) {
-            let ptsPrevJ1 = p.j1 ? calcularRankingEnVivo(p.j1.id, p.j1.puntos_ranking || 0, finMatches, p.id) : 0;
-            let ptsPrevJ2 = p.j2 ? calcularRankingEnVivo(p.j2.id, p.j2.puntos_ranking || 0, finMatches, p.id) : 0;
-            let impacto = calcularImpacto(ptsPrevJ1, ptsPrevJ2);
-
-            let isFin = (p.estado || '').toLowerCase() === 'finalizado';
-            let ptsFinalJ1 = ptsPrevJ1;
-            let ptsFinalJ2 = ptsPrevJ2;
-            let deltaJ1 = 0;
-            let deltaJ2 = 0;
-
-            if (isFin && p.j1 && p.j2) {
-                if (p.ganador_id === p.jugador1_id) {
-                    deltaJ1 = impacto.j1G;
-                    deltaJ2 = impacto.j2P;
-                } else if (p.ganador_id === p.jugador2_id) {
-                    deltaJ1 = impacto.j1P;
-                    deltaJ2 = impacto.j2G;
-                }
-                ptsFinalJ1 += deltaJ1;
-                ptsFinalJ2 += deltaJ2;
-            }
-
-            return { ptsPrevJ1, ptsPrevJ2, ptsFinalJ1, ptsFinalJ2, deltaJ1, deltaJ2, impacto, isFin };
         }
 
         function calcularStandingsGrupos() {
@@ -454,7 +298,7 @@
                     }
                 });
 
-                let estLimpio = (m.estado || '').trim().toLowerCase();
+                let estLimpio = String(m.estado || '').trim().toLowerCase();
                 if (estLimpio === 'finalizado' && m.j1 && m.j2) {
                     const j1 = grupoObj[m.j1.id];
                     const j2 = grupoObj[m.j2.id];
@@ -540,7 +384,7 @@
                     const rivalClub = esJ1 ? (p.j2 ? p.j2.club : '') : (p.j1 ? p.j1.club : '');
                     const rivalPts = esJ1 ? (p.j2 ? p.j2.puntos_ranking || 0 : 0) : (p.j1 ? p.j1.puntos_ranking || 0 : 0);
 
-                    const estLimpio = (p.estado || '').trim().toLowerCase();
+                    const estLimpio = String(p.estado || '').trim().toLowerCase();
                     const esFin = estLimpio === 'finalizado';
                     const esVivo = estLimpio === 'en_curso';
 
@@ -614,10 +458,10 @@
         }
 
         // ==========================================
-        // DIBUJAR PANTALLA Y ASEGURAR QUE LOS CONTENEDORES EXISTAN
+        // DIBUJAR PANTALLA PRINCIPAL
         // ==========================================
         function dibujarPantalla() {
-            const container = document.getElementById('contenedor-espectador');
+            const container = document.getElementById('contenedor-partidos');
             if (!container) return;
             
             container.innerHTML = '';
@@ -625,13 +469,6 @@
             if (estadoFiltro === 'resumen') {
                 container.style.display = 'block';
                 dibujarResumenYLlaves(container);
-                return;
-            }
-
-            if (estadoFiltro === 'ranking') {
-                container.style.display = 'block';
-                const finMatches = todosLosPartidos.filter(p => (p.estado || '').toLowerCase() === 'finalizado');
-                dibujarRankingGlobal(container, finMatches);
                 return;
             }
 
@@ -648,11 +485,11 @@
             }
 
             if (estadoFiltro === 'en_curso') {
-                filtrados = filtrados.filter(p => (p.estado || '').trim().toLowerCase() === 'en_curso');
+                filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'en_curso');
             } else if (estadoFiltro === 'pendiente') {
-                filtrados = filtrados.filter(p => (p.estado || '').trim().toLowerCase() === 'pendiente');
+                filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'pendiente');
             } else if (estadoFiltro === 'finalizado') {
-                filtrados = filtrados.filter(p => (p.estado || '').trim().toLowerCase() === 'finalizado');
+                filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'finalizado');
             }
 
             if (filtrados.length === 0) {
@@ -673,15 +510,16 @@
                 container.innerHTML += `<div class="header-hora">⏰ ${hora}</div>`;
 
                 gruposPorHora[hora].forEach(p => {
-                    let est = (p.estado || '').toLowerCase();
+                    let est = String(p.estado || '').toLowerCase();
                     let isFin = est === 'finalizado';
                     let isVivo = est === 'en_curso';
 
                     let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : 
                                   (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
 
-                    let nomJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
-                    let nomJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
+                    // PROTECCIÓN EXTREMA CONTRA NULL
+                    let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
+                    let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
 
                     let iconJ1 = (isFin && p.ganador_id === p.jugador1_id) ? '🏆 ' : '';
                     let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '🏆 ' : '';
@@ -697,7 +535,7 @@
                     }
 
                     container.innerHTML += `
-                        <div class="card-mesa ${isVivo ? 'vivo' : (isFin ? 'finalizado' : '')}" onclick="abrirPartidoFullScreen(${p.id})">
+                        <div class="card-mesa ${isVivo ? 'vivo' : (isFin ? 'finalizado' : '')}">
                             <div class="top-bar">
                                 <span class="mesa-title">MESA ${p.mesa || 1}</span>
                                 ${badgeEst}
@@ -711,18 +549,24 @@
 
                             <div class="score-container">
                                 <div class="jugador-box">
-                                    <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador1_id}, '${nomJ1.replace(/'/g, "\\'")}', '${(p.j1?.club || '').replace(/'/g, "\\'")}')">
+                                    <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador1_id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(p.j1?.club || '').replace(/'/g, "\\'")}')">
                                         <span class="jugador-nombre">${iconJ1}${nomJ1}</span>
                                     </div>
                                     <div style="display:flex; align-items:center;">${score1}</div>
                                 </div>
 
                                 <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
-                                    <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador2_id}, '${nomJ2.replace(/'/g, "\\'")}', '${(p.j2?.club || '').replace(/'/g, "\\'")}')">
+                                    <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador2_id}, '${String(nomJ2).replace(/'/g, "\\'")}', '${String(p.j2?.club || '').replace(/'/g, "\\'")}')">
                                         <span class="jugador-nombre">${iconJ2}${nomJ2}</span>
                                     </div>
                                     <div style="display:flex; align-items:center;">${score2}</div>
                                 </div>
+                            </div>
+
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn-arbitrar ${isFin ? 'btn-reabrir' : ''}" onclick="abrirScoreboardJuez(${p.id})">
+                                    ${isFin ? '🏁 REABRIR PARTIDO' : '🏓 Arbitrar Partido'}
+                                </button>
                             </div>
                         </div>
                     `;
@@ -735,13 +579,13 @@
         }
 
         // ==========================================
-        // FUNCIÓN DEL PODIO AÑADIDA PARA EVITAR EL CRASH
+        // DIBUJAR CUADRO DE HONOR Y RESUMEN
         // ==========================================
         function obtenerCuadroDeHonorHtml(catNombre) {
             const pCat = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre);
-            const pF = pCat.find(p => (p.ronda_fase || '').toLowerCase().includes('final') && !(p.ronda_fase || '').toLowerCase().includes('semi'));
-            const s1 = pCat.find(p => (p.ronda_fase || '').toLowerCase().includes('semi') && ((p.ronda_fase || '').includes('1') || (p.ronda_fase || '').toLowerCase().includes('cruce 1')));
-            const s2 = pCat.find(p => (p.ronda_fase || '').toLowerCase().includes('semi') && ((p.ronda_fase || '').includes('2') || (p.ronda_fase || '').toLowerCase().includes('cruce 2')));
+            const pF = pCat.find(p => String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi'));
+            const s1 = pCat.find(p => String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('1') || String(p.ronda_fase || '').toLowerCase().includes('cruce 1')));
+            const s2 = pCat.find(p => String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('2') || String(p.ronda_fase || '').toLowerCase().includes('cruce 2')));
             
             if (!pF || !pF.ganador_id) return ''; 
 
@@ -752,8 +596,8 @@
             if (s1 && s1.ganador_id) ter.push(s1.ganador_id === s1.jugador1_id ? s1.j2 : s1.j1);
             if (s2 && s2.ganador_id) ter.push(s2.ganador_id === s2.jugador1_id ? s2.j2 : s2.j1);
 
-            let clC = cObj ? `onclick="abrirModalJugadorAdmin(${cObj.id}, '${(cObj.nombre||'').replace(/'/g, "\\'")}', '${(cObj.club||'').replace(/'/g, "\\'")}')"` : '';
-            let clS = subObj ? `onclick="abrirModalJugadorAdmin(${subObj.id}, '${(subObj.nombre||'').replace(/'/g, "\\'")}', '${(subObj.club||'').replace(/'/g, "\\'")}')"` : '';
+            let clC = cObj ? `onclick="abrirModalJugadorAdmin(${cObj.id}, '${String(cObj.nombre||'').replace(/'/g, "\\'")}', '${String(cObj.club||'').replace(/'/g, "\\'")}')"` : '';
+            let clS = subObj ? `onclick="abrirModalJugadorAdmin(${subObj.id}, '${String(subObj.nombre||'').replace(/'/g, "\\'")}', '${String(subObj.club||'').replace(/'/g, "\\'")}')"` : '';
 
             return `
                 <div style="margin-bottom:20px; border:1px solid rgba(245,158,11,0.3); border-radius:16px; background:linear-gradient(135deg, rgba(245,158,11,0.15), rgba(120,53,15,0.05)); padding:20px; text-align:center; box-shadow:0 0 20px rgba(245,158,11,0.1);">
@@ -772,7 +616,7 @@
                             <div style="font-size:9px; color:#64748b; font-weight:800; text-transform:uppercase; letter-spacing:2px; margin-bottom:4px;">🥉 3ros Lugares</div>
                             <div style="display:flex; flex-direction:column; gap:4px;">
                                 ${ter.map(t => {
-                                    let cl = t ? `onclick="abrirModalJugadorAdmin(${t.id}, '${(t.nombre||'').replace(/'/g, "\\'")}', '${(t.club||'').replace(/'/g, "\\'")}')"` : '';
+                                    let cl = t ? `onclick="abrirModalJugadorAdmin(${t.id}, '${String(t.nombre||'').replace(/'/g, "\\'")}', '${String(t.club||'').replace(/'/g, "\\'")}')"` : '';
                                     return `<div style="font-size:13px; font-weight:800; color:#fb923c; text-transform:uppercase; cursor:pointer; display:inline-block; transition:0.2s;" ${cl} onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#fb923c'">${t?.nombre || ''}</div>`;
                                 }).join('')}
                             </div>
@@ -836,7 +680,7 @@
                                             let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
 
                                             return `
-                                                <tr style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'" onclick="abrirModalJugadorAdmin(${j.id}, '${(j.nombre\vert{}\vert{}'').replace(/'/g, "\\'")}', '${(j.club || 'Sin Club').replace(/'/g, "\\'")}')">
+                                                <tr style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'" onclick="abrirModalJugadorAdmin(${j.id}, '${String(j.nombre||'').replace(/'/g, "\\'")}', '${String(j.club || 'Sin Club').replace(/'/g, "\\'")}')">
                                                     <td style="padding:8px 6px; font-weight:800; color:#64748b;">#${idx + 1}</td>
                                                     <td style="padding:8px 6px;">
                                                         <strong style="color:#ffffff;">${j.nombre}</strong>
@@ -869,12 +713,13 @@
             dibujarLlavesInferiores(container);
         }
 
-        function generarTarjetaLlaveEspectador(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2, colorDesc2) {
-            let isFin = partido && (partido.estado || '').trim().toLowerCase() === 'finalizado';
-            let isVivo = partido && (partido.estado || '').trim().toLowerCase() === 'en_curso';
+        function generarTarjetaLlave(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2, colorDesc2) {
+            let isFin = partido && String(partido.estado || '').trim().toLowerCase() === 'finalizado';
+            let isVivo = partido && String(partido.estado || '').trim().toLowerCase() === 'en_curso';
             
             let opacidad = isFin ? 'opacity: 0.85;' : '';
-            let cursor = partido ? 'cursor:pointer;' : '';
+            let btnText = isFin ? '🏁 REABRIR PARTIDO' : `🏓 ARBITRAR PARTIDO`;
+            let btnClass = isFin ? 'btn-arbitrar btn-reabrir' : 'btn-arbitrar';
             
             let badgeEst = isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : 
                           (isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
@@ -895,19 +740,16 @@
             let icon1 = win1 ? '🏆 ' : '';
             let icon2 = win2 ? '🏆 ' : '';
 
-            let clickAction = partido ? `onclick="abrirPartidoFullScreen(${partido.id})"` : '';
-            let hoverFX = partido ? 'hover:-translate-y-1 hover:border-white/20 transition-all' : '';
-
-            let clickAccion1 = partido && partido.jugador1_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador1_id}, '${(nomJ1||'').replace(/'/g, "\\'")}', '')"` : '';
-            let clickAccion2 = partido && partido.jugador2_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador2_id}, '${(nomJ2||'').replace(/'/g, "\\'")}', '')"` : '';
+            let clickAccion1 = partido && partido.jugador1_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador1_id}, '${String(nomJ1||'').replace(/'/g, "\\'")}', '${String(partido.j1?.club || '').replace(/'/g, "\\'")}')"` : '';
+            let clickAccion2 = partido && partido.jugador2_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador2_id}, '${String(nomJ2||'').replace(/'/g, "\\'")}', '${String(partido.j2?.club || '').replace(/'/g, "\\'")}')"` : '';
 
             let flexWrapper = titulo === 'Gran Final' ? 'grid-column: 1 / -1; display:flex; justify-content:center; margin-top:10px;' : '';
-            let innerStyle = `background:rgba(0,0,0,0.4); padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); ${opacidad} width:100%; ${cursor}`;
+            let innerStyle = `background:rgba(0,0,0,0.4); padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); ${opacidad} width:100%;`;
             if(titulo === 'Gran Final') innerStyle += ' max-width:450px; text-align:left;';
 
             return `
                 ${titulo === 'Gran Final' ? `<div style="${flexWrapper}">` : ''}
-                <div style="${innerStyle}" class="${hoverFX}" ${clickAction}>
+                <div style="${innerStyle}">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span style="font-size:${titulo==='Gran Final' ? '12px' : '10px'}; color:${colorTitulo}; font-weight:900; text-transform:uppercase;">${titulo==='Gran Final' ? '🏆 ' : ''}${titulo}</span>
@@ -937,6 +779,10 @@
                             <span style="font-size:9px; background:${colorDesc2}; padding:2px 6px; border-radius:4px; font-weight:800; margin-left:8px;">${descJ2}</span>
                         </div>
                     </div>
+                    
+                    <button class="${btnClass} mt-4" onclick="abrirScoreboardJuez(${partido ? partido.id : 0})">
+                        ${btnText}
+                    </button>
                 </div>
                 ${titulo === 'Gran Final' ? `</div>` : ''}
             `;
@@ -953,7 +799,7 @@
 
             if (catsList.length === 0) return;
 
-            const partidosLlaveBD = todosLosPartidos.filter(p => !p.grupo_nombre || (p.ronda_fase || '').toLowerCase().includes('cruce') || (p.ronda_fase || '').toLowerCase().includes('semifinal') || (p.ronda_fase || '').toLowerCase().includes('final'));
+            const partidosLlaveBD = todosLosPartidos.filter(p => !p.grupo_nombre || String(p.ronda_fase || '').toLowerCase().includes('cruce') || String(p.ronda_fase || '').toLowerCase().includes('semifinal') || String(p.ronda_fase || '').toLowerCase().includes('final'));
 
             catsList.forEach(catNombre => {
                 const gruposCat = standings[catNombre] || {};
@@ -967,12 +813,12 @@
 
                 const partidosCatGpo = todosLosPartidos.filter(p => p.grupo_nombre && p.categorias?.nombre === catNombre);
                 const totalGpo = partidosCatGpo.length;
-                const finGpo = partidosCatGpo.filter(p => (p.estado || '').trim().toLowerCase() === 'finalizado').length;
+                const finGpo = partidosCatGpo.filter(p => String(p.estado || '').trim().toLowerCase() === 'finalizado').length;
                 const gpoCompleto = totalGpo > 0 && totalGpo === finGpo;
 
-                const partidoSemi1 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && (p.ronda_fase || '').toLowerCase().includes('semi') && ((p.ronda_fase || '').includes('1') || (p.ronda_fase || '').toLowerCase().includes('cruce 1')));
-                const partidoSemi2 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && (p.ronda_fase || '').toLowerCase().includes('semi') && ((p.ronda_fase || '').includes('2') || (p.ronda_fase || '').toLowerCase().includes('cruce 2')));
-                const partidoFinal = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && (p.ronda_fase || '').toLowerCase().includes('final') && !(p.ronda_fase || '').toLowerCase().includes('semi'));
+                const partidoSemi1 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('1') || String(p.ronda_fase || '').toLowerCase().includes('cruce 1')));
+                const partidoSemi2 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('2') || String(p.ronda_fase || '').toLowerCase().includes('cruce 2')));
+                const partidoFinal = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi'));
 
                 let nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : primeroA;
                 let nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : segundoB;
@@ -983,9 +829,9 @@
                 let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Ganador Semi 1');
                 let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Ganador Semi 2');
 
-                let cardS1 = generarTarjetaLlaveEspectador(partidoSemi1, 'Semifinal 1', '#38bdf8', 1, nomSemi1_j1, nomSemi1_j2, '1° Gpo A', '2° Gpo B', 'rgba(6,182,212,0.2); color:#38bdf8;');
-                let cardS2 = generarTarjetaLlaveEspectador(partidoSemi2, 'Semifinal 2', '#f0abfc', 2, nomSemi2_j1, nomSemi2_j2, '1° Gpo B', '2° Gpo A', 'rgba(6,182,212,0.2); color:#38bdf8;');
-                let cardFinal = generarTarjetaLlaveEspectador(partidoFinal, 'Gran Final', '#fbbf24', 1, nomFinal_j1, nomFinal_j2, 'Gana Semi 1', 'Gana Semi 2', 'rgba(217,70,239,0.2); color:#d946ef;');
+                let cardS1 = generarTarjetaLlave(partidoSemi1, 'Semifinal 1', '#38bdf8', 1, nomSemi1_j1, nomSemi1_j2, '1° Gpo A', '2° Gpo B', 'rgba(6,182,212,0.2); color:#38bdf8;');
+                let cardS2 = generarTarjetaLlave(partidoSemi2, 'Semifinal 2', '#f0abfc', 2, nomSemi2_j1, nomSemi2_j2, '1° Gpo B', '2° Gpo A', 'rgba(6,182,212,0.2); color:#38bdf8;');
+                let cardFinal = generarTarjetaLlave(partidoFinal, 'Gran Final', '#fbbf24', 1, nomFinal_j1, nomFinal_j2, 'Gana Semi 1', 'Gana Semi 2', 'rgba(217,70,239,0.2); color:#d946ef;');
 
                 container.innerHTML += `
                     <div class="seccion-llaves-footer">
@@ -1014,274 +860,81 @@
             });
         }
 
-        function obtenerCategoriaDePuntos(pts) {
-            let catEncontrada = todasLasCategorias.find(c => {
-                let nom = c.nombre.toLowerCase();
-                if (nom === 'libre') return false;
-                if (nom.includes('primera')) return pts >= c.puntos_minimos;
-                return pts >= c.puntos_minimos && pts <= c.puntos_maximos;
-            });
-            return catEncontrada || todasLasCategorias.find(c => c.nombre.toLowerCase() === 'libre') || { nombre: 'General', puntos_minimos: 0, puntos_maximos: 9999 };
-        }
-
-        function dibujarRankingGlobal(container, finMatches) {
-            let htmlContent = `
-                <div class="flex justify-between items-center mb-6 no-print">
-                    <h2 class="text-xl md:text-2xl font-black text-white uppercase tracking-widest"><i class="fa-solid fa-ranking-star mr-2 text-fuchsia-400"></i> Ranking Global y Ascensos</h2>
-                    <button onclick="window.print()" class="bg-cyan-500 hover:bg-cyan-400 text-black px-4 md:px-6 py-2 rounded-full text-xs font-black uppercase transition-all shadow-[0_0_10px_rgba(6,182,212,0.5)]">
-                        <i class="fa-solid fa-print mr-2"></i> Imprimir Ranking
-                    </button>
-                </div>
-                
-                <div class="print-only" style="display:none;">
-                    <h1 style="text-align:center; font-size:20px; font-weight:bold; margin-bottom:20px;">RANKING GLOBAL EN VIVO - ${document.getElementById('torneo-nombre-header').innerText}</h1>
-                </div>
-            `;
-
-            let idsEnLlaves = new Set();
-            if (bonoPaseActivo && bonoPaseValor > 0) {
-                finMatches.filter(p => !p.grupo_nombre && p.ronda_fase).forEach(p => {
-                    if (p.jugador1_id) idsEnLlaves.add(p.jugador1_id);
-                    if (p.jugador2_id) idsEnLlaves.add(p.jugador2_id);
-                });
+        async function abrirScoreboardJuez(partidoId) {
+            if (!partidoId || partidoId === 0) {
+                alert("⚠️ La fase final debe guardarse primero desde 'Sorteo y Rol' para activar el arbitraje oficial de esta llave.");
+                return;
             }
 
-            let listaCompletaProyectada = todosLosJugadores.map(j => {
-                let rInicial = j.puntos_ranking || 0;
-                let rFinal = calcularRankingEnVivo(j.id, rInicial, finMatches, null);
-                
-                if (idsEnLlaves.has(j.id)) {
-                    rFinal += bonoPaseValor;
-                }
-
-                let catInicial = obtenerCategoriaDePuntos(rInicial);
-                let catFinal = obtenerCategoriaDePuntos(rFinal);
-
-                let subioCat = false;
-                if (catInicial.id !== catFinal.id && catFinal.puntos_minimos > catInicial.puntos_minimos) {
-                    subioCat = true;
-                }
-
-                return {
-                    id: j.id, nombre: j.nombre, club: j.club || 'Sin Club',
-                    rInicial, rFinal, dif: rFinal - rInicial,
-                    catInicial, catFinal, subioCat, jugoTorneo: (rFinal !== rInicial || idsEnLlaves.has(j.id))
-                };
-            });
-
-            const categoriasFuerza = todasLasCategorias.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
-
-            categoriasFuerza.forEach(cat => {
-                const jugsEnCat = listaCompletaProyectada.filter(j => j.catFinal.id === cat.id).sort((a, b) => b.rFinal - a.rFinal);
-
-                htmlContent += `
-                    <div class="p-6 md:p-8 rounded-3xl mb-8 border border-white/10 glass-panel">
-                        <div class="flex justify-between items-center border-b border-fuchsia-500/30 pb-4 mb-6">
-                            <h3 class="text-lg md:text-xl font-black text-fuchsia-400 uppercase tracking-widest"><i class="fa-solid fa-layer-group mr-2"></i> ${cat.nombre}</h3>
-                            <span class="text-xs text-zinc-500 font-bold uppercase tracking-wider">Rango: ${cat.puntos_minimos} a ${cat.puntos_maximos} Pts</span>
-                        </div>
-
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-xs text-left border-collapse">
-                                <thead class="text-[9px] uppercase text-zinc-500 border-b border-white/10">
-                                    <tr>
-                                        <th class="py-2">Pos</th>
-                                        <th class="py-2">Jugador</th>
-                                        <th class="py-2">Club / Entidad</th>
-                                        <th class="py-2 text-center">R. Inicial</th>
-                                        <th class="py-2 text-center">Variación</th>
-                                        <th class="py-2 text-center text-amber-400">R. Actual</th>
-                                        <th class="py-2 text-right">Estatus / Mención</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-white/5">
-                                    ${jugsEnCat.length === 0 ? `<tr><td colspan="7" class="py-4 text-center text-zinc-600 italic">Sin jugadores en este rango.</td></tr>` : 
-                                    jugsEnCat.map((j, idx) => {
-                                        let difHtml = j.dif > 0 ? `<span class="text-emerald-400 font-bold">+${j.dif}</span>` : (j.dif < 0 ? `<span class="text-rose-400 font-bold">${j.dif}</span>` : `<span class="text-zinc-600">0</span>`);
-                                        
-                                        let mencionAscenso = j.subioCat ? `
-                                            <span class="badge-ascenso bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-block animate-pulse">
-                                                🎉 ¡Felicidades! Ascendiste a ${cat.nombre}
-                                            </span>
-                                        ` : '';
-
-                                        let accionClic = j.jugoTorneo ? `onclick="abrirModalJugadorAdmin(${j.id}, '${(j.nombre\vert{}\vert{}'').replace(/'/g, "\\'")}', '${(j.club || 'Sin Club').replace(/'/g, "\\'")}')"` : '';
-                                        let claseClic = j.jugoTorneo ? `cursor-pointer hover:bg-fuchsia-500/10 transition-colors` : `opacity-60`;
-
-                                        return `
-                                            <tr class="${claseClic}" ${accionClic}>
-                                                <td class="py-3 font-black text-zinc-500">#${idx + 1}</td>
-                                                <td class="py-3 font-bold text-white">${j.nombre}</td>
-                                                <td class="py-3 text-zinc-400 font-semibold">${j.club}</td>
-                                                <td class="py-3 text-center text-zinc-400 font-bold">${j.rInicial} pts</td>
-                                                <td class="py-3 text-center font-bold">${difHtml}</td>
-                                                <td class="py-3 text-center text-amber-400 font-black text-sm">${j.rFinal} pts</td>
-                                                <td class="py-3 text-right">${mencionAscenso}</td>
-                                            </tr>
-                                        `;
-                                    }).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                `;
-            });
-
-            container.innerHTML = htmlContent;
-        }
-
-        function abrirPartidoFullScreen(partidoId) {
-            if (!partidoId || partidoId === 0) return;
-            activePartidoFullScreenId = partidoId;
-            const modal = document.getElementById('modal-fullscreen-partido');
-            modal.style.display = 'flex';
-            actualizarModalFullScreen();
-        }
-
-        function cerrarPartidoFullScreen() {
-            activePartidoFullScreenId = null;
-            const modal = document.getElementById('modal-fullscreen-partido');
-            modal.style.display = 'none';
+            const p = todosLosPartidos.find(x => x.id === partidoId);
             
-            if(partidoUrlId) {
-                const url = new URL(window.location);
-                url.searchParams.delete('partido');
-                window.history.pushState({}, '', url);
-                partidoUrlId = null;
-            }
-        }
-
-        function actualizarModalFullScreen() {
-            if (!activePartidoFullScreenId) return;
-
-            const p = todosLosPartidos.find(item => item.id == activePartidoFullScreenId);
-            if (!p) return;
-
-            let est = (p.estado || '').toLowerCase();
-            let isFin = est === 'finalizado';
-
-            document.getElementById('fs-mesa-fase').innerText = `MESA ${p.mesa || 1} • ${p.grupo_nombre ? 'GRUPO ' + p.grupo_nombre : (p.ronda_fase || 'FASE FINAL')}`;
-            document.getElementById('fs-cat-nombre').innerText = `🏆 ${p.categorias?.nombre || 'CATEGORÍA'}`;
-
-            let nomJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
-            let nomJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
-
-            document.getElementById('fs-name-j1').innerText = nomJ1;
-            document.getElementById('fs-name-j2').innerText = nomJ2;
-            document.getElementById('fs-club-j1').innerText = p.j1?.club || 'Sin Club';
-            document.getElementById('fs-club-j2').innerText = p.j2?.club || 'Sin Club';
-
-            const scoreJ1 = isFin ? p.sets_j1 : p.puntos_j1 || 0;
-            const scoreJ2 = isFin ? p.sets_j2 : p.puntos_j2 || 0;
-
-            document.getElementById('fs-score-j1').innerText = scoreJ1;
-            document.getElementById('fs-score-j2').innerText = scoreJ2;
-            document.getElementById('fs-sets-j1').innerText = p.sets_j1 || 0;
-            document.getElementById('fs-sets-j2').innerText = p.sets_j2 || 0;
-
-            if (isFin && p.ganador_id === p.jugador1_id) {
-                document.getElementById('fs-winner-icon1').classList.remove('hidden');
-                document.getElementById('fs-winner-icon2').classList.add('hidden');
-            } else if (isFin && p.ganador_id === p.jugador2_id) {
-                document.getElementById('fs-winner-icon1').classList.add('hidden');
-                document.getElementById('fs-winner-icon2').classList.remove('hidden');
-            } else {
-                document.getElementById('fs-winner-icon1').classList.add('hidden');
-                document.getElementById('fs-winner-icon2').classList.add('hidden');
-            }
-
-            const finMatches = todosLosPartidos.filter(m => (m.estado || '').toLowerCase() === 'finalizado');
-            let rDetails = calcularDetallesRankingPartido(p, finMatches);
-
-            let txtRankJ1 = isFin ? `${rDetails.ptsFinalJ1} pts (${rDetails.deltaJ1 >= 0 ? '+' + rDetails.deltaJ1 : rDetails.deltaJ1})` : `${rDetails.ptsPrevJ1} pts`;
-            let txtRankJ2 = isFin ? `${rDetails.ptsFinalJ2} pts (${rDetails.deltaJ2 >= 0 ? '+' + rDetails.deltaJ2 : rDetails.deltaJ2})` : `${rDetails.ptsPrevJ2} pts`;
-
-            document.getElementById('fs-ranking-j1').innerText = p.mostrar_ranking ? txtRankJ1 : '';
-            document.getElementById('fs-ranking-j2').innerText = p.mostrar_ranking ? txtRankJ2 : '';
-
-            const proyBox = document.getElementById('fs-proyeccion-box');
-            if (p.mostrar_ranking && p.j1 && p.j2) {
-                if (isFin) {
-                    proyBox.style.borderColor = 'rgba(16,185,129,0.3)';
-                    proyBox.style.background = 'rgba(16,185,129,0.1)';
-                    proyBox.style.color = '#34d399';
-                    proyBox.innerHTML = `
-                        📈 RESULTADO DE RANKING FINAL:<br>
-                        ${p.j1.nombre.split(' ')[0]}: <strong>${rDetails.deltaJ1 >= 0 ? '+' + rDetails.deltaJ1 : rDetails.deltaJ1}</strong> | 
-                        ${p.j2.nombre.split(' ')[0]}: <strong>${rDetails.deltaJ2 >= 0 ? '+' + rDetails.deltaJ2 : rDetails.deltaJ2}</strong>
-                    `;
-                } else {
-                    proyBox.style.borderColor = 'rgba(245, 158, 11, 0.3)';
-                    proyBox.style.background = 'rgba(245, 158, 11, 0.1)';
-                    proyBox.style.color = '#fbbf24';
-                    proyBox.innerHTML = `
-                        📊 PROYECCIÓN DE RANKING:<br>
-                        ${p.j1.nombre.split(' ')[0]}: <span class="text-emerald-400">+${rDetails.impacto.j1G}</span> / <span class="text-rose-400">${rDetails.impacto.j1P}</span> | 
-                        ${p.j2.nombre.split(' ')[0]}: <span class="text-emerald-400">+${rDetails.impacto.j2G}</span> / <span class="text-rose-400">${rDetails.impacto.j2P}</span>
-                    `;
+            if (p && !p.grupo_nombre && p.ronda_fase) {
+                const catNombre = p.categorias?.nombre;
+                const partidosCat = todosLosPartidos.filter(m => m.categorias?.nombre === catNombre);
+                
+                const partidosCatGpo = partidosCat.filter(m => m.grupo_nombre);
+                const totalGpo = partidosCatGpo.length;
+                const finGpo = partidosCatGpo.filter(m => String(m.estado || '').trim().toLowerCase() === 'finalizado').length;
+                
+                if (totalGpo > 0 && totalGpo !== finGpo) {
+                    alert(`⛔ ACCESO DENEGADO.\n\nNo puedes arbitrar las llaves eliminatorias de la categoría "${catNombre || ''}" porque aún hay partidos de grupo Pendientes o En Vivo.\n\nFinalízalos todos primero.`);
+                    return;
                 }
-                proyBox.style.display = 'block';
-            } else {
-                proyBox.style.display = 'none';
+
+                const esFinal = String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi');
+                if (esFinal) {
+                    const semis = partidosCat.filter(m => !m.grupo_nombre && m.ronda_fase && String(m.ronda_fase || '').toLowerCase().includes('semi'));
+                    const semisIncompletas = semis.some(m => String(m.estado || '').trim().toLowerCase() !== 'finalizado');
+                    if (semisIncompletas) {
+                        alert(`⛔ ACCESO DENEGADO.\n\nNo puedes arbitrar la Gran Final porque las Semifinales aún no han terminado.`);
+                        return;
+                    }
+                }
+
+                if (!p.jugador1_id || !p.jugador2_id) {
+                    const standings = calcularStandingsGrupos();
+                    const gruposCat = standings[catNombre] || {};
+                    const gpoA_arr = gruposCat['A'] ? ordenarJugadoresITTF(Object.values(gruposCat['A'])) : [];
+                    const gpoB_arr = gruposCat['B'] ? ordenarJugadoresITTF(Object.values(gruposCat['B'])) : [];
+
+                    let resJ1 = null, resJ2 = null;
+                    const rf = String(p.ronda_fase || '').toLowerCase();
+
+                    if (rf.includes('semi') && (rf.includes('1') || rf.includes('cruce 1'))) {
+                        resJ1 = gpoA_arr[0]?.id; resJ2 = gpoB_arr[1]?.id;
+                    } else if (rf.includes('semi') && (rf.includes('2') || rf.includes('cruce 2'))) {
+                        resJ1 = gpoB_arr[0]?.id; resJ2 = gpoA_arr[1]?.id;
+                    } else if (esFinal) {
+                        const semi1 = partidosCat.find(m => String(m.ronda_fase || '').toLowerCase().includes('semi') && (String(m.ronda_fase || '').includes('1') || String(m.ronda_fase || '').includes('cruce 1')));
+                        const semi2 = partidosCat.find(m => String(m.ronda_fase || '').toLowerCase().includes('semi') && (String(m.ronda_fase || '').includes('2') || String(m.ronda_fase || '').includes('cruce 2')));
+                        resJ1 = semi1?.ganador_id;
+                        resJ2 = semi2?.ganador_id;
+                    }
+
+                    if (resJ1 || resJ2) {
+                        let updates = {};
+                        if (resJ1 && !p.jugador1_id) updates.jugador1_id = resJ1;
+                        if (resJ2 && !p.jugador2_id) updates.jugador2_id = resJ2;
+
+                        if (Object.keys(updates).length > 0) {
+                            await clienteSupabase.from('partidos').update(updates).eq('id', p.id);
+                        }
+                    } else {
+                        alert("⚠️ No se pudieron determinar los jugadores para este partido. Asegúrate de que las fases anteriores tengan resultados válidos en el sistema.");
+                        return;
+                    }
+                }
             }
 
-            const fsListSets = document.getElementById('fs-list-sets');
-            fsListSets.innerHTML = '';
-            if (p.historial_sets && p.historial_sets.length > 0) {
-                p.historial_sets.forEach(s => {
-                    let c1 = s.s1 > s.s2 ? 'text-cyan-400' : 'text-zinc-400';
-                    let c2 = s.s2 > s.s1 ? 'text-fuchsia-400' : 'text-zinc-400';
-                    fsListSets.innerHTML += `
-                        <span class="bg-black/60 border border-white/10 px-3 py-1 rounded-lg text-xs font-bold">
-                            Set ${s.numSet}: <span class="${c1}">${s.s1}</span> - <span class="${c2}">${s.s2}</span>
-                        </span>
-                    `;
-                });
-            }
-
-            let currentScoreStr = `${scoreJ1}-${scoreJ2}`;
-            if (lastAnnouncedScore !== currentScoreStr && !isFin) {
-                lastAnnouncedScore = currentScoreStr;
-                anunciarMarcadorEspectador(nomJ1, scoreJ1, nomJ2, scoreJ2);
+            let pin = prompt("🔒 Ingrese el PIN de Autorización para Arbitrar:");
+            if (pin === pinJuecesActual) {
+                window.location.href = `juez.html?partido=${partidoId}`;
+            } else if (pin !== null) {
+                alert("❌ PIN de autorización incorrecto.");
             }
         }
 
-        function toggleAudioEspectador() {
-            audioMuted = !audioMuted;
-            document.getElementById('fs-btn-audio').innerHTML = audioMuted ? '<i class="fa-solid fa-volume-xmark text-rose-400"></i>' : '<i class="fa-solid fa-volume-high text-cyan-400"></i>';
-        }
-
-        function anunciarMarcadorEspectador(n1, s1, n2, s2) {
-            if (audioMuted || !window.speechSynthesis) return;
-            window.speechSynthesis.cancel();
-            let texto = `${getApellido(n1)} ${s1}, ${getApellido(n2)} ${s2}`;
-            let u = new SpeechSynthesisUtterance(texto);
-            u.lang = 'es-MX';
-            window.speechSynthesis.speak(u);
-        }
-
-        function compartirPartidoWhatsAppActual() {
-            if (!activePartidoFullScreenId) return;
-            const p = todosLosPartidos.find(item => item.id == activePartidoFullScreenId);
-            if (!p) return;
-
-            let nomJ1 = p.j1 ? p.j1.nombre : 'J1';
-            let nomJ2 = p.j2 ? p.j2.nombre : 'J2';
-            let score1 = (p.estado || '').toLowerCase() === 'finalizado' ? p.sets_j1 : p.puntos_j1 || 0;
-            let score2 = (p.estado || '').toLowerCase() === 'finalizado' ? p.sets_j2 : p.puntos_j2 || 0;
-
-            const urlPartido = `${window.location.origin}/espectador.html?torneo=${idTorneoActivo}&partido=${p.id}`;
-            let textoWS = `🏓 *MARCADOR EN VIVO - PIXEL STUDIO* 🏓\n\n` +
-                          `🏆 Categoría: *${p.categorias?.nombre || 'Torneo'}*\n` +
-                          `📍 Mesa: *Mesa ${p.mesa || 1}*\n\n` +
-                          `👤 *${nomJ1}* (${score1})\n` +
-                          `👤 *${nomJ2}* (${score2})\n\n` +
-                          `Sigue los puntos en tiempo real ingresando aquí:\n👉 ${urlPartido}`;
-
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWS)}`, '_blank');
-        }
-
-        inicializarEspectador();
+        inicializar();
     </script>
 </body>
 </html>
