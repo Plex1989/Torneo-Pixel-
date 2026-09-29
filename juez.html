@@ -80,7 +80,7 @@
                     🎾 Saque
                 </div>
                 <h2 id="name-left" class="text-lg md:text-2xl font-black uppercase tracking-wider text-white truncate mt-1">JUGADOR 1</h2>
-                <div id="ranking-info-left" class="text-[10px] font-extrabold text-cyan-300 mt-0.5">Calculando...</div>
+                <div id="ranking-info-left" class="text-[10px] font-extrabold text-cyan-300 mt-0.5"></div>
             </div>
             
             <div onclick="addPointLeft()" class="flex-1 card-score score-p1 flex flex-col items-center justify-center cursor-pointer active:bg-cyan-950/40 transition-colors">
@@ -110,7 +110,7 @@
                     🎾 Saque
                 </div>
                 <h2 id="name-right" class="text-lg md:text-2xl font-black uppercase tracking-wider text-white truncate mt-1">JUGADOR 2</h2>
-                <div id="ranking-info-right" class="text-[10px] font-extrabold text-fuchsia-300 mt-0.5">Calculando...</div>
+                <div id="ranking-info-right" class="text-[10px] font-extrabold text-fuchsia-300 mt-0.5"></div>
             </div>
             
             <div onclick="addPointRight()" class="flex-1 card-score score-p2 flex flex-col items-center justify-center cursor-pointer active:bg-fuchsia-950/40 transition-colors">
@@ -210,6 +210,25 @@
             if (numSetActual % 2 === 0) isSwapped = true;
             else isSwapped = false;
 
+            // === AUTO-CORRECCIÓN DE ESTADOS ZOMBIS ===
+            // Si el partido ya alcanzó los sets para ganar, pero sigue "en curso" o tiene puntos en el nuevo set.
+            if (p1.sets >= setsParaGanar || p2.sets >= setsParaGanar) {
+                if (data.estado !== 'finalizado' || p1.score > 0 || p2.score > 0) {
+                    p1.score = 0;
+                    p2.score = 0;
+                    data.estado = 'finalizado';
+                    data.ganador_id = p1.sets > p2.sets ? p1.id : p2.id;
+                    
+                    // Forzamos actualización en la BD para limpiar los puntos fantasma
+                    await clienteSupabase.from('partidos').update({
+                        puntos_j1: 0,
+                        puntos_j2: 0,
+                        estado: 'finalizado',
+                        ganador_id: data.ganador_id
+                    }).eq('id', partidoId);
+                }
+            }
+
             if (data.estado === 'finalizado' && data.ganador_id) {
                 mostrarOverlayGanador(data.ganador_id === p1.id ? p1.nombre : p2.nombre);
             }
@@ -227,13 +246,15 @@
             
             await clienteSupabase.from('partidos').update({ modo_juego: val }).eq('id', partidoId);
             
-            // Si al cambiar el formato el jugador ya alcanzó los sets para ganar, finalizar
+            // Si al cambiar el formato el jugador ya alcanzó los sets para ganar, finalizar limpiando basura
             if (p1.sets >= setsParaGanar || p2.sets >= setsParaGanar) {
+                p1.score = 0; 
+                p2.score = 0;
                 partidoData.estado = 'finalizado';
                 let ganadorId = p1.sets > p2.sets ? p1.id : p2.id;
                 partidoData.ganador_id = ganadorId;
                 mostrarOverlayGanador(ganadorId === p1.id ? p1.nombre : p2.nombre);
-                await clienteSupabase.from('partidos').update({ estado: 'finalizado', ganador_id: ganadorId }).eq('id', partidoId);
+                await clienteSupabase.from('partidos').update({ puntos_j1: 0, puntos_j2: 0, estado: 'finalizado', ganador_id: ganadorId }).eq('id', partidoId);
             }
             actualizarUI();
         }
@@ -414,7 +435,7 @@
                 }
             }
 
-            // CORRECCIÓN: Si el Ranking está en OFF, el texto queda completamente en blanco para no mostrar absolutamente nada
+            // CORRECCIÓN: Si está apagado, se manda una cadena vacía para que no se muestre absolutamente nada de ranking.
             let textRankP1 = mostrarRankingImpacto ? `<strong>${ptsShowP1} pts${isFin ? '(Final)' : '(En Vivo)'}</strong> | <span class="text-emerald-400">🏆 +${impactoLive.j1Gana}</span> <span class="text-rose-400">❌ ${Math.abs(impactoLive.j1Pierde)}</span>` : ``;
             let textRankP2 = mostrarRankingImpacto ? `<strong>${ptsShowP2} pts${isFin ? '(Final)' : '(En Vivo)'}</strong> | <span class="text-emerald-400">🏆 +${impactoLive.j2Gana}</span> <span class="text-rose-400">❌ ${Math.abs(impactoLive.j2Pierde)}</span>` : ``;
 
@@ -482,7 +503,6 @@
             if (partidoGanado) mostrarOverlayGanador(ganadorId === p1.id ? p1.nombre : p2.nombre);
         }
 
-        // CORRECCIÓN: Función Deshacer mejorada para restaurar el set correcto incluso si se recargó la página
         function undo() {
             if (historyStack.length > 0) {
                 const snap = historyStack.pop();
