@@ -529,7 +529,6 @@
             const porCategoria = {};
 
             partidosMonitoreo.forEach(m => {
-                // CORRECCIÓN: Filtrar estrictamente solo partidos de fase de grupos
                 if (!m.grupo_nombre) return;
 
                 const catNombre = m.categorias?.nombre || 'General';
@@ -659,27 +658,41 @@
                                                 <th style="padding:8px; text-align:center;">PJ</th>
                                                 <th style="padding:8px; text-align:center;">PG</th>
                                                 <th style="padding:8px; text-align:center;">PP</th>
+                                                <th style="padding:8px; text-align:center;">Sets (G - P)</th>
+                                                <th style="padding:8px; text-align:center;">Dif</th>
                                                 <th style="padding:8px; text-align:center; color:#fbbf24;">Pts</th>
                                                 <th style="padding:8px;">Ganó a:</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            ${listaJugadores.map((j, idx) => `
-                                                <tr class="tr-header" onclick="abrirModalJugadorAdmin(${j.id}, '${j.nombre.replace(/'/g, "\\'")}', '${j.club || 'Sin Club'}')" style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer;">
-                                                    <td style="padding:10px 8px; font-weight:800; color:#64748b;">#${idx + 1}</td>
-                                                    <td style="padding:10px 8px;">
-                                                        <strong style="color:#ffffff; font-size:12px; display:block;">${j.nombre}</strong>
-                                                        <span style="font-size:9px; color:#64748b; font-weight:700;">${j.club || 'Sin Club'}</span>
-                                                    </td>
-                                                    <td style="padding:10px 8px; text-align:center; font-weight:700; color:#94a3b8;">${j.pj}</td>
-                                                    <td style="padding:10px 8px; text-align:center; font-weight:700; color:#34d399;">${j.pg}</td>
-                                                    <td style="padding:10px 8px; text-align:center; font-weight:700; color:#f87171;">${j.pp}</td>
-                                                    <td style="padding:10px 8px; text-align:center; font-weight:800; color:#fbbf24; font-size:14px;">${j.pts}</td>
-                                                    <td style="padding:10px 8px; font-size:10px;">
-                                                        ${j.ganoA.length > 0 ? `<span style="background:rgba(16,185,129,0.2); color:#34d399; padding:2px 8px; border-radius:4px; font-weight:800; border:1px solid rgba(16,185,129,0.4);">${j.ganoA.join(', ')}</span>` : '<span style="color:#475569; font-style:italic;">-</span>'}
-                                                    </td>
-                                                </tr>
-                                            `).join('')}
+                                            ${listaJugadores.map((j, idx) => {
+                                                let dif = j.setsGanados - j.setsPerdidos;
+                                                let difStr = dif >= 0 ? '+' + dif : dif;
+                                                let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
+
+                                                return `
+                                                    <tr class="tr-header" onclick="abrirModalJugadorAdmin(${j.id}, '${j.nombre.replace(/'/g, "\\'")}', '${j.club || 'Sin Club'}')" style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer;">
+                                                        <td style="padding:10px 8px; font-weight:800; color:#64748b;">#${idx + 1}</td>
+                                                        <td style="padding:10px 8px;">
+                                                            <strong style="color:#ffffff; font-size:12px; display:block;">${j.nombre}</strong>
+                                                            <span style="font-size:9px; color:#64748b; font-weight:700;">${j.club || 'Sin Club'}</span>
+                                                        </td>
+                                                        <td style="padding:10px 8px; text-align:center; font-weight:700; color:#94a3b8;">${j.pj}</td>
+                                                        <td style="padding:10px 8px; text-align:center; font-weight:700; color:#34d399;">${j.pg}</td>
+                                                        <td style="padding:10px 8px; text-align:center; font-weight:700; color:#f87171;">${j.pp}</td>
+                                                        <td style="padding:10px 8px; text-align:center;">
+                                                            <span style="color:#34d399; font-weight:800;">${j.setsGanados}</span>
+                                                            <span style="color:#64748b; margin:0 2px;">:</span>
+                                                            <span style="color:#f87171; font-weight:800;">${j.setsPerdidos}</span>
+                                                        </td>
+                                                        <td style="padding:10px 8px; text-align:center; font-weight:800; color:${colorDif};">${difStr}</td>
+                                                        <td style="padding:10px 8px; text-align:center; font-weight:800; color:#fbbf24; font-size:14px;">${j.pts}</td>
+                                                        <td style="padding:10px 8px; font-size:10px;">
+                                                            ${j.ganoA.length > 0 ? `<span style="background:rgba(16,185,129,0.2); color:#34d399; padding:2px 8px; border-radius:4px; font-weight:800; border:1px solid rgba(16,185,129,0.4);">${j.ganoA.join(', ')}</span>` : '<span style="color:#475569; font-style:italic;">-</span>'}
+                                                        </td>
+                                                    </tr>
+                                                `;
+                                            }).join('')}
                                         </tbody>
                                     </table>
                                 </div>
