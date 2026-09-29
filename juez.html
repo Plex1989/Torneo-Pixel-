@@ -35,12 +35,9 @@
                 ✅ Volver a Mesas
             </button>
             
-            <button onclick="ocultarAvisoVictoria()" class="w-full bg-slate-800 hover:bg-slate-700 text-white px-6 py-3 rounded-full font-bold text-xs md:text-sm uppercase tracking-widest transition-all border border-slate-600">
-                👁️ Ver Tablero (Opciones)
-            </button>
-
-            <button onclick="cerrarModalYCorregir()" class="text-rose-400 hover:text-rose-300 text-[10px] md:text-xs font-bold uppercase underline tracking-widest cursor-pointer mt-4">
-                ⚙️ Deshacer Último Punto (Reabrir Partido)
+            <!-- BOTÓN DESHACER REDISEÑADO -->
+            <button onclick="cerrarModalYCorregir()" class="w-full bg-rose-500/20 hover:bg-rose-500 text-rose-400 hover:text-white px-6 py-3 rounded-full font-bold text-xs md:text-sm uppercase tracking-widest transition-all border border-rose-500/50 shadow-[0_0_15px_rgba(225,29,72,0.2)] mt-2">
+                <i class="fa-solid fa-rotate-left mr-2"></i> Deshacer Último Punto
             </button>
         </div>
     </div>
@@ -151,7 +148,7 @@
         let audioMuted = false;
         let mostrarRankingImpacto = false;
         
-        // Memoria Persistente de React portada a Vanilla JS
+        // Memoria Persistente a prueba de refrescos
         let historyStack = [];
         let canalEspectadores = null;
 
@@ -165,7 +162,9 @@
             if (!partidoId) { alert("ID de partido no especificado."); return; }
             try {
                 const cacheHistory = localStorage.getItem(`historial_undo_${partidoId}`);
-                if (cacheHistory) historyStack = JSON.parse(cacheHistory);
+                if (cacheHistory) {
+                    historyStack = JSON.parse(cacheHistory);
+                }
 
                 const { data: reglas } = await clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true });
                 reglasRanking = reglas || [];
@@ -265,6 +264,7 @@
         function getCurrentServer() {
             let currentSetIdx = numSetActual - 1; if(currentSetIdx >= firstServersBySet.length) { firstServersBySet[currentSetIdx] = firstServersBySet[currentSetIdx-1] === 1 ? 2 : 1; }
             let firstSrv = firstServersBySet[currentSetIdx]; let s1 = p1.score, s2 = p2.score; let total = s1 + s2;
+            
             let deuceThreshold = pointsToWin - 1;
             if(s1 >= deuceThreshold && s2 >= deuceThreshold && modoJuego !== '1-15') { 
                 let extra = total - (deuceThreshold * 2); 
@@ -372,13 +372,12 @@
                 return;
             }
 
-            saveSnapshot(); // ¡Se guarda la jugada en la RAM local antes de hacer cambios!
+            saveSnapshot();
             
             if (jugadorOriginalNum === 1) p1.score++; else p2.score++;
             let s1 = p1.score, s2 = p2.score;
             let partidoGanado = false; let ganadorId = null;
 
-            // Validación matemática del set (ej. 11 pts)
             if ((s1 >= pointsToWin || s2 >= pointsToWin) && Math.abs(s1 - s2) >= 2) {
                 let ganadorSet = s1 > s2 ? 1 : 2;
                 if (ganadorSet === 1) p1.sets++; else p2.sets++;
@@ -434,14 +433,11 @@
             }
         }
 
-        // ==========================================
-        // BOTÓN DESHACER INTELIGENTE A PRUEBA DE FALLOS
-        // ==========================================
         async function undo(skipConfirm = false) {
-            // Caso 1: Hay memoria RAM del partido en esta ventana (botón React)
+            // Caso 1: Hay memoria RAM del partido en esta ventana
             if (historyStack.length > 0) {
                 const snap = historyStack.pop();
-                localStorage.setItem(`historial_undo_${partidoId}`, JSON.stringify(historyStack)); // Sincroniza la caché
+                localStorage.setItem(`historial_undo_${partidoId}`, JSON.stringify(historyStack)); 
                 
                 p1 = snap.p1; p2 = snap.p2; 
                 historialSets = snap.historialSets; 
@@ -455,8 +451,8 @@
                 return;
             } 
             
-            // Caso 2: Memoria borrada (Recargaron página o vienen de Mesas)
-            if (p1.score === 0 && p2.score === 0 && historialSets.length === 0 && (!partidoData || partidoData.estado !== 'finalizado')) return; // Partido virgen
+            // Caso 2: Memoria borrada
+            if (p1.score === 0 && p2.score === 0 && historialSets.length === 0 && (!partidoData || partidoData.estado !== 'finalizado')) return;
 
             if (!skipConfirm) {
                 let c = confirm("⚠️ Modo Corrección Manual: ¿Deseas deshacer la última acción y reabrir el marcador?");
@@ -464,11 +460,9 @@
             }
 
             if (partidoData && partidoData.estado === 'finalizado') {
-                // Primero le quitamos el estatus de cerrado
                 partidoData.estado = 'en_curso';
                 partidoData.ganador_id = null;
                 
-                // Si el partido se ganó legalmente (cumplió con los sets requeridos)
                 if (p1.sets >= setsParaGanar || p2.sets >= setsParaGanar) {
                     if (p1.sets > p2.sets) p1.sets = Math.max(0, p1.sets - 1);
                     else p2.sets = Math.max(0, p2.sets - 1);
@@ -477,18 +471,13 @@
                         let lastSet = historialSets.pop();
                         numSetActual = Math.max(1, numSetActual - 1);
                         p1.score = lastSet.s1; p2.score = lastSet.s2;
-                        // Le restamos el último punto anotado
+                        
                         if (p1.score > p2.score) p1.score = Math.max(0, p1.score - 1);
                         else p2.score = Math.max(0, p2.score - 1);
                     }
-                } else {
-                    // Si se finalizó manualmente a la mitad de un juego (EJ. 9-2)
-                    // NO restamos sets, NO tocamos historial, SOLO se quita el estatus "finalizado"
-                    // Lo regresamos intacto para que puedan seguir sumando
                 }
             } 
             else if (p1.score === 0 && p2.score === 0 && (p1.sets > 0 || p2.sets > 0)) {
-                // Acaban de ganar un set, pero el partido no ha terminado. Anulamos el set.
                 if (historialSets.length > 0) {
                     let lastSet = historialSets.pop();
                     numSetActual = Math.max(1, numSetActual - 1);
@@ -498,7 +487,6 @@
                 }
             } 
             else {
-                // El partido está en juego (ej. 9-2) y quieren restar un punto sin borrar RAM
                 let resp = prompt(`MODO CORRECCIÓN: ¿A quién le restamos 1 punto?\n\n[ 1 ] para ${p1.nombre}\n[ 2 ] para ${p2.nombre}`);
                 if (resp === '1' && p1.score > 0) p1.score--;
                 else if (resp === '2' && p2.score > 0) p2.score--;
@@ -526,11 +514,6 @@
 
             document.getElementById('modal-ganador').classList.remove('hidden');
             document.getElementById('modal-ganador').classList.add('flex');
-        }
-
-        function ocultarAvisoVictoria() {
-            document.getElementById('modal-ganador').classList.add('hidden');
-            document.getElementById('modal-ganador').classList.remove('flex');
         }
 
         function cerrarYRegresar() { window.location.href = 'mesas.html'; }
