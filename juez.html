@@ -186,7 +186,7 @@
 
             // CORRECCIÓN MATEMÁTICA: Sets para ganar asegurados
             modoJuego = data.modo_juego || '3-5';
-            setsParaGanar = 3; // Fallback seguro por si en BD se guarda un dato corrupto
+            setsParaGanar = 3; 
             if (modoJuego === '2-3') setsParaGanar = 2;
             if (modoJuego === '4-7') setsParaGanar = 4;
 
@@ -291,10 +291,19 @@
         }
 
         function calcularImpactoPuntos(ptsA, ptsB) {
-            let diff = Math.abs(ptsA - ptsB); let favoritoEsJ1 = ptsA >= ptsB;
-            let reglaGanaJ1 = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((favoritoEsJ1 && r.resultado_esperado === 'gana_favorito') || (!favoritoEsJ1 && r.resultado_esperado === 'gana_retador')));
+            let diff = Math.abs(ptsA - ptsB); 
+            // CORRECCIÓN: Se renombró la variable correctamente para evitar el cuelgue silencioso.
+            let favJ1 = ptsA >= ptsB; 
+            
+            let reglaGanaJ1 = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((favJ1 && r.resultado_esperado === 'gana_favorito') || (!favJ1 && r.resultado_esperado === 'gana_retador')));
             let reglaGanaJ2 = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((!favJ1 && r.resultado_esperado === 'gana_favorito') || (favJ1 && r.resultado_esperado === 'gana_retador')));
-            return { j1Gana: reglaGanaJ1 ? reglaGanaJ1.puntos_ganador : 10, j1Pierde: reglaGanaJ2 ? -Math.abs(reglaGanaJ2.puntos_perdedor) : -5, j2Gana: reglaGanaJ2 ? reglaGanaJ2.puntos_ganador : 10, j2Pierde: reglaGanaJ1 ? -Math.abs(reglaGanaJ1.puntos_perdedor) : -5 };
+            
+            return { 
+                j1Gana: reglaGanaJ1 ? reglaGanaJ1.puntos_ganador : 10, 
+                j1Pierde: reglaGanaJ2 ? -Math.abs(reglaGanaJ2.puntos_perdedor) : -5, 
+                j2Gana: reglaGanaJ2 ? reglaGanaJ2.puntos_ganador : 10, 
+                j2Pierde: reglaGanaJ1 ? -Math.abs(reglaGanaJ1.puntos_perdedor) : -5 
+            };
         }
 
         function getCurrentServer() {
@@ -326,10 +335,9 @@
             
             const { error } = await clienteSupabase.from('partidos').update({ mostrar_ranking: mostrarRankingImpacto }).eq('id', partidoId);
             
-            // Advertencia visual si falla porque falta la columna en Supabase
             if (error) {
                 console.error("Error BD:", error);
-                alert("⚠️ ATENCIÓN: El sistema no pudo guardar el estado de Ranking (Volverá a OFF al recargar).\n\nPara arreglarlo, por favor ingresa al SQL Editor de Supabase y corre este comando:\n\nALTER TABLE partidos ADD COLUMN IF NOT EXISTS mostrar_ranking boolean DEFAULT false;");
+                alert("⚠️ ATENCIÓN: El sistema no pudo guardar el estado de Ranking.");
             }
             
             actualizarUI();
@@ -380,7 +388,6 @@
         function addPointRight() { addPoint(isSwapped ? 1 : 2); }
 
         async function addPoint(jugadorOriginalNum) {
-            // BLOQUEO DURO DE SEGURIDAD ABSOLUTA
             if (p1.sets >= setsParaGanar || p2.sets >= setsParaGanar || (partidoData && partidoData.estado === 'finalizado')) {
                 let ganadorFinal = p1.sets > p2.sets ? p1.nombre : p2.nombre;
                 mostrarOverlayGanador(ganadorFinal);
@@ -427,14 +434,51 @@
             if (partidoGanado) mostrarOverlayGanador(ganadorId === p1.id ? p1.nombre : p2.nombre);
         }
 
+        // CORRECCIÓN: Función Deshacer rediseñada para funcionar aunque se recargue la página.
         function undo() {
-            if (historyStack.length === 0) return;
-            const snap = historyStack.pop();
-            p1 = snap.p1; p2 = snap.p2; historialSets = snap.historialSets; numSetActual = snap.numSetActual; isSwapped = snap.isSwapped; firstServersBySet = snap.firstServersBySet;
+            if (historyStack.length > 0) {
+                const snap = historyStack.pop();
+                p1 = snap.p1; p2 = snap.p2; historialSets = snap.historialSets; numSetActual = snap.numSetActual; isSwapped = snap.isSwapped; firstServersBySet = snap.firstServersBySet;
+            } else {
+                // Si recargaron la página, analizamos el marcador para saber exactamente a dónde regresar.
+                if (p1.score === 0 && p2.score === 0) {
+                    if (historialSets.length > 0) {
+                        let lastSet = historialSets.pop();
+                        numSetActual = Math.max(1, numSetActual - 1);
+                        if (lastSet.s1 > lastSet.s2) {
+                            p1.sets = Math.max(0, p1.sets - 1);
+                            p1.score = lastSet.s1 - 1; // Si ganó 11-9, regresa el score a 10.
+                            p2.score = lastSet.s2;     // Y el perdedor se queda en 9.
+                        } else {
+                            p2.sets = Math.max(0, p2.sets - 1);
+                            p1.score = lastSet.s1;
+                            p2.score = lastSet.s2 - 1; 
+                        }
+                    } else {
+                        return; // Nada que deshacer
+                    }
+                } else {
+                    if (p1.score > p2.score) {
+                        p1.score = Math.max(0, p1.score - 1);
+                    } else if (p2.score > p1.score) {
+                        p2.score = Math.max(0, p2.score - 1);
+                    } else {
+                        if (p1.score > 0) p1.score--; // Respaldo en caso de empate técnico
+                    }
+                }
+            }
+            
             partidoData.estado = 'en_curso';
             partidoData.ganador_id = null;
+
             actualizarUI();
-            clienteSupabase.from('partidos').update({ puntos_j1: p1.score, puntos_j2: p2.score, sets_j1: p1.sets, sets_j2: p2.sets, historial_sets: historialSets, estado: 'en_curso', ganador_id: null }).eq('id', partidoId);
+            clienteSupabase.from('partidos').update({ 
+                puntos_j1: p1.score, puntos_j2: p2.score, 
+                sets_j1: p1.sets, sets_j2: p2.sets, 
+                historial_sets: historialSets, 
+                estado: 'en_curso', 
+                ganador_id: null 
+            }).eq('id', partidoId);
         }
 
         function manualSwapSides() { isSwapped = !isSwapped; actualizarUI(); }
@@ -455,22 +499,7 @@
         function cerrarModalYCorregir() {
             document.getElementById('modal-ganador').classList.add('hidden');
             document.getElementById('modal-ganador').classList.remove('flex');
-            
-            if (historyStack.length > 0) {
-                undo();
-            } else {
-                if (p1.sets >= setsParaGanar || p1.id === partidoData.ganador_id) p1.sets = Math.max(0, p1.sets - 1);
-                else p2.sets = Math.max(0, p2.sets - 1);
-                
-                p1.score = 0; p2.score = 0;
-                if (historialSets.length > 0) { historialSets.pop(); numSetActual = Math.max(1, numSetActual - 1); }
-                
-                partidoData.estado = 'en_curso';
-                partidoData.ganador_id = null;
-
-                actualizarUI();
-                clienteSupabase.from('partidos').update({ sets_j1: p1.sets, sets_j2: p2.sets, puntos_j1: p1.score, puntos_j2: p2.score, historial_sets: historialSets, estado: 'en_curso', ganador_id: null }).eq('id', partidoId);
-            }
+            undo();
         }
 
         function toggleAudio() { audioMuted = !audioMuted; document.getElementById('btn-audio').innerHTML = audioMuted ? '<i class="fa-solid fa-volume-xmark text-rose-400"></i>' : '<i class="fa-solid fa-volume-high text-cyan-400"></i>'; }
