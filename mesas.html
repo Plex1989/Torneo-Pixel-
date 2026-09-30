@@ -135,9 +135,9 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // BLINDAJE SAAS (Variables)
-        const ORG_ID = localStorage.getItem('organizador_id');
-        let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
+        // BLINDAJE SAAS SEGURO
+        const ORG_ID = parseInt(localStorage.getItem('organizador_id')) || null;
+        let idTorneoActivo = parseInt(localStorage.getItem('torneo_activo_id')) || null;
 
         let todosLosPartidos = [];
         let mesaFiltro = 'todas';
@@ -162,20 +162,25 @@
 
         async function inicializar() {
             try {
-                // BLINDAJE SAAS
+                if (!ORG_ID || !idTorneoActivo) {
+                    document.getElementById('contenedor-partidos').innerHTML = `<div class="mensaje-vacio text-rose-500">Torneo u organizador no detectado.</div>`;
+                    return;
+                }
+
+                // BLINDAJE SAAS - SEGURO CONTRA ERRORES
                 const [resTorneo, resReglas, resConfig] = await Promise.allSettled([
-                    clienteSupabase.from('torneos').select('nombre, pin_jueces').eq('id', idTorneoActivo).eq('organizador_id', ORG_ID).single(),
+                    clienteSupabase.from('torneos').select('nombre, pin_jueces').eq('id', idTorneoActivo).eq('organizador_id', ORG_ID).maybeSingle(),
                     clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }),
-                    clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).single()
+                    clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).maybeSingle()
                 ]);
 
-                if (resTorneo.status === 'fulfilled' && resTorneo.value.data) {
+                if (resTorneo.status === 'fulfilled' && resTorneo.value && resTorneo.value.data) {
                     document.getElementById('nombre-torneo').innerText = resTorneo.value.data.nombre;
                     if (resTorneo.value.data.pin_jueces) pinJuecesActual = resTorneo.value.data.pin_jueces;
                 }
 
-                reglasRankingList = resReglas.status === 'fulfilled' ? (resReglas.value.data || []) : [];
-                if (resConfig.status === 'fulfilled' && resConfig.value.data) {
+                reglasRankingList = resReglas.status === 'fulfilled' && resReglas.value ? (resReglas.value.data || []) : [];
+                if (resConfig.status === 'fulfilled' && resConfig.value && resConfig.value.data) {
                     bonoPaseActivo = resConfig.value.data.activo;
                     bonoPaseValor = resConfig.value.data.valor;
                 }
@@ -522,90 +527,92 @@
                     filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'finalizado');
                 }
 
+                // ARREGLO: Ya no detenemos la ejecución si no hay partidos de grupo
+                // Solo informamos al usuario, y continuamos para cargar las llaves al final.
                 if (filtrados.length === 0) {
-                    container.innerHTML = `<div class="mensaje-vacio">No hay partidos registrados bajo este filtro.</div>`;
-                    return;
+                    container.innerHTML = `<div class="mensaje-vacio">No hay partidos de fase de grupos bajo este filtro.</div>`;
+                } else {
+                    const gruposPorHora = {};
+                    filtrados.forEach(p => {
+                        const h = p.hora || '09:00 AM';
+                        if(!gruposPorHora[h]) gruposPorHora[h] = [];
+                        gruposPorHora[h].push(p);
+                    });
+
+                    const horasOrdenadas = Object.keys(gruposPorHora).sort((a, b) => timeStringToMinutes(a) - timeStringToMinutes(b));
+
+                    horasOrdenadas.forEach(hora => {
+                        container.innerHTML += `<div class="header-hora">⏰ ${hora}</div>`;
+
+                        gruposPorHora[hora].forEach(p => {
+                            let est = String(p.estado || '').toLowerCase();
+                            let isFin = est === 'finalizado';
+                            let isVivo = est === 'en_curso';
+
+                            let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : 
+                                          (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
+
+                            let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
+                            let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
+
+                            let iconJ1 = (isFin && p.ganador_id === p.jugador1_id) ? '🏆 ' : '';
+                            let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '🏆 ' : '';
+
+                            let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
+
+                            let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : '';
+                            let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
+                            
+                            if (isVivo) {
+                                score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`;
+                                score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`;
+                            }
+
+                            // EVITA CRASH EN CASO DE JUGADORES NULOS
+                            let j1Click = p.jugador1_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador1_id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(p.j1?.club || '').replace(/'/g, "\\'")}')"` : '';
+                            let j2Click = p.jugador2_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador2_id}, '${String(nomJ2).replace(/'/g, "\\'")}', '${String(p.j2?.club || '').replace(/'/g, "\\'")}')"` : '';
+
+                            container.innerHTML += `
+                                <div class="card-mesa ${isVivo ? 'vivo' : (isFin ? 'finalizado' : '')}">
+                                    <div class="top-bar">
+                                        <span class="mesa-title">MESA ${p.mesa || 1}</span>
+                                        ${badgeEst}
+                                    </div>
+
+                                    <div style="margin-bottom:12px;">
+                                        <span class="cat-badge" style="color:${catStyle.text}; background:${catStyle.bg}; border:1px solid ${catStyle.border};">
+                                            🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'} • Gpo ${p.grupo_nombre}
+                                        </span>
+                                    </div>
+
+                                    <div class="score-container">
+                                        <div class="jugador-box">
+                                            <div style="cursor:pointer;" ${j1Click}>
+                                                <span class="jugador-nombre">${iconJ1}${nomJ1}</span>
+                                            </div>
+                                            <div style="display:flex; align-items:center;">${score1}</div>
+                                        </div>
+
+                                        <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
+                                            <div style="cursor:pointer;" ${j2Click}>
+                                                <span class="jugador-nombre">${iconJ2}${nomJ2}</span>
+                                            </div>
+                                            <div style="display:flex; align-items:center;">${score2}</div>
+                                        </div>
+                                    </div>
+
+                                    <div style="display:flex; gap:10px;">
+                                        <button class="btn-arbitrar ${isFin ? 'btn-reabrir' : ''}" onclick="abrirScoreboardJuez(${p.id})">
+                                            ${isFin ? '🏁 REABRIR PARTIDO' : '🏓 Arbitrar Partido'}
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                    });
                 }
 
-                const gruposPorHora = {};
-                filtrados.forEach(p => {
-                    const h = p.hora || '09:00 AM';
-                    if(!gruposPorHora[h]) gruposPorHora[h] = [];
-                    gruposPorHora[h].push(p);
-                });
-
-                const horasOrdenadas = Object.keys(gruposPorHora).sort((a, b) => timeStringToMinutes(a) - timeStringToMinutes(b));
-
-                horasOrdenadas.forEach(hora => {
-                    container.innerHTML += `<div class="header-hora">⏰ ${hora}</div>`;
-
-                    gruposPorHora[hora].forEach(p => {
-                        let est = String(p.estado || '').toLowerCase();
-                        let isFin = est === 'finalizado';
-                        let isVivo = est === 'en_curso';
-
-                        let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : 
-                                      (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
-
-                        let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
-                        let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
-
-                        let iconJ1 = (isFin && p.ganador_id === p.jugador1_id) ? '🏆 ' : '';
-                        let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '🏆 ' : '';
-
-                        let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
-
-                        let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : '';
-                        let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
-                        
-                        if (isVivo) {
-                            score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`;
-                            score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`;
-                        }
-
-                        // EVITA CRASH EN CASO DE JUGADORES NULOS
-                        let j1Click = p.jugador1_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador1_id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(p.j1?.club || '').replace(/'/g, "\\'")}')"` : '';
-                        let j2Click = p.jugador2_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador2_id}, '${String(nomJ2).replace(/'/g, "\\'")}', '${String(p.j2?.club || '').replace(/'/g, "\\'")}')"` : '';
-
-                        container.innerHTML += `
-                            <div class="card-mesa ${isVivo ? 'vivo' : (isFin ? 'finalizado' : '')}">
-                                <div class="top-bar">
-                                    <span class="mesa-title">MESA ${p.mesa || 1}</span>
-                                    ${badgeEst}
-                                </div>
-
-                                <div style="margin-bottom:12px;">
-                                    <span class="cat-badge" style="color:${catStyle.text}; background:${catStyle.bg}; border:1px solid ${catStyle.border};">
-                                        🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'} • Gpo ${p.grupo_nombre}
-                                    </span>
-                                </div>
-
-                                <div class="score-container">
-                                    <div class="jugador-box">
-                                        <div style="cursor:pointer;" ${j1Click}>
-                                            <span class="jugador-nombre">${iconJ1}${nomJ1}</span>
-                                        </div>
-                                        <div style="display:flex; align-items:center;">${score1}</div>
-                                    </div>
-
-                                    <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
-                                        <div style="cursor:pointer;" ${j2Click}>
-                                            <span class="jugador-nombre">${iconJ2}${nomJ2}</span>
-                                        </div>
-                                        <div style="display:flex; align-items:center;">${score2}</div>
-                                    </div>
-                                </div>
-
-                                <div style="display:flex; gap:10px;">
-                                    <button class="btn-arbitrar ${isFin ? 'btn-reabrir' : ''}" onclick="abrirScoreboardJuez(${p.id})">
-                                        ${isFin ? '🏁 REABRIR PARTIDO' : '🏓 Arbitrar Partido'}
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                });
-
+                // SIEMPRE INTENTA DIBUJAR LAS LLAVES AL FINAL (Aunque no haya fase de grupos)
                 if (mesaFiltro === 'todas') {
                     dibujarLlavesInferiores(container);
                 }
