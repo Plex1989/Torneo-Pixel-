@@ -11,7 +11,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // BLINDAJE SAAS
         const orgIdCheck = localStorage.getItem('organizador_id');
         if (!orgIdCheck) {
             alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
@@ -71,12 +70,13 @@
         .mensaje-vacio { text-align: center; color: #475569; font-style: italic; grid-column: 1/-1; padding: 40px; }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .modal-overlay.hidden { display: none !important; pointer-events: none; z-index: -100; }
         .modal-card { background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; width: 100%; max-width: 520px; padding: 24px; color: white; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
     </style>
 </head>
 <body>
 
-    <div id="modal-jugador-admin" class="modal-overlay no-print" style="display: none;">
+    <div id="modal-jugador-admin" class="modal-overlay hidden no-print">
         <div class="modal-card">
             <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
                 <div>
@@ -161,21 +161,21 @@
 
         async function inicializar() {
             try {
-                // EXTRACCIÓN DINÁMICA DE USUARIO (Idéntico a Espectador)
-                const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre, organizador_id, pin_jueces').eq('id', idTorneoActivo).single();
+                // EXTRACCIÓN DINÁMICA DE USUARIO Y TORNEO IGUAL QUE ESPECTADOR
+                const { data: torneoData, error: errTorneo } = await clienteSupabase.from('torneos').select('nombre, organizador_id, pin_jueces').eq('id', idTorneoActivo).single();
                 
-                if (torneoData) {
-                    document.getElementById('nombre-torneo').innerText = torneoData.nombre;
-                    if (torneoData.pin_jueces) pinJuecesActual = torneoData.pin_jueces;
-                    ORG_ID = torneoData.organizador_id;
-                } else {
-                    document.getElementById('contenedor-partidos').innerHTML = `<div class="mensaje-vacio text-rose-500">Torneo no detectado.</div>`;
+                if (errTorneo || !torneoData) {
+                    document.getElementById('contenedor-partidos').innerHTML = `<div class="mensaje-vacio text-rose-500">Error: Torneo no detectado en la Base de Datos.</div>`;
                     return;
                 }
 
+                document.getElementById('nombre-torneo').innerText = torneoData.nombre;
+                if (torneoData.pin_jueces) pinJuecesActual = torneoData.pin_jueces;
+                ORG_ID = torneoData.organizador_id;
+
                 const [resReglas, resConfig] = await Promise.allSettled([
                     clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }),
-                    clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).maybeSingle()
+                    clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).single()
                 ]);
 
                 reglasRankingList = resReglas.status === 'fulfilled' && resReglas.value ? (resReglas.value.data || []) : [];
@@ -194,8 +194,8 @@
                     })
                     .subscribe();
             } catch (err) {
-                console.error("Error inicializando mesas:", err);
-                document.getElementById('contenedor-partidos').innerHTML = `<div class="mensaje-vacio text-rose-500">Error inicializando el sistema. Revisa la consola.</div>`;
+                console.error("Error crítico inicializando mesas:", err);
+                document.getElementById('contenedor-partidos').innerHTML = `<div class="mensaje-vacio text-rose-500">Error inicializando el sistema. Verifica la consola.</div>`;
             }
         }
 
@@ -239,22 +239,20 @@
         }
 
         function generarBotonesCategorias() {
-            try {
-                const bar = document.getElementById('bar-categorias');
-                if(!bar) return;
-                const catsMap = new Map();
-                todosLosPartidos.forEach(p => {
-                    if (p.categorias && p.categorias.nombre) {
-                        catsMap.set(p.categorias.nombre, p.categorias.id);
-                    }
-                });
+            const bar = document.getElementById('bar-categorias');
+            if(!bar) return;
+            const catsMap = new Map();
+            todosLosPartidos.forEach(p => {
+                if (p.categorias && p.categorias.nombre) {
+                    catsMap.set(p.categorias.nombre, p.categorias.id);
+                }
+            });
 
-                let html = `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === 'todas' ? 'active' : ''}" onclick="filtrarCategoria('todas')">Todas las Categorías</button>`;
-                catsMap.forEach((id, nombre) => {
-                    html += `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === nombre ? 'active' : ''}" onclick="filtrarCategoria('${nombre}')">🏆 ${nombre}</button>`;
-                });
-                bar.innerHTML = html;
-            } catch(e) { console.error("Error en generarBotonesCategorias:", e); }
+            let html = `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === 'todas' ? 'active' : ''}" onclick="filtrarCategoria('todas')">Todas las Categorías</button>`;
+            catsMap.forEach((id, nombre) => {
+                html += `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === nombre ? 'active' : ''}" onclick="filtrarCategoria('${nombre}')">🏆 ${nombre}</button>`;
+            });
+            bar.innerHTML = html;
         }
 
         function filtrarCategoria(catNombre) {
@@ -264,19 +262,17 @@
         }
 
         function generarBotonesMesas() {
-            try {
-                const bar = document.getElementById('bar-mesas');
-                if(!bar) return;
-                let mesasUnicas = [...new Set(todosLosPartidos.map(p => p.mesa))].sort((a,b) => a-b);
+            const bar = document.getElementById('bar-mesas');
+            if(!bar) return;
+            let mesasUnicas = [...new Set(todosLosPartidos.map(p => p.mesa))].sort((a,b) => a-b);
 
-                let html = `<button class="btn-filter-pill ${mesaFiltro === 'todas' ? 'active' : ''}" onclick="filtrarMesa('todas')">Todas las Mesas</button>`;
-                mesasUnicas.forEach(m => {
-                    if(m !== null && m !== undefined) {
-                        html += `<button class="btn-filter-pill ${mesaFiltro == m ? 'active' : ''}" onclick="filtrarMesa(${m})">Mesa ${m}</button>`;
-                    }
-                });
-                bar.innerHTML = html;
-            } catch(e) { console.error("Error en generarBotonesMesas:", e); }
+            let html = `<button class="btn-filter-pill ${mesaFiltro === 'todas' ? 'active' : ''}" onclick="filtrarMesa('todas')">Todas las Mesas</button>`;
+            mesasUnicas.forEach(m => {
+                if(m !== null && m !== undefined) {
+                    html += `<button class="btn-filter-pill ${mesaFiltro == m ? 'active' : ''}" onclick="filtrarMesa(${m})">Mesa ${m}</button>`;
+                }
+            });
+            bar.innerHTML = html;
         }
 
         function filtrarMesa(m) {
@@ -482,140 +478,138 @@
                 modalList.innerHTML = html;
             }
 
-            document.getElementById('modal-jugador-admin').style.display = 'flex';
+            document.getElementById('modal-jugador-admin').classList.remove('hidden');
         }
 
         function cerrarModalJugadorAdmin() {
-            document.getElementById('modal-jugador-admin').style.display = 'none';
+            document.getElementById('modal-jugador-admin').classList.add('hidden');
         }
 
+        // ==========================================
+        // DIBUJAR PANTALLA PRINCIPAL
+        // ==========================================
         function dibujarPantalla() {
-            try {
-                const container = document.getElementById('contenedor-partidos');
-                if (!container) return;
-                
-                container.innerHTML = '';
+            const container = document.getElementById('contenedor-partidos');
+            if (!container) return;
+            
+            container.innerHTML = '';
 
-                if (estadoFiltro === 'resumen') {
-                    container.style.display = 'block';
-                    dibujarResumenYLlaves(container);
-                    return;
-                }
+            if (estadoFiltro === 'resumen') {
+                container.style.display = 'block';
+                dibujarResumenYLlaves(container);
+                return;
+            }
 
-                container.style.display = 'grid';
+            container.style.display = 'grid';
 
-                let filtrados = todosLosPartidos.filter(p => p.grupo_nombre);
+            let filtrados = todosLosPartidos.filter(p => p.grupo_nombre);
 
-                if (mesaFiltro !== 'todas') {
-                    filtrados = filtrados.filter(p => p.mesa == mesaFiltro);
-                }
+            if (mesaFiltro !== 'todas') {
+                filtrados = filtrados.filter(p => p.mesa == mesaFiltro);
+            }
 
-                if (categoriaFiltro !== 'todas') {
-                    filtrados = filtrados.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
-                }
+            if (categoriaFiltro !== 'todas') {
+                filtrados = filtrados.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
+            }
 
-                if (estadoFiltro === 'en_curso') {
-                    filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'en_curso');
-                } else if (estadoFiltro === 'pendiente') {
-                    filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'pendiente');
-                } else if (estadoFiltro === 'finalizado') {
-                    filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'finalizado');
-                }
+            if (estadoFiltro === 'en_curso') {
+                filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'en_curso');
+            } else if (estadoFiltro === 'pendiente') {
+                filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'pendiente');
+            } else if (estadoFiltro === 'finalizado') {
+                filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'finalizado');
+            }
 
-                if (filtrados.length === 0) {
-                    container.innerHTML = `<div class="mensaje-vacio">No hay partidos de fase de grupos bajo este filtro.</div>`;
-                } else {
-                    const gruposPorHora = {};
-                    filtrados.forEach(p => {
-                        const h = p.hora || '09:00 AM';
-                        if(!gruposPorHora[h]) gruposPorHora[h] = [];
-                        gruposPorHora[h].push(p);
-                    });
+            if (filtrados.length === 0) {
+                container.innerHTML = `<div class="mensaje-vacio">No hay partidos de fase de grupos bajo este filtro.</div>`;
+            } else {
+                const gruposPorHora = {};
+                filtrados.forEach(p => {
+                    const h = p.hora || '09:00 AM';
+                    if(!gruposPorHora[h]) gruposPorHora[h] = [];
+                    gruposPorHora[h].push(p);
+                });
 
-                    const horasOrdenadas = Object.keys(gruposPorHora).sort((a, b) => timeStringToMinutes(a) - timeStringToMinutes(b));
+                const horasOrdenadas = Object.keys(gruposPorHora).sort((a, b) => timeStringToMinutes(a) - timeStringToMinutes(b));
 
-                    horasOrdenadas.forEach(hora => {
-                        container.innerHTML += `<div class="header-hora">⏰ ${hora}</div>`;
+                horasOrdenadas.forEach(hora => {
+                    container.innerHTML += `<div class="header-hora">⏰ ${hora}</div>`;
 
-                        gruposPorHora[hora].forEach(p => {
-                            let est = String(p.estado || '').toLowerCase();
-                            let isFin = est === 'finalizado';
-                            let isVivo = est === 'en_curso';
+                    gruposPorHora[hora].forEach(p => {
+                        let est = String(p.estado || '').toLowerCase();
+                        let isFin = est === 'finalizado';
+                        let isVivo = est === 'en_curso';
 
-                            let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : 
-                                          (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
+                        let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : 
+                                      (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
 
-                            let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
-                            let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
+                        let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
+                        let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
 
-                            let iconJ1 = (isFin && p.ganador_id === p.jugador1_id) ? '🏆 ' : '';
-                            let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '🏆 ' : '';
+                        let iconJ1 = (isFin && p.ganador_id === p.jugador1_id) ? '🏆 ' : '';
+                        let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '🏆 ' : '';
 
-                            let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
+                        let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
 
-                            let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : '';
-                            let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
-                            
-                            if (isVivo) {
-                                score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`;
-                                score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`;
-                            }
+                        let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : '';
+                        let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
+                        
+                        if (isVivo) {
+                            score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`;
+                            score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`;
+                        }
 
-                            let j1Click = p.jugador1_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador1_id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(p.j1?.club || '').replace(/'/g, "\\'")}')"` : '';
-                            let j2Click = p.jugador2_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador2_id}, '${String(nomJ2).replace(/'/g, "\\'")}', '${String(p.j2?.club || '').replace(/'/g, "\\'")}')"` : '';
+                        let j1Click = p.jugador1_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador1_id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(p.j1?.club || '').replace(/'/g, "\\'")}')"` : '';
+                        let j2Click = p.jugador2_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador2_id}, '${String(nomJ2).replace(/'/g, "\\'")}', '${String(p.j2?.club || '').replace(/'/g, "\\'")}')"` : '';
 
-                            container.innerHTML += `
-                                <div class="card-mesa ${isVivo ? 'vivo' : (isFin ? 'finalizado' : '')}">
-                                    <div class="top-bar">
-                                        <span class="mesa-title">MESA ${p.mesa || 1}</span>
-                                        ${badgeEst}
-                                    </div>
+                        container.innerHTML += `
+                            <div class="card-mesa ${isVivo ? 'vivo' : (isFin ? 'finalizado' : '')}">
+                                <div class="top-bar">
+                                    <span class="mesa-title">MESA ${p.mesa || 1}</span>
+                                    ${badgeEst}
+                                </div>
 
-                                    <div style="margin-bottom:12px;">
-                                        <span class="cat-badge" style="color:${catStyle.text}; background:${catStyle.bg}; border:1px solid ${catStyle.border};">
-                                            🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'} • Gpo ${p.grupo_nombre}
-                                        </span>
-                                    </div>
+                                <div style="margin-bottom:12px;">
+                                    <span class="cat-badge" style="color:${catStyle.text}; background:${catStyle.bg}; border:1px solid ${catStyle.border};">
+                                        🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'} • Gpo ${p.grupo_nombre}
+                                    </span>
+                                </div>
 
-                                    <div class="score-container">
-                                        <div class="jugador-box">
-                                            <div style="cursor:pointer;" ${j1Click}>
-                                                <span class="jugador-nombre">${iconJ1}${nomJ1}</span>
-                                            </div>
-                                            <div style="display:flex; align-items:center;">${score1}</div>
+                                <div class="score-container">
+                                    <div class="jugador-box">
+                                        <div style="cursor:pointer;" ${j1Click}>
+                                            <span class="jugador-nombre">${iconJ1}${nomJ1}</span>
                                         </div>
-
-                                        <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
-                                            <div style="cursor:pointer;" ${j2Click}>
-                                                <span class="jugador-nombre">${iconJ2}${nomJ2}</span>
-                                            </div>
-                                            <div style="display:flex; align-items:center;">${score2}</div>
-                                        </div>
+                                        <div style="display:flex; align-items:center;">${score1}</div>
                                     </div>
 
-                                    <div style="display:flex; gap:10px;">
-                                        <button class="btn-arbitrar ${isFin ? 'btn-reabrir' : ''}" onclick="abrirScoreboardJuez(${p.id})">
-                                            ${isFin ? '🏁 REABRIR PARTIDO' : '🏓 Arbitrar Partido'}
-                                        </button>
+                                    <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
+                                        <div style="cursor:pointer;" ${j2Click}>
+                                            <span class="jugador-nombre">${iconJ2}${nomJ2}</span>
+                                        </div>
+                                        <div style="display:flex; align-items:center;">${score2}</div>
                                     </div>
                                 </div>
-                            `;
-                        });
-                    });
-                }
 
-                if (mesaFiltro === 'todas') {
-                    dibujarLlavesInferiores(container);
-                }
-            } catch (err) {
-                console.error("Error crítico en dibujarPantalla:", err);
-                const container = document.getElementById('contenedor-partidos');
-                if (container) {
-                    container.innerHTML = `<div class="mensaje-vacio text-rose-500">Ocurrió un error renderizando los partidos.</div>`;
-                }
+                                <div style="display:flex; gap:10px;">
+                                    <button class="btn-arbitrar ${isFin ? 'btn-reabrir' : ''}" onclick="abrirScoreboardJuez(${p.id})">
+                                        ${isFin ? '🏁 REABRIR PARTIDO' : '🏓 Arbitrar Partido'}
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                });
+            }
+
+            if (mesaFiltro === 'todas') {
+                dibujarLlavesInferiores(container);
             }
         }
 
+        // ==========================================
+        // DIBUJAR CUADRO DE HONOR Y RESUMEN
+        // ==========================================
         function obtenerCuadroDeHonorHtml(catNombre) {
             const pCat = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre);
             const pF = pCat.find(p => String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi'));
@@ -898,68 +892,8 @@
 
         async function abrirScoreboardJuez(partidoId) {
             if (!partidoId || partidoId === 0) {
-                alert("⚠️ La fase final debe guardarse primero desde 'Sorteo y Rol' para activar el arbitraje oficial de esta llave.");
+                alert("⚠️️ Debes guardar el Sorteo Oficial en BD primero para activar esta llave.");
                 return;
-            }
-
-            const p = todosLosPartidos.find(x => x.id === partidoId);
-            
-            if (p && !p.grupo_nombre && p.ronda_fase) {
-                const catNombre = p.categorias?.nombre;
-                const partidosCat = todosLosPartidos.filter(m => m.categorias?.nombre === catNombre);
-                
-                const partidosCatGpo = partidosCat.filter(m => m.grupo_nombre);
-                const totalGpo = partidosCatGpo.length;
-                const finGpo = partidosCatGpo.filter(m => String(m.estado || '').trim().toLowerCase() === 'finalizado').length;
-                
-                if (totalGpo > 0 && totalGpo !== finGpo) {
-                    alert(`⛔ ACCESO DENEGADO.\n\nNo puedes arbitrar las llaves eliminatorias de la categoría "${catNombre || ''}" porque aún hay partidos de grupo Pendientes o En Vivo.\n\nFinalízalos todos primero.`);
-                    return;
-                }
-
-                const esFinal = String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi');
-                if (esFinal) {
-                    const semis = partidosCat.filter(m => !m.grupo_nombre && m.ronda_fase && String(m.ronda_fase || '').toLowerCase().includes('semi'));
-                    const semisIncompletas = semis.some(m => String(m.estado || '').trim().toLowerCase() !== 'finalizado');
-                    if (semisIncompletas) {
-                        alert(`⛔ ACCESO DENEGADO.\n\nNo puedes arbitrar la Gran Final porque las Semifinales aún no han terminado.`);
-                        return;
-                    }
-                }
-
-                if (!p.jugador1_id || !p.jugador2_id) {
-                    const standings = calcularStandingsGrupos();
-                    const gruposCat = standings[catNombre] || {};
-                    const gpoA_arr = gruposCat['A'] ? ordenarJugadoresITTF(Object.values(gruposCat['A'])) : [];
-                    const gpoB_arr = gruposCat['B'] ? ordenarJugadoresITTF(Object.values(gruposCat['B'])) : [];
-
-                    let resJ1 = null, resJ2 = null;
-                    const rf = String(p.ronda_fase || '').toLowerCase();
-
-                    if (rf.includes('semi') && (rf.includes('1') || rf.includes('cruce 1'))) {
-                        resJ1 = gpoA_arr[0]?.id; resJ2 = gpoB_arr[1]?.id;
-                    } else if (rf.includes('semi') && (rf.includes('2') || rf.includes('cruce 2'))) {
-                        resJ1 = gpoB_arr[0]?.id; resJ2 = gpoA_arr[1]?.id;
-                    } else if (esFinal) {
-                        const semi1 = partidosCat.find(m => String(m.ronda_fase || '').toLowerCase().includes('semi') && (String(m.ronda_fase || '').includes('1') || String(m.ronda_fase || '').includes('cruce 1')));
-                        const semi2 = partidosCat.find(m => String(m.ronda_fase || '').toLowerCase().includes('semi') && (String(m.ronda_fase || '').includes('2') || String(m.ronda_fase || '').includes('cruce 2')));
-                        resJ1 = semi1?.ganador_id;
-                        resJ2 = semi2?.ganador_id;
-                    }
-
-                    if (resJ1 || resJ2) {
-                        let updates = {};
-                        if (resJ1 && !p.jugador1_id) updates.jugador1_id = resJ1;
-                        if (resJ2 && !p.jugador2_id) updates.jugador2_id = resJ2;
-
-                        if (Object.keys(updates).length > 0) {
-                            await clienteSupabase.from('partidos').update(updates).eq('id', p.id);
-                        }
-                    } else {
-                        alert("⚠️ No se pudieron determinar los jugadores para este partido. Asegúrate de que las fases anteriores tengan resultados válidos en el sistema.");
-                        return;
-                    }
-                }
             }
 
             let pin = prompt("🔒 Ingrese el PIN de Autorización para Arbitrar:");
