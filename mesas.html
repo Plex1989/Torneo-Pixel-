@@ -180,7 +180,7 @@
                     bonoPaseValor = resConfig.value.data.valor;
                 }
 
-                cargarPartidos();
+                await cargarPartidos();
                 iniciarPresenciaEspectadores();
 
                 clienteSupabase
@@ -191,6 +191,7 @@
                     .subscribe();
             } catch (err) {
                 console.error("Error inicializando mesas:", err);
+                document.getElementById('contenedor-partidos').innerHTML = `<div class="mensaje-vacio text-rose-500">Error inicializando el sistema. Revisa la consola.</div>`;
             }
         }
 
@@ -213,35 +214,44 @@
         }
 
         async function cargarPartidos() {
-            // BLINDAJE SAAS
-            const { data } = await clienteSupabase
-                .from('partidos')
-                .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)')
-                .eq('torneo_id', idTorneoActivo)
-                .eq('organizador_id', ORG_ID)
-                .order('id', { ascending: true });
+            try {
+                // BLINDAJE SAAS
+                const { data, error } = await clienteSupabase
+                    .from('partidos')
+                    .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)')
+                    .eq('torneo_id', idTorneoActivo)
+                    .eq('organizador_id', ORG_ID)
+                    .order('id', { ascending: true });
 
-            todosLosPartidos = data || [];
-            generarBotonesCategorias();
-            generarBotonesMesas();
-            dibujarPantalla();
+                if (error) throw error;
+
+                todosLosPartidos = data || [];
+                generarBotonesCategorias();
+                generarBotonesMesas();
+                dibujarPantalla();
+            } catch (err) {
+                console.error("Error cargando partidos:", err);
+                document.getElementById('contenedor-partidos').innerHTML = `<div class="mensaje-vacio text-rose-500">Ocurrió un error al cargar los partidos desde el servidor.</div>`;
+            }
         }
 
         function generarBotonesCategorias() {
-            const bar = document.getElementById('bar-categorias');
-            if(!bar) return;
-            const catsMap = new Map();
-            todosLosPartidos.forEach(p => {
-                if (p.categorias && p.categorias.nombre) {
-                    catsMap.set(p.categorias.nombre, p.categorias.id);
-                }
-            });
+            try {
+                const bar = document.getElementById('bar-categorias');
+                if(!bar) return;
+                const catsMap = new Map();
+                todosLosPartidos.forEach(p => {
+                    if (p.categorias && p.categorias.nombre) {
+                        catsMap.set(p.categorias.nombre, p.categorias.id);
+                    }
+                });
 
-            let html = `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === 'todas' ? 'active' : ''}" onclick="filtrarCategoria('todas')">Todas las Categorías</button>`;
-            catsMap.forEach((id, nombre) => {
-                html += `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === nombre ? 'active' : ''}" onclick="filtrarCategoria('${nombre}')">🏆 ${nombre}</button>`;
-            });
-            bar.innerHTML = html;
+                let html = `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === 'todas' ? 'active' : ''}" onclick="filtrarCategoria('todas')">Todas las Categorías</button>`;
+                catsMap.forEach((id, nombre) => {
+                    html += `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === nombre ? 'active' : ''}" onclick="filtrarCategoria('${nombre}')">🏆 ${nombre}</button>`;
+                });
+                bar.innerHTML = html;
+            } catch(e) { console.error("Error en generarBotonesCategorias:", e); }
         }
 
         function filtrarCategoria(catNombre) {
@@ -251,15 +261,19 @@
         }
 
         function generarBotonesMesas() {
-            const bar = document.getElementById('bar-mesas');
-            if(!bar) return;
-            let mesasUnicas = [...new Set(todosLosPartidos.map(p => p.mesa))].sort((a,b) => a-b);
+            try {
+                const bar = document.getElementById('bar-mesas');
+                if(!bar) return;
+                let mesasUnicas = [...new Set(todosLosPartidos.map(p => p.mesa))].sort((a,b) => a-b);
 
-            let html = `<button class="btn-filter-pill ${mesaFiltro === 'todas' ? 'active' : ''}" onclick="filtrarMesa('todas')">Todas las Mesas</button>`;
-            mesasUnicas.forEach(m => {
-                if(m) html += `<button class="btn-filter-pill ${mesaFiltro == m ? 'active' : ''}" onclick="filtrarMesa(${m})">Mesa ${m}</button>`;
-            });
-            bar.innerHTML = html;
+                let html = `<button class="btn-filter-pill ${mesaFiltro === 'todas' ? 'active' : ''}" onclick="filtrarMesa('todas')">Todas las Mesas</button>`;
+                mesasUnicas.forEach(m => {
+                    if(m !== null && m !== undefined) {
+                        html += `<button class="btn-filter-pill ${mesaFiltro == m ? 'active' : ''}" onclick="filtrarMesa(${m})">Mesa ${m}</button>`;
+                    }
+                });
+                bar.innerHTML = html;
+            } catch(e) { console.error("Error en generarBotonesMesas:", e); }
         }
 
         function filtrarMesa(m) {
@@ -355,6 +369,7 @@
         }
 
         function abrirModalJugadorAdmin(jugadorId, nombre, club) {
+            if(!jugadorId) return;
             document.getElementById('modal-jugador-nombre').innerText = nombre;
             document.getElementById('modal-jugador-club').innerText = club || 'Sin Club';
 
@@ -472,122 +487,134 @@
         }
 
         // ==========================================
-        // DIBUJAR PANTALLA PRINCIPAL
+        // DIBUJAR PANTALLA PRINCIPAL CON EXCEPCIONES MANEJADAS
         // ==========================================
         function dibujarPantalla() {
-            const container = document.getElementById('contenedor-partidos');
-            if (!container) return;
-            
-            container.innerHTML = '';
+            try {
+                const container = document.getElementById('contenedor-partidos');
+                if (!container) return;
+                
+                container.innerHTML = '';
 
-            if (estadoFiltro === 'resumen') {
-                container.style.display = 'block';
-                dibujarResumenYLlaves(container);
-                return;
-            }
+                if (estadoFiltro === 'resumen') {
+                    container.style.display = 'block';
+                    dibujarResumenYLlaves(container);
+                    return;
+                }
 
-            container.style.display = 'grid';
+                container.style.display = 'grid';
 
-            let filtrados = todosLosPartidos.filter(p => p.grupo_nombre);
+                let filtrados = todosLosPartidos.filter(p => p.grupo_nombre);
 
-            if (mesaFiltro !== 'todas') {
-                filtrados = filtrados.filter(p => p.mesa == mesaFiltro);
-            }
+                if (mesaFiltro !== 'todas') {
+                    filtrados = filtrados.filter(p => p.mesa == mesaFiltro);
+                }
 
-            if (categoriaFiltro !== 'todas') {
-                filtrados = filtrados.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
-            }
+                if (categoriaFiltro !== 'todas') {
+                    filtrados = filtrados.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
+                }
 
-            if (estadoFiltro === 'en_curso') {
-                filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'en_curso');
-            } else if (estadoFiltro === 'pendiente') {
-                filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'pendiente');
-            } else if (estadoFiltro === 'finalizado') {
-                filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'finalizado');
-            }
+                if (estadoFiltro === 'en_curso') {
+                    filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'en_curso');
+                } else if (estadoFiltro === 'pendiente') {
+                    filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'pendiente');
+                } else if (estadoFiltro === 'finalizado') {
+                    filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'finalizado');
+                }
 
-            if (filtrados.length === 0) {
-                container.innerHTML = `<div class="mensaje-vacio">No hay partidos registrados bajo este filtro.</div>`;
-                return;
-            }
+                if (filtrados.length === 0) {
+                    container.innerHTML = `<div class="mensaje-vacio">No hay partidos registrados bajo este filtro.</div>`;
+                    return;
+                }
 
-            const gruposPorHora = {};
-            filtrados.forEach(p => {
-                const h = p.hora || '09:00 AM';
-                if(!gruposPorHora[h]) gruposPorHora[h] = [];
-                gruposPorHora[h].push(p);
-            });
-
-            const horasOrdenadas = Object.keys(gruposPorHora).sort((a, b) => timeStringToMinutes(a) - timeStringToMinutes(b));
-
-            horasOrdenadas.forEach(hora => {
-                container.innerHTML += `<div class="header-hora">⏰ ${hora}</div>`;
-
-                gruposPorHora[hora].forEach(p => {
-                    let est = String(p.estado || '').toLowerCase();
-                    let isFin = est === 'finalizado';
-                    let isVivo = est === 'en_curso';
-
-                    let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : 
-                                  (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
-
-                    let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
-                    let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
-
-                    let iconJ1 = (isFin && p.ganador_id === p.jugador1_id) ? '🏆 ' : '';
-                    let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '🏆 ' : '';
-
-                    let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
-
-                    let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : '';
-                    let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
-                    
-                    if (isVivo) {
-                        score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`;
-                        score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`;
-                    }
-
-                    container.innerHTML += `
-                        <div class="card-mesa ${isVivo ? 'vivo' : (isFin ? 'finalizado' : '')}">
-                            <div class="top-bar">
-                                <span class="mesa-title">MESA ${p.mesa || 1}</span>
-                                ${badgeEst}
-                            </div>
-
-                            <div style="margin-bottom:12px;">
-                                <span class="cat-badge" style="color:${catStyle.text}; background:${catStyle.bg}; border:1px solid ${catStyle.border};">
-                                    🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'} • Gpo ${p.grupo_nombre}
-                                </span>
-                            </div>
-
-                            <div class="score-container">
-                                <div class="jugador-box">
-                                    <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador1_id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(p.j1?.club || '').replace(/'/g, "\\'")}')">
-                                        <span class="jugador-nombre">${iconJ1}${nomJ1}</span>
-                                    </div>
-                                    <div style="display:flex; align-items:center;">${score1}</div>
-                                </div>
-
-                                <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
-                                    <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador2_id}, '${String(nomJ2).replace(/'/g, "\\'")}', '${String(p.j2?.club || '').replace(/'/g, "\\'")}')">
-                                        <span class="jugador-nombre">${iconJ2}${nomJ2}</span>
-                                    </div>
-                                    <div style="display:flex; align-items:center;">${score2}</div>
-                                </div>
-                            </div>
-
-                            <div style="display:flex; gap:10px;">
-                                <button class="btn-arbitrar ${isFin ? 'btn-reabrir' : ''}" onclick="abrirScoreboardJuez(${p.id})">
-                                    ${isFin ? '🏁 REABRIR PARTIDO' : '🏓 Arbitrar Partido'}
-                                </button>
-                            </div>
-                        </div>
-                    `;
+                const gruposPorHora = {};
+                filtrados.forEach(p => {
+                    const h = p.hora || '09:00 AM';
+                    if(!gruposPorHora[h]) gruposPorHora[h] = [];
+                    gruposPorHora[h].push(p);
                 });
-            });
 
-            if (mesaFiltro === 'todas') {
-                dibujarLlavesInferiores(container);
+                const horasOrdenadas = Object.keys(gruposPorHora).sort((a, b) => timeStringToMinutes(a) - timeStringToMinutes(b));
+
+                horasOrdenadas.forEach(hora => {
+                    container.innerHTML += `<div class="header-hora">⏰ ${hora}</div>`;
+
+                    gruposPorHora[hora].forEach(p => {
+                        let est = String(p.estado || '').toLowerCase();
+                        let isFin = est === 'finalizado';
+                        let isVivo = est === 'en_curso';
+
+                        let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : 
+                                      (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
+
+                        let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
+                        let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
+
+                        let iconJ1 = (isFin && p.ganador_id === p.jugador1_id) ? '🏆 ' : '';
+                        let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '🏆 ' : '';
+
+                        let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
+
+                        let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : '';
+                        let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
+                        
+                        if (isVivo) {
+                            score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`;
+                            score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`;
+                        }
+
+                        // EVITA CRASH EN CASO DE JUGADORES NULOS
+                        let j1Click = p.jugador1_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador1_id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(p.j1?.club || '').replace(/'/g, "\\'")}')"` : '';
+                        let j2Click = p.jugador2_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador2_id}, '${String(nomJ2).replace(/'/g, "\\'")}', '${String(p.j2?.club || '').replace(/'/g, "\\'")}')"` : '';
+
+                        container.innerHTML += `
+                            <div class="card-mesa ${isVivo ? 'vivo' : (isFin ? 'finalizado' : '')}">
+                                <div class="top-bar">
+                                    <span class="mesa-title">MESA ${p.mesa || 1}</span>
+                                    ${badgeEst}
+                                </div>
+
+                                <div style="margin-bottom:12px;">
+                                    <span class="cat-badge" style="color:${catStyle.text}; background:${catStyle.bg}; border:1px solid ${catStyle.border};">
+                                        🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'} • Gpo ${p.grupo_nombre}
+                                    </span>
+                                </div>
+
+                                <div class="score-container">
+                                    <div class="jugador-box">
+                                        <div style="cursor:pointer;" ${j1Click}>
+                                            <span class="jugador-nombre">${iconJ1}${nomJ1}</span>
+                                        </div>
+                                        <div style="display:flex; align-items:center;">${score1}</div>
+                                    </div>
+
+                                    <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
+                                        <div style="cursor:pointer;" ${j2Click}>
+                                            <span class="jugador-nombre">${iconJ2}${nomJ2}</span>
+                                        </div>
+                                        <div style="display:flex; align-items:center;">${score2}</div>
+                                    </div>
+                                </div>
+
+                                <div style="display:flex; gap:10px;">
+                                    <button class="btn-arbitrar ${isFin ? 'btn-reabrir' : ''}" onclick="abrirScoreboardJuez(${p.id})">
+                                        ${isFin ? '🏁 REABRIR PARTIDO' : '🏓 Arbitrar Partido'}
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                });
+
+                if (mesaFiltro === 'todas') {
+                    dibujarLlavesInferiores(container);
+                }
+            } catch (err) {
+                console.error("Error crítico en dibujarPantalla:", err);
+                const container = document.getElementById('contenedor-partidos');
+                if (container) {
+                    container.innerHTML = `<div class="mensaje-vacio text-rose-500">Ocurrió un error renderizando los partidos. Borrar los datos corruptos de Supabase podría solucionar el problema.</div>`;
+                }
             }
         }
 
@@ -691,9 +718,10 @@
                                             let dif = j.setsG - j.setsP;
                                             let difStr = dif >= 0 ? '+' + dif : dif;
                                             let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
+                                            let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${String(j.nombre\vert{}\vert{}'').replace(/'/g, "\\'")}', '${String(j.club || 'Sin Club').replace(/'/g, "\\'")}')"` : '';
 
                                             return `
-                                                <tr style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'" onclick="abrirModalJugadorAdmin(${j.id}, '${String(j.nombre\vert{}\vert{}'').replace(/'/g, "\\'")}', '${String(j.club || 'Sin Club').replace(/'/g, "\\'")}')">
+                                                <tr style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'" ${jClic}>
                                                     <td style="padding:8px 6px; font-weight:800; color:#64748b;">#${idx + 1}</td>
                                                     <td style="padding:8px 6px;">
                                                         <strong style="color:#ffffff;">${j.nombre}</strong>
