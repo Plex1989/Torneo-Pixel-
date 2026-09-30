@@ -6,7 +6,9 @@
     <title>Horarios y Difusión WS - Pixel Studio</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        if (localStorage.getItem('admin_autenticado') !== 'true') {
+        // BLINDAJE SAAS
+        const orgIdCheck = localStorage.getItem('organizador_id');
+        if (!orgIdCheck) {
             alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
             window.location.href = "torneos.html";
         }
@@ -105,18 +107,21 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+        const ORG_ID = localStorage.getItem('organizador_id');
         let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
         let torneoActivoObj = null;
         let categoriasList = [];
         let horariosGuardados = {};
 
         function cerrarSesionAdmin() {
-            localStorage.removeItem('admin_autenticado');
-            window.location.reload();
+            localStorage.removeItem('organizador_id');
+            localStorage.removeItem('organizador_usuario');
+            localStorage.removeItem('torneo_activo_id');
+            window.location.href = "torneos.html";
         }
 
         async function inicializarHorarios() {
-            const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
+            const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).eq('organizador_id', ORG_ID).single();
             if (torneoData) {
                 torneoActivoObj = torneoData;
                 document.getElementById('nombre-torneo-banner').innerText = `${torneoData.nombre} (${torneoData.fecha_evento || 'Sin fecha'})`;
@@ -124,8 +129,7 @@
                 document.getElementById('nombre-torneo-banner').innerText = "Sin torneo activo seleccionado";
             }
 
-            // Ordenar por puntos mínimos descendente para mostrar Primera Fuerza hasta arriba
-            const { data: catData } = await clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: false });
+            const { data: catData } = await clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: false });
             categoriasList = catData || [];
 
             const claveStorage = `horarios_torneo_${idTorneoActivo}`;
