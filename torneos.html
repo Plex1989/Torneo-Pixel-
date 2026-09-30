@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Orbitron:wght@700;800&display=swap');
 
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 0; background-color: #04060a; color: #f8fafc; min-height: 100vh; position: relative; overflow-x: hidden; }
         
@@ -22,7 +22,6 @@
         .nav-btn { color: #94a3b8; text-decoration: none; padding: 8px 18px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; }
         .nav-btn:hover { color: #000000; background: #f5a623; border-color: #f5a623; box-shadow: 0 0 25px rgba(245, 166, 35, 0.8); transform: translateY(-2px); }
         .nav-btn.active { color: #ffffff; border-color: #8b5cf6; background: rgba(139, 92, 246, 0.3); box-shadow: 0 0 15px rgba(139, 92, 246, 0.4); }
-        .nav-btn.public { color: #34d399; border-color: rgba(16, 185, 129, 0.5); }
 
         .main-content { padding: 30px; max-width: 1100px; margin: auto; position: relative; z-index: 10; }
 
@@ -70,8 +69,6 @@
         .kpi-card { background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 12px 16px; text-align: center; }
         .kpi-val { font-size: 22px; font-weight: 800; font-family: 'Orbitron', sans-serif; color: #38bdf8; margin-top: 4px; }
         .kpi-lbl { font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
-        .kpi-alert { color: #f59e0b !important; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -79,28 +76,33 @@
     <nav class="navbar">
         <div class="nav-title">CENTRAL DE TORNEOS</div>
         <div class="nav-links">
-            <a href="torneos.html" class="nav-btn active">Mis Torneos</a>
-            <a href="admin.html" class="nav-btn">Administrador</a>
-            <a href="sorteo.html" class="nav-btn">Sorteo y Rol</a>
-            <a href="mesas.html" target="_blank" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
-            <a href="espectador.html" target="_blank" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador</a>
-            <a href="index.html" target="_blank" class="nav-btn public">Portal Público</a>
-            <button onclick="cerrarSesion()" class="nav-btn" style="border-color: rgba(239,68,68,0.4); color: #f87171; cursor:pointer;" id="btn-salir">SALIR</button>
+            <span id="label-usuario-activo" style="display:none; color:#38bdf8; font-size:10px; font-weight:800; text-transform:uppercase; margin-right:15px; align-self:center;"><i class="fa-solid fa-user-shield"></i> <span id="nombre-usr-nav"></span></span>
+            <a href="torneos.html" class="nav-btn active" id="btn-nav-torneos" style="display:none;">Mis Torneos</a>
+            <a href="admin.html" class="nav-btn" id="btn-nav-admin" style="display:none;">Administrador</a>
+            <button onclick="cerrarSesion()" class="nav-btn" style="border-color: rgba(239,68,68,0.4); color: #f87171; cursor:pointer; display:none;" id="btn-salir">CERRAR SESIÓN</button>
         </div>
     </nav>
 
     <div class="main-content">
 
-        <!-- MÓDULO DE LOGIN -->
-        <div id="panel-login" class="panel-3d" style="border-bottom: 5px solid #ef4444; text-align: center; max-width: 450px; margin: 40px auto; display: none;">
-            <i class="fa-solid fa-shield-halved" style="font-size: 40px; color: #ef4444; margin-bottom: 15px;"></i>
-            <h2 style="border:none; margin-bottom:5px;">ACCESO RESTRINGIDO</h2>
-            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 25px;">Ingrese la clave de administrador para acceder a la gestión de torneos.</p>
-            <input type="password" id="admin-pass" placeholder="Clave de acceso" style="width: 100%; margin-bottom: 20px; text-align: center; font-size: 16px; letter-spacing: 3px;">
-            <button class="btn-console btn-red" style="width: 100%; justify-content: center;" onclick="loginAdmin()">ENTRAR AL SISTEMA</button>
+        <!-- MÓDULO DE AUTENTICACIÓN (LOGIN Y REGISTRO) -->
+        <div id="panel-login" class="panel-3d" style="border-bottom: 5px solid #0ea5e9; text-align: center; max-width: 450px; margin: 40px auto;">
+            <img src="https://cdn-icons-png.flaticon.com/512/3233/3233483.png" style="width:64px; margin: 0 auto 15px auto; filter: drop-shadow(0 0 10px rgba(14,165,233,0.5));">
+            <h2 style="border:none; margin-bottom:5px; font-size:18px;">ACCESO ORGANIZADORES</h2>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 25px;">Gestiona tus torneos de manera independiente.</p>
+            
+            <div style="background:rgba(0,0,0,0.3); padding:20px; border-radius:16px; border:1px solid rgba(255,255,255,0.05);">
+                <input type="text" id="auth-user" placeholder="Usuario" style="width: 100%; margin-bottom: 10px; text-align: center;">
+                <input type="password" id="auth-pass" placeholder="Contraseña" style="width: 100%; margin-bottom: 20px; text-align: center; letter-spacing: 2px;">
+                
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-console btn-outline" style="flex:1; justify-content: center;" onclick="crearCuenta()">CREAR CUENTA</button>
+                    <button class="btn-console btn-cyan" style="flex:1; justify-content: center; background:#0ea5e9; color:#000;" onclick="iniciarSesion()">ENTRAR ➔</button>
+                </div>
+            </div>
         </div>
 
-        <!-- MÓDULOS DEL SISTEMA -->
+        <!-- MÓDULOS DEL SISTEMA (SOLO VISIBLES AL INICIAR SESIÓN) -->
         <div id="panel-sistema" style="display: none;">
             
             <!-- BANNER Y MONITOR DE ALERTAS DE TORNEO ACTIVO -->
@@ -179,7 +181,6 @@
             </div>
 
         </div>
-
     </div>
 
     <script>
@@ -188,68 +189,118 @@
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         let torneosCargados = [];
+        let orgActivoId = null;
 
         document.addEventListener("DOMContentLoaded", () => {
-            if (localStorage.getItem('admin_autenticado') === 'true') {
+            verificarSesion();
+        });
+
+        // ==========================================
+        // SISTEMA DE AUTENTICACIÓN MULTI-USUARIO
+        // ==========================================
+        function verificarSesion() {
+            orgActivoId = localStorage.getItem('organizador_id');
+            const usrName = localStorage.getItem('organizador_usuario');
+
+            if (orgActivoId && usrName) {
                 document.getElementById('panel-login').style.display = 'none';
                 document.getElementById('panel-sistema').style.display = 'block';
+                
+                document.getElementById('label-usuario-activo').style.display = 'inline-block';
+                document.getElementById('nombre-usr-nav').innerText = usrName;
+                document.getElementById('btn-nav-torneos').style.display = 'inline-block';
+                document.getElementById('btn-nav-admin').style.display = 'inline-block';
                 document.getElementById('btn-salir').style.display = 'inline-flex';
+                
                 cargarTorneos();
             } else {
                 document.getElementById('panel-login').style.display = 'block';
                 document.getElementById('panel-sistema').style.display = 'none';
+                
+                document.getElementById('label-usuario-activo').style.display = 'none';
+                document.getElementById('btn-nav-torneos').style.display = 'none';
+                document.getElementById('btn-nav-admin').style.display = 'none';
                 document.getElementById('btn-salir').style.display = 'none';
             }
-        });
+        }
 
-        async function loginAdmin() {
-            const pass = document.getElementById('admin-pass').value;
-            const { data } = await clienteSupabase.from('configuracion').select('valor').eq('clave', 'admin_password').single();
-            let validPass = data ? data.valor : '1234'; 
-            
-            if (pass === validPass || pass === 'admin' || pass === '1234' || pass.toLowerCase() === 'pixel') {
-                localStorage.setItem('admin_autenticado', 'true');
-                window.location.reload();
+        async function iniciarSesion() {
+            const usr = document.getElementById('auth-user').value.trim();
+            const pass = document.getElementById('auth-pass').value.trim();
+
+            if (!usr || !pass) { alert("Ingresa usuario y contraseña."); return; }
+
+            const { data, error } = await clienteSupabase
+                .from('organizadores')
+                .select('id, usuario')
+                .eq('usuario', usr)
+                .eq('password', pass)
+                .single();
+
+            if (error || !data) {
+                alert("❌ Usuario o contraseña incorrectos.");
             } else {
-                alert('❌ Clave incorrecta. Intente de nuevo.');
+                localStorage.setItem('organizador_id', data.id);
+                localStorage.setItem('organizador_usuario', data.usuario);
+                verificarSesion();
+            }
+        }
+
+        async function crearCuenta() {
+            const usr = document.getElementById('auth-user').value.trim();
+            const pass = document.getElementById('auth-pass').value.trim();
+
+            if (!usr || !pass) { alert("Ingresa un usuario y contraseña para tu nueva cuenta."); return; }
+
+            // Checar si existe
+            const { data: existe } = await clienteSupabase.from('organizadores').select('id').eq('usuario', usr).maybeSingle();
+            if (existe) {
+                alert("⚠️ Ese nombre de usuario ya está ocupado. Elige otro.");
+                return;
+            }
+
+            const { data, error } = await clienteSupabase
+                .from('organizadores')
+                .insert([{ usuario: usr, password: pass }])
+                .select('id, usuario')
+                .single();
+
+            if (error) {
+                alert("❌ Error al crear cuenta: " + error.message);
+            } else {
+                alert("✅ ¡Cuenta creada exitosamente! Bienvenido.");
+                localStorage.setItem('organizador_id', data.id);
+                localStorage.setItem('organizador_usuario', data.usuario);
+                verificarSesion();
             }
         }
 
         function cerrarSesion() {
-            localStorage.removeItem('admin_autenticado');
+            localStorage.removeItem('organizador_id');
+            localStorage.removeItem('organizador_usuario');
+            localStorage.removeItem('torneo_activo_id'); // Reseteamos el torneo al salir
             window.location.reload();
         }
 
-        function compartirLinkTransmisionWS() {
-            const activoId = localStorage.getItem('torneo_activo_id');
-            if (!activoId) { alert("Selecciona un torneo activo primero."); return; }
-            const t = torneosCargados.find(item => item.id == activoId);
-            const urlTransmision = `${window.location.origin}/espectador.html?torneo=${activoId}`;
-            const texto = `🔴 *¡CARTELERA EN VIVO!* 🔴\n\n🏆 Torneo: *${t ? t.nombre : 'Torneo'}*\n\nSigue los marcadores en tiempo real de todas las mesas ingresando aquí:\n👉 ${urlTransmision}`;
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
-        }
-
-        function compartirLinkInscripcionWS() {
-            const activoId = localStorage.getItem('torneo_activo_id');
-            if (!activoId) { alert("Selecciona un torneo activo primero."); return; }
-            const t = torneosCargados.find(item => item.id == activoId);
-            const urlPublica = `${window.location.origin}/index.html?torneo=${activoId}`;
-            let textoWS = `🏓 *¡INSCRIPCIONES ABIERTAS!* 🏓\n\n🏆 Torneo: *${t ? t.nombre : 'Torneo'}*\n\nReserva tu lugar en línea ingresando aquí:\n👉 ${urlPublica}\n\n¡Te esperamos! 🏆`;
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWS)}`, '_blank');
-        }
-
+        // ==========================================
+        // GESTIÓN DE TORNEOS PROTEGIDA POR USUARIO
+        // ==========================================
         async function cargarTorneos() {
+            if (!orgActivoId) return;
+
             try {
+                // AQUÍ ESTÁ LA MAGIA: Solo carga los torneos de ESTE usuario
                 const { data, error } = await clienteSupabase
                     .from('torneos')
                     .select('*')
+                    .eq('organizador_id', orgActivoId)
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
                 torneosCargados = data || [];
                 
                 const activoId = localStorage.getItem('torneo_activo_id') || (torneosCargados[0] ? torneosCargados[0].id : null);
-                if (activoId && !localStorage.getItem('torneo_activo_id')) {
+                if (activoId && !localStorage.getItem('torneo_activo_id') && torneosCargados.some(t => t.id == activoId)) {
                     localStorage.setItem('torneo_activo_id', activoId);
                 }
 
@@ -268,7 +319,7 @@
             const elPendientesPago = document.getElementById('kpi-pendientes-pago');
             const elSinRanking = document.getElementById('kpi-sin-ranking');
 
-            if (!activoId) {
+            if (!activoId || !torneosCargados.some(t => t.id == activoId)) {
                 banner.innerText = "Ningún Torneo Seleccionado";
                 elTotales.innerText = "0"; elConfirmados.innerText = "0";
                 elPendientesPago.innerText = "0"; elSinRanking.innerText = "0";
@@ -292,20 +343,17 @@
 
                 elTotales.innerText = total;
                 elConfirmados.innerText = confirmados;
-                
                 elPendientesPago.innerText = pendientesPago;
-                if(pendientesPago > 0) elPendientesPago.classList.add('kpi-alert');
-                else elPendientesPago.classList.remove('kpi-alert');
 
+                // MAGIA MULTIUSUARIO: Solo buscamos jugadores que pertenezcan a este organizador
                 const { data: jugSinRanking } = await clienteSupabase
                     .from('jugadores')
                     .select('id')
+                    .eq('organizador_id', orgActivoId)
                     .eq('puntos_ranking', 0);
 
                 const cantSinRanking = jugSinRanking ? jugSinRanking.length : 0;
                 elSinRanking.innerText = cantSinRanking;
-                if(cantSinRanking > 0) elSinRanking.classList.add('kpi-alert');
-                else elSinRanking.classList.remove('kpi-alert');
 
             } catch (err) {
                 console.error("Error al cargar métricas:", err);
@@ -359,9 +407,6 @@
             cargarTorneos();
         }
 
-        // ==========================================
-        // GUARDADO CON SILENT FALLBACK SI NO EXISTE LA COLUMNA
-        // ==========================================
         async function guardarTorneo() {
             const id = document.getElementById('torneo-id').value;
             const nombre = document.getElementById('t-nombre').value.trim();
@@ -371,11 +416,13 @@
 
             if (!nombre) { alert("El nombre del torneo es obligatorio."); return; }
 
+            // INCLUIMOS EL ID DEL ORGANIZADOR AL CREAR EL TORNEO
             let payload = {
                 nombre: nombre,
                 fecha_evento: fecha,
                 lugar_evento: sede,
-                numero_mesas: mesas
+                numero_mesas: mesas,
+                organizador_id: orgActivoId
             };
 
             const btn = document.getElementById('btn-guardar');
@@ -383,27 +430,15 @@
 
             try {
                 if (id) {
-                    let { error } = await clienteSupabase.from('torneos').update(payload).eq('id', id);
-                    if (error && error.message.includes('numero_mesas')) {
-                        delete payload.numero_mesas;
-                        let resFallback = await clienteSupabase.from('torneos').update(payload).eq('id', id);
-                        if (resFallback.error) throw resFallback.error;
-                    } else if (error) {
-                        throw error;
-                    }
+                    // Update
+                    const { error } = await clienteSupabase.from('torneos').update(payload).eq('id', id).eq('organizador_id', orgActivoId);
+                    if (error) throw error;
                     alert("✅ Torneo actualizado con éxito.");
                 } else {
-                    let { data, error } = await clienteSupabase.from('torneos').insert([payload]).select();
-                    if (error && error.message.includes('numero_mesas')) {
-                        delete payload.numero_mesas;
-                        let resFallback = await clienteSupabase.from('torneos').insert([payload]).select();
-                        if (resFallback.error) throw resFallback.error;
-                        data = resFallback.data;
-                    } else if (error) {
-                        throw error;
-                    }
+                    // Insert
+                    const { data, error } = await clienteSupabase.from('torneos').insert([payload]).select();
+                    if (error) throw error;
                     alert("✅ Torneo creado con éxito.");
-
                     if (torneosCargados.length === 0 && data && data.length > 0) {
                         localStorage.setItem('torneo_activo_id', data[0].id);
                     }
@@ -448,36 +483,46 @@
         }
 
         async function eliminarTorneo(id, nombre) {
-            const confirmacion = confirm(
-                `⚠️ ATENCIÓN: ¿Estás seguro de eliminar el torneo "${nombre}"?\n\n` +
-                `Esto borrará permanentemente:\n` +
-                `- Todos los partidos jugados\n` +
-                `- Todas las inscripciones de jugadores\n` +
-                `- Horarios, programación y grupos\n\n` +
-                `ESTA ACCIÓN NO SE PUEDE DESHACER.`
-            );
-
+            const confirmacion = confirm(`⚠️ ATENCIÓN: ¿Eliminar el torneo "${nombre}" y TODO su contenido?\n\nESTA ACCIÓN NO SE PUEDE DESHACER.`);
             if (!confirmacion) return;
 
             try {
+                // Borramos todo en cascada asegurándonos que le pertenezca a este organizador (por medio del torneo_id)
                 await clienteSupabase.from('partidos').delete().eq('torneo_id', id);
                 await clienteSupabase.from('inscripciones').delete().eq('torneo_id', id);
                 await clienteSupabase.from('programacion_categorias').delete().eq('torneo_id', id);
-                await clienteSupabase.from('grupos_torneo').delete().eq('torneo_id', id);
 
-                const { error } = await clienteSupabase.from('torneos').delete().eq('id', id);
+                const { error } = await clienteSupabase.from('torneos').delete().eq('id', id).eq('organizador_id', orgActivoId);
                 if (error) throw error;
 
                 if (localStorage.getItem('torneo_activo_id') == id) {
                     localStorage.removeItem('torneo_activo_id');
                 }
 
-                alert(`✅ Torneo "${nombre}" borrado exitosamente.`);
+                alert(`✅ Torneo borrado exitosamente.`);
                 cargarTorneos();
             } catch (err) {
                 console.error(err);
                 alert("❌ Ocurrió un error al borrar el torneo:\n" + err.message);
             }
+        }
+
+        function compartirLinkTransmisionWS() {
+            const activoId = localStorage.getItem('torneo_activo_id');
+            if (!activoId) { alert("Selecciona un torneo activo primero."); return; }
+            const t = torneosCargados.find(item => item.id == activoId);
+            const urlTransmision = `${window.location.origin}/espectador.html?torneo=${activoId}`;
+            const texto = `🔴 *¡CARTELERA EN VIVO!* 🔴\n\n🏆 Torneo: *${t ? t.nombre : 'Torneo'}*\n\nSigue los marcadores en tiempo real de todas las mesas ingresando aquí:\n👉 ${urlTransmision}`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+
+        function compartirLinkInscripcionWS() {
+            const activoId = localStorage.getItem('torneo_activo_id');
+            if (!activoId) { alert("Selecciona un torneo activo primero."); return; }
+            const t = torneosCargados.find(item => item.id == activoId);
+            const urlPublica = `${window.location.origin}/index.html?torneo=${activoId}`;
+            let textoWS = `🏓 *¡INSCRIPCIONES ABIERTAS!* 🏓\n\n🏆 Torneo: *${t ? t.nombre : 'Torneo'}*\n\nReserva tu lugar en línea ingresando aquí:\n👉 ${urlPublica}\n\n¡Te esperamos! 🏆`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWS)}`, '_blank');
         }
     </script>
 </body>
