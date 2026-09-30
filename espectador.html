@@ -202,6 +202,7 @@
         let idTorneoActivo = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id') || 1;
         let partidoUrlId = urlParams.get('partido');
 
+        let ORG_ID = null; // EXTRAÍDO AUTOMÁTICAMENTE DEL TORNEO
         let todosLosPartidos = [];
         let reglasRankingList = [];
         let todasLasCategorias = [];
@@ -235,17 +236,23 @@
 
         async function inicializarEspectador() {
             try {
-                const [resTorneo, resReglas, resConfig, resCat, resJugadores] = await Promise.allSettled([
-                    clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).single(),
-                    clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true }),
-                    clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').single(),
-                    clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: false }),
-                    clienteSupabase.from('jugadores').select('*').order('puntos_ranking', { ascending: false })
-                ]);
-
-                if (resTorneo.status === 'fulfilled' && resTorneo.value.data) {
-                    document.getElementById('torneo-nombre-header').innerText = resTorneo.value.data.nombre;
+                // 1. OBTENER TORNEO Y SU DUEÑO
+                const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre, organizador_id').eq('id', idTorneoActivo).single();
+                
+                if (torneoData) {
+                    document.getElementById('torneo-nombre-header').innerText = torneoData.nombre;
+                    ORG_ID = torneoData.organizador_id;
+                } else {
+                    throw new Error("Torneo no encontrado");
                 }
+
+                // 2. CARGAR DATOS BLINDADOS
+                const [resReglas, resConfig, resCat, resJugadores] = await Promise.allSettled([
+                    clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }),
+                    clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).single(),
+                    clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: false }),
+                    clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID).order('puntos_ranking', { ascending: false })
+                ]);
 
                 reglasRankingList = resReglas.status === 'fulfilled' ? (resReglas.value.data || []) : [];
                 todasLasCategorias = resCat.status === 'fulfilled' ? (resCat.value.data || []) : [];
@@ -280,6 +287,7 @@
                 .from('partidos')
                 .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)')
                 .eq('torneo_id', idTorneoActivo)
+                .eq('organizador_id', ORG_ID)
                 .order('id', { ascending: true });
 
             todosLosPartidos = partidos || [];
@@ -671,7 +679,6 @@
                     let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : 
                                   (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
 
-                    // PROTECCIÓN EXTREMA CONTRA NULL EN LOS NOMBRES
                     let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
                     let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
 
