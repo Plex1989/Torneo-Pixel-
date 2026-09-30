@@ -11,7 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // BLINDAJE SAAS: Verifica que exista un organizador activo
+        // BLINDAJE SAAS
         const orgIdCheck = localStorage.getItem('organizador_id');
         if (!orgIdCheck) {
             alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
@@ -135,9 +135,8 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // BLINDAJE SAAS SEGURO
-        const ORG_ID = parseInt(localStorage.getItem('organizador_id')) || null;
-        let idTorneoActivo = parseInt(localStorage.getItem('torneo_activo_id')) || null;
+        let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
+        let ORG_ID = null;
 
         let todosLosPartidos = [];
         let mesaFiltro = 'todas';
@@ -162,22 +161,22 @@
 
         async function inicializar() {
             try {
-                if (!ORG_ID || !idTorneoActivo) {
-                    document.getElementById('contenedor-partidos').innerHTML = `<div class="mensaje-vacio text-rose-500">Torneo u organizador no detectado.</div>`;
+                // EXTRACCIÓN DINÁMICA DE USUARIO (Idéntico a Espectador)
+                const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre, organizador_id, pin_jueces').eq('id', idTorneoActivo).single();
+                
+                if (torneoData) {
+                    document.getElementById('nombre-torneo').innerText = torneoData.nombre;
+                    if (torneoData.pin_jueces) pinJuecesActual = torneoData.pin_jueces;
+                    ORG_ID = torneoData.organizador_id;
+                } else {
+                    document.getElementById('contenedor-partidos').innerHTML = `<div class="mensaje-vacio text-rose-500">Torneo no detectado.</div>`;
                     return;
                 }
 
-                // BLINDAJE SAAS - SEGURO CONTRA ERRORES
-                const [resTorneo, resReglas, resConfig] = await Promise.allSettled([
-                    clienteSupabase.from('torneos').select('nombre, pin_jueces').eq('id', idTorneoActivo).eq('organizador_id', ORG_ID).maybeSingle(),
+                const [resReglas, resConfig] = await Promise.allSettled([
                     clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }),
                     clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).maybeSingle()
                 ]);
-
-                if (resTorneo.status === 'fulfilled' && resTorneo.value && resTorneo.value.data) {
-                    document.getElementById('nombre-torneo').innerText = resTorneo.value.data.nombre;
-                    if (resTorneo.value.data.pin_jueces) pinJuecesActual = resTorneo.value.data.pin_jueces;
-                }
 
                 reglasRankingList = resReglas.status === 'fulfilled' && resReglas.value ? (resReglas.value.data || []) : [];
                 if (resConfig.status === 'fulfilled' && resConfig.value && resConfig.value.data) {
@@ -220,7 +219,6 @@
 
         async function cargarPartidos() {
             try {
-                // BLINDAJE SAAS
                 const { data, error } = await clienteSupabase
                     .from('partidos')
                     .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)')
@@ -491,9 +489,6 @@
             document.getElementById('modal-jugador-admin').style.display = 'none';
         }
 
-        // ==========================================
-        // DIBUJAR PANTALLA PRINCIPAL CON EXCEPCIONES MANEJADAS
-        // ==========================================
         function dibujarPantalla() {
             try {
                 const container = document.getElementById('contenedor-partidos');
@@ -527,8 +522,6 @@
                     filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'finalizado');
                 }
 
-                // ARREGLO: Ya no detenemos la ejecución si no hay partidos de grupo
-                // Solo informamos al usuario, y continuamos para cargar las llaves al final.
                 if (filtrados.length === 0) {
                     container.innerHTML = `<div class="mensaje-vacio">No hay partidos de fase de grupos bajo este filtro.</div>`;
                 } else {
@@ -568,7 +561,6 @@
                                 score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`;
                             }
 
-                            // EVITA CRASH EN CASO DE JUGADORES NULOS
                             let j1Click = p.jugador1_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador1_id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(p.j1?.club || '').replace(/'/g, "\\'")}')"` : '';
                             let j2Click = p.jugador2_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador2_id}, '${String(nomJ2).replace(/'/g, "\\'")}', '${String(p.j2?.club || '').replace(/'/g, "\\'")}')"` : '';
 
@@ -612,7 +604,6 @@
                     });
                 }
 
-                // SIEMPRE INTENTA DIBUJAR LAS LLAVES AL FINAL (Aunque no haya fase de grupos)
                 if (mesaFiltro === 'todas') {
                     dibujarLlavesInferiores(container);
                 }
@@ -620,14 +611,11 @@
                 console.error("Error crítico en dibujarPantalla:", err);
                 const container = document.getElementById('contenedor-partidos');
                 if (container) {
-                    container.innerHTML = `<div class="mensaje-vacio text-rose-500">Ocurrió un error renderizando los partidos. Borrar los datos corruptos de Supabase podría solucionar el problema.</div>`;
+                    container.innerHTML = `<div class="mensaje-vacio text-rose-500">Ocurrió un error renderizando los partidos.</div>`;
                 }
             }
         }
 
-        // ==========================================
-        // DIBUJAR CUADRO DE HONOR Y RESUMEN
-        // ==========================================
         function obtenerCuadroDeHonorHtml(catNombre) {
             const pCat = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre);
             const pF = pCat.find(p => String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi'));
