@@ -189,10 +189,8 @@
             <div id="info-fecha-lugar" class="detalles-evento"></div>
         </div>
         
-        <!-- BOTÓN GENERAL "SOY NUEVO" -->
         <button id="btn-abrir-nuevo" class="btn-secondary" style="width: 100%; padding: 12px; font-size: 11px; margin-bottom: 20px; border-color: #06b6d4; color: #38bdf8;" onclick="abrirNuevoJugador()">➕ SOY NUEVO JUGADOR (CREAR PERFIL)</button>
 
-        <!-- SECCIÓN REGISTRO DE NUEVO JUGADOR -->
         <div id="caja-nuevo-jugador" class="seccion-plegable" style="margin-top: 0;">
             <div style="font-size: 12px; font-weight: 800; color: #38bdf8; margin-bottom: 15px; text-transform: uppercase; text-align:center;">➕ Registro de Nuevo Jugador</div>
             <p style="font-size: 11px; color:#94a3b8; text-align:center; margin-bottom: 15px; line-height: 1.5;">Ingresa tus datos para integrarte a la base de datos. El administrador validará tu perfil y te asignará tu ranking inicial.</p>
@@ -205,7 +203,6 @@
             <button class="btn-secondary" style="width: 100%; margin-top:10px; border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.1);" onclick="cerrarNuevoJugador()">❌ Cancelar y Volver al Buscador</button>
         </div>
 
-        <!-- BLOQUE PRINCIPAL -->
         <div id="bloque-principal">
             
             <label style="margin-top:0;">1. Busca y selecciona tu nombre:</label>
@@ -214,14 +211,12 @@
                 <option value="">Cargando base de datos...</option>
             </select>
 
-            <!-- BANNER DE CONFIRMACIÓN DEL JUGADOR ELEGIDO -->
             <div id="banner-jugador-seleccionado" class="banner-jugador-seleccionado">
                 <div class="etiqueta">✅ Jugador Seleccionado</div>
                 <div id="texto-jugador-seleccionado" class="nombre">ARTURO</div>
                 <button class="btn-secondary" style="border-color: #fbbf24; color: #fbbf24;" onclick="abrirCambioNip()">🔑 Cambiar mi NIP</button>
             </div>
 
-            <!-- SECCIÓN CAMBIO DE NIP -->
             <div id="caja-cambiar-nip" class="seccion-plegable">
                 <div style="font-size: 11px; font-weight: 800; color: #fbbf24; margin-bottom: 15px; text-transform: uppercase; text-align:center;">
                     🔑 Modificando NIP de:<br><span id="nombre-cambio-nip" style="color:#ffffff; font-size:14px; display:block; margin-top:6px;"></span>
@@ -233,7 +228,6 @@
                 <button class="btn-secondary" style="width: 100%; margin-top:10px; border-color: #64748b; color: #94a3b8;" onclick="cerrarCambioNip()">Cancelar Edición</button>
             </div>
 
-            <!-- BLOQUE DE INSCRIPCIÓN -->
             <div id="bloque-inscripcion">
                 <div id="info-puntos"></div>
                 <div id="info-inscripciones"></div>
@@ -243,14 +237,12 @@
                     <option value="">Primero selecciona tu nombre</option>
                 </select>
 
-                <!-- TARJETA ESPERA APROBACIÓN ADMIN -->
                 <div id="tarjeta-pendiente-ranking" class="tarjeta-pendiente-ranking">
                     ⏳ <strong>Perfil en Proceso de Clasificación Oficial</strong><br>
                     Tu registro ha sido recibido exitosamente. Para garantizar un torneo equitativo, el comité organizador debe asignar tu nivel de ranking inicial antes de habilitar tus categorías.<br><br>
                     📌 <em>Por favor vuelve a consultar en unos minutos o contacta al administrador del torneo.</em>
                 </div>
 
-                <!-- TARJETA HORARIO Y COSTO -->
                 <div id="tarjeta-horario-cat" class="tarjeta-horario-cat"></div>
 
                 <div id="caja-nip" class="caja-seguridad">
@@ -272,9 +264,10 @@
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         let torneoActivo = null;
+        let ORG_ID = null; // EXTRAÍDO AUTOMÁTICAMENTE DEL TORNEO
         let todosLosJugadores = [], todasLasCategorias = [], todasLasInscripciones = [], todosLosClubs = [];
         let programacionCategoriasNube = [];
-        let categoriasCerradasSet = new Set(); // Guarda las categorías que ya tienen partidos creados/en curso
+        let categoriasCerradasSet = new Set(); 
 
         async function inicializar() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -301,6 +294,8 @@
 
             if (torneoData && torneoData.length > 0) {
                 torneoActivo = torneoData[0];
+                ORG_ID = torneoActivo.organizador_id; // MAGIA: AQUÍ AUTO-DETECTA EL DUEÑO DEL TORNEO
+                
                 document.getElementById('nombre-torneo-header').innerText = torneoActivo.nombre;
 
                 let detalles = [];
@@ -309,7 +304,7 @@
                 
                 document.getElementById('info-fecha-lugar').innerText = detalles.length > 0 ? detalles.join('  •  ') : '📅 Fecha y Sede por confirmar';
 
-                const { data: progData } = await clienteSupabase.from('programacion_categorias').select('*').eq('torneo_id', torneoActivo.id);
+                const { data: progData } = await clienteSupabase.from('programacion_categorias').select('*').eq('torneo_id', torneoActivo.id).eq('organizador_id', ORG_ID);
                 programacionCategoriasNube = progData || [];
             } else {
                 document.getElementById('nombre-torneo-header').innerText = "Sin Torneo Activo";
@@ -317,11 +312,11 @@
                 return;
             }
 
-            // CARGAR Y DETECTAR CATEGORÍAS CERRADAS (PARTIDOS YA GENERADOS / EN CURSO)
             const { data: partidosData } = await clienteSupabase
                 .from('partidos')
                 .select('categoria_id')
-                .eq('torneo_id', torneoActivo.id);
+                .eq('torneo_id', torneoActivo.id)
+                .eq('organizador_id', ORG_ID);
 
             categoriasCerradasSet.clear();
             if (partidosData && partidosData.length > 0) {
@@ -331,10 +326,10 @@
             }
 
             const [resJugadores, resCategorias, resInscripciones, resClubs] = await Promise.all([
-                clienteSupabase.from('jugadores').select('*').order('nombre', { ascending: true }),
-                clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true }),
-                clienteSupabase.from('inscripciones').select('*').eq('torneo_id', torneoActivo.id),
-                clienteSupabase.from('clubs').select('*').order('nombre', { ascending: true })
+                clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID).order('nombre', { ascending: true }),
+                clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: true }),
+                clienteSupabase.from('inscripciones').select('*').eq('torneo_id', torneoActivo.id).eq('organizador_id', ORG_ID),
+                clienteSupabase.from('clubs').select('*').eq('organizador_id', ORG_ID).order('nombre', { ascending: true })
             ]);
 
             todosLosJugadores = resJugadores.data || [];
@@ -457,7 +452,7 @@
                 const nombreCatLower = cat.nombre.toLowerCase();
                 const esLibre = nombreCatLower === 'libre';
                 const esPrimera = nombreCatLower.includes('primera');
-                const esCerrada = categoriasCerradasSet.has(cat.id); // Candado de categoría iniciada
+                const esCerrada = categoriasCerradasSet.has(cat.id);
 
                 let permitido = false;
 
@@ -534,7 +529,8 @@
                 nombre: nombre,
                 club: club,
                 puntos_ranking: 0,
-                nip_seguridad: nip
+                nip_seguridad: nip,
+                organizador_id: ORG_ID
             }]).select();
 
             if (error || !data) { alert("Error al registrar jugador."); return; }
@@ -562,7 +558,7 @@
                 return;
             }
 
-            const { error } = await clienteSupabase.from('jugadores').update({ nip_seguridad: nipNuevo }).eq('id', idJugador);
+            const { error } = await clienteSupabase.from('jugadores').update({ nip_seguridad: nipNuevo }).eq('id', idJugador).eq('organizador_id', ORG_ID);
 
             if (error) { alert("Error al actualizar NIP."); return; }
 
@@ -591,7 +587,8 @@
                 torneo_id: torneoActivo.id,
                 jugador_id: idJugador, 
                 categoria_id: selectCategoria.value,
-                estatus_pago: 'Pendiente de Pago'
+                estatus_pago: 'Pendiente de Pago',
+                organizador_id: ORG_ID
             }]);
 
             if (error) { alert("Error al guardar."); btnInscribir.innerText = "Reservar mi lugar"; btnInscribir.disabled = false; return; }
