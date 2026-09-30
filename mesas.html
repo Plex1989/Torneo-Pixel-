@@ -10,6 +10,14 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // BLINDAJE SAAS: Verifica que exista un organizador activo
+        const orgIdCheck = localStorage.getItem('organizador_id');
+        if (!orgIdCheck) {
+            alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
+            window.location.href = "torneos.html";
+        }
+    </script>
     <style>
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 15px; background-color: #04060a; color: #f8fafc; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
         
@@ -127,7 +135,10 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+        // BLINDAJE SAAS (Variables)
+        const ORG_ID = localStorage.getItem('organizador_id');
         let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
+
         let todosLosPartidos = [];
         let mesaFiltro = 'todas';
         let estadoFiltro = 'todos';
@@ -151,10 +162,11 @@
 
         async function inicializar() {
             try {
+                // BLINDAJE SAAS
                 const [resTorneo, resReglas, resConfig] = await Promise.allSettled([
-                    clienteSupabase.from('torneos').select('nombre, pin_jueces').eq('id', idTorneoActivo).single(),
-                    clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true }),
-                    clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').single()
+                    clienteSupabase.from('torneos').select('nombre, pin_jueces').eq('id', idTorneoActivo).eq('organizador_id', ORG_ID).single(),
+                    clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }),
+                    clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).single()
                 ]);
 
                 if (resTorneo.status === 'fulfilled' && resTorneo.value.data) {
@@ -201,10 +213,12 @@
         }
 
         async function cargarPartidos() {
+            // BLINDAJE SAAS
             const { data } = await clienteSupabase
                 .from('partidos')
                 .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)')
                 .eq('torneo_id', idTorneoActivo)
+                .eq('organizador_id', ORG_ID)
                 .order('id', { ascending: true });
 
             todosLosPartidos = data || [];
@@ -517,7 +531,6 @@
                     let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : 
                                   (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
 
-                    // PROTECCIÓN EXTREMA CONTRA NULL
                     let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
                     let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
 
@@ -680,7 +693,7 @@
                                             let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
 
                                             return `
-                                                <tr style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'" onclick="abrirModalJugadorAdmin(${j.id}, '${String(j.nombre||'').replace(/'/g, "\\'")}', '${String(j.club || 'Sin Club').replace(/'/g, "\\'")}')">
+                                                <tr style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'" onclick="abrirModalJugadorAdmin(${j.id}, '${String(j.nombre\vert{}\vert{}'').replace(/'/g, "\\'")}', '${String(j.club || 'Sin Club').replace(/'/g, "\\'")}')">
                                                     <td style="padding:8px 6px; font-weight:800; color:#64748b;">#${idx + 1}</td>
                                                     <td style="padding:8px 6px;">
                                                         <strong style="color:#ffffff;">${j.nombre}</strong>
