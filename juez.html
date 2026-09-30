@@ -128,6 +128,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         const partidoId = urlParams.get('partido');
 
+        let ORG_ID = null; // EXTRAÍDO DEL PARTIDO AUTOMÁTICAMENTE
         let partidoData = null;
         let reglasRanking = [];
         let p1 = { id: null, nombre: 'JUGADOR 1', ptsBase: 0, ptsLive: 0, score: 0, sets: 0 };
@@ -159,9 +160,18 @@
                 if (cacheHistory) {
                     historyStack = JSON.parse(cacheHistory);
                 }
-                const { data: reglas } = await clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true });
-                reglasRanking = reglas || [];
+                
+                // PRIMERO CARGAR PARTIDO PARA EXTRAER EL ORG_ID DEL SISTEMA
                 await cargarYResolverPartido();
+
+                // LUEGO CARGAR LAS REGLAS ESPECÍFICAS DE ESE CLUB
+                if (ORG_ID) {
+                    const { data: reglas } = await clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true });
+                    reglasRanking = reglas || [];
+                    await calcularRankingEnVivoAcumulado();
+                    actualizarUI();
+                }
+
             } catch (err) { console.error("Error inicializando:", err); }
         }
 
@@ -174,7 +184,9 @@
                     .single();
 
                 if (error || !data) throw new Error("No se encontró el partido.");
+                
                 partidoData = data;
+                ORG_ID = data.organizador_id; // MAGIA: EL SISTEMA SABE PARA QUÉ CLUB ESTÁS ARBITRANDO
 
                 p1.id = data.jugador1_id; p1.nombre = data.j1 ? data.j1.nombre : 'Jugador 1'; p1.ptsBase = data.j1 ? data.j1.puntos_ranking || 0 : 0;
                 p2.id = data.jugador2_id; p2.nombre = data.j2 ? data.j2.nombre : 'Jugador 2'; p2.ptsBase = data.j2 ? data.j2.puntos_ranking || 0 : 0;
@@ -214,7 +226,6 @@
                     mostrarOverlayGanador(nomWin);
                 }
 
-                await calcularRankingEnVivoAcumulado();
                 actualizarBotonRankingUI();
                 actualizarUI();
                 iniciarPresenciaEspectadores();
@@ -496,7 +507,6 @@
         function manualSwapSides() { isSwapped = !isSwapped; actualizarUI(); }
 
         function mostrarOverlayGanador(nombre) {
-            // VERIFICAMOS SI EL PARTIDO ES LA GRAN FINAL
             const isFinal = partidoData && partidoData.ronda_fase && partidoData.ronda_fase.toLowerCase().includes('final') && !partidoData.ronda_fase.toLowerCase().includes('semi');
 
             const titleEl = document.querySelector('#modal-ganador h1');
@@ -521,11 +531,6 @@
 
             document.getElementById('modal-ganador').classList.remove('hidden');
             document.getElementById('modal-ganador').classList.add('flex');
-        }
-
-        function ocultarAvisoVictoria() {
-            document.getElementById('modal-ganador').classList.add('hidden');
-            document.getElementById('modal-ganador').classList.remove('flex');
         }
 
         function cerrarYRegresar() { window.location.href = 'mesas.html'; }
