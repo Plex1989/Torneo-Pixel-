@@ -6,7 +6,9 @@
     <title>Sorteo y Rol de Partidos - Pixel Studio</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        if (localStorage.getItem('admin_autenticado') !== 'true') {
+        // BLINDAJE SAAS: Ahora verifica el ID del organizador
+        const orgIdCheck = localStorage.getItem('organizador_id');
+        if (!orgIdCheck) {
             alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
             window.location.href = "torneos.html";
         }
@@ -224,7 +226,10 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+        // EXTRAEMOS EL ID DEL ORGANIZADOR DEL LOCAL STORAGE
+        const ORG_ID = localStorage.getItem('organizador_id');
         let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
+        
         let torneoActivoObj = null;
         let jugadoresListos = [];
         let gruposGlobal = [];
@@ -236,7 +241,8 @@
 
         async function inicializarSorteo() {
             try {
-                const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
+                // BLINDAJE SAAS (Se agrega ORG_ID a todas las busquedas)
+                const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).eq('organizador_id', ORG_ID).single();
                 if (torneoData) {
                     torneoActivoObj = torneoData;
                     let infoLugar = torneoData.lugar_evento ? ` | 📍 ${torneoData.lugar_evento}` : '';
@@ -244,7 +250,7 @@
                     if(torneoData.pin_jueces) document.getElementById('rr-pin-jueces').value = torneoData.pin_jueces;
                 }
 
-                const { data } = await clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: true });
+                const { data } = await clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: true });
                 const select = document.getElementById('filtro-categoria');
                 select.innerHTML = '<option value="">-- Selecciona una categoría --</option>';
                 if (data) data.forEach(cat => select.innerHTML += `<option value="${cat.id}">${cat.nombre}</option>`);
@@ -282,10 +288,12 @@
                     return; 
                 }
 
+                // BLINDAJE SAAS (Filtro organizador_id)
                 const { count } = await clienteSupabase.from('inscripciones')
                     .select('*', { count: 'exact', head: true })
                     .eq('categoria_id', idCat)
                     .eq('torneo_id', idTorneoActivo)
+                    .eq('organizador_id', ORG_ID)
                     .eq('estatus_pago', 'Pagado');
                 
                 contador.innerText = count || 0;
@@ -295,6 +303,7 @@
                     .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking)')
                     .eq('categoria_id', idCat)
                     .eq('torneo_id', idTorneoActivo)
+                    .eq('organizador_id', ORG_ID)
                     .order('id', { ascending: true });
 
                 if (error) throw error;
@@ -447,10 +456,12 @@
             const idCategoria = document.getElementById('filtro-categoria').value;
             if (!idCategoria) { alert("Selecciona una categoría."); return; }
 
+            // BLINDAJE SAAS
             const { data } = await clienteSupabase.from('inscripciones')
                 .select(`jugadores ( id, nombre, puntos_ranking, club )`)
                 .eq('categoria_id', idCategoria)
                 .eq('torneo_id', idTorneoActivo)
+                .eq('organizador_id', ORG_ID)
                 .eq('estatus_pago', 'Pagado');
 
             if (!data || data.length === 0) { alert("No hay jugadores pagados en esta categoría."); return; }
@@ -903,7 +914,11 @@
             if (!confirm("⚠️ ¿Deseas ELIMINAR el sorteo guardado de esta categoría y generar uno nuevo?")) return;
 
             try {
-                await clienteSupabase.from('partidos').delete().eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo);
+                // BLINDAJE SAAS
+                await clienteSupabase.from('partidos').delete()
+                    .eq('categoria_id', idCat)
+                    .eq('torneo_id', idTorneoActivo)
+                    .eq('organizador_id', ORG_ID);
                 await cargarEstadoCategoria();
             } catch(e) {
                 alert("Error al borrar: " + e.message);
@@ -921,15 +936,23 @@
             btn.innerText = "Guardando en Supabase...";
 
             try {
-                const req1 = await clienteSupabase.from('torneos').update({ pin_jueces: pinJueces }).eq('id', idTorneoActivo);
+                // BLINDAJE SAAS
+                const req1 = await clienteSupabase.from('torneos').update({ pin_jueces: pinJueces })
+                    .eq('id', idTorneoActivo)
+                    .eq('organizador_id', ORG_ID);
                 if (req1.error) throw new Error("Fallo al actualizar PIN: " + req1.error.message);
 
-                const req2 = await clienteSupabase.from('partidos').delete().eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo);
+                const req2 = await clienteSupabase.from('partidos').delete()
+                    .eq('categoria_id', idCategoria)
+                    .eq('torneo_id', idTorneoActivo)
+                    .eq('organizador_id', ORG_ID);
                 if (req2.error) throw new Error("Fallo al limpiar partidos antiguos: " + req2.error.message);
 
+                // IMPORTANTE: INYECTAR EL ORGANIZADOR AL CREAR LOS PARTIDOS
                 let partidosInsertar = partidosGeneradosRR.map(p => ({
                     torneo_id: parseInt(idTorneoActivo),
                     categoria_id: parseInt(idCategoria),
+                    organizador_id: ORG_ID, // <-- BLINDAJE
                     grupo_nombre: p.grupoNombre || null,
                     ronda_fase: p.rondaFase || `Ronda ${p.r}`,
                     mesa: p.mesa || 1,
