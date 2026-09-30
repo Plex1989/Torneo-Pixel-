@@ -125,6 +125,7 @@
         const urlParams = new URLSearchParams(window.location.search);
         let idTorneoActivo = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id') || 1;
 
+        let ORG_ID = null; // EXTRAÍDO AUTOMÁTICAMENTE
         let reglasRankingList = [];
         let categoriasList = [];
         let todosLosJugadoresBD = [];
@@ -134,20 +135,24 @@
 
         async function cargarMemoria() {
             try {
-                // Seguridad a prueba de fallos: allSettled
-                const [resTorneo, resPartidos, resReglas, resConfig, resCat, resJugadores] = await Promise.allSettled([
-                    clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).single(),
-                    clienteSupabase.from('partidos').select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)').eq('torneo_id', idTorneoActivo).eq('estado', 'finalizado'),
-                    clienteSupabase.from('reglas_ranking').select('*'),
-                    clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').single(),
-                    clienteSupabase.from('categorias').select('*').order('puntos_minimos', { ascending: false }),
-                    clienteSupabase.from('jugadores').select('*').order('puntos_ranking', { ascending: false })
-                ]);
-
-                if (resTorneo.status === 'fulfilled' && resTorneo.value.data) {
-                    document.getElementById('torneo-nombre').innerText = resTorneo.value.data.nombre;
-                    document.getElementById('torneo-nombre-tag').innerText = resTorneo.value.data.nombre;
+                // 1. OBTENER TORNEO Y SU DUEÑO
+                const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre, organizador_id').eq('id', idTorneoActivo).single();
+                if (torneoData) {
+                    document.getElementById('torneo-nombre').innerText = torneoData.nombre;
+                    document.getElementById('torneo-nombre-tag').innerText = torneoData.nombre;
+                    ORG_ID = torneoData.organizador_id;
+                } else {
+                    throw new Error("Torneo no encontrado");
                 }
+
+                // 2. CARGAR DATOS BLINDADOS
+                const [resPartidos, resReglas, resConfig, resCat, resJugadores] = await Promise.allSettled([
+                    clienteSupabase.from('partidos').select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)').eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID).eq('estado', 'finalizado'),
+                    clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID),
+                    clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).single(),
+                    clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: false }),
+                    clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID).order('puntos_ranking', { ascending: false })
+                ]);
                 
                 reglasRankingList = resReglas.status === 'fulfilled' ? (resReglas.value.data || []) : [];
                 categoriasList = resCat.status === 'fulfilled' ? (resCat.value.data || []) : [];
@@ -196,7 +201,6 @@
         function procesarDatos(partidosFin) {
             let reporteData = { categorias: {}, expedientes: {} };
 
-            // INICIALIZAR EXPEDIENTES
             partidosFin.forEach(p => {
                 [p.j1, p.j2].forEach(j => {
                     if (j && !reporteData.expedientes[j.id]) {
@@ -208,7 +212,6 @@
                 });
             });
 
-            // PROCESAR PARTIDOS Y TABLAS
             partidosFin.forEach(p => {
                 let catNombre = p.categorias?.nombre || 'General';
                 if (!reporteData.categorias[catNombre]) reporteData.categorias[catNombre] = { grupos: {}, llaves: [] };
@@ -267,7 +270,6 @@
                 }
             });
 
-            // APLICAR BONO DE CLASIFICACIÓN
             if (bonoPaseActivo && bonoPaseValor > 0) {
                 let idsEnLlaves = new Set();
                 partidosFin.filter(p => !p.grupo_nombre && p.ronda_fase).forEach(p => {
@@ -345,12 +347,11 @@
             const semi1 = catData.llaves.find(p => p.ronda_fase?.toLowerCase().includes('semi') && p.ronda_fase?.includes('1'));
             const semi2 = catData.llaves.find(p => p.ronda_fase?.toLowerCase().includes('semi') && p.ronda_fase?.includes('2'));
 
-            if (!partidoFinal || !partidoFinal.ganador_id) return ''; // Aún no hay campeón
+            if (!partidoFinal || !partidoFinal.ganador_id) return '';
 
             const campeonObj = partidoFinal.ganador_id === partidoFinal.jugador1_id ? partidoFinal.j1 : partidoFinal.j2;
             const subcampeonObj = partidoFinal.ganador_id === partidoFinal.jugador1_id ? partidoFinal.j2 : partidoFinal.j1;
 
-            // Terceros lugares (Perdedores de semis)
             let terceros = [];
             if (semi1 && semi1.ganador_id) terceros.push(semi1.ganador_id === semi1.jugador1_id ? semi1.j2 : semi1.j1);
             if (semi2 && semi2.ganador_id) terceros.push(semi2.ganador_id === semi2.jugador1_id ? semi2.j2 : semi2.j1);
@@ -451,10 +452,8 @@
                 html += `<div class="glass-panel p-5 md:p-8 rounded-3xl mb-8 print-border">`;
                 html += `<h2 class="text-xl md:text-3xl font-black text-cyan-400 uppercase tracking-widest mb-6 border-b border-cyan-500/30 pb-4"><i class="fa-solid fa-trophy mr-2 text-amber-400"></i> ${catNombre}</h2>`;
 
-                // 1. CUADRO DE HONOR
                 html += generarCuadroDeHonor(catData);
 
-                // 2. FASE DE GRUPOS
                 if (Object.keys(catData.grupos).length > 0) {
                     html += `<h3 class="text-sm font-black text-white uppercase tracking-widest mb-4 border-l-4 border-cyan-500 pl-3">Fase de Grupos</h3>`;
                     html += `<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">`;
@@ -502,10 +501,9 @@
                     html += `</div>`;
                 }
 
-                // 3. FASE FINAL (LLAVES)
                 html += generarLlaveVisual(catData.llaves);
 
-                html += `</div>`; // Fin glass-panel categoría
+                html += `</div>`; 
             });
 
             container.innerHTML = html;
