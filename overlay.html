@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Overlay de Transmisión - Pixel Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* FONDO TOTALMENTE TRANSPARENTE PARA OBS / PRISM LIVE */
+        body { 
+            font-family: 'Sora', sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: transparent !important; 
+            overflow: hidden; 
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end; /* Pega el marcador abajo */
+        }
+        
+        .font-digital { font-family: 'Orbitron', sans-serif; }
+        
+        /* ESTILOS DEL MARCADOR INFERIOR */
+        .scoreboard-container {
+            width: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 70%, transparent 100%);
+            padding: 20px 10px 10px 10px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            align-items: flex-end;
+            transition: all 0.5s ease;
+        }
+
+        .jugador-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            min-width: 300px;
+            max-width: 400px;
+            flex: 1;
+        }
+
+        .panel-j1 { border-left: 5px solid #06b6d4; }
+        .panel-j2 { border-left: 5px solid #d946ef; }
+
+        .info-jugador { flex: 1; }
+        .nombre { font-size: 22px; font-weight: 900; color: white; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.1; }
+        .club { font-size: 12px; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
+
+        .sets-caja { background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+        .sets-num { font-family: 'Orbitron', sans-serif; font-size: 20px; font-weight: 900; color: white; }
+        .sets-lbl { font-size: 9px; color: #64748b; font-weight: 800; text-transform: uppercase; }
+
+        .puntos-num { font-family: 'Orbitron', sans-serif; font-size: 55px; font-weight: 900; line-height: 0.8; }
+        .pts-j1 { color: #06b6d4; text-shadow: 0 0 15px rgba(6, 182, 212, 0.5); }
+        .pts-j2 { color: #d946ef; text-shadow: 0 0 15px rgba(217, 70, 239, 0.5); }
+
+        .centro-info { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 5px; }
+        .mesa-badge { background: #f5a623; color: black; font-weight: 900; font-size: 12px; padding: 4px 12px; border-radius: 99px; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 15px rgba(245, 166, 35, 0.5); margin-bottom: 5px; }
+        .fase-txt { font-size: 10px; color: #cbd5e1; font-weight: 800; text-transform: uppercase; text-shadow: 1px 1px 2px black; text-align: center; }
+
+        /* ESTILOS DE LA CLAQUETA GIGANTE (SE MUESTRA AL INICIO) */
+        #claqueta-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: opacity 0.5s ease;
+        }
+
+        .claqueta-box {
+            border: 2px dashed #f5a623;
+            padding: 40px;
+            border-radius: 20px;
+            background: rgba(15, 23, 42, 0.8);
+            box-shadow: 0 0 50px rgba(245, 166, 35, 0.2);
+            animation: pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% { border-color: #f5a623; box-shadow: 0 0 20px rgba(245, 166, 35, 0.2); }
+            50% { border-color: #ffed4a; box-shadow: 0 0 50px rgba(245, 166, 35, 0.6); }
+            100% { border-color: #f5a623; box-shadow: 0 0 20px rgba(245, 166, 35, 0.2); }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- CLAQUETA GIGANTE PARA GRABACIÓN -->
+    <div id="claqueta-overlay" style="display: none;">
+        <div class="claqueta-box">
+            <div class="text-amber-500 font-black tracking-widest uppercase mb-2 text-xl">🎬 Claqueta de Grabación</div>
+            <div class="text-white font-bold mb-6 text-sm">El Título en YouTube DEBE incluir el siguiente ID:</div>
+            
+            <div class="font-digital text-7xl md:text-9xl text-cyan-400 font-black mb-6 drop-shadow-[0_0_20px_rgba(6,182,212,0.8)]">
+                [ID: <span id="claqueta-id">--</span>]
+            </div>
+            
+            <h1 id="claqueta-match" class="text-3xl md:text-5xl text-white font-black uppercase tracking-wider mb-4">Jugador 1 VS Jugador 2</h1>
+            <h2 id="claqueta-cat" class="text-xl md:text-2xl text-fuchsia-400 font-bold uppercase tracking-widest">Categoría • Grupo A</h2>
+            
+            <div class="mt-8 text-zinc-500 font-bold uppercase tracking-widest text-sm animate-pulse">Ocultando claqueta automáticamente...</div>
+        </div>
+    </div>
+
+    <!-- MARCADOR INFERIOR TRANSPARENTE -->
+    <div id="scoreboard" class="scoreboard-container" style="display: none;">
+        
+        <div class="jugador-panel panel-j1">
+            <div class="info-jugador">
+                <div id="sb-nombre-j1" class="nombre">JUGADOR 1</div>
+                <div id="sb-club-j1" class="club">CLUB</div>
+            </div>
+            <div class="sets-caja">
+                <div class="sets-lbl">SETS</div>
+                <div id="sb-sets-j1" class="sets-num text-cyan-400">0</div>
+            </div>
+            <div id="sb-pts-j1" class="puntos-num pts-j1">0</div>
+        </div>
+
+        <div class="centro-info">
+            <div id="sb-mesa" class="mesa-badge">MESA 1</div>
+            <div id="sb-fase" class="fase-txt">FASE DE GRUPOS<br>1RA FUERZA</div>
+        </div>
+
+        <div class="jugador-panel panel-j2 flex-row-reverse text-right">
+            <div class="info-jugador">
+                <div id="sb-nombre-j2" class="nombre">JUGADOR 2</div>
+                <div id="sb-club-j2" class="club">CLUB</div>
+            </div>
+            <div class="sets-caja">
+                <div class="sets-lbl">SETS</div>
+                <div id="sb-sets-j2" class="sets-num text-fuchsia-400">0</div>
+            </div>
+            <div id="sb-pts-j2" class="puntos-num pts-j2">0</div>
+        </div>
+
+    </div>
+
+    <!-- PANTALLA DE ESPERA -->
+    <div id="pantalla-espera" class="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
+        <div class="bg-slate-900/90 border border-white/10 p-6 rounded-2xl text-center">
+            <i class="fa-solid fa-satellite-dish text-4xl text-cyan-500 animate-pulse mb-4"></i>
+            <h2 class="text-white font-black uppercase tracking-widest text-xl mb-1">Esperando Partido...</h2>
+            <p id="txt-espera-mesa" class="text-zinc-400 font-bold text-sm">Mesa --</p>
+        </div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://stytjtqshyupkyihurpd.supabase.co';
+        const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
+        const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlTorneo = urlParams.get('torneo');
+        const urlMesa = urlParams.get('mesa');
+        
+        let ORG_ID = null;
+        let partidoActivoId = null;
+        let timerClaqueta = null;
+
+        async function inicializarOverlay() {
+            if (!urlTorneo || !urlMesa) {
+                document.getElementById('pantalla-espera').innerHTML = `
+                    <div class="bg-rose-900/90 border border-rose-500/50 p-6 rounded-2xl text-center">
+                        <i class="fa-solid fa-triangle-exclamation text-4xl text-rose-500 mb-4"></i>
+                        <h2 class="text-white font-black uppercase tracking-widest text-xl mb-2">Error de Configuración</h2>
+                        <p class="text-rose-200 font-bold text-sm">Falta el parámetro de torneo o mesa en el link.<br>Ejemplo: overlay.html?torneo=1&mesa=3</p>
+                    </div>`;
+                return;
+            }
+
+            document.getElementById('txt-espera-mesa').innerText = `Monitoreando Mesa ${urlMesa}...`;
+
+            try {
+                // 1. Obtener Organizador
+                const { data: torneoData } = await clienteSupabase.from('torneos').select('organizador_id').eq('id', urlTorneo).single();
+                if (!torneoData) throw new Error("Torneo no encontrado");
+                ORG_ID = torneoData.organizador_id;
+
+                // 2. Buscar si hay un partido activo
+                await buscarPartidoEnMesa();
+
+                // 3. Suscribirse a cambios
+                clienteSupabase
+                    .channel('overlay-realtime')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'partidos', filter: `torneo_id=eq.${urlTorneo}` }, payload => {
+                        // Si el cambio afecta a nuestra mesa, actualizamos
+                        if (payload.new && payload.new.mesa == urlMesa) {
+                            buscarPartidoEnMesa();
+                        }
+                    })
+                    .subscribe();
+
+            } catch (err) {
+                console.error("Error inicializando overlay:", err);
+            }
+        }
+
+        async function buscarPartidoEnMesa() {
+            try {
+                // Busca el partido 'en_curso' más reciente para esta mesa
+                const { data, error } = await clienteSupabase
+                    .from('partidos')
+                    .select('*, j1:jugador1_id(nombre, club), j2:jugador2_id(nombre, club), categorias(nombre)')
+                    .eq('torneo_id', urlTorneo)
+                    .eq('organizador_id', ORG_ID)
+                    .eq('mesa', urlMesa)
+                    .eq('estado', 'en_curso')
+                    .order('updated_at', { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+
+                if (error) throw error;
+
+                if (data) {
+                    procesarPartido(data);
+                } else {
+                    // No hay partido activo, mostrar pantalla de espera
+                    document.getElementById('scoreboard').style.display = 'none';
+                    document.getElementById('claqueta-overlay').style.display = 'none';
+                    document.getElementById('pantalla-espera').style.display = 'flex';
+                    partidoActivoId = null;
+                }
+            } catch (error) {
+                console.error("Error buscando partido:", error);
+            }
+        }
+
+        function procesarPartido(p) {
+            document.getElementById('pantalla-espera').style.display = 'none';
+
+            let nomJ1 = p.j1?.nombre || 'J1';
+            let nomJ2 = p.j2?.nombre || 'J2';
+            let catFase = `${p.categorias?.nombre || 'Categoría'} • ${p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Llave')}`;
+
+            // Si es un partido nuevo, mostramos la claqueta
+            if (partidoActivoId !== p.id) {
+                partidoActivoId = p.id;
+                
+                // Actualizar info claqueta
+                document.getElementById('claqueta-id').innerText = p.id;
+                document.getElementById('claqueta-match').innerText = `${nomJ1} VS ${nomJ2}`;
+                document.getElementById('claqueta-cat').innerText = catFase;
+
+                // Mostrar Claqueta
+                document.getElementById('claqueta-overlay').style.display = 'flex';
+                document.getElementById('scoreboard').style.display = 'none';
+
+                // Ocultar claqueta después de 8 segundos y mostrar marcador
+                if(timerClaqueta) clearTimeout(timerClaqueta);
+                timerClaqueta = setTimeout(() => {
+                    document.getElementById('claqueta-overlay').style.opacity = '0';
+                    setTimeout(() => {
+                        document.getElementById('claqueta-overlay').style.display = 'none';
+                        document.getElementById('claqueta-overlay').style.opacity = '1'; // Reset
+                        document.getElementById('scoreboard').style.display = 'flex';
+                    }, 500); // Espera la transición CSS
+                }, 8000);
+            } else {
+                // Si es el mismo partido actualizándose, asegurar que el marcador se ve
+                if (document.getElementById('claqueta-overlay').style.display === 'none') {
+                    document.getElementById('scoreboard').style.display = 'flex';
+                }
+            }
+
+            // Actualizar Marcador Inferior
+            document.getElementById('sb-nombre-j1').innerText = nomJ1;
+            document.getElementById('sb-club-j1').innerText = p.j1?.club || 'Sin Club';
+            document.getElementById('sb-pts-j1').innerText = p.puntos_j1 || 0;
+            document.getElementById('sb-sets-j1').innerText = p.sets_j1 || 0;
+
+            document.getElementById('sb-nombre-j2').innerText = nomJ2;
+            document.getElementById('sb-club-j2').innerText = p.j2?.club || 'Sin Club';
+            document.getElementById('sb-pts-j2').innerText = p.puntos_j2 || 0;
+            document.getElementById('sb-sets-j2').innerText = p.sets_j2 || 0;
+
+            document.getElementById('sb-mesa').innerText = `MESA ${p.mesa}`;
+            document.getElementById('sb-fase').innerHTML = `${p.categorias?.nombre || 'Cat'}<br>${p.grupo_nombre ? 'Grupo ' + p.grupo_nombre : (p.ronda_fase || '')}`;
+        }
+
+        inicializarOverlay();
+    </script>
+</body>
+</html>
