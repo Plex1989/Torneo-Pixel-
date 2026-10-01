@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control - Arbitraje Digital</title>
-    <!-- Tailwind CSS para asegurar que los nuevos módulos se vean bien -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -108,6 +107,12 @@
             #area-impresion-memoria { display: block !important; }
             .memoria-print-area { display: block !important; }
         }
+
+        /* Utilidad para inputs de tabla */
+        .input-tabla {
+            background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 8px; color: #ffffff; font-size: 11px; outline: none; transition: all 0.2s;
+        }
+        .input-tabla:focus { border-color: #06b6d4; }
     </style>
 </head>
 <body>
@@ -279,19 +284,19 @@
             <div class="caja-edicion">
                 <div style="font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color:#ffffff; margin-bottom: 12px;" id="titulo-modo-jugador">➕ Registrando Nuevo Jugador</div>
                 <div class="flex flex-col md:flex-row gap-3">
-                    <input type="text" id="nuevo-nombre" class="flex-1 bg-black/50 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-fuchsia-500" placeholder="Nombre completo">
-                    <select id="nuevo-club" class="bg-black/50 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-fuchsia-500 w-full md:w-32"><option value="Sin Club">Cargando...</option></select>
+                    <input type="text" id="nuevo-nombre" class="flex-1 input-tabla" placeholder="Nombre completo">
+                    <select id="nuevo-club" class="input-tabla w-full md:w-32"><option value="Sin Club">Cargando...</option></select>
                     <div class="flex flex-col w-full md:w-24">
-                        <label class="text-[8px] text-zinc-500 font-bold uppercase mb-1">Rank Ant.</label>
-                        <input type="number" id="nuevo-ranking-ant" class="bg-black/50 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-fuchsia-500 w-full" placeholder="Ant." value="0">
+                        <span style="font-size:8px; color:#94a3b8; font-weight:800; text-transform:uppercase; margin-bottom: 2px;">Rank Ant.</span>
+                        <input type="number" id="nuevo-ranking-ant" class="input-tabla w-full" placeholder="Ant." value="0">
                     </div>
                     <div class="flex flex-col w-full md:w-24">
-                        <label class="text-[8px] text-cyan-500 font-bold uppercase mb-1">Rank Act.</label>
-                        <input type="number" id="nuevo-ranking" class="bg-black/50 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-fuchsia-500 w-full" placeholder="Act.">
+                        <span style="font-size:8px; color:#22d3ee; font-weight:800; text-transform:uppercase; margin-bottom: 2px;">Rank Act.</span>
+                        <input type="number" id="nuevo-ranking" class="input-tabla w-full" placeholder="Act.">
                     </div>
                     <div class="flex flex-col w-full md:w-24">
-                        <label class="text-[8px] text-zinc-500 font-bold uppercase mb-1">PIN</label>
-                        <input type="text" id="nuevo-nip" class="bg-black/50 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-fuchsia-500 w-full" placeholder="PIN" maxlength="4" value="1234">
+                        <span style="font-size:8px; color:#94a3b8; font-weight:800; text-transform:uppercase; margin-bottom: 2px;">PIN</span>
+                        <input type="text" id="nuevo-nip" class="input-tabla w-full" placeholder="PIN" maxlength="4" value="1234">
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:10px;">
@@ -1080,10 +1085,10 @@
                 tbody.innerHTML += `
                     <tr>
                         <td><strong style="color:#ffffff; font-size:12px;">${cat.nombre || 'Sin Nombre'}</strong></td>
-                        <td><input type="date" id="cat-fecha-${cat.id}" value="${fechaVal}"></td>
-                        <td><input type="time" id="cat-hora-${cat.id}" value="${horaVal}"></td>
-                        <td><input type="text" id="cat-lugar-${cat.id}" value="${lugarVal}" placeholder="Lugar / Mesas"></td>
-                        <td><input type="number" id="cat-inscripcion-${cat.id}" value="${costoVal}" style="width:80px;" placeholder="$"></td>
+                        <td><input type="date" id="cat-fecha-${cat.id}" value="${fechaVal}" class="input-tabla"></td>
+                        <td><input type="time" id="cat-hora-${cat.id}" value="${horaVal}" class="input-tabla"></td>
+                        <td><input type="text" id="cat-lugar-${cat.id}" value="${lugarVal}" placeholder="Lugar / Mesas" class="input-tabla w-full"></td>
+                        <td><input type="number" id="cat-inscripcion-${cat.id}" value="${costoVal}" style="width:80px;" placeholder="$" class="input-tabla text-center"></td>
                         <td><button class="btn-console btn-gold" style="padding: 4px 10px; font-size: 9px;" onclick="guardarHorarioCat(${cat.id})">💾 Guardar</button></td>
                     </tr>
                 `;
@@ -1186,7 +1191,7 @@
 
                     catObj.inscripciones.forEach(ins => {
                         const esPagado = ins.estatus_pago === 'Pagado';
-                        let selectCatHtml = `<select id="select-cambiar-cat-${ins.id}" style="padding: 6px; font-size: 10px; margin-right: 6px; width: 110px; font-weight: 700;">`;
+                        let selectCatHtml = `<select id="select-cambiar-cat-${ins.id}" class="input-tabla" style="padding: 6px; font-size: 10px; margin-right: 6px; width: 110px; font-weight: 700;">`;
                         todasLasCategoriasAdmin.forEach(c => { selectCatHtml += `<option value="${c.id}" ${c.id === ins.categoria_id ? 'selected' : ''}>${c.nombre}</option>`; });
                         selectCatHtml += `</select>`;
 
@@ -1241,7 +1246,7 @@
                 if (!data || data.length === 0) { document.getElementById('modulo-pendientes-ranking').style.display = 'none'; return; }
                 document.getElementById('modulo-pendientes-ranking').style.display = 'block'; tbody.innerHTML = '';
                 data.forEach(j => {
-                    tbody.innerHTML += `<tr><td><strong style="color:#ffffff; font-size:12px;">${j.nombre}</strong></td><td>${j.club || 'Sin Club'}</td><td><input type="number" id="input-ranking-${j.id}" placeholder="Puntos" style="width:90px; padding:8px; text-align:center;"></td><td><button class="btn-console btn-gold" style="padding:6px 12px; font-size:9px;" onclick="asignarRankingInicial(${j.id}, '${j.nombre.replace(/'/g, "\\'")}')">Guardar</button></td></tr>`;
+                    tbody.innerHTML += `<tr><td><strong style="color:#ffffff; font-size:12px;">${j.nombre}</strong></td><td>${j.club || 'Sin Club'}</td><td><input type="number" id="input-ranking-${j.id}" placeholder="Puntos" style="width:90px;" class="input-tabla text-center"></td><td><button class="btn-console btn-gold" style="padding:6px 12px; font-size:9px;" onclick="asignarRankingInicial(${j.id}, '${j.nombre.replace(/'/g, "\\'")}')">Guardar</button></td></tr>`;
                 });
             } catch(e) { console.error("Error pendientes ranking:", e); }
         }
@@ -1268,7 +1273,7 @@
             if (todosLosClubsAdmin.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="mensaje-vacio">No hay clubs.</td></tr>'; return; }
             todosLosClubsAdmin.forEach(c => {
                 const esDefault = c.nombre === 'Sin Club';
-                tbody.innerHTML += `<tr><td>#${c.id}</td><td><input type="text" id="club-nombre-${c.id}" value="${c.nombre}" ${esDefault ? 'disabled' : ''}></td><td>${!esDefault ? `<button class="btn-console btn-purple" style="padding: 5px 10px; font-size: 9px; margin-right: 4px;" onclick="actualizarClub(${c.id}, '${c.nombre}')">Guardar</button><button class="btn-console btn-red" style="padding: 5px 10px; font-size: 9px;" onclick="eliminarClub(${c.id}, '${c.nombre}')">Eliminar</button>` : '<small>Sistema</small>'}</td></tr>`;
+                tbody.innerHTML += `<tr><td>#${c.id}</td><td><input type="text" id="club-nombre-${c.id}" value="${c.nombre}" ${esDefault ? 'disabled' : ''} class="input-tabla w-full"></td><td>${!esDefault ? `<button class="btn-console btn-purple" style="padding: 5px 10px; font-size: 9px; margin-right: 4px;" onclick="actualizarClub(${c.id}, '${c.nombre}')">Guardar</button><button class="btn-console btn-red" style="padding: 5px 10px; font-size: 9px;" onclick="eliminarClub(${c.id}, '${c.nombre}')">Eliminar</button>` : '<small>Sistema</small>'}</td></tr>`;
             });
         }
 
@@ -1432,7 +1437,25 @@
                 tbody.innerHTML = '<tr><td colspan="5" class="mensaje-vacio">No hay categorías.</td></tr>';
                 return;
             }
-            todasLasCategoriasAdmin.forEach(cat => tbody.innerHTML += `<tr><td><strong style="color:#ffffff; font-size:12px;">${cat.nombre}</strong></td><td><input type="number" id="cat-min-${cat.id}" style="width:60px; text-align:center; padding: 6px;" value="${cat.puntos_minimos}"> pts</td><td><input type="number" id="cat-max-${cat.id}" style="width:60px; text-align:center; padding: 6px;" value="${cat.puntos_maximos}"> pts</td><td>$<input type="number" id="cat-precio-${cat.id}" style="width:60px; text-align:center; padding: 6px;" value="${cat.costo_inscripcion || 200}"></td><td><button class="btn-console btn-pink" style="padding:4px 10px; font-size:9px;" onclick="actualizarCategoria(${cat.id})">Guardar</button></td></tr>`);
+            todasLasCategoriasAdmin.forEach(cat => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong style="color:#ffffff; font-size:12px;">${cat.nombre}</strong></td>
+                        <td>
+                            <input type="number" id="cat-min-${cat.id}" class="input-tabla w-20 text-center" value="${cat.puntos_minimos}"> pts
+                        </td>
+                        <td>
+                            <input type="number" id="cat-max-${cat.id}" class="input-tabla w-20 text-center" value="${cat.puntos_maximos}"> pts
+                        </td>
+                        <td>
+                            $<input type="number" id="cat-precio-${cat.id}" class="input-tabla w-20 text-center" value="${cat.costo_inscripcion || 200}">
+                        </td>
+                        <td>
+                            <button class="btn-console btn-pink" style="padding:4px 10px; font-size:9px;" onclick="actualizarCategoria(${cat.id})">Guardar</button>
+                        </td>
+                    </tr>
+                `;
+            });
         }
 
         async function actualizarCategoria(id) {
@@ -1462,8 +1485,8 @@
                     <tr>
                         <td style="color:#94a3b8; font-size:11px; font-weight:600;">De ${regla.diferencia_min} a ${regla.diferencia_max} pts</td>
                         <td style="color:#ffffff; font-size:11px; font-weight:700;">${escenario}</td>
-                        <td>+ <input type="number" id="regla-ganador-${regla.id}" style="width:50px; text-align:center; padding:6px;" value="${regla.puntos_ganador}"></td>
-                        <td> <input type="number" id="regla-perdedor-${regla.id}" style="width:50px; text-align:center; padding:6px;" value="${regla.puntos_perdedor}"></td>
+                        <td>+ <input type="number" id="regla-ganador-${regla.id}" style="width:60px;" value="${regla.puntos_ganador}" class="input-tabla text-center"></td>
+                        <td> <input type="number" id="regla-perdedor-${regla.id}" style="width:60px;" value="${regla.puntos_perdedor}" class="input-tabla text-center"></td>
                         <td><button class="btn-console btn-red" style="padding:4px 10px; font-size:9px;" onclick="actualizarRegla(${regla.id})">Guardar</button></td>
                     </tr>
                 `;
