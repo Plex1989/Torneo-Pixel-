@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control - Pixel Studio</title>
+    <title>Panel de Control - Arbitraje Digital</title>
+    <!-- Tailwind CSS para asegurar que los nuevos módulos se vean bien -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
@@ -21,7 +23,7 @@
         body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
         @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
 
-        /* HEADER FIJO STICKY PARA MÓVIL Y DESKTOP */
+        /* HEADER FIJO STICKY */
         .navbar { background: rgba(10, 15, 26, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 100; }
         .nav-title { font-weight: 800; font-size: 15px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
         
@@ -123,11 +125,9 @@
                     <span id="modal-jugador-variacion" style="font-size: 10px; font-weight: 800;"></span>
                 </div>
             </div>
-
             <div id="modal-jugador-partidos-list" style="display: flex; flex-direction: column; gap: 10px;">
                 <div class="mensaje-vacio">Cargando expediente...</div>
             </div>
-
             <button onclick="cerrarModalJugadorAdmin()" style="width: 100%; justify-content: center; margin-top: 20px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; padding: 12px; border-radius: 9999px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease;">Cerrar Detalle</button>
         </div>
     </div>
@@ -139,7 +139,6 @@
                 <h3 style="margin: 0; color: #a855f7; font-size: 16px; font-weight: 800; text-transform: uppercase;"><i class="fa-solid fa-trophy mr-2"></i> Ranking Global</h3>
                 <button onclick="document.getElementById('modal-ranking-global').style.display='none'" style="background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
             </div>
-
             <div style="max-height: 65vh; overflow-y: auto;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                     <thead style="position: sticky; top: 0; background: #0f172a; z-index: 10;">
@@ -196,7 +195,6 @@
                         <i class="fa-solid fa-eye mr-1"></i> <span id="contador-espectadores">0</span> Conectados
                     </div>
                 </div>
-
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <button class="tab-filter active" id="tab-en_curso" onclick="cambiarFiltroEstadoMonitor('en_curso')">🔴 En Vivo</button>
                     <button class="tab-filter" id="tab-resumen" onclick="cambiarFiltroEstadoMonitor('resumen')">📊 Resumen y Llaves</button>
@@ -205,9 +203,7 @@
                     <button class="tab-filter" id="tab-todos" onclick="cambiarFiltroEstadoMonitor('todos')">📋 Todos</button>
                 </div>
             </div>
-
             <div class="scrolling-bar" id="bar-admin-categorias"></div>
-
             <div id="grid-mesas-vivo" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:18px;">
                 <div class="mensaje-vacio">Cargando partidos...</div>
             </div>
@@ -282,20 +278,20 @@
 
             <div class="caja-edicion">
                 <div style="font-weight: 800; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color:#ffffff; margin-bottom: 12px;" id="titulo-modo-jugador">➕ Registrando Nuevo Jugador</div>
-                <div class="form-row">
-                    <input type="text" id="nuevo-nombre" placeholder="Nombre completo">
-                    <select id="nuevo-club" style="max-width: 140px;"><option value="Sin Club">Cargando clubs...</option></select>
-                    <div style="display:flex; flex-direction:column; max-width:80px;">
-                        <span style="font-size:8px; color:#94a3b8; font-weight:800; text-transform:uppercase;">Rank Ant.</span>
-                        <input type="number" id="nuevo-ranking-ant" placeholder="Ant." value="0">
+                <div class="flex flex-col md:flex-row gap-3">
+                    <input type="text" id="nuevo-nombre" class="flex-1 bg-black/50 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-fuchsia-500" placeholder="Nombre completo">
+                    <select id="nuevo-club" class="bg-black/50 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-fuchsia-500 w-full md:w-32"><option value="Sin Club">Cargando...</option></select>
+                    <div class="flex flex-col w-full md:w-24">
+                        <label class="text-[8px] text-zinc-500 font-bold uppercase mb-1">Rank Ant.</label>
+                        <input type="number" id="nuevo-ranking-ant" class="bg-black/50 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-fuchsia-500 w-full" placeholder="Ant." value="0">
                     </div>
-                    <div style="display:flex; flex-direction:column; max-width:80px;">
-                        <span style="font-size:8px; color:#22d3ee; font-weight:800; text-transform:uppercase;">Rank Act.</span>
-                        <input type="number" id="nuevo-ranking" placeholder="Act.">
+                    <div class="flex flex-col w-full md:w-24">
+                        <label class="text-[8px] text-cyan-500 font-bold uppercase mb-1">Rank Act.</label>
+                        <input type="number" id="nuevo-ranking" class="bg-black/50 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-fuchsia-500 w-full" placeholder="Act.">
                     </div>
-                    <div style="display:flex; flex-direction:column; max-width:80px;">
-                        <span style="font-size:8px; color:#94a3b8; font-weight:800; text-transform:uppercase;">PIN</span>
-                        <input type="text" id="nuevo-nip" placeholder="PIN" maxlength="4" value="1234">
+                    <div class="flex flex-col w-full md:w-24">
+                        <label class="text-[8px] text-zinc-500 font-bold uppercase mb-1">PIN</label>
+                        <input type="text" id="nuevo-nip" class="bg-black/50 border border-white/10 rounded-xl p-3 text-white text-xs outline-none focus:border-fuchsia-500 w-full" placeholder="PIN" maxlength="4" value="1234">
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:10px;">
@@ -305,7 +301,7 @@
                 </div>
             </div>
 
-            <!-- CONTENEDOR RANKING OCULTO (Para impresión vieja) -->
+            <!-- CONTENEDOR RANKING OCULTO (Para impresión) -->
             <div id="seccion-print" style="display: none; margin-top: 25px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;">
                 <h3 style="color:#ffffff; text-align:center; font-size: 14px; letter-spacing: 2px;">RANKING OFICIAL ACTUAL</h3>
                 <p id="fecha-impresion" style="text-align:center; font-size:10px; color:#94a3b8; text-transform:uppercase;"></p>
@@ -328,7 +324,7 @@
 
         <!-- GESTIÓN DE CATEGORÍAS -->
         <div class="panel-3d panel-pink">
-            <h2>🏷️️ Gestión de Categorías / Fuerzas</h2>
+            <h2>🏷 Gestión de Categorías / Fuerzas</h2>
             <div class="form-row" style="margin-bottom: 18px;">
                 <input type="text" id="nueva-cat-nombre" placeholder="Nombre (Ej. Primera Fuerza)">
                 <input type="number" id="nueva-cat-min" placeholder="Pts Min (Ej. 1100)" style="max-width: 120px;">
@@ -667,9 +663,6 @@
             return fallbackText;
         }
 
-        // ==========================================
-        // EXPEDIENTE MEJORADO CON CÁLCULO DE RANKING
-        // ==========================================
         function abrirModalJugadorAdmin(jugadorId, nombre, club) {
             document.getElementById('modal-jugador-nombre').innerText = nombre;
             document.getElementById('modal-jugador-club').innerText = club || 'Sin Club';
@@ -689,8 +682,6 @@
                 modalList.innerHTML = '<div class="mensaje-vacio">Este jugador no ha disputado partidos registrados aún.</div>';
             } else {
                 let html = '';
-                
-                // Verificar bono
                 let estaEnLlaves = partidosJugador.some(p => !p.grupo_nombre && p.ronda_fase);
                 if (bonoPaseActivo && bonoPaseValor > 0 && estaEnLlaves) {
                     deltaTotal += bonoPaseValor;
@@ -870,7 +861,6 @@
                         `;
                     });
 
-                    // CUADRO DE LLAVES ADMIN
                     const gpoA_arr = resumenData[catNombreActual]?.grupos['A'] ? ordenarJugadoresITTF(Object.values(resumenData[catNombreActual].grupos['A'])) : [];
                     const gpoB_arr = resumenData[catNombreActual]?.grupos['B'] ? ordenarJugadoresITTF(Object.values(resumenData[catNombreActual].grupos['B'])) : [];
 
@@ -1601,7 +1591,6 @@
                 }
             });
 
-            // LÓGICA DE BONO AUTOMÁTICO
             if (bonoPaseActivo && bonoPaseValor > 0) {
                 let idsEnLlaves = new Set();
                 partidosMonitoreo.filter(p => !p.grupo_nombre && p.ronda_fase).forEach(p => {
@@ -1626,7 +1615,6 @@
             dataMemoriaGlobal = reporteData;
             dibujarMemoriaHTML();
             
-            // EL BOTÓN WA PERMANECE OCULTO HASTA QUE EL ADMIN DIGA "CONFIRMAR"
             document.getElementById('btn-wa-memoria').style.display = 'none'; 
             document.getElementById('caja-aplicar-ranking').style.display = 'block';
         }
@@ -1707,6 +1695,7 @@
             }
         }
 
+        window.onload = cargarDatosIniciales;
     </script>
 </body>
 </html>
