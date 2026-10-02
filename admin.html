@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control - Arbitraje Digital</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -22,6 +23,7 @@
         body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
         @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
 
+        /* HEADER FIJO STICKY */
         .navbar { background: rgba(10, 15, 26, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 100; }
         .nav-title { font-weight: 800; font-size: 15px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
         
@@ -96,19 +98,56 @@
         .memoria-table-dark td { padding: 6px; border-bottom: 1px solid rgba(255,255,255,0.05); }
 
         .memoria-print-area { display: none; background: #fff !important; color: #000 !important; padding: 40px; font-family: 'Arial', sans-serif; }
+        
+        /* ================= CSS EXCLUSIVO PARA IMPRESIÓN DEL RANKING (1 COLUMNA PROFESIONAL) ================= */
         @media print {
             body > *:not(#area-impresion-memoria) { display: none !important; }
-            body { background: #fff !important; }
+            body { background: #f8fafc !important; }
             #area-impresion-memoria { display: block !important; }
-            .memoria-print-area { display: block !important; }
+            .memoria-print-area { display: block !important; padding: 20px 40px !important; }
             
-            /* CSS EXCLUSIVO PARA IMPRESIÓN DEL RANKING TIPO PDF DE 2 COLUMNAS */
-            .impresion-ranking { font-family: Arial, sans-serif !important; color: #000 !important; width: 100%; }
-            .print-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
-            .col-container { column-count: 2; column-gap: 40px; }
-            .print-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; padding: 4px 0; font-size: 10px; break-inside: avoid; }
-            .print-cat-header { background: #e2e8f0 !important; font-weight: bold; font-size: 12px; text-align: center; padding: 6px; margin: 10px 0 5px 0; border-top: 2px solid #000; border-bottom: 2px solid #000; break-inside: avoid; -webkit-print-color-adjust: exact; color: #000 !important; }
-            .print-th { font-weight: bold; font-size: 9px; color: #64748b !important; border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 4px; display: flex; justify-content: space-between; break-inside: avoid; }
+            .impresion-ranking { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important; color: #1e293b !important; width: 100%; max-width: 800px; margin: 0 auto; }
+            
+            /* Encabezado Principal */
+            .print-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #1e293b; padding-bottom: 15px; margin-bottom: 30px; }
+            .print-header-left h2 { margin: 0; font-size: 28px; font-weight: 900; color: #0f172a !important; letter-spacing: -0.5px; }
+            .print-header-left h3 { margin: 0; font-size: 12px; font-weight: 600; color: #64748b !important; text-transform: uppercase; letter-spacing: 1px; }
+            .print-header-center h1 { margin: 0; font-size: 22px; color: #0f172a !important; font-weight: 800; letter-spacing: 2px; }
+            .print-header-center span { font-weight: 700; font-size: 12px; color: #3b82f6 !important; text-transform: uppercase; letter-spacing: 1px; display: block; margin-top: 4px; }
+            .print-header-right { text-align: right; font-size: 12px; color: #475569 !important; font-weight: 600; }
+            .print-header-right strong { font-size: 16px; color: #0f172a !important; font-weight: 900; }
+
+            /* Encabezados de Categoría (Colores Profesionales) */
+            .print-cat-wrapper { margin-bottom: 30px; page-break-inside: avoid; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+            
+            .print-cat-header { padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(0,0,0,0.1); }
+            .print-cat-header h4 { margin: 0; font-size: 16px; font-weight: 800; color: #ffffff !important; text-transform: uppercase; letter-spacing: 1px; }
+            .print-cat-header span { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.8) !important; background: rgba(0,0,0,0.2); padding: 4px 10px; border-radius: 99px; }
+
+            /* Colores específicos por categoría */
+            .bg-cat-primera { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%) !important; -webkit-print-color-adjust: exact; }
+            .bg-cat-segunda { background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%) !important; -webkit-print-color-adjust: exact; }
+            .bg-cat-tercera { background: linear-gradient(135deg, #b45309 0%, #78350f 100%) !important; -webkit-print-color-adjust: exact; }
+            .bg-cat-cuarta { background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%) !important; -webkit-print-color-adjust: exact; }
+            .bg-cat-quinta { background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%) !important; -webkit-print-color-adjust: exact; }
+            .bg-cat-default { background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important; -webkit-print-color-adjust: exact; }
+
+            /* Tabla de Jugadores en PDF */
+            .print-table { width: 100%; border-collapse: collapse; background: #ffffff !important; }
+            .print-table th { padding: 10px 15px; text-align: left; font-size: 10px; font-weight: 800; color: #64748b !important; text-transform: uppercase; border-bottom: 2px solid #e2e8f0; background: #f8fafc !important; -webkit-print-color-adjust: exact; }
+            .print-table td { padding: 12px 15px; font-size: 12px; border-bottom: 1px solid #f1f5f9; color: #334155 !important; }
+            .print-table tr:last-child td { border-bottom: none; }
+            
+            /* Elementos de la tabla */
+            .pt-rank { font-weight: 800; color: #94a3b8 !important; text-align: center; width: 50px; }
+            .pt-name { font-weight: 800; color: #0f172a !important; }
+            .pt-club { font-size: 10px; font-weight: 600; color: #64748b !important; background: #f1f5f9 !important; padding: 3px 8px; border-radius: 4px; -webkit-print-color-adjust: exact; display: inline-block; }
+            .pt-score-ant { font-family: 'Courier New', Courier, monospace; color: #94a3b8 !important; text-align: center; font-weight: 600; }
+            .pt-score-act { font-family: 'Courier New', Courier, monospace; color: #0f172a !important; text-align: center; font-weight: 900; font-size: 14px; }
+            .pt-diff { text-align: center; font-weight: 800; font-size: 11px; }
+            .diff-up { color: #16a34a !important; }
+            .diff-down { color: #dc2626 !important; }
+            .diff-same { color: #94a3b8 !important; }
         }
 
         .input-tabla {
@@ -139,28 +178,22 @@
         </div>
     </div>
 
-    <!-- MODAL RANKING CON FLECHITAS Y CATEGORIAS -->
+    <!-- MODAL RANKING CON DISEÑO MEJORADO -->
     <div id="modal-ranking-global" class="modal-overlay" style="display: none;">
-        <div class="modal-card modal-card-ranking">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
-                <h3 style="margin: 0; color: #a855f7; font-size: 16px; font-weight: 800; text-transform: uppercase;"><i class="fa-solid fa-trophy mr-2"></i> Ranking Global</h3>
-                <button onclick="document.getElementById('modal-ranking-global').style.display='none'" style="background:transparent; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
+        <div class="modal-card modal-card-ranking" style="padding: 0; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column;">
+            <!-- Header Modal -->
+            <div style="padding: 20px 24px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 20;">
+                <h3 style="margin: 0; color: #a855f7; font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">
+                    <i class="fa-solid fa-trophy mr-2 text-yellow-400"></i> Ranking Global
+                </h3>
+                <button onclick="document.getElementById('modal-ranking-global').style.display='none'" class="text-slate-400 hover:text-white transition-colors" style="background:transparent; border:none; font-size:24px; cursor:pointer;">&times;</button>
             </div>
-            <div style="max-height: 65vh; overflow-y: auto;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                    <thead style="position: sticky; top: 0; background: #0f172a; z-index: 10;">
-                        <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.1); text-transform: uppercase; color: #94a3b8; font-size: 10px;">
-                            <th style="padding: 10px; text-align:center;">Pos</th>
-                            <th style="padding: 10px;">Jugador</th>
-                            <th style="padding: 10px;">Club</th>
-                            <th style="padding: 10px; text-align:center;">Rank Ant.</th>
-                            <th style="padding: 10px; text-align:center; color:#22d3ee;">Rank Act.</th>
-                        </tr>
-                    </thead>
-                    <tbody id="body-tabla-ranking-modal">
-                        <tr><td colspan="5" class="mensaje-vacio">Cargando ranking...</td></tr>
-                    </tbody>
-                </table>
+            
+            <!-- Cuerpo Modal con Scroll -->
+            <div style="flex: 1; overflow-y: auto; padding: 20px 24px; background: #0b1120;">
+                <div id="body-tabla-ranking-modal" style="display: flex; flex-direction: column; gap: 24px;">
+                    <div class="mensaje-vacio">Cargando ranking...</div>
+                </div>
             </div>
         </div>
     </div>
@@ -388,7 +421,7 @@
 
     </div>
 
-    <!-- ÁREA DE IMPRESIÓN OCULTA PARA PDF (SÓLO VISIBLE AL MANDAR A IMPRIMIR) -->
+    <!-- ÁREA DE IMPRESIÓN OCULTA PARA PDF (1 COLUMNA PROFESIONAL) -->
     <div id="area-impresion-memoria" class="memoria-print-area"></div>
 
     <script>
@@ -864,6 +897,7 @@
                         `;
                     });
 
+                    // CUADRO DE LLAVES ADMIN
                     const gpoA_arr = resumenData[catNombreActual]?.grupos['A'] ? ordenarJugadoresITTF(Object.values(resumenData[catNombreActual].grupos['A'])) : [];
                     const gpoB_arr = resumenData[catNombreActual]?.grupos['B'] ? ordenarJugadoresITTF(Object.values(resumenData[catNombreActual].grupos['B'])) : [];
 
@@ -1302,17 +1336,31 @@
             const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
             
             let globalRank = 1;
+            
+            // Asignar colores profesionales según el orden
+            const styles = [
+                { bg: 'linear-gradient(90deg, rgba(251,191,36,0.15) 0%, transparent 100%)', border: '#f59e0b', text: '#fbbf24' }, // Oro
+                { bg: 'linear-gradient(90deg, rgba(148,163,184,0.15) 0%, transparent 100%)', border: '#94a3b8', text: '#cbd5e1' }, // Plata
+                { bg: 'linear-gradient(90deg, rgba(180,83,9,0.15) 0%, transparent 100%)', border: '#d97706', text: '#f59e0b' },    // Bronce
+                { bg: 'linear-gradient(90deg, rgba(6,182,212,0.15) 0%, transparent 100%)', border: '#06b6d4', text: '#22d3ee' },    // Cyan
+                { bg: 'linear-gradient(90deg, rgba(168,85,247,0.15) 0%, transparent 100%)', border: '#a855f7', text: '#c084fc' }     // Púrpura
+            ];
 
-            categoriasFuerza.forEach(cat => {
+            categoriasFuerza.forEach((cat, index) => {
+                const style = styles[index % styles.length];
                 const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos).sort((a,b) => b.puntos_ranking - a.puntos_ranking);
                 
                 if (jugadoresCat.length > 0) {
                     tbody.innerHTML += `
-                        <tr style="background: rgba(139, 92, 246, 0.2); border-left: 4px solid #a855f7;">
-                            <td colspan="5" style="padding: 12px 16px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <strong style="color: #c084fc; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">🏆 ${cat.nombre}</strong>
-                                    <span style="color: #94a3b8; font-size: 10px; font-weight: 800;">${cat.puntos_minimos} - ${cat.puntos_maximos} pts</span>
+                        <tr>
+                            <td colspan="5" style="padding: 24px 0 8px 0; border-bottom: 2px solid ${style.border};">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-end; background: ${style.bg}; padding: 12px 16px; border-radius: 8px 8px 0 0; border-left: 4px solid ${style.border};">
+                                    <h4 style="margin: 0; color: ${style.text}; font-size: 14px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">
+                                        ${cat.nombre}
+                                    </h4>
+                                    <span style="color: #64748b; font-size: 10px; font-weight: 800; font-family: 'Orbitron', sans-serif;">
+                                        ${cat.puntos_minimos} - ${cat.puntos_maximos} PTS
+                                    </span>
                                 </div>
                             </td>
                         </tr>
@@ -1320,17 +1368,17 @@
 
                     jugadoresCat.forEach(j => {
                         let diff = (j.puntos_ranking || 0) - (j.puntos_ranking_ant || 0);
-                        let flecha = diff > 0 ? `<span style="color:#34d399; font-size:9px; margin-left:6px;"><i class="fa-solid fa-arrow-up"></i> ${diff}</span>` : 
-                                     (diff < 0 ? `<span style="color:#f87171; font-size:9px; margin-left:6px;"><i class="fa-solid fa-arrow-down"></i> ${Math.abs(diff)}</span>` : 
-                                     `<span style="color:#64748b; font-size:9px; margin-left:6px;"><i class="fa-solid fa-minus"></i></span>`);
+                        let flecha = diff > 0 ? `<span style="color:#10b981; font-size:10px; margin-left:8px; font-weight:900;"><i class="fa-solid fa-arrow-up"></i> ${diff}</span>` : 
+                                     (diff < 0 ? `<span style="color:#ef4444; font-size:10px; margin-left:8px; font-weight:900;"><i class="fa-solid fa-arrow-down"></i> ${Math.abs(diff)}</span>` : 
+                                     `<span style="color:#475569; font-size:10px; margin-left:8px;"><i class="fa-solid fa-minus"></i></span>`);
 
                         tbody.innerHTML += `
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
-                                <td style="padding: 10px; font-weight: 800; color: #64748b; text-align:center;">#${globalRank}</td>
-                                <td style="padding: 10px; font-weight: 800;">${j.nombre}</td>
-                                <td style="padding: 10px;"><span style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 9px;">${j.club || 'S/C'}</span></td>
-                                <td style="padding: 10px; text-align: center; color: #94a3b8; font-family: 'Orbitron', sans-serif;">${j.puntos_ranking_ant || 0}</td>
-                                <td style="padding: 10px; text-align: center; font-weight: 800; color: #22d3ee; font-family: 'Orbitron', sans-serif;">${j.puntos_ranking || 0} ${flecha}</td>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.03); transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+                                <td style="padding: 12px 10px; font-weight: 900; color: #475569; text-align:center; width:60px; font-size: 13px;">#${globalRank}</td>
+                                <td style="padding: 12px 10px; font-weight: 800; color: #f1f5f9; font-size: 13px;">${j.nombre}</td>
+                                <td style="padding: 12px 10px;"><span style="background: rgba(255,255,255,0.05); color: #94a3b8; padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px;">${j.club || 'S/C'}</span></td>
+                                <td style="padding: 12px 10px; text-align: center; color: #64748b; font-family: 'Orbitron', sans-serif; font-size: 12px;">${j.puntos_ranking_ant || 0}</td>
+                                <td style="padding: 12px 10px; text-align: center; font-weight: 900; color: #38bdf8; font-family: 'Orbitron', sans-serif; font-size: 15px;">${j.puntos_ranking || 0} ${flecha}</td>
                             </tr>
                         `;
                         globalRank++;
@@ -1341,7 +1389,7 @@
             document.getElementById('modal-ranking-global').style.display = 'flex';
         }
 
-        // ================= IMPRESIÓN DEL RANKING EN PDF TIPO AVETEME (2 COLUMNAS) =================
+        // ================= IMPRESIÓN DEL RANKING EN PDF TIPO AVETEME (UNA SOLA COLUMNA CON DISEÑO PROFESIONAL) =================
         function generarRankingPorCategoriasHTMLPDF() {
             const contenedor = document.getElementById('contenedor-ranking-categorias'); 
             if(!contenedor) return;
@@ -1349,65 +1397,82 @@
             let html = `
                 <div class="impresion-ranking">
                     <div class="print-header">
-                        <div>
-                            <h2 style="margin:0; font-size:24px; font-weight:900; color:#000 !important;">VETEME</h2>
-                            <h3 style="margin:0; font-size:12px; font-weight:normal; color:#000 !important;">Asociación Veracruzana de<br>Tenis de Mesa A.C.</h3>
+                        <div class="print-header-left">
+                            <h2>VETEME</h2>
+                            <h3>Asociación Veracruzana de<br>Tenis de Mesa A.C.</h3>
                         </div>
-                        <div style="text-align:center;">
-                            <h1 style="margin:0; font-size:18px; color:#000 !important;">RANKING ESTATAL</h1>
-                            <span id="fecha-impresion-doc" style="font-weight:bold; font-size:14px;"></span>
+                        <div class="print-header-center">
+                            <h1>RANKING ESTATAL</h1>
+                            <span id="fecha-impresion-doc"></span>
                         </div>
-                        <div style="text-align:right; font-size:12px;">
-                            <strong>${todosLosJugadoresAdmin.length} ATLETAS</strong><br>
-                            ACTIVOS
+                        <div class="print-header-right">
+                            <strong>${todosLosJugadoresAdmin.length} ATLETAS</strong><br>ACTIVOS
                         </div>
                     </div>
-
-                    <div class="col-container">
-                        <div class="print-th">
-                            <div style="width:25px; text-align:center;">RKN</div>
-                            <div style="flex:1;">NOMBRE COMPLETO</div>
-                            <div style="width:40px; text-align:center;">CLUB</div>
-                            <div style="width:35px; text-align:center;">ANT</div>
-                            <div style="width:35px; text-align:center;">ACT</div>
-                            <div style="width:20px; text-align:center;">+/-</div>
-                        </div>
             `;
 
             const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
-            
             let globalRank = 1;
+            
+            const styles = [
+                'bg-cat-primera', 'bg-cat-segunda', 'bg-cat-tercera', 'bg-cat-cuarta', 'bg-cat-quinta'
+            ];
 
-            categoriasFuerza.forEach(cat => {
+            categoriasFuerza.forEach((cat, index) => {
+                const styleClass = styles[index] || 'bg-cat-default';
                 const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos).sort((a,b) => b.puntos_ranking - a.puntos_ranking);
                 
                 if (jugadoresCat.length > 0) {
-                    html += `<div class="print-cat-header">${cat.nombre.toUpperCase()}</div>`;
+                    html += `
+                        <div class="print-cat-wrapper">
+                            <div class="print-cat-header ${styleClass}">
+                                <h4>${cat.nombre}</h4>
+                                <span>${cat.puntos_minimos} - ${cat.puntos_maximos} PTS</span>
+                            </div>
+                            <table class="print-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px; text-align: center;">RKN</th>
+                                        <th>NOMBRE COMPLETO</th>
+                                        <th style="width: 80px; text-align: center;">CLUB</th>
+                                        <th style="width: 60px; text-align: center;">ANT</th>
+                                        <th style="width: 60px; text-align: center;">ACT</th>
+                                        <th style="width: 50px; text-align: center;">+/-</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
                     
                     jugadoresCat.forEach(j => {
                         let diff = (j.puntos_ranking || 0) - (j.puntos_ranking_ant || 0);
-                        let flecha = diff > 0 ? `<span style="color:green !important;">▲</span>` : (diff < 0 ? `<span style="color:red !important;">▼</span>` : `<span style="color:gray !important;">-</span>`);
+                        let arrow = '';
+                        let arrowClass = 'diff-same';
+                        if (diff > 0) { arrow = `▲ +${diff}`; arrowClass = 'diff-up'; }
+                        else if (diff < 0) { arrow = `▼ ${diff}`; arrowClass = 'diff-down'; }
+                        else { arrow = '-'; }
 
                         html += `
-                            <div class="print-row">
-                                <div style="width:25px; text-align:center; font-weight:bold;">${globalRank}</div>
-                                <div style="flex:1; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-left:5px;">${j.nombre}</div>
-                                <div style="width:40px; text-align:center; font-size:9px;">${j.club || ''}</div>
-                                <div style="width:35px; text-align:center;">${j.puntos_ranking_ant || 0}</div>
-                                <div style="width:35px; text-align:center; font-weight:bold;">${j.puntos_ranking || 0}</div>
-                                <div style="width:20px; text-align:center; font-size:9px;">${flecha}</div>
-                            </div>
+                                    <tr>
+                                        <td class="pt-rank">${globalRank}</td>
+                                        <td class="pt-name">${j.nombre}</td>
+                                        <td style="text-align: center;"><span class="pt-club">${j.club || ''}</span></td>
+                                        <td class="pt-score-ant">${j.puntos_ranking_ant || 0}</td>
+                                        <td class="pt-score-act">${j.puntos_ranking || 0}</td>
+                                        <td class="pt-diff ${arrowClass}">${arrow}</td>
+                                    </tr>
                         `;
                         globalRank++;
                     });
+
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
                 }
             });
 
-            html += `
-                    </div>
-                </div>
-            `;
-            
+            html += `</div>`;
             contenedor.innerHTML = html;
 
             const meses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
