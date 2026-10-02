@@ -211,7 +211,7 @@
             <a href="admin.html" class="nav-btn active">Administrador</a>
             <a href="sorteo.html" class="nav-btn">Sorteo y Rol</a>
             <a href="mesas.html" target="_blank" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
-            <a href="espectador.html" target="_blank" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️️ Espectador</a>
+            <a href="espectador.html" target="_blank" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador</a>
             <a href="index.html" target="_blank" class="nav-btn">Portal Público</a>
             <button onclick="cerrarSesionAdmin()" class="nav-btn" style="border-color: rgba(239,68,68,0.4); color: #f87171; cursor:pointer;">SALIR</button>
         </div>
@@ -292,7 +292,7 @@
 
         <!-- NUEVOS JUGADORES ESPERANDO RANKING -->
         <div class="panel-3d panel-amber" id="modulo-pendientes-ranking" style="display:none; border-color: #f59e0b;">
-            <h2 style="color: #fbbf24;">⚠️ Nuevos Jugadores (Esperando Ranking)</h2>
+            <h2 style="color: #fbbf24;">⚠️️ Nuevos Jugadores (Esperando Ranking)</h2>
             <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px;">Estos jugadores se acaban de registrar. Asígnales sus puntos oficiales para liberar sus categorías.</p>
             <table>
                 <thead><tr><th>Jugador</th><th>Club / Entidad</th><th>Asignar Puntos</th><th style="width: 100px;">Acción</th></tr></thead>
@@ -396,6 +396,12 @@
                     <span style="margin-left: 20px; color:#94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase;">Asignar</span>
                     <input type="number" id="bono-puntos" style="width:60px; text-align:center; padding: 6px;" class="input-tabla" placeholder="Pts">
                     <span style="color:#94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase;">pts a los que avancen a la fase final.</span>
+                    
+                    <!-- ETIQUETA VISUAL DE SEMBRADO 1 -->
+                    <span style="margin-left: 10px; font-size: 9px; color: #ef4444; font-weight: 800; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); padding: 4px 8px; border-radius: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                        <i class="fa-solid fa-circle-exclamation mr-1"></i> No aplica al Sembrado 1
+                    </span>
+
                     <button class="btn-console btn-red" style="margin-left: auto;" onclick="guardarBono()">Guardar Bono</button>
                 </div>
             </div>
@@ -1332,7 +1338,7 @@
             await clienteSupabase.from('clubes').delete().eq('id', id).eq('organizador_id', ORG_ID); cargarDatosIniciales();
         }
 
-        // ================= MODAL DE RANKING WEB (UNA FILA COMPACTA CON COLORES) =================
+        // ================= MODAL DE RANKING WEB =================
         function mostrarRankingModal() {
             const tbody = document.getElementById('body-tabla-ranking-modal');
             tbody.innerHTML = '';
@@ -1510,7 +1516,7 @@
                 document.getElementById('nuevo-ranking-ant').value = j.puntos_ranking_ant || 0;
                 document.getElementById('nuevo-ranking').value = j.puntos_ranking || 0; 
                 document.getElementById('nuevo-nip').value = j.nip_seguridad || '1234';
-                document.getElementById('titulo-modo-jugador').innerText = `✏️ Editando a: ${j.nombre}`;
+                document.getElementById('titulo-modo-jugador').innerText = `✏️️ Editando a: ${j.nombre}`;
                 const btnGuardar = document.getElementById('btn-guardar-jugador'); btnGuardar.innerText = "Actualizar Cambios"; btnGuardar.className = "btn-console btn-green";
                 document.getElementById('btn-eliminar-jugador').style.display = "inline-flex"; document.getElementById('btn-cancelar-jugador').style.display = "inline-flex";
             }
@@ -1688,7 +1694,7 @@
             };
         }
 
-        // ================= FUNCIÓN DE MEMORIA TÉCNICA CON LÓGICA DE EXCLUSIÓN SEMBRADO 1 =================
+        // ================= FUNCIÓN DE MEMORIA TÉCNICA (EXCLUYE AL SEMBRADO 1 DEL BONO) =================
         function generarMemoriaTecnica() {
             if(partidosMonitoreo.length === 0) { alert("No hay partidos en el torneo."); return; }
 
