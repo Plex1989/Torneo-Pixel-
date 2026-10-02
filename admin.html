@@ -22,7 +22,6 @@
         body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
         @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
 
-        /* HEADER FIJO STICKY */
         .navbar { background: rgba(10, 15, 26, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 100; }
         .nav-title { font-weight: 800; font-size: 15px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
         
@@ -47,9 +46,6 @@
         h2, h3 { color: #ffffff; margin-top: 0; padding-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 20px; }
         
         .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
-        .form-row input[type="text"], .form-row input[type="number"], .form-row input[type="date"], .form-row input[type="time"], .form-row select, select { 
-            flex: 1; padding: 10px 14px; border: 1px solid rgba(255, 255, 255, 0.18) !important; background: rgba(10, 15, 26, 0.85) !important; color: #ffffff !important; border-radius: 10px; min-width: 110px; font-size: 12px; font-family: 'Sora', sans-serif; font-weight: 600;
-        }
         
         select option { background-color: #0a0b10 !important; color: #ffffff !important; padding: 10px; }
         
@@ -80,7 +76,6 @@
         .scrolling-bar::-webkit-scrollbar { display: none; }
         
         .caja-edicion { background: rgba(15, 23, 42, 0.5); padding: 18px; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.05); margin-top: 15px; }
-        .header-categoria-ranking { background: rgba(15, 23, 42, 0.6); font-weight: 800; font-size: 11px; color: #ffffff; padding: 12px 18px; margin-top: 22px; text-transform: uppercase; border-radius: 8px; letter-spacing: 2px; border-left: 4px solid #8b5cf6; }
 
         .badge-pago { padding: 3px 10px; border-radius: 9999px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
         .pago-ok { background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.5); color: #34d399; }
@@ -106,13 +101,20 @@
             body { background: #fff !important; }
             #area-impresion-memoria { display: block !important; }
             .memoria-print-area { display: block !important; }
+            
+            /* CSS EXCLUSIVO PARA IMPRESIÓN DEL RANKING TIPO PDF DE 2 COLUMNAS */
+            .impresion-ranking { font-family: Arial, sans-serif !important; color: #000 !important; width: 100%; }
+            .print-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 15px; }
+            .col-container { column-count: 2; column-gap: 40px; }
+            .print-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #cbd5e1; padding: 4px 0; font-size: 10px; break-inside: avoid; }
+            .print-cat-header { background: #e2e8f0 !important; font-weight: bold; font-size: 12px; text-align: center; padding: 6px; margin: 10px 0 5px 0; border-top: 2px solid #000; border-bottom: 2px solid #000; break-inside: avoid; -webkit-print-color-adjust: exact; color: #000 !important; }
+            .print-th { font-weight: bold; font-size: 9px; color: #64748b !important; border-bottom: 2px solid #000; padding-bottom: 4px; margin-bottom: 4px; display: flex; justify-content: space-between; break-inside: avoid; }
         }
 
-        /* Utilidad para inputs de tabla */
         .input-tabla {
-            background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; padding: 8px; color: #ffffff; font-size: 11px; outline: none; transition: all 0.2s;
+            background: rgba(0, 0, 0, 0.5) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 8px !important; padding: 8px !important; color: #ffffff !important; font-size: 11px !important; outline: none !important; transition: all 0.2s !important;
         }
-        .input-tabla:focus { border-color: #06b6d4; }
+        .input-tabla:focus { border-color: #06b6d4 !important; }
     </style>
 </head>
 <body>
@@ -137,7 +139,7 @@
         </div>
     </div>
 
-    <!-- MODAL RANKING CON FLECHITAS -->
+    <!-- MODAL RANKING CON FLECHITAS Y CATEGORIAS -->
     <div id="modal-ranking-global" class="modal-overlay" style="display: none;">
         <div class="modal-card modal-card-ranking">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
@@ -274,9 +276,9 @@
             
             <p style="font-size: 10px; color: #64748b; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; font-weight: 800;">Buscar jugador para editar o agregar nuevo:</p>
             
-            <div class="form-row">
-                <input type="text" id="buscador-jugador" placeholder="🔎 Buscar por nombre..." onkeyup="filtrarYAutoSeleccionarAdmin()" style="max-width: 280px;">
-                <select id="select-jugador-admin" onchange="cargarDatosJugadorEditar()">
+            <div class="form-row" style="align-items: center;">
+                <input type="text" id="buscador-jugador" placeholder="🔎 Buscar por nombre..." onkeyup="filtrarYAutoSeleccionarAdmin()" class="input-tabla flex-1" style="max-width: 280px;">
+                <select id="select-jugador-admin" onchange="cargarDatosJugadorEditar()" class="input-tabla flex-1">
                     <option value="">-- Nuevo Jugador (Modo Crear) --</option>
                 </select>
             </div>
@@ -288,15 +290,15 @@
                     <select id="nuevo-club" class="input-tabla w-full md:w-32"><option value="Sin Club">Cargando...</option></select>
                     <div class="flex flex-col w-full md:w-24">
                         <span style="font-size:8px; color:#94a3b8; font-weight:800; text-transform:uppercase; margin-bottom: 2px;">Rank Ant.</span>
-                        <input type="number" id="nuevo-ranking-ant" class="input-tabla w-full" placeholder="Ant." value="0">
+                        <input type="number" id="nuevo-ranking-ant" class="input-tabla w-full text-center" placeholder="Ant." value="0">
                     </div>
                     <div class="flex flex-col w-full md:w-24">
                         <span style="font-size:8px; color:#22d3ee; font-weight:800; text-transform:uppercase; margin-bottom: 2px;">Rank Act.</span>
-                        <input type="number" id="nuevo-ranking" class="input-tabla w-full" placeholder="Act.">
+                        <input type="number" id="nuevo-ranking" class="input-tabla w-full text-center" placeholder="Act.">
                     </div>
                     <div class="flex flex-col w-full md:w-24">
                         <span style="font-size:8px; color:#94a3b8; font-weight:800; text-transform:uppercase; margin-bottom: 2px;">PIN</span>
-                        <input type="text" id="nuevo-nip" class="input-tabla w-full" placeholder="PIN" maxlength="4" value="1234">
+                        <input type="text" id="nuevo-nip" class="input-tabla w-full text-center" placeholder="PIN" maxlength="4" value="1234">
                     </div>
                 </div>
                 <div style="display:flex; gap:10px; margin-top:10px;">
@@ -306,19 +308,15 @@
                 </div>
             </div>
 
-            <!-- CONTENEDOR RANKING OCULTO (Para impresión) -->
-            <div id="seccion-print" style="display: none; margin-top: 25px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); padding: 15px; border-radius: 12px;">
-                <h3 style="color:#ffffff; text-align:center; font-size: 14px; letter-spacing: 2px;">RANKING OFICIAL ACTUAL</h3>
-                <p id="fecha-impresion" style="text-align:center; font-size:10px; color:#94a3b8; text-transform:uppercase;"></p>
-                <div id="contenedor-ranking-categorias">Cargando tabla de posiciones...</div>
-            </div>
+            <!-- CONTENEDOR RANKING OCULTO (Para generación de código de impresión) -->
+            <div id="contenedor-ranking-categorias" style="display:none;"></div>
         </div>
 
         <!-- GESTIÓN DE CLUBS -->
         <div class="panel-3d panel-blue">
             <h2>🏡 Gestión de Clubs / Equipos</h2>
             <div class="form-row" style="margin-bottom: 18px;">
-                <input type="text" id="nuevo-nombre-club" placeholder="Nombre del Club (Ej. Halcones Xalapa)">
+                <input type="text" id="nuevo-nombre-club" placeholder="Nombre del Club (Ej. Halcones Xalapa)" class="input-tabla flex-1">
                 <button class="btn-console btn-gold" onclick="crearClub()">Añadir Club</button>
             </div>
             <table>
@@ -331,10 +329,10 @@
         <div class="panel-3d panel-pink">
             <h2>🏷 Gestión de Categorías / Fuerzas</h2>
             <div class="form-row" style="margin-bottom: 18px;">
-                <input type="text" id="nueva-cat-nombre" placeholder="Nombre (Ej. Primera Fuerza)">
-                <input type="number" id="nueva-cat-min" placeholder="Pts Min (Ej. 1100)" style="max-width: 120px;">
-                <input type="number" id="nueva-cat-max" placeholder="Pts Max (Ej. 3000)" style="max-width: 120px;">
-                <input type="number" id="nueva-cat-precio" placeholder="Inscripción $" style="max-width: 110px;" value="200">
+                <input type="text" id="nueva-cat-nombre" placeholder="Nombre (Ej. Primera Fuerza)" class="input-tabla flex-1">
+                <input type="number" id="nueva-cat-min" placeholder="Pts Min (Ej. 1100)" class="input-tabla" style="max-width: 120px;">
+                <input type="number" id="nueva-cat-max" placeholder="Pts Max (Ej. 3000)" class="input-tabla" style="max-width: 120px;">
+                <input type="number" id="nueva-cat-precio" placeholder="Inscripción $" class="input-tabla" style="max-width: 110px;" value="200">
                 <button class="btn-console btn-pink" onclick="crearCategoria()">Añadir Categoría</button>
             </div>
             <table>
@@ -358,7 +356,7 @@
                         <input type="checkbox" id="bono-activo" style="width:16px; height:16px; accent-color:#06b6d4;"> Activar bono
                     </label>
                     <span style="margin-left: 20px; color:#94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase;">Asignar</span>
-                    <input type="number" id="bono-puntos" style="width:60px; text-align:center; padding: 6px;" placeholder="Pts">
+                    <input type="number" id="bono-puntos" style="width:60px; text-align:center; padding: 6px;" class="input-tabla" placeholder="Pts">
                     <span style="color:#94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase;">pts a los que avancen a la fase final.</span>
                     <button class="btn-console btn-red" style="margin-left: auto;" onclick="guardarBono()">Guardar Bono</button>
                 </div>
@@ -390,7 +388,7 @@
 
     </div>
 
-    <!-- ÁREA DE IMPRESIÓN OCULTA -->
+    <!-- ÁREA DE IMPRESIÓN OCULTA PARA PDF (SÓLO VISIBLE AL MANDAR A IMPRIMIR) -->
     <div id="area-impresion-memoria" class="memoria-print-area"></div>
 
     <script>
@@ -485,7 +483,7 @@
             try { poblarDropdownClubs(); } catch(e) { console.error(e); }
             try { dibujarTablaClubs(); } catch(e) { console.error(e); }
             try { filtrarYAutoSeleccionarAdmin(); } catch(e) { console.error(e); }
-            try { generarRankingPorCategorias(); } catch(e) { console.error(e); }
+            try { generarRankingPorCategoriasHTMLPDF(); } catch(e) { console.error(e); }
             try { cargarInscritosEnVivo(); } catch(e) { console.error(e); }
             try { dibujarTablaProgramacionCategorias(); } catch(e) { console.error(e); }
             try { cargarPendientes(); } catch(e) { console.error(e); }
@@ -1296,49 +1294,135 @@
             await clienteSupabase.from('clubes').delete().eq('id', id).eq('organizador_id', ORG_ID); cargarDatosIniciales();
         }
 
-        // ================= MODAL DE RANKING NUEVO =================
+        // ================= MODAL DE RANKING NUEVO (AGRUPADO POR CATEGORÍAS) =================
         function mostrarRankingModal() {
             const tbody = document.getElementById('body-tabla-ranking-modal');
             tbody.innerHTML = '';
 
-            let ordenados = [...todosLosJugadoresAdmin].sort((a,b) => (b.puntos_ranking||0) - (a.puntos_ranking||0));
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
             
-            ordenados.forEach((j, index) => {
-                let diff = (j.puntos_ranking || 0) - (j.puntos_ranking_ant || 0);
-                let flecha = diff > 0 ? `<span style="color:#34d399; font-size:9px; margin-left:6px;"><i class="fa-solid fa-arrow-up"></i> ${diff}</span>` : 
-                             (diff < 0 ? `<span style="color:#f87171; font-size:9px; margin-left:6px;"><i class="fa-solid fa-arrow-down"></i> ${Math.abs(diff)}</span>` : 
-                             `<span style="color:#64748b; font-size:9px; margin-left:6px;"><i class="fa-solid fa-minus"></i></span>`);
+            let globalRank = 1;
 
-                tbody.innerHTML += `
-                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
-                        <td style="padding: 10px; font-weight: 800; color: #64748b; text-align:center;">#${index+1}</td>
-                        <td style="padding: 10px; font-weight: 800;">${j.nombre}</td>
-                        <td style="padding: 10px;"><span style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 9px;">${j.club || 'S/C'}</span></td>
-                        <td style="padding: 10px; text-align: center; color: #94a3b8; font-family: 'Orbitron', sans-serif;">${j.puntos_ranking_ant || 0}</td>
-                        <td style="padding: 10px; text-align: center; font-weight: 800; color: #22d3ee; font-family: 'Orbitron', sans-serif;">${j.puntos_ranking || 0} ${flecha}</td>
-                    </tr>
-                `;
+            categoriasFuerza.forEach(cat => {
+                const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos).sort((a,b) => b.puntos_ranking - a.puntos_ranking);
+                
+                if (jugadoresCat.length > 0) {
+                    tbody.innerHTML += `
+                        <tr style="background: rgba(139, 92, 246, 0.2); border-left: 4px solid #a855f7;">
+                            <td colspan="5" style="padding: 12px 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <strong style="color: #c084fc; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">🏆 ${cat.nombre}</strong>
+                                    <span style="color: #94a3b8; font-size: 10px; font-weight: 800;">${cat.puntos_minimos} - ${cat.puntos_maximos} pts</span>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+
+                    jugadoresCat.forEach(j => {
+                        let diff = (j.puntos_ranking || 0) - (j.puntos_ranking_ant || 0);
+                        let flecha = diff > 0 ? `<span style="color:#34d399; font-size:9px; margin-left:6px;"><i class="fa-solid fa-arrow-up"></i> ${diff}</span>` : 
+                                     (diff < 0 ? `<span style="color:#f87171; font-size:9px; margin-left:6px;"><i class="fa-solid fa-arrow-down"></i> ${Math.abs(diff)}</span>` : 
+                                     `<span style="color:#64748b; font-size:9px; margin-left:6px;"><i class="fa-solid fa-minus"></i></span>`);
+
+                        tbody.innerHTML += `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+                                <td style="padding: 10px; font-weight: 800; color: #64748b; text-align:center;">#${globalRank}</td>
+                                <td style="padding: 10px; font-weight: 800;">${j.nombre}</td>
+                                <td style="padding: 10px;"><span style="background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-size: 9px;">${j.club || 'S/C'}</span></td>
+                                <td style="padding: 10px; text-align: center; color: #94a3b8; font-family: 'Orbitron', sans-serif;">${j.puntos_ranking_ant || 0}</td>
+                                <td style="padding: 10px; text-align: center; font-weight: 800; color: #22d3ee; font-family: 'Orbitron', sans-serif;">${j.puntos_ranking || 0} ${flecha}</td>
+                            </tr>
+                        `;
+                        globalRank++;
+                    });
+                }
             });
 
             document.getElementById('modal-ranking-global').style.display = 'flex';
         }
 
-        function generarRankingPorCategorias() {
+        // ================= IMPRESIÓN DEL RANKING EN PDF TIPO AVETEME (2 COLUMNAS) =================
+        function generarRankingPorCategoriasHTMLPDF() {
             const contenedor = document.getElementById('contenedor-ranking-categorias'); 
             if(!contenedor) return;
-            contenedor.innerHTML = '';
             
-            const fechaEl = document.getElementById('fecha-impresion');
-            if(fechaEl) fechaEl.innerText = "Actualizado al: " + new Date().toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
-            
+            let html = `
+                <div class="impresion-ranking">
+                    <div class="print-header">
+                        <div>
+                            <h2 style="margin:0; font-size:24px; font-weight:900; color:#000 !important;">VETEME</h2>
+                            <h3 style="margin:0; font-size:12px; font-weight:normal; color:#000 !important;">Asociación Veracruzana de<br>Tenis de Mesa A.C.</h3>
+                        </div>
+                        <div style="text-align:center;">
+                            <h1 style="margin:0; font-size:18px; color:#000 !important;">RANKING ESTATAL</h1>
+                            <span id="fecha-impresion-doc" style="font-weight:bold; font-size:14px;"></span>
+                        </div>
+                        <div style="text-align:right; font-size:12px;">
+                            <strong>${todosLosJugadoresAdmin.length} ATLETAS</strong><br>
+                            ACTIVOS
+                        </div>
+                    </div>
+
+                    <div class="col-container">
+                        <div class="print-th">
+                            <div style="width:25px; text-align:center;">RKN</div>
+                            <div style="flex:1;">NOMBRE COMPLETO</div>
+                            <div style="width:40px; text-align:center;">CLUB</div>
+                            <div style="width:35px; text-align:center;">ANT</div>
+                            <div style="width:35px; text-align:center;">ACT</div>
+                            <div style="width:20px; text-align:center;">+/-</div>
+                        </div>
+            `;
+
             const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
+            
+            let globalRank = 1;
+
             categoriasFuerza.forEach(cat => {
-                const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos);
-                let htmlCat = `<div class="header-categoria-ranking">${cat.nombre} <span style="color:#64748b; font-size:9px; font-weight:700; margin-left:10px;">(${cat.puntos_minimos} A ${cat.puntos_maximos} PTS)</span></div><table><thead><tr><th style="width: 60px; text-align: center;">Pos</th><th>Jugador</th><th>Club / Entidad</th><th style="width: 120px;">Puntos</th></tr></thead><tbody>`;
-                if (jugadoresCat.length === 0) { htmlCat += `<tr><td colspan="4" class="mensaje-vacio">Sin jugadores en esta fuerza.</td></tr>`; } 
-                else { jugadoresCat.forEach((j, index) => { htmlCat += `<tr><td style="text-align: center; font-weight: 800; color:#64748b; font-size:11px;">#${index + 1}</td><td><strong style="color:#ffffff; font-size:12px;">${j.nombre}</strong></td><td style="color:#94a3b8; font-size:11px; font-weight:600;">${j.club || 'Sin Club'}</td><td style="font-weight: 800; color: #a855f7; font-size:12px;">${j.puntos_ranking} pts</td></tr>`; }); }
-                contenedor.innerHTML += htmlCat + `</tbody></table>`;
+                const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos).sort((a,b) => b.puntos_ranking - a.puntos_ranking);
+                
+                if (jugadoresCat.length > 0) {
+                    html += `<div class="print-cat-header">${cat.nombre.toUpperCase()}</div>`;
+                    
+                    jugadoresCat.forEach(j => {
+                        let diff = (j.puntos_ranking || 0) - (j.puntos_ranking_ant || 0);
+                        let flecha = diff > 0 ? `<span style="color:green !important;">▲</span>` : (diff < 0 ? `<span style="color:red !important;">▼</span>` : `<span style="color:gray !important;">-</span>`);
+
+                        html += `
+                            <div class="print-row">
+                                <div style="width:25px; text-align:center; font-weight:bold;">${globalRank}</div>
+                                <div style="flex:1; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding-left:5px;">${j.nombre}</div>
+                                <div style="width:40px; text-align:center; font-size:9px;">${j.club || ''}</div>
+                                <div style="width:35px; text-align:center;">${j.puntos_ranking_ant || 0}</div>
+                                <div style="width:35px; text-align:center; font-weight:bold;">${j.puntos_ranking || 0}</div>
+                                <div style="width:20px; text-align:center; font-size:9px;">${flecha}</div>
+                            </div>
+                        `;
+                        globalRank++;
+                    });
+                }
             });
+
+            html += `
+                    </div>
+                </div>
+            `;
+            
+            contenedor.innerHTML = html;
+
+            const meses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+            const d = new Date();
+            const fechaEl = document.getElementById('fecha-impresion-doc');
+            if(fechaEl) {
+                fechaEl.innerText = `${meses[d.getMonth()]} ${d.getFullYear()}`;
+            }
+        }
+
+        function imprimirRanking() { 
+            const printArea = document.getElementById('area-impresion-memoria');
+            const rankingContent = document.getElementById('contenedor-ranking-categorias').innerHTML;
+            printArea.innerHTML = rankingContent;
+            window.print(); 
         }
 
         function filtrarYAutoSeleccionarAdmin() {
@@ -1396,8 +1480,6 @@
             await clienteSupabase.from('jugadores').delete().eq('id', idSel).eq('organizador_id', ORG_ID);
             alert(`✅ Eliminado.`); document.getElementById('buscador-jugador').value = ''; resetFormularioJugador(); cargarDatosIniciales();
         }
-
-        function imprimirRanking() { window.print(); }
 
         function exportarExcel() {
             let csv = 'Posicion,Jugador,Club,Ranking_Anterior,Ranking_Actual,Categoria\n';
