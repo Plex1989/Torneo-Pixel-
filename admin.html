@@ -211,7 +211,7 @@
             <a href="admin.html" class="nav-btn active">Administrador</a>
             <a href="sorteo.html" class="nav-btn">Sorteo y Rol</a>
             <a href="mesas.html" target="_blank" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
-            <a href="espectador.html" target="_blank" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador</a>
+            <a href="espectador.html" target="_blank" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️️ Espectador</a>
             <a href="index.html" target="_blank" class="nav-btn">Portal Público</a>
             <button onclick="cerrarSesionAdmin()" class="nav-btn" style="border-color: rgba(239,68,68,0.4); color: #f87171; cursor:pointer;">SALIR</button>
         </div>
@@ -1341,7 +1341,6 @@
             
             let globalRank = 1;
             
-            // Colores vibrantes y profesionales para la pantalla (texto oscuro para contrastar con fondos claros)
             const styles = [
                 { bg: '#fbbf24', text: '#000000' }, // Oro / Primera
                 { bg: '#94a3b8', text: '#000000' }, // Plata / Segunda
@@ -1355,7 +1354,6 @@
                 const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos).sort((a,b) => b.puntos_ranking - a.puntos_ranking);
                 
                 if (jugadoresCat.length > 0) {
-                    // Fila de encabezado de categoría
                     tbody.innerHTML += `
                         <tr style="background: ${style.bg}; color: ${style.text}; border-bottom: 2px solid #000;">
                             <td colspan="5" style="padding: 6px 12px; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">
@@ -1373,7 +1371,6 @@
                                      (diff < 0 ? `<span style="color:#ef4444; margin-left:4px;"><i class="fa-solid fa-arrow-down"></i> ${Math.abs(diff)}</span>` : 
                                      `<span style="color:#475569; margin-left:4px;"><i class="fa-solid fa-minus"></i></span>`);
 
-                        // Fila de jugador compacta y en una sola línea
                         tbody.innerHTML += `
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(0,0,0,0.2)'">
                                 <td style="padding: 6px 10px; font-weight: 800; color: #64748b; text-align:center; width:50px; font-size: 11px;">#${globalRank}</td>
@@ -1391,7 +1388,7 @@
             document.getElementById('modal-ranking-global').style.display = 'flex';
         }
 
-        // ================= IMPRESIÓN DEL RANKING EN PDF TIPO AVETEME (UNA SOLA COLUMNA PROFESIONAL) =================
+        // ================= IMPRESIÓN DEL RANKING EN PDF =================
         function generarRankingPorCategoriasHTMLPDF() {
             const contenedor = document.getElementById('contenedor-ranking-categorias'); 
             if(!contenedor) return;
@@ -1416,10 +1413,7 @@
             const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
             let globalRank = 1;
             
-            // Clases de colores específicos definidos en el CSS de @media print
-            const styles = [
-                'bg-cat-primera', 'bg-cat-segunda', 'bg-cat-tercera', 'bg-cat-cuarta', 'bg-cat-quinta'
-            ];
+            const styles = ['bg-cat-0', 'bg-cat-1', 'bg-cat-2', 'bg-cat-3', 'bg-cat-4'];
 
             categoriasFuerza.forEach((cat, index) => {
                 const styleClass = styles[index % styles.length];
@@ -1694,6 +1688,7 @@
             };
         }
 
+        // ================= FUNCIÓN DE MEMORIA TÉCNICA CON LÓGICA DE EXCLUSIÓN SEMBRADO 1 =================
         function generarMemoriaTecnica() {
             if(partidosMonitoreo.length === 0) { alert("No hay partidos en el torneo."); return; }
 
@@ -1702,23 +1697,32 @@
                 jugadoresExpediente: {}
             };
 
+            // 1. Inicializar expedientes de jugadores
             partidosMonitoreo.forEach(p => {
                 [p.j1, p.j2].forEach(j => {
                     if (j && !reporteData.jugadoresExpediente[j.id]) {
                         reporteData.jugadoresExpediente[j.id] = {
                             id: j.id, nombre: j.nombre, club: j.club, ranking_inicial: j.puntos_ranking || 0,
-                            pts_ganados: 0, pts_perdidos: 0, partidos: [], ranking_final: j.puntos_ranking || 0
+                            pts_ganados: 0, pts_perdidos: 0, partidos: [], ranking_final: j.puntos_ranking || 0,
+                            grupo_pertenencia: null, categoria_pertenencia: null
                         };
                     }
                 });
             });
 
+            // 2. Procesar partidos finalizados y registrar grupos
             partidosMonitoreo.filter(p => (p.estado||'').toLowerCase() === 'finalizado').forEach(p => {
                 let catNombre = p.categorias?.nombre || 'General';
                 if (!reporteData.categorias[catNombre]) reporteData.categorias[catNombre] = { grupos: {} };
                 
                 let exp1 = reporteData.jugadoresExpediente[p.jugador1_id];
                 let exp2 = reporteData.jugadoresExpediente[p.jugador2_id];
+
+                // Guardar a qué grupo pertenece cada jugador para la lógica de bonos
+                if (p.grupo_nombre) {
+                    if(exp1) { exp1.grupo_pertenencia = p.grupo_nombre; exp1.categoria_pertenencia = catNombre; }
+                    if(exp2) { exp2.grupo_pertenencia = p.grupo_nombre; exp2.categoria_pertenencia = catNombre; }
+                }
 
                 if (exp1 && exp2) {
                     let calculo = calcularPuntosMatch(exp1.ranking_inicial, exp2.ranking_inicial, p.ganador_id, p.jugador1_id, p.jugador2_id);
@@ -1742,13 +1746,14 @@
                     exp2.partidos.push({ fase: faseP, res: `${p.sets_j2}-${p.sets_j1}`, desc: desc2 });
                 }
 
+                // Generar estadísticas de grupos para cuadrar posiciones
                 if(p.grupo_nombre) {
                     let gpoObj = reporteData.categorias[catNombre].grupos;
                     if(!gpoObj[p.grupo_nombre]) gpoObj[p.grupo_nombre] = {};
                     
                     [p.j1, p.j2].forEach(j => { 
                         if(j && !gpoObj[p.grupo_nombre][j.id]) {
-                            gpoObj[p.grupo_nombre][j.id] = {id:j.id, nombre:j.nombre, pj:0, pg:0, pts:0, setsGanados:0, setsPerdidos:0, puntosGanados:0, puntosPerdidos:0};
+                            gpoObj[p.grupo_nombre][j.id] = {id:j.id, nombre:j.nombre, pts_ranking_ini: j.puntos_ranking || 0, pj:0, pg:0, pts:0, setsGanados:0, setsPerdidos:0, puntosGanados:0, puntosPerdidos:0};
                         }
                     });
 
@@ -1765,23 +1770,44 @@
                 }
             });
 
+            // 3. LÓGICA DE BONO AUTOMÁTICO (Con regla de Sembrado 1 excluido)
             if (bonoPaseActivo && bonoPaseValor > 0) {
+                // Encontrar quiénes jugaron en llaves (clasificados)
                 let idsEnLlaves = new Set();
                 partidosMonitoreo.filter(p => !p.grupo_nombre && p.ronda_fase).forEach(p => {
                     if (p.jugador1_id) idsEnLlaves.add(p.jugador1_id);
                     if (p.jugador2_id) idsEnLlaves.add(p.jugador2_id);
                 });
 
+                // Analizar a cada clasificado para ver si era el Sembrado 1 de su grupo
                 idsEnLlaves.forEach(id => {
                     let exp = reporteData.jugadoresExpediente[id];
-                    if (exp) {
-                        exp.pts_ganados += bonoPaseValor;
-                        exp.ranking_final += bonoPaseValor;
-                        exp.partidos.unshift({
-                            fase: '🏆 Clasificación',
-                            res: '-',
-                            desc: `<span class="text-gold">Bono por Pase a Llaves Finales (+${bonoPaseValor} pts)</span>`
-                        });
+                    if (exp && exp.grupo_pertenencia && exp.categoria_pertenencia) {
+                        
+                        // Obtener a todos los jugadores del grupo de este clasificado
+                        let grupoData = reporteData.categorias[exp.categoria_pertenencia].grupos[exp.grupo_pertenencia];
+                        let jugadoresGrupo = Object.values(grupoData);
+                        
+                        // Encontrar al Sembrado 1 (el que tenía más puntos de ranking al inicio del torneo)
+                        let sembrado1 = jugadoresGrupo.reduce((prev, current) => (prev.pts_ranking_ini > current.pts_ranking_ini) ? prev : current);
+
+                        // Aplicar el bono SOLO si el jugador NO es el sembrado 1
+                        if (id !== sembrado1.id) {
+                            exp.pts_ganados += bonoPaseValor;
+                            exp.ranking_final += bonoPaseValor;
+                            exp.partidos.unshift({
+                                fase: '🏆 Clasificación',
+                                res: '-',
+                                desc: `<span class="text-gold">Bono Pase a Llaves (+${bonoPaseValor} pts)</span>`
+                            });
+                        } else {
+                            // Si era el sembrado 1, se registra el avance pero sin bono
+                            exp.partidos.unshift({
+                                fase: '🏆 Clasificación',
+                                res: '-',
+                                desc: `<span style="color:#64748b; font-style:italic;">Avanza como Sembrado 1 (Sin bono)</span>`
+                            });
+                        }
                     }
                 });
             }
