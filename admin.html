@@ -1352,6 +1352,7 @@
             
             let globalRank = 1;
             
+            // Colores vibrantes y profesionales para la pantalla (texto oscuro para contrastar con fondos claros)
             const styles = [
                 { bg: '#fbbf24', text: '#000000' }, // Oro / Primera
                 { bg: '#94a3b8', text: '#000000' }, // Plata / Segunda
@@ -1365,6 +1366,7 @@
                 const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos).sort((a,b) => b.puntos_ranking - a.puntos_ranking);
                 
                 if (jugadoresCat.length > 0) {
+                    // Fila de encabezado de categoría
                     tbody.innerHTML += `
                         <tr style="background: ${style.bg}; color: ${style.text}; border-bottom: 2px solid #000;">
                             <td colspan="5" style="padding: 6px 12px; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">
@@ -1382,6 +1384,7 @@
                                      (diff < 0 ? `<span style="color:#ef4444; margin-left:4px;"><i class="fa-solid fa-arrow-down"></i> ${Math.abs(diff)}</span>` : 
                                      `<span style="color:#475569; margin-left:4px;"><i class="fa-solid fa-minus"></i></span>`);
 
+                        // Fila de jugador compacta y en una sola línea
                         tbody.innerHTML += `
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(0,0,0,0.2)'">
                                 <td style="padding: 6px 10px; font-weight: 800; color: #64748b; text-align:center; width:50px; font-size: 11px;">#${globalRank}</td>
@@ -1424,7 +1427,10 @@
             const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
             let globalRank = 1;
             
-            const styles = ['bg-cat-0', 'bg-cat-1', 'bg-cat-2', 'bg-cat-3', 'bg-cat-4'];
+            // Clases de colores específicos definidos en el CSS de @media print
+            const styles = [
+                'bg-cat-primera', 'bg-cat-segunda', 'bg-cat-tercera', 'bg-cat-cuarta', 'bg-cat-quinta'
+            ];
 
             categoriasFuerza.forEach((cat, index) => {
                 const styleClass = styles[index % styles.length];
