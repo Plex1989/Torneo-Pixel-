@@ -1013,20 +1013,21 @@
                 let r2 = j2 ? j2.racha : 0;
                 
                 let rachaHTML = '';
-                if (r1 > r2) {
+                
+                // Mostrar solo a quien tiene la racha, el otro es el retador
+                if (r1 > 0 && r2 === 0) {
                     rachaHTML = `
-                        <div style="color:#fbbf24; font-weight:900; font-size:12px; margin-bottom:4px;">👑 ${j1.nombre} lleva ${r1} ganados en esta mesa</div>
+                        <div style="color:#fbbf24; font-weight:900; font-size:12px; margin-bottom:4px;">👑 ${j1.nombre} lleva ${r1} victoria(s) en esta mesa</div>
                         <div style="color:#34d399; font-weight:700; font-size:10px;">🟢 ${j2.nombre} acaba de entrar (0)</div>
                     `;
-                } else if (r2 > r1) {
+                } else if (r2 > 0 && r1 === 0) {
                     rachaHTML = `
-                        <div style="color:#fbbf24; font-weight:900; font-size:12px; margin-bottom:4px;">👑 ${j2.nombre} lleva ${r2} ganados en esta mesa</div>
+                        <div style="color:#fbbf24; font-weight:900; font-size:12px; margin-bottom:4px;">👑 ${j2.nombre} lleva ${r2} victoria(s) en esta mesa</div>
                         <div style="color:#34d399; font-weight:700; font-size:10px;">🟢 ${j1.nombre} acaba de entrar (0)</div>
                     `;
                 } else if (r1 > 0 && r1 === r2) {
-                    rachaHTML = `
-                        <div style="color:#fbbf24; font-weight:900; font-size:12px; margin-bottom:4px;">👑 Choque de Reyes (Ambos con racha de ${r1})</div>
-                    `;
+                    // Por si acaso, si ambos tuvieran racha (poco probable por la lógica)
+                    rachaHTML = `<div style="color:#fbbf24; font-weight:900; font-size:12px; margin-bottom:4px;">👑 Choque de Reyes (Ambos con racha de ${r1})</div>`;
                 } else {
                     rachaHTML = `<div style="color:#94a3b8; font-weight:700; font-style:italic;">Mesa libre: Ninguno tiene racha activa aún</div>`;
                 }
@@ -1204,227 +1205,6 @@
 
                 if (matchesAssignedInBlock.length === 0 && pendingMatches.length > 0) {
                     let match = pendingMatches.shift();
-                    matchesAssignedInBlock.push(match);
-                }
-
-                let categoryPlayersCount = 0;
-                gruposGlobal.forEach(g => categoryPlayersCount += g.jugadores.length);
-                let restingCount = categoryPlayersCount - playersBusyInBlock.size;
-
-                let neededExternal = matchesAssignedInBlock.length - restingCount;
-                if (neededExternal > 0) {
-                    blockNeeds[currentBlock] = neededExternal;
-                }
-
-                currentBlock++;
-            }
-
-            let maxExt = 0;
-            Object.values(blockNeeds).forEach(v => { if(v > maxExt) maxExt = v; });
-            maxJuecesFaltantesSistema = maxExt;
-
-            const container = document.getElementById('contenedor-jueces-externos');
-            if (maxExt === 0) {
-                container.innerHTML = '<span style="color:#10b981; font-size:10px; font-weight:700;">✅ Los jugadores que descansan son suficientes para arbitrar. No se requieren jueces externos.</span>';
-            } else {
-                let html = `<span style="color:#f87171; font-size:10px; font-weight:700; margin-bottom:8px; display:block;">⚠️ Faltan jugadores para arbitrar. Se requieren ${maxExt} Jueces Externos simultáneos. Asigna sus nombres:</span>`;
-                html += '<div style="display:flex; gap:10px; flex-wrap:wrap;">';
-                for(let i=0; i<maxExt; i++) {
-                    html += `<input type="text" id="juez-ext-${i}" placeholder="Nombre Juez Externo ${i+1}" style="width:200px; padding:6px; font-size:10px; border-radius:6px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">`;
-                }
-                html += '</div>';
-                container.innerHTML = html;
-            }
-        }
-
-        async function prepararSorteo() {
-            const idCategoria = document.getElementById('filtro-categoria').value;
-            if (!idCategoria) { alert("Selecciona una categoría."); return; }
-
-            const { data } = await clienteSupabase.from('inscripciones')
-                .select(`jugadores ( id, nombre, puntos_ranking, club )`)
-                .eq('categoria_id', idCategoria)
-                .eq('torneo_id', idTorneoActivo)
-                .eq('organizador_id', ORG_ID)
-                .eq('estatus_pago', 'Pagado');
-
-            if (!data || data.length === 0) { alert("No hay jugadores pagados en esta categoría."); return; }
-
-            jugadoresListos = data.map(ins => ins.jugadores).sort((a, b) => b.puntos_ranking - a.puntos_ranking);
-
-            const tamanoGrupo = parseInt(document.getElementById('tamano-grupo').value);
-            ejecutarSerpiente(tamanoGrupo);
-
-            document.getElementById('panel-config-horarios').style.display = 'block';
-            simularJuecesYActualizarUI();
-        }
-
-        function ejecutarSerpiente(tamanoGrupo) {
-            const numGrupos = Math.ceil(jugadoresListos.length / tamanoGrupo);
-            gruposGlobal = Array.from({ length: numGrupos }, (_, i) => ({ 
-                nombre: String.fromCharCode(65 + i), 
-                jugadores: [] 
-            }));
-
-            let direccion = 1, indiceGrupo = 0;
-
-            for (let i = 0; i < jugadoresListos.length; i++) {
-                let jugador = jugadoresListos[i];
-                jugador.seedOriginal = i + 1;
-                gruposGlobal[indiceGrupo].jugadores.push(jugador);
-                
-                indiceGrupo += direccion;
-                if (indiceGrupo === numGrupos) { direccion = -1; indiceGrupo = numGrupos - 1; } 
-                else if (indiceGrupo === -1) { direccion = 1; indiceGrupo = 0; }
-            }
-
-            dibujarGrupos();
-            simularJuecesYActualizarUI();
-        }
-
-        function dibujarGrupos() {
-            const contenedor = document.getElementById('contenedor-grupos');
-            contenedor.innerHTML = '';
-
-            gruposGlobal.forEach((grupo, idxGrupo) => {
-                let claseColor = clasesColoresGrupo[idxGrupo % clasesColoresGrupo.length];
-                let html = `<div class="grupo-card ${claseColor}"><div class="grupo-header">Grupo ${grupo.nombre}</div>`;
-                
-                grupo.jugadores.forEach((j) => {
-                    html += `
-                        <div class="jugador-item">
-                            <div class="jugador-info">
-                                <strong style="color:#ffffff;">${j.nombre}</strong>
-                                <div><span class="tag-club">${j.club || 'Sin Club'}</span></div>
-                                <span style="font-size:10px; color:#94a3b8;">${j.puntos_ranking} pts (Seed #${j.seedOriginal})</span>
-                                <select class="select-grupo" onchange="moverJugador(${j.id}, this.value)">
-                                    <option value="${grupo.nombre}" selected>Mover a...</option>
-                                    ${gruposGlobal.filter(g => g.nombre !== grupo.nombre).map(g => `<option value="${g.nombre}">Gpo ${g.nombre}</option>`).join('')}
-                                </select>
-                            </div>
-                        </div>
-                    `;
-                });
-                
-                contenedor.innerHTML += html + `</div>`;
-            });
-
-            document.getElementById('btn-guardar-grupos').style.display = 'block';
-        }
-
-        function moverJugador(jugadorId, nuevoGrupoNombre) {
-            let jugador = null;
-            gruposGlobal.forEach(g => {
-                let idx = g.jugadores.findIndex(j => j.id === jugadorId);
-                if(idx !== -1) {
-                    jugador = g.jugadores[idx];
-                    g.jugadores.splice(idx, 1);
-                }
-            });
-
-            let targetGroup = gruposGlobal.find(g => g.nombre === nuevoGrupoNombre);
-            if(targetGroup && jugador) {
-                targetGroup.jugadores.push(jugador);
-            }
-            dibujarGrupos();
-            simularJuecesYActualizarUI();
-        }
-
-        function recalcularRolPartidos() {
-            let scheds = {};
-            let maxRounds = 0;
-
-            let refereeDutyCount = {};
-            gruposGlobal.forEach(g => {
-                g.jugadores.forEach(j => {
-                    if (j && j.id) refereeDutyCount[j.id] = 0;
-                    let s = algoritmoRoundRobin(g.jugadores);
-                    scheds[g.nombre] = s;
-                    if(s.length > maxRounds) maxRounds = s.length;
-                });
-            });
-            
-            const mesaInicio = parseInt(document.getElementById('rr-mesa-inicio').value) || 1;
-            const numMesas = parseInt(document.getElementById('rr-num-mesas').value) || 2;
-            const horaInicioStr = document.getElementById('rr-hora-inicio').value || '09:00';
-            const duracionPartido = parseInt(document.getElementById('rr-duracion-partido').value) || 30;
-            const modoJuego = document.getElementById('rr-modo-juego').value || '3-5';
-            
-            const horaBreakStr = document.getElementById('rr-hora-break').value;
-            const duracionBreak = parseInt(document.getElementById('rr-duracion-break').value) || 30;
-            
-            let externalNames = [];
-            for(let i=0; i<maxJuecesFaltantesSistema; i++) {
-                let input = document.getElementById(`juez-ext-${i}`);
-                let val = input ? input.value.trim() : '';
-                externalNames.push(val || `Juez Externo ${i+1}`);
-            }
-            
-            let pendingMatches = [];
-            for(let r=0; r < maxRounds; r++) {
-                gruposGlobal.forEach(g => {
-                    let s = scheds[g.nombre];
-                    if(s && s[r]) {
-                        s[r].matches.forEach(m => {
-                            pendingMatches.push({
-                                r: r,
-                                grupoNombre: g.nombre,
-                                j1: m.j1,
-                                j2: m.j2,
-                                modoJuego: modoJuego
-                            });
-                        });
-                    }
-                });
-            }
-            
-            let minsInicio = timeToMinutes(horaInicioStr);
-            let minsBreak = horaBreakStr ? timeToMinutes(horaBreakStr) : null;
-            let breakApplied = false;
-            
-            let currentTimeMins = minsInicio;
-            partidosGeneradosRR = [];
-
-            while (pendingMatches.length > 0) {
-                if (minsBreak !== null && !breakApplied && currentTimeMins >= minsBreak) {
-                    currentTimeMins += duracionBreak;
-                    breakApplied = true;
-                }
-                let blockHoraStr = minutesToTimeStr(currentTimeMins);
-
-                let playersBusyInBlock = new Set();
-                let tableCounter = 0;
-                let externalRefCounter = 0;
-                let matchesAssignedInBlock = [];
-
-                for (let i = 0; i < pendingMatches.length; i++) {
-                    if (tableCounter >= numMesas) break;
-
-                    let match = pendingMatches[i];
-                    let p1Id = match.j1 ? match.j1.id : null;
-                    let p2Id = match.j2 ? match.j2.id : null;
-
-                    if ((p1Id && playersBusyInBlock.has(p1Id)) || (p2Id && playersBusyInBlock.has(p2Id))) {
-                        continue; 
-                    }
-
-                    match.mesa = mesaInicio + tableCounter;
-                    match.hora = blockHoraStr;
-
-                    if (p1Id) playersBusyInBlock.add(p1Id);
-                    if (p2Id) playersBusyInBlock.add(p2Id);
-
-                    matchesAssignedInBlock.push(match);
-                    tableCounter++;
-
-                    pendingMatches.splice(i, 1);
-                    i--;
-                }
-
-                if (matchesAssignedInBlock.length === 0 && pendingMatches.length > 0) {
-                    let match = pendingMatches.shift();
-                    match.mesa = mesaInicio;
-                    match.hora = blockHoraStr;
                     matchesAssignedInBlock.push(match);
                 }
 
