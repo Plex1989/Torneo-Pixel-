@@ -471,6 +471,18 @@
                     localStorage.removeItem('categoria_guardada_reciente');
                     await cargarEstadoCategoria();
                 }
+
+                // NUEVO: Suscripción en tiempo real para mantener la cartelera de Flash/RR actualizada sola
+                clienteSupabase
+                    .channel('sorteo-partidos-realtime')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, (payload) => {
+                        const idCatActual = document.getElementById('filtro-categoria').value;
+                        if (idCatActual) {
+                            cargarEstadoCategoria();
+                        }
+                    })
+                    .subscribe();
+
             } catch(e) {
                 console.error("Error al iniciar:", e);
             }
