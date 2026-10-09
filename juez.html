@@ -133,6 +133,11 @@
         let reglasRanking = [];
         let p1 = { id: null, nombre: 'JUGADOR 1', ptsBase: 0, ptsLive: 0, score: 0, sets: 0 };
         let p2 = { id: null, nombre: 'JUGADOR 2', ptsBase: 0, ptsLive: 0, score: 0, sets: 0 };
+        
+        // HÁNDICAP LIGA FLASH
+        let handicapP1 = 0;
+        let handicapP2 = 0;
+
         let historialSets = [];
         let numSetActual = 1;
         let modoJuego = '3-5'; 
@@ -161,7 +166,7 @@
                     historyStack = JSON.parse(cacheHistory);
                 }
                 
-                // PRIMERO CARGAR PARTIDO PARA EXTRAER EL ORG_ID DEL SISTEMA
+                // PRIMERO CARGAR PARTIDO PARA EXTRAER EL ORG_ID DEL SISTEMA Y HANDICAP
                 await cargarYResolverPartido();
 
                 // LUEGO CARGAR LAS REGLAS ESPECÍFICAS DE ESE CLUB
@@ -191,21 +196,38 @@
                 p1.id = data.jugador1_id; p1.nombre = data.j1 ? data.j1.nombre : 'Jugador 1'; p1.ptsBase = data.j1 ? data.j1.puntos_ranking || 0 : 0;
                 p2.id = data.jugador2_id; p2.nombre = data.j2 ? data.j2.nombre : 'Jugador 2'; p2.ptsBase = data.j2 ? data.j2.puntos_ranking || 0 : 0;
 
+                // DETECCIÓN DE HÁNDICAP PARA LIGA FLASH
+                if (data.grupo_nombre === 'Flash' && data.ronda_fase) {
+                    if (data.ronda_fase.includes('Div 1 vs Div 2')) {
+                        handicapP1 = 0; handicapP2 = 5;
+                    } else if (data.ronda_fase.includes('Div 2 vs Div 1')) {
+                        handicapP1 = 5; handicapP2 = 0;
+                    }
+                }
+
                 p1.score = parseInt(data.puntos_j1) || 0;
                 p2.score = parseInt(data.puntos_j2) || 0;
                 p1.sets = parseInt(data.sets_j1) || 0;
                 p2.sets = parseInt(data.sets_j2) || 0;
+                
+                let hs = data.historial_sets;
+                if (typeof hs === 'string') { try { hs = JSON.parse(hs); } catch(e) { hs = []; } }
+                historialSets = Array.isArray(hs) ? hs : [];
+                numSetActual = historialSets.length + 1;
+
+                // APLICAR HÁNDICAP SI EL PARTIDO ES NUEVO Y ESTÁ EN CERO TODO
+                if (historialSets.length === 0 && p1.score === 0 && p2.score === 0 && p1.sets === 0 && p2.sets === 0 && (handicapP1 > 0 || handicapP2 > 0)) {
+                    p1.score = handicapP1;
+                    p2.score = handicapP2;
+                    // Sincronizar con Supabase para que espectadores lo vean de inmediato
+                    clienteSupabase.from('partidos').update({ puntos_j1: p1.score, puntos_j2: p2.score }).eq('id', partidoId);
+                }
 
                 modoJuego = data.modo_juego || '3-5';
                 definirReglasMatematicas();
 
                 const selFormato = document.getElementById('select-formato');
                 if (selFormato) selFormato.value = modoJuego;
-
-                let hs = data.historial_sets;
-                if (typeof hs === 'string') { try { hs = JSON.parse(hs); } catch(e) { hs = []; } }
-                historialSets = Array.isArray(hs) ? hs : [];
-                numSetActual = historialSets.length + 1;
                 
                 let memoriaLocalRanking = localStorage.getItem('preferencia_ranking_pixel');
                 if (data.mostrar_ranking !== undefined && data.mostrar_ranking !== null) {
@@ -267,7 +289,12 @@
 
         function getCurrentServer() {
             let currentSetIdx = numSetActual - 1; if(currentSetIdx >= firstServersBySet.length) { firstServersBySet[currentSetIdx] = firstServersBySet[currentSetIdx-1] === 1 ? 2 : 1; }
-            let firstSrv = firstServersBySet[currentSetIdx]; let s1 = p1.score, s2 = p2.score; let total = s1 + s2;
+            let firstSrv = firstServersBySet[currentSetIdx]; 
+            
+            // Lógica ajustada para no contar el hándicap en los cambios de saque
+            let s1 = Math.max(0, p1.score - handicapP1);
+            let s2 = Math.max(0, p2.score - handicapP2); 
+            let total = s1 + s2;
             
             let deuceThreshold = pointsToWin - 1;
             if(s1 >= deuceThreshold && s2 >= deuceThreshold && modoJuego !== '1-15') { 
@@ -327,11 +354,18 @@
 
         function actualizarUI() {
             let leftJ = isSwapped ? p2 : p1; let rightJ = isSwapped ? p1 : p2;
-            document.getElementById('name-left').innerText = leftJ.nombre; document.getElementById('name-right').innerText = rightJ.nombre;
+            
+            // Añadir indicativo visual de Hándicap si existe
+            let n1 = p1.nombre + (handicapP1 > 0 ? ' <span class="text-amber-400 text-xs md:text-sm tracking-normal block md:inline"><br class="md:hidden">(+5 Pts Div)</span>' : '');
+            let n2 = p2.nombre + (handicapP2 > 0 ? ' <span class="text-amber-400 text-xs md:text-sm tracking-normal block md:inline"><br class="md:hidden">(+5 Pts Div)</span>' : '');
+            
+            document.getElementById('name-left').innerHTML = isSwapped ? n2 : n1; 
+            document.getElementById('name-right').innerHTML = isSwapped ? n1 : n2;
+
             document.getElementById('score-left').innerText = leftJ.score; document.getElementById('score-right').innerText = rightJ.score;
             document.getElementById('sets-left').innerText = leftJ.sets; document.getElementById('sets-right').innerText = rightJ.sets;
             
-            let txtFase = partidoData?.grupo_nombre ? 'GRUPO ' + partidoData.grupo_nombre : (partidoData?.ronda_fase || 'FASE FINAL');
+            let txtFase = partidoData?.grupo_nombre === 'Flash' ? 'LIGA CONTINUA' : (partidoData?.grupo_nombre ? 'GRUPO ' + partidoData.grupo_nombre : (partidoData?.ronda_fase || 'FASE FINAL'));
             document.getElementById('info-mesa-fase').innerText = `MESA ${partidoData?.mesa || 1} • ${txtFase}`;
 
             let isFin = (partidoData?.estado || '').toLowerCase() === 'finalizado';
@@ -392,7 +426,9 @@
                 else if (p2.sets >= setsParaGanar) { partidoGanado = true; ganadorId = p2.id; }
 
                 if (!partidoGanado) {
-                    p1.score = 0; p2.score = 0;
+                    // SE REINICIA EL MARCADOR, APLICANDO HÁNDICAP SI LO HAY
+                    p1.score = handicapP1; 
+                    p2.score = handicapP2;
                     isSwapped = !isSwapped; 
                     let prevFirst = firstServersBySet[firstServersBySet.length - 1];
                     firstServersBySet.push(prevFirst === 1 ? 2 : 1);
@@ -453,7 +489,8 @@
                 return;
             } 
             
-            if (p1.score === 0 && p2.score === 0 && historialSets.length === 0 && (!partidoData || partidoData.estado !== 'finalizado')) return;
+            // Proteger contra deshacer por debajo del hándicap o del 0 absoluto
+            if (p1.score === handicapP1 && p2.score === handicapP2 && historialSets.length === 0 && (!partidoData || partidoData.estado !== 'finalizado')) return;
 
             if (!skipConfirm) {
                 let c = confirm("⚠️ Modo Corrección Manual: ¿Deseas deshacer la última acción y reabrir el marcador?");
@@ -473,24 +510,27 @@
                         numSetActual = Math.max(1, numSetActual - 1);
                         p1.score = lastSet.s1; p2.score = lastSet.s2;
                         
-                        if (p1.score > p2.score) p1.score = Math.max(0, p1.score - 1);
-                        else p2.score = Math.max(0, p2.score - 1);
+                        // Restar el punto ganador asegurando no bajar del handicap
+                        if (p1.score > p2.score) p1.score = Math.max(handicapP1, p1.score - 1);
+                        else p2.score = Math.max(handicapP2, p2.score - 1);
                     }
                 }
             } 
-            else if (p1.score === 0 && p2.score === 0 && (p1.sets > 0 || p2.sets > 0)) {
+            else if (p1.score === handicapP1 && p2.score === handicapP2 && (p1.sets > 0 || p2.sets > 0)) {
+                // Estaban en el inicio de un set nuevo, deshacer al final del anterior
                 if (historialSets.length > 0) {
                     let lastSet = historialSets.pop();
                     numSetActual = Math.max(1, numSetActual - 1);
                     p1.score = lastSet.s1; p2.score = lastSet.s2;
-                    if (p1.score > p2.score) { p1.sets = Math.max(0, p1.sets - 1); p1.score--; }
-                    else { p2.sets = Math.max(0, p2.sets - 1); p2.score--; }
+                    if (p1.score > p2.score) { p1.sets = Math.max(0, p1.sets - 1); p1.score = Math.max(handicapP1, p1.score - 1); }
+                    else { p2.sets = Math.max(0, p2.sets - 1); p2.score = Math.max(handicapP2, p2.score - 1); }
                 }
             } 
             else {
+                // Restar un punto normal, protegiendo el hándicap
                 let resp = prompt(`MODO CORRECCIÓN: ¿A quién le restamos 1 punto?\n\n[ 1 ] para ${p1.nombre}\n[ 2 ] para ${p2.nombre}`);
-                if (resp === '1' && p1.score > 0) p1.score--;
-                else if (resp === '2' && p2.score > 0) p2.score--;
+                if (resp === '1' && p1.score > handicapP1) p1.score--;
+                else if (resp === '2' && p2.score > handicapP2) p2.score--;
                 else return;
             }
 
