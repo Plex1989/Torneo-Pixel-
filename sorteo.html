@@ -186,8 +186,8 @@
         <div class="nav-title">CENTRAL DE TORNEOS</div>
         <div class="nav-links">
             <a href="torneos.html" class="nav-btn">Mis Torneos</a>
-            <a href="admin.html" class="nav-btn">Administrador</a>
-            <a href="sorteo.html" class="nav-btn active">Sorteo y Rol</a>
+            <a href="admin.html" class="nav-btn active">Administrador</a>
+            <a href="sorteo.html" class="nav-btn">Sorteo y Rol</a>
             <a href="mesas.html" target="_blank" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
             <a href="espectador.html" target="_blank" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador</a>
             <a href="index.html" target="_blank" class="nav-btn public">Portal Público</a>
@@ -243,7 +243,7 @@
                             <input type="text" id="buscador-flash-sorteo" placeholder="🔎 Buscar..." onkeyup="dibujarGridJugadoresFlash()" class="input-mini-buscar" style="max-width: 140px;">
                         </div>
                         
-                        <!-- Contenedor donde inyectaremos las dos zonas separadas -->
+                        <!-- Contenedor donde inyectaremos las tres zonas separadas (Reyes, Próximos, Ocupados) -->
                         <div id="flash-wrapper-jugadores" style="max-height: 500px; overflow-y: auto; padding-right: 10px;">
                             <div class="mensaje-vacio">Selecciona una categoría...</div>
                         </div>
@@ -498,7 +498,7 @@
                     .eq('estatus_pago', 'Pagado');
                 
                 contador.innerText = count || 0;
-                jugadoresListos = inscripcionesData ? inscripcionesData.map(ins => ins.jugadores) : [];
+                jugadoresListos = inscripcionesData ? inscripcionesData.map(ins => ins.jugadores).sort((a, b) => b.puntos_ranking - a.puntos_ranking) : [];
 
                 if (modoTorneoActual === 'flash') {
                     contSorteo.style.display = 'none';
@@ -568,19 +568,27 @@
                     .eq('grupo_nombre', 'Flash');
 
                 let todosFlash = partidosFlash || [];
-                
-                let pjMap = {};
-                jugadoresListos.forEach(j => pjMap[j.id] = 0);
-                
-                todosFlash.forEach(p => {
-                    if (p.jugador1_id) pjMap[p.jugador1_id] = (pjMap[p.jugador1_id] || 0) + 1;
-                    if (p.jugador2_id) pjMap[p.jugador2_id] = (pjMap[p.jugador2_id] || 0) + 1;
-                });
-
-                jugadoresListos.forEach(j => j.pjFlash = pjMap[j.id]);
-                
-                // Extraer activos
                 partidosFlashActivos = todosFlash.filter(p => p.estado === 'en_curso');
+
+                jugadoresListos.forEach(j => {
+                    let misPartidos = todosFlash.filter(p => p.estado === 'finalizado' && (p.jugador1_id === j.id || p.jugador2_id === j.id));
+                    misPartidos.sort((a,b) => b.id - a.id); // Ordenar descendente (el más reciente es el índice 0)
+
+                    j.pjFlash = misPartidos.length;
+                    j.racha = 0;
+                    j.lastMatchId = misPartidos.length > 0 ? misPartidos[0].id : 0;
+
+                    // Calcular la racha actual (solo si el último partido lo ganó, sigue contando hasta que perdió uno)
+                    for (let p of misPartidos) {
+                        if (p.ganador_id === j.id) {
+                            j.racha++;
+                        } else {
+                            break; // Se rompió la racha
+                        }
+                    }
+                    
+                    j.isPlaying = partidosFlashActivos.some(p => p.jugador1_id === j.id || p.jugador2_id === j.id);
+                });
 
                 dibujarGridJugadoresFlash();
                 dibujarSetupFlash();
@@ -589,6 +597,10 @@
             } catch (e) {
                 console.error("Error en Flash:", e);
             }
+        }
+
+        function filtrarSorteoFlash() {
+            dibujarGridJugadoresFlash(); // Re-dibuja aplicando el filtro actual
         }
 
         function dibujarGridJugadoresFlash() {
@@ -602,41 +614,83 @@
 
             const inputClean = quitarAcentos(document.getElementById('buscador-flash-sorteo').value.toLowerCase());
 
-            let disponibles = [];
+            let reyes = [];
+            let retadores = [];
             let ocupados = [];
 
-            // Separar y filtrar
+            // Separar a los jugadores en las 3 zonas basándose en las reglas de Rey de la Mesa
             jugadoresListos.forEach(j => {
                 let nombreClean = quitarAcentos(j.nombre.toLowerCase());
                 if (!nombreClean.includes(inputClean)) return; 
 
-                let isPlaying = partidosFlashActivos.some(p => p.jugador1_id === j.id || p.jugador2_id === j.id);
-                if (isPlaying) {
+                if (j.isPlaying) {
                     j.partidoActivo = partidosFlashActivos.find(p => p.jugador1_id === j.id || p.jugador2_id === j.id);
                     ocupados.push(j);
                 } else {
-                    disponibles.push(j);
+                    // Si tiene racha (ganó su último partido) y no ha llegado al límite de 5
+                    if (j.racha > 0 && j.racha < 5) {
+                        reyes.push(j);
+                    } else {
+                        // Si perdió su último partido (racha=0) o si llegó a 5 victorias, se va a la fila de retadores
+                        retadores.push(j);
+                    }
                 }
             });
 
-            // Ordenar la fila (Disponibles): Los de menos PJ van primero. Luego por ID (los primeros en registrarse)
-            disponibles.sort((a,b) => {
-                if(a.pjFlash !== b.pjFlash) return a.pjFlash - b.pjFlash;
-                return a.id - b.id; 
+            // Ordenar Reyes (los más recientes primero, aunque generalmente son pocos)
+            reyes.sort((a, b) => b.lastMatchId - a.lastMatchId);
+
+            // Ordenar Retadores (Fila Virtual FIFO)
+            // 1. Los que tienen PJ = 0 van primero (ordenados por ID de registro)
+            // 2. Los que tienen PJ > 0 van después (ordenados por el ID de su último partido ASCENDENTE, el que jugó hace más tiempo va primero)
+            retadores.sort((a, b) => {
+                if (a.pjFlash === 0 && b.pjFlash > 0) return -1;
+                if (b.pjFlash === 0 && a.pjFlash > 0) return 1;
+                if (a.pjFlash === 0 && b.pjFlash === 0) return a.id - b.id;
+                return a.lastMatchId - b.lastMatchId; 
             });
 
-            // --- HTML ZONA DISPONIBLES ---
-            let html = `
+            // ================== ZONA 1: REYES EN MESA ==================
+            let html = '';
+            if (reyes.length > 0) {
+                html += `
+                    <div style="font-size:11px; font-weight:900; color:#fbbf24; margin-bottom:12px; text-transform:uppercase; border-bottom:1px solid rgba(245,158,11,0.3); padding-bottom:6px;">
+                        👑 Reyes en Mesa (Esperando Retador)
+                    </div>
+                    <div class="flash-grid" style="margin-bottom:25px;">
+                `;
+                
+                reyes.forEach(j => {
+                    let divStr = localStorage.getItem(`flash_div_${ORG_ID}_${j.id}`);
+                    let divBadge = divStr === '1' ? `<span class="div-tag-1">Div 1</span>` : (divStr === '2' ? `<span class="div-tag-2">Div 2</span>` : `<span style="color:#64748b; font-style:italic; font-weight:800; font-size:9px;">Sin Div</span>`);
+                    let isSelected = seleccionFlash.some(sel => sel.id === j.id);
+                    let classSel = isSelected ? 'selected' : '';
+
+                    html += `
+                        <button class="flash-btn-jugador ${classSel}" style="border-color:#fbbf24; background:rgba(245,158,11,0.1);" onclick="toggleSeleccionFlash(${j.id})">
+                            <div class="nombre">${j.nombre}</div>
+                            <div class="stats" style="margin-top:2px;">
+                                ${divBadge}
+                                <span style="background:#fbbf24; color:#000; font-size:8px; padding:2px 4px; border-radius:4px; font-weight:900;">👑 RACHA: ${j.racha}</span>
+                            </div>
+                        </button>
+                    `;
+                });
+                html += `</div>`;
+            }
+
+            // ================== ZONA 2: PRÓXIMOS EN FILA ==================
+            html += `
                 <div style="font-size:11px; font-weight:900; color:#34d399; margin-bottom:12px; text-transform:uppercase; border-bottom:1px solid rgba(52,211,153,0.3); padding-bottom:6px;">
-                    🟢 Próximos en Fila (Disponibles)
+                    🟢 Próximos en Fila (Retadores)
                 </div>
                 <div class="flash-grid" style="margin-bottom:25px;">
             `;
 
-            if (disponibles.length === 0) {
+            if (retadores.length === 0) {
                 html += `<div style="grid-column: 1/-1; font-size:10px; color:#64748b; font-style:italic;">No hay jugadores esperando en fila.</div>`;
             } else {
-                disponibles.forEach((j, idx) => {
+                retadores.forEach((j, idx) => {
                     let divStr = localStorage.getItem(`flash_div_${ORG_ID}_${j.id}`);
                     let divBadge = divStr === '1' ? `<span class="div-tag-1">Div 1</span>` : (divStr === '2' ? `<span class="div-tag-2">Div 2</span>` : `<span style="color:#64748b; font-style:italic; font-weight:800; font-size:9px;">Sin Div</span>`);
                     
@@ -659,7 +713,7 @@
             }
             html += `</div>`;
 
-            // --- HTML ZONA OCUPADOS ---
+            // ================== ZONA 3: EN MESA ==================
             html += `
                 <div style="font-size:11px; font-weight:900; color:#ef4444; margin-bottom:12px; text-transform:uppercase; border-bottom:1px solid rgba(239,68,68,0.3); padding-bottom:6px;">
                     🔴 En Mesa (Jugando)
@@ -697,10 +751,9 @@
         }
 
         function toggleSeleccionFlash(id) {
-            // Check de seguridad por si le dan clic rapido
             let isPlaying = partidosFlashActivos.some(p => p.jugador1_id === id || p.jugador2_id === id);
             if (isPlaying) {
-                alert("⚠️ Este jugador ya está disputando un partido en este momento.");
+                alert("⚠️ Este jugador ya está disputando un partido en este momento. Espera a que termine.");
                 return;
             }
 
@@ -784,6 +837,7 @@
             const mesaVal = parseInt(document.getElementById('flash-mesa-input').value) || 1;
             const idCat = document.getElementById('filtro-categoria').value;
             
+            // VALIDACIÓN: Evitar mandar a mesa ocupada
             let mesaOcupada = partidosFlashActivos.some(p => p.mesa === mesaVal);
             if (mesaOcupada) {
                 alert(`⚠️ MESA OCUPADA\n\nLa Mesa ${mesaVal} ya tiene un partido en curso. Por favor elige otra mesa libre o registra el resultado del partido activo antes de mandar uno nuevo.`);
@@ -837,6 +891,7 @@
             }
 
             partidosFlashActivos.forEach((p, idx) => {
+                // Selecciona el color de la paleta dinámicamente
                 let colorSet = coloresMesasFlash[idx % coloresMesasFlash.length];
                 
                 let n1 = p.j1 ? p.j1.nombre : 'Jugador 1';
