@@ -510,7 +510,7 @@
                     .eq('estatus_pago', 'Pagado');
                 
                 contador.innerText = count || 0;
-                jugadoresListos = inscripcionesData ? inscripcionesData.map(ins => ins.jugadores) : [];
+                jugadoresListos = inscripcionesData ? inscripcionesData.map(ins => ins.jugadores).sort((a, b) => b.puntos_ranking - a.puntos_ranking) : [];
 
                 if (modoTorneoActual === 'flash') {
                     contSorteo.style.display = 'none';
@@ -1009,11 +1009,28 @@
                 let j1 = jugadoresListos.find(j => j.id === match.jugador1_id);
                 let j2 = jugadoresListos.find(j => j.id === match.jugador2_id);
                 
-                // Racha actual en mesa
+                let r1 = j1 ? j1.racha : 0;
+                let r2 = j2 ? j2.racha : 0;
+                
                 let rachaHTML = '';
-                if(j1 && j1.racha > 0) rachaHTML += `<span style="color:#fbbf24; font-weight:900;">👑 ${j1.nombre} lleva ${j1.racha} victoria(s) en esta mesa</span><br>`;
-                if(j2 && j2.racha > 0) rachaHTML += `<span style="color:#fbbf24; font-weight:900;">👑 ${j2.nombre} lleva ${j2.racha} victoria(s) en esta mesa</span>`;
-                if(!rachaHTML) rachaHTML = '<span style="color:#64748b; font-style:italic;">Primer partido en esta mesa para ambos</span>';
+                if (r1 > r2) {
+                    rachaHTML = `
+                        <div style="color:#fbbf24; font-weight:900; font-size:12px; margin-bottom:4px;">👑 ${j1.nombre} lleva ${r1} ganados en esta mesa</div>
+                        <div style="color:#34d399; font-weight:700; font-size:10px;">🟢 ${j2.nombre} acaba de entrar (0)</div>
+                    `;
+                } else if (r2 > r1) {
+                    rachaHTML = `
+                        <div style="color:#fbbf24; font-weight:900; font-size:12px; margin-bottom:4px;">👑 ${j2.nombre} lleva ${r2} ganados en esta mesa</div>
+                        <div style="color:#34d399; font-weight:700; font-size:10px;">🟢 ${j1.nombre} acaba de entrar (0)</div>
+                    `;
+                } else if (r1 > 0 && r1 === r2) {
+                    rachaHTML = `
+                        <div style="color:#fbbf24; font-weight:900; font-size:12px; margin-bottom:4px;">👑 Choque de Reyes (Ambos con racha de ${r1})</div>
+                    `;
+                } else {
+                    rachaHTML = `<div style="color:#94a3b8; font-weight:700; font-style:italic;">Mesa libre: Ninguno tiene racha activa aún</div>`;
+                }
+                
                 document.getElementById('res-racha-box').innerHTML = rachaHTML;
 
                 // Historial directo (H2H) del día
