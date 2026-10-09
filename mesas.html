@@ -84,10 +84,6 @@
                     <h3 id="modal-jugador-nombre" style="margin: 0; color: #38bdf8; font-size: 16px; font-weight: 800; text-transform: uppercase;"></h3>
                     <span id="modal-jugador-club" style="font-size: 10px; color: #94a3b8; font-weight: 700;"></span>
                 </div>
-                <div style="text-align: right; margin-right: 15px;">
-                    <div id="modal-jugador-ranking-header" style="font-size: 16px; font-weight: 900; color: #fbbf24;"></div>
-                    <span id="modal-jugador-variacion" style="font-size: 10px; font-weight: 800; color:#94a3b8;"></span>
-                </div>
                 <button onclick="cerrarModalJugadorAdmin()" style="background: rgba(255,255,255,0.1); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-weight: 800;">✕</button>
             </div>
             
@@ -146,20 +142,15 @@
         let categoriaFiltro = 'todas';
         let pinJuecesActual = "1234";
         let canalEspectadores = null;
-        
-        let reglasRankingList = [];
-        let bonoPaseActivo = false;
-        let bonoPaseValor = 0;
 
-        // Paleta de colores para las mesas de la Liga Flash
         const coloresMesasFlash = [
-            { border: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', text: '#10b981' }, 
-            { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', text: '#3b82f6' }, 
-            { border: '#d946ef', bg: 'rgba(217, 70, 239, 0.15)', text: '#d946ef' }, 
-            { border: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', text: '#eab308' },  
-            { border: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)', text: '#a855f7' }, 
-            { border: '#f97316', bg: 'rgba(249, 115, 22, 0.15)', text: '#f97316' }, 
-            { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', text: '#06b6d4' }   
+            { border: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', text: '#10b981' }, 
+            { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', text: '#3b82f6' }, 
+            { border: '#d946ef', bg: 'rgba(217, 70, 239, 0.1)', text: '#d946ef' }, 
+            { border: '#eab308', bg: 'rgba(234, 179, 8, 0.1)', text: '#eab308' },  
+            { border: '#a855f7', bg: 'rgba(168, 85, 247, 0.1)', text: '#a855f7' }, 
+            { border: '#f97316', bg: 'rgba(249, 115, 22, 0.1)', text: '#f97316' }, 
+            { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)', text: '#06b6d4' }   
         ];
 
         const obtenerEstiloCategoria = (catId) => {
@@ -174,21 +165,10 @@
 
         async function inicializar() {
             try {
-                const [resTorneo, resReglas, resConfig] = await Promise.allSettled([
-                    clienteSupabase.from('torneos').select('nombre, pin_jueces').eq('id', idTorneoActivo).eq('organizador_id', orgId).single(),
-                    clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', orgId).order('diferencia_min', { ascending: true }),
-                    clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').eq('organizador_id', orgId).single()
-                ]);
-
-                if (resTorneo.status === 'fulfilled' && resTorneo.value.data) {
-                    document.getElementById('nombre-torneo').innerText = resTorneo.value.data.nombre;
-                    if (resTorneo.value.data.pin_jueces) pinJuecesActual = resTorneo.value.data.pin_jueces;
-                }
-
-                reglasRankingList = resReglas.status === 'fulfilled' ? (resReglas.value.data || []) : [];
-                if (resConfig.status === 'fulfilled' && resConfig.value.data) {
-                    bonoPaseActivo = resConfig.value.data.activo;
-                    bonoPaseValor = resConfig.value.data.valor;
+                const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre, pin_jueces').eq('id', idTorneoActivo).eq('organizador_id', orgId).single();
+                if (torneoData) {
+                    document.getElementById('nombre-torneo').innerText = torneoData.nombre;
+                    if (torneoData.pin_jueces) pinJuecesActual = torneoData.pin_jueces;
                 }
 
                 await cargarPartidos();
@@ -378,113 +358,7 @@
             document.getElementById('modal-jugador-club').innerText = club || 'Sin Club';
 
             const modalList = document.getElementById('modal-jugador-partidos-list');
-            modalList.innerHTML = '<div class="mensaje-vacio">Cargando expediente...</div>';
-
-            const partidosJugador = todosLosPartidos.filter(p => p.jugador1_id === jugadorId || p.jugador2_id === jugadorId);
-
-            let rInicial = 0;
-            let foundMatch = partidosJugador.find(p => p.jugador1_id === jugadorId || p.jugador2_id === jugadorId);
-            if (foundMatch) {
-                if (foundMatch.jugador1_id === jugadorId && foundMatch.j1) rInicial = foundMatch.j1.puntos_ranking || 0;
-                if (foundMatch.jugador2_id === jugadorId && foundMatch.j2) rInicial = foundMatch.j2.puntos_ranking || 0;
-            }
-
-            let deltaTotal = 0;
-            let rHeader = document.getElementById('modal-jugador-ranking-header');
-            let rVar = document.getElementById('modal-jugador-variacion');
-
-            if (partidosJugador.length === 0) {
-                if(rHeader) rHeader.innerText = `${rInicial} pts`;
-                if(rVar) rVar.innerHTML = `<span style="color:#64748b;">(Sin partidos)</span>`;
-                modalList.innerHTML = '<div class="mensaje-vacio">Este jugador no ha disputado partidos registrados aún.</div>';
-            } else {
-                let html = '';
-                
-                let estaEnLlaves = partidosJugador.some(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase && !p.grupo_nombre);
-                if (bonoPaseActivo && bonoPaseValor > 0 && estaEnLlaves) {
-                    deltaTotal += bonoPaseValor;
-                    html += `
-                        <div style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); padding:10px 14px; border-radius:12px; display:flex; justify-content:space-between; align-items:center;">
-                            <span style="font-size:11px; font-weight:800; color:#fbbf24;">🏆 Bono por Pase a Fase Final</span>
-                            <span style="font-size:12px; font-weight:900; color:#34d399;">+${bonoPaseValor} pts</span>
-                        </div>
-                    `;
-                }
-
-                partidosJugador.forEach(p => {
-                    const esJ1 = p.jugador1_id === jugadorId;
-                    const rivalNombre = esJ1 ? (p.j2 ? p.j2.nombre : 'Por definir') : (p.j1 ? p.j1.nombre : 'Por definir');
-                    const rivalClub = esJ1 ? (p.j2 ? p.j2.club : '') : (p.j1 ? p.j1.club : '');
-                    const rivalPts = esJ1 ? (p.j2 ? p.j2.puntos_ranking || 0 : 0) : (p.j1 ? p.j1.puntos_ranking || 0 : 0);
-
-                    const estLimpio = String(p.estado || '').trim().toLowerCase();
-                    const esFin = estLimpio === 'finalizado';
-                    const esVivo = estLimpio === 'en_curso';
-
-                    const ganoPlayer = esFin && p.ganador_id === jugadorId;
-                    const perdioPlayer = esFin && p.ganador_id && p.ganador_id !== jugadorId;
-
-                    let deltaPartido = 0;
-                    if (esFin) {
-                        let diff = Math.abs(rInicial - rivalPts); 
-                        let favoritoEsJ1 = rInicial >= rivalPts;
-                        let esUpset = p.ganador_id !== (favoritoEsJ1 ? jugadorId : (esJ1 ? p.jugador2_id : p.jugador1_id)); 
-
-                        let reglaFin = reglasRankingList.find(r => 
-                            diff >= r.diferencia_min && diff <= r.diferencia_max && 
-                            ((esUpset && r.resultado_esperado === 'gana_retador') || (!esUpset && r.resultado_esperado === 'gana_favorito'))
-                        );
-
-                        deltaPartido = ganoPlayer ? (reglaFin ? reglaFin.puntos_ganador : 10) : (reglaFin ? -Math.abs(reglaFin.puntos_perdedor) : -5);
-                        deltaTotal += deltaPartido;
-                    }
-
-                    let estadoBadge = '<span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:3px 8px; border-radius:99px; font-weight:800;">⏳ PENDIENTE</span>';
-                    if (esVivo) estadoBadge = '<span style="font-size:9px; background:rgba(16,185,129,0.2); color:#34d399; padding:3px 8px; border-radius:99px; font-weight:800;">🔴 EN VIVO</span>';
-                    else if (ganoPlayer) estadoBadge = `<span style="font-size:9px; background:rgba(16,185,129,0.2); color:#34d399; padding:3px 8px; border-radius:99px; font-weight:800;">🏆 VICTORIA (+${deltaPartido} pts)</span>`;
-                    else if (perdioPlayer) estadoBadge = `<span style="font-size:9px; background:rgba(239,68,68,0.2); color:#f87171; padding:3px 8px; border-radius:99px; font-weight:800;">❌ DERROTA (${deltaPartido} pts)</span>`;
-
-                    let marcadorText = esFin ? (esJ1 ? `${p.sets_j1} - ${p.sets_j2}` : `${p.sets_j2} - ${p.sets_j1}`) + ' Sets' : (esVivo ? (esJ1 ? `${p.puntos_j1} - ${p.puntos_j2}` : `${p.puntos_j2} - ${p.puntos_j1}`) + ' Pts' : 'VS');
-
-                    let historialText = '';
-                    if (p.historial_sets && Array.isArray(p.historial_sets) && p.historial_sets.length > 0) {
-                        let parciales = p.historial_sets.map(s => esJ1 ? `${s.s1}-${s.s2}` : `${s.s2}-${s.s1}`);
-                        historialText = `<div style="font-size:10px; color:#94a3b8; margin-top:6px; font-weight:700;">Parciales: ${parciales.join(', ')}</div>`;
-                    }
-
-                    let etiqGpo = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? 'Grupo ' + p.grupo_nombre : (p.ronda_fase || 'Fase Final'));
-
-                    html += `
-                        <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); padding:12px 16px; border-radius:12px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                <span style="font-size:10px; color:#38bdf8; font-weight:800; text-transform:uppercase;">
-                                    ${etiqGpo} • Mesa ${p.mesa || 1}
-                                </span>
-                                ${estadoBadge}
-                            </div>
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <div>
-                                    <strong style="font-size:13px; color:#ffffff;">vs ${rivalNombre}</strong>
-                                    <small style="display:block; color:#64748b; font-size:10px;">${rivalClub || 'Sin Club'}</small>
-                                </div>
-                                <span style="font-family:'Orbitron', sans-serif; font-size:15px; font-weight:800; color:#fbbf24;">
-                                    ${marcadorText}
-                                </span>
-                            </div>
-                            ${historialText}
-                        </div>
-                    `;
-                });
-
-                let rFinal = rInicial + deltaTotal;
-                let difStr = deltaTotal >= 0 ? `<span style="color:#34d399;">+${deltaTotal}</span>` : `<span style="color:#f87171;">${deltaTotal}</span>`;
-
-                if(rHeader) rHeader.innerText = `${rFinal} pts`;
-                if(rVar) rVar.innerHTML = `${rInicial} ➔ ${rFinal} (${difStr})`;
-
-                modalList.innerHTML = html;
-            }
-
+            modalList.innerHTML = '<div class="mensaje-vacio">El detalle del ranking no está disponible en la vista de mesas. Ve al administrador para ver el expediente completo.</div>';
             document.getElementById('modal-jugador-admin').style.display = 'flex';
         }
 
@@ -504,7 +378,6 @@
                 return;
             }
 
-            // MODO FLASH ESTADÍSTICAS
             if (estadoFiltro === 'flash') {
                 container.style.display = 'block';
                 dibujarEstadisticasFlash(container);
@@ -655,14 +528,14 @@
             const getDiv = (jId) => {
                 for (let p of partidosFlash) {
                     if (p.ronda_fase && p.ronda_fase.includes('Div')) {
-                        let m = p.ronda_fase.match(/Div (\d|.) vs Div (\d|.)/);
+                        let m = p.ronda_fase.match(/Div\s*(.)\s*vs\s*Div\s*(.)/i);
                         if (m) {
                             if (p.jugador1_id === jId) return m[1];
                             if (p.jugador2_id === jId) return m[2];
                         }
                     }
                 }
-                return localStorage.getItem(`flash_div_${orgId}_${jId}`) || '?';
+                return '?';
             };
 
             partidosFlash.forEach(m => {
@@ -696,16 +569,22 @@
                 return;
             }
 
+            // Calcular Efectividad y Diferencia
             jugadoresArr.forEach(j => {
                 j.efectividad = j.pj > 0 ? ((j.pg / j.pj) * 100).toFixed(1) : 0;
                 j.difSets = j.setsG - j.setsP;
             });
 
+            // Ordenamiento (Reglas del Flyer):
+            // 1. Min 5 PJ primero
+            // 2. Efectividad mayor
+            // 3. Diferencia de sets mayor
             jugadoresArr.sort((a, b) => {
                 let aQualifies = a.pj >= 5 ? 1 : 0;
                 let bQualifies = b.pj >= 5 ? 1 : 0;
                 
                 if (aQualifies !== bQualifies) return bQualifies - aQualifies;
+                
                 if (parseFloat(b.efectividad) !== parseFloat(a.efectividad)) return parseFloat(b.efectividad) - parseFloat(a.efectividad);
                 
                 return b.difSets - a.difSets;
@@ -859,6 +738,7 @@
             catsList.forEach(catNombre => {
                 const gruposCat = standings[catNombre] || {};
                 
+                // Si la categoría solo tiene modalidad flash, nos la saltamos en este resumen
                 if (Object.keys(gruposCat).length === 0) {
                     const llavesFlash = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase);
                     if(llavesFlash.length === 0) return;
@@ -898,7 +778,7 @@
                                             let dif = j.setsG - j.setsP;
                                             let difStr = dif >= 0 ? '+' + dif : dif;
                                             let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
-                                            let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${String(j.nombre\vert{}\vert{}'').replace(/'/g, "\\'")}', '${String(j.club || 'Sin Club').replace(/'/g, "\\'")}')"` : '';
+                                            let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${String(j.nombre||'').replace(/'/g, "\\'")}', '${String(j.club || 'Sin Club').replace(/'/g, "\\'")}')"` : '';
 
                                             return `
                                                 <tr style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'" ${jClic}>
@@ -1141,7 +1021,7 @@
                         if (resJ2 && !p.jugador2_id) updates.jugador2_id = resJ2;
 
                         if (Object.keys(updates).length > 0) {
-                            await clienteSupabase.from('partidos').update(updates).eq('id', p.id).eq('organizador_id', ORG_ID);
+                            await clienteSupabase.from('partidos').update(updates).eq('id', p.id).eq('organizador_id', orgId);
                         }
                     } else {
                         alert("⚠️ No se pudieron determinar los jugadores para este partido. Asegúrate de que las fases anteriores tengan resultados válidos en el sistema.");
