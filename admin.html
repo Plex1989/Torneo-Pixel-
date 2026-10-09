@@ -184,10 +184,42 @@
         </div>
     </div>
 
+    <!-- MODAL NUEVO JUGADOR FLASH -->
+    <div id="modal-nuevo-flash" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
+                <h3 style="margin: 0; color: #10b981; font-size: 16px; font-weight: 800; text-transform: uppercase;">➕ Alta Rápida de Jugador</h3>
+                <button onclick="document.getElementById('modal-nuevo-flash').style.display='none'" style="background: transparent; border: none; color: white; font-size: 18px; cursor: pointer;">✕</button>
+            </div>
+            
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px;">Este jugador se agregará a la base de datos oficial y quedará preseleccionado para la Liga Flash.</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                <input type="text" id="flash-new-name" placeholder="Nombre Completo" class="input-tabla w-full">
+                <div style="display: flex; gap: 10px;">
+                    <select id="flash-new-club" class="input-tabla w-full">
+                        <option value="Sin Club">Sin Club</option>
+                    </select>
+                    <input type="number" id="flash-new-rank" placeholder="Puntos (Ej. 1000)" class="input-tabla w-full">
+                </div>
+                <div style="display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    <span style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">División:</span>
+                    <label style="display:flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#fff; cursor:pointer;">
+                        <input type="radio" name="flash_new_div" value="1" checked style="accent-color:#f43f5e;"> Div 1
+                    </label>
+                    <label style="display:flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#fff; cursor:pointer;">
+                        <input type="radio" name="flash_new_div" value="2" style="accent-color:#eab308;"> Div 2
+                    </label>
+                </div>
+            </div>
+            
+            <button id="btn-save-flash-player" onclick="guardarNuevoJugadorFlash()" style="width: 100%; justify-content: center; background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #34d399; padding: 12px; border-radius: 9999px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease;">💾 Crear y Seleccionar</button>
+        </div>
+    </div>
+
     <!-- MODAL RANKING WEB (UNA FILA COMPACTA CON COLORES) -->
     <div id="modal-ranking-global" class="modal-overlay" style="display: none;">
         <div class="modal-card modal-card-ranking" style="padding: 0; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column;">
-            <!-- Header Modal -->
             <div style="padding: 16px 24px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 20;">
                 <h3 style="margin: 0; color: #a855f7; font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">
                     <i class="fa-solid fa-trophy mr-2 text-yellow-400"></i> Ranking Global
@@ -195,7 +227,6 @@
                 <button onclick="document.getElementById('modal-ranking-global').style.display='none'" class="text-slate-400 hover:text-white transition-colors" style="background:transparent; border:none; font-size:24px; cursor:pointer;">&times;</button>
             </div>
             
-            <!-- Cuerpo Modal con Scroll -->
             <div style="flex: 1; overflow-y: auto; background: #0b1120;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
                     <thead style="position: sticky; top: 0; background: #0f172a; z-index: 10; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);">
@@ -299,6 +330,7 @@
                 <h2 style="border:none; margin:0; padding:0; color:#fbbf24;">⚡ Inscripción Exprés (Liga Flash y Presencial)</h2>
                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                     <input type="text" id="buscador-flash" placeholder="🔎 Buscar jugador..." onkeyup="filtrarJugadoresFlash()" class="input-tabla" style="max-width: 180px;">
+                    <button class="btn-console btn-green" onclick="document.getElementById('modal-nuevo-flash').style.display='flex'">➕ Alta Rápida</button>
                     <select id="select-cat-flash" class="input-tabla" style="max-width: 200px;">
                         <option value="">-- Elige Categoría Destino --</option>
                     </select>
@@ -483,6 +515,12 @@
     <div id="area-impresion-memoria" class="memoria-print-area"></div>
 
     <script>
+        // ================= FUNCIÓN GLOBAL PARA QUITAR ACENTOS =================
+        function quitarAcentos(str) {
+            if (!str) return "";
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
         // ================= TRIPLE CANDADO PARA CERRAR SESIÓN =================
         function cerrarSesionAdmin() {
             localStorage.removeItem('admin_autenticado');
@@ -640,14 +678,17 @@
             });
         }
 
-        // Función del buscador en tiempo real
+        // Función del buscador en tiempo real (Ahora ignora acentos y busca en toda la cadena)
         function filtrarJugadoresFlash() {
-            const input = document.getElementById('buscador-flash').value.toLowerCase();
+            const inputVal = document.getElementById('buscador-flash').value.toLowerCase();
+            const inputClean = quitarAcentos(inputVal);
             const filas = document.querySelectorAll('.tr-jugador-flash');
             
             filas.forEach(fila => {
                 const nombre = fila.querySelector('strong').innerText.toLowerCase();
-                if (nombre.includes(input)) {
+                const nombreClean = quitarAcentos(nombre);
+                
+                if (nombreClean.includes(inputClean)) {
                     fila.style.display = '';
                 } else {
                     fila.style.display = 'none';
@@ -705,6 +746,67 @@
             } finally {
                 btn.disabled = false;
                 btn.innerText = "🚀 Inscribir Seleccionados";
+            }
+        }
+
+        // ================= CREACIÓN DE JUGADOR DIRECTO DESDE FLASH =================
+        async function guardarNuevoJugadorFlash() {
+            const nombre = document.getElementById('flash-new-name').value.toUpperCase().trim();
+            const club = document.getElementById('flash-new-club').value;
+            const puntos = parseInt(document.getElementById('flash-new-rank').value) || 0;
+            const div = document.querySelector('input[name="flash_new_div"]:checked').value;
+            
+            if (!nombre || puntos === 0) {
+                alert("Por favor ingresa un nombre y sus puntos de ranking.");
+                return;
+            }
+
+            const btn = document.getElementById('btn-save-flash-player');
+            btn.disabled = true;
+            btn.innerText = "⏳ Guardando...";
+
+            try {
+                const { data, error } = await clienteSupabase.from('jugadores')
+                    .insert([{ 
+                        nombre: nombre, 
+                        club: club, 
+                        puntos_ranking_ant: puntos, 
+                        puntos_ranking: puntos, 
+                        nip_seguridad: '1234', 
+                        organizador_id: ORG_ID 
+                    }])
+                    .select();
+
+                if (error) throw error;
+
+                const newPlayerId = data[0].id;
+                
+                // Guardar la división elegida para este jugador
+                localStorage.setItem(`flash_div_${ORG_ID}_${newPlayerId}`, div);
+
+                // Cerrar y limpiar modal
+                document.getElementById('modal-nuevo-flash').style.display = 'none';
+                document.getElementById('flash-new-name').value = '';
+                document.getElementById('flash-new-rank').value = '';
+
+                // Recargar toda la página para asegurar que el DOM de la tabla Flash se reconstruya
+                await cargarDatosIniciales();
+                
+                // Buscar el nuevo checkbox y marcarlo automáticamente
+                setTimeout(() => {
+                    const checkbox = document.querySelector(`.check-flash-ins[value="${newPlayerId}"]`);
+                    if (checkbox) {
+                        checkbox.checked = true;
+                        checkbox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        checkbox.parentElement.parentElement.style.background = 'rgba(16, 185, 129, 0.2)';
+                    }
+                }, 800);
+
+            } catch (err) {
+                alert("Error al crear jugador: " + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "💾 Crear y Seleccionar";
             }
         }
         // ================= FIN MÓDULO INSCRIPCIÓN EXPRÉS =================
@@ -1476,10 +1578,19 @@
 
         function poblarDropdownClubs() {
             const select = document.getElementById('nuevo-club'); 
-            if(!select) return;
-            select.innerHTML = '';
-            if (todosLosClubsAdmin.length === 0) { select.innerHTML = '<option value="Sin Club">Sin Club</option>'; return; }
-            todosLosClubsAdmin.forEach(club => { let opt = document.createElement('option'); opt.value = club.nombre; opt.textContent = club.nombre; select.appendChild(opt); });
+            const selectFlash = document.getElementById('flash-new-club'); // Para modal flash
+            
+            if(!select || !selectFlash) return;
+            select.innerHTML = '<option value="Sin Club">Sin Club</option>';
+            selectFlash.innerHTML = '<option value="Sin Club">Sin Club</option>';
+            
+            todosLosClubsAdmin.forEach(club => { 
+                let opt = document.createElement('option'); opt.value = club.nombre; opt.textContent = club.nombre; 
+                select.appendChild(opt); 
+                
+                let optF = document.createElement('option'); optF.value = club.nombre; optF.textContent = club.nombre; 
+                selectFlash.appendChild(optF); 
+            });
         }
 
         function dibujarTablaClubs() {
@@ -1667,13 +1778,13 @@
         }
 
         function filtrarYAutoSeleccionarAdmin() {
-            const input = document.getElementById('buscador-jugador');
+            const inputEl = document.getElementById('buscador-jugador');
             const select = document.getElementById('select-jugador-admin');
-            if(!input || !select) return;
+            if(!inputEl || !select) return;
 
-            const texto = input.value.toLowerCase().trim();
+            const texto = quitarAcentos(inputEl.value.toLowerCase().trim());
             select.innerHTML = '<option value="">-- Nuevo Jugador (Modo Crear) --</option>';
-            const filtrados = todosLosJugadoresAdmin.filter(j => j.nombre && j.nombre.toLowerCase().includes(texto));
+            const filtrados = todosLosJugadoresAdmin.filter(j => j.nombre && quitarAcentos(j.nombre.toLowerCase()).includes(texto));
             filtrados.forEach(j => { let opt = document.createElement('option'); opt.value = j.id; opt.textContent = `${j.nombre} [${j.club || 'Sin Club'}] (${j.puntos_ranking} pts)`; select.appendChild(opt); });
             if (texto.length > 0 && filtrados.length > 0) { select.value = filtrados[0].id; cargarDatosJugadorEditar(); }
             else if (texto.length === 0) resetFormularioJugador();
