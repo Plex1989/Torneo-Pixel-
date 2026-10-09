@@ -12,8 +12,6 @@
             alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
             window.location.href = "torneos.html";
         }
-
-        // Ya no necesitamos la función enfocarPestana aquí
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -199,7 +197,6 @@
             <a href="torneos.html" class="nav-btn">Mis Torneos</a>
             <a href="admin.html" class="nav-btn">Administrador</a>
             <a href="sorteo.html" class="nav-btn active">Sorteo y Rol</a>
-            <!-- Ajuste para navegación sin duplicados -->
             <a href="mesas.html" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
             <a href="espectador.html" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador</a>
             <a href="index.html" class="nav-btn public">Portal Público</a>
@@ -414,28 +411,25 @@
         let idJugadorPendienteDiv = null; 
         let idPartidoPendienteRes = null; 
 
-        let draggedId = null; // Para Drag & Drop de Fila Virtual
+        let draggedId = null; 
 
         const clasesColoresGrupo = ['gpo-cyan', 'gpo-purple', 'gpo-emerald', 'gpo-amber'];
 
-        // PALETA DE COLORES VISUALES PARA LAS MESAS FLASH
         const coloresMesasFlash = [
-            { border: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', text: '#000', badge: '#10b981' }, // Verde
-            { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', text: '#fff', badge: '#3b82f6' }, // Azul
-            { border: '#d946ef', bg: 'rgba(217, 70, 239, 0.1)', text: '#fff', badge: '#d946ef' }, // Magenta
-            { border: '#eab308', bg: 'rgba(234, 179, 8, 0.1)', text: '#000', badge: '#eab308' }, // Amarillo
-            { border: '#a855f7', bg: 'rgba(168, 85, 247, 0.1)', text: '#fff', badge: '#a855f7' }, // Morado
-            { border: '#f97316', bg: 'rgba(249, 115, 22, 0.1)', text: '#fff', badge: '#f97316' }, // Naranja
-            { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)', text: '#000', badge: '#06b6d4' }   // Cyan
+            { border: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', text: '#000', badge: '#10b981' }, 
+            { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', text: '#fff', badge: '#3b82f6' }, 
+            { border: '#d946ef', bg: 'rgba(217, 70, 239, 0.1)', text: '#fff', badge: '#d946ef' }, 
+            { border: '#eab308', bg: 'rgba(234, 179, 8, 0.1)', text: '#000', badge: '#eab308' }, 
+            { border: '#a855f7', bg: 'rgba(168, 85, 247, 0.1)', text: '#fff', badge: '#a855f7' }, 
+            { border: '#f97316', bg: 'rgba(249, 115, 22, 0.1)', text: '#fff', badge: '#f97316' }, 
+            { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)', text: '#000', badge: '#06b6d4' }   
         ];
 
-        // ================= FUNCIÓN GLOBAL QUITAR ACENTOS =================
         function quitarAcentos(str) {
             if (!str) return "";
             return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
-        // ================= FUNCIONES DE CAMBIO DE MODO =================
         function cambiarModoTorneo(modo) {
             modoTorneoActual = modo;
             
@@ -475,7 +469,6 @@
                     await cargarEstadoCategoria();
                 }
 
-                // NUEVO: Suscripción en tiempo real para mantener la cartelera de Flash/RR actualizada sola
                 clienteSupabase
                     .channel('sorteo-partidos-realtime')
                     .on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, (payload) => {
@@ -581,10 +574,6 @@
             }
         }
 
-        // ====================================================================
-        // ======================= LÓGICA MODO FLASH ⚡ =======================
-        // ====================================================================
-
         async function cargarDatosFlash(idCat) {
             try {
                 const { data: partidosFlash } = await clienteSupabase.from('partidos')
@@ -595,32 +584,31 @@
                     .eq('grupo_nombre', 'Flash');
 
                 let todosFlash = partidosFlash || [];
-                partidosFlashActivos = todosFlash.filter(p => p.estado === 'en_curso');
                 
-                // Guardar historial para el H2H de la ventanita Modal
+                // ORDENAR SIEMPRE POR MESA ASCENDENTE
+                partidosFlashActivos = todosFlash.filter(p => p.estado === 'en_curso').sort((a, b) => (a.mesa || 0) - (b.mesa || 0));
+                
                 historialFlashGlobal = todosFlash.filter(p => p.estado === 'finalizado');
 
                 jugadoresListos.forEach(j => {
                     let misPartidos = todosFlash.filter(p => p.estado === 'finalizado' && (p.jugador1_id === j.id || p.jugador2_id === j.id));
-                    // Para calcular bien la racha de 5, necesitamos leerlos cronológicamente
-                    misPartidos.sort((a,b) => a.id - b.id); // Orden ascendente (del más antiguo al más reciente)
+                    misPartidos.sort((a,b) => a.id - b.id); 
 
                     j.pjFlash = misPartidos.length;
                     
                     let rachaReal = 0;
                     let mesaRacha = null;
 
-                    // Calcular racha con la regla del 5 y reseteo
                     for (let p of misPartidos) {
                         if (p.ganador_id === j.id) {
                             rachaReal++;
                             mesaRacha = p.mesa;
                             if (rachaReal >= 5) {
-                                rachaReal = 0;   // Llegó al límite, resetea
-                                mesaRacha = null; // Cede la mesa
+                                rachaReal = 0;  
+                                mesaRacha = null; 
                             }
                         } else {
-                            rachaReal = 0; // Perdió, pierde la racha
+                            rachaReal = 0; 
                             mesaRacha = null;
                         }
                     }
@@ -641,10 +629,9 @@
         }
 
         function filtrarSorteoFlash() {
-            dibujarGridJugadoresFlash(); // Re-dibuja aplicando el filtro actual
+            dibujarGridJugadoresFlash(); 
         }
 
-        // --- FUNCIONES PARA DRAG AND DROP (FILA DE RAQUETAS) ---
         function handleDragStart(e, id) {
             draggedId = id;
             e.dataTransfer.effectAllowed = 'move';
@@ -670,7 +657,7 @@
                     savedQueue.splice(fromIndex, 1);
                     savedQueue.splice(toIndex, 0, draggedId);
                     localStorage.setItem(lsKey, JSON.stringify(savedQueue));
-                    dibujarGridJugadoresFlash(); // Re-dibujar con el nuevo orden
+                    dibujarGridJugadoresFlash(); 
                 }
             }
         }
@@ -678,7 +665,6 @@
             e.target.style.opacity = '1';
             draggedId = null;
         }
-
 
         function dibujarGridJugadoresFlash() {
             const wrapper = document.getElementById('flash-wrapper-jugadores');
@@ -695,7 +681,6 @@
             let retadores = [];
             let ocupados = [];
 
-            // Separar a los jugadores en las 3 zonas basándose en las reglas de Rey de la Mesa
             jugadoresListos.forEach(j => {
                 let nombreClean = quitarAcentos(j.nombre.toLowerCase());
                 if (!nombreClean.includes(inputClean)) return; 
@@ -704,20 +689,16 @@
                     j.partidoActivo = partidosFlashActivos.find(p => p.jugador1_id === j.id || p.jugador2_id === j.id);
                     ocupados.push(j);
                 } else {
-                    // Si tiene racha (ganó su último partido) y no ha llegado al límite de 5
                     if (j.racha > 0 && j.racha < 5) {
                         reyes.push(j);
                     } else {
-                        // Si perdió su último partido (racha=0) o si llegó a 5 victorias, se va a la fila de retadores
                         retadores.push(j);
                     }
                 }
             });
 
-            // Ordenar Reyes (los más recientes primero, aunque generalmente son pocos)
             reyes.sort((a, b) => b.lastMatchId - a.lastMatchId);
 
-            // Ordenar Retadores (Fila Virtual)
             const lsKey = `flash_queue_${ORG_ID}_${idTorneoActivo}`;
             let savedQueue = JSON.parse(localStorage.getItem(lsKey) || "[]");
 
@@ -725,20 +706,16 @@
                 let idxA = savedQueue.indexOf(a.id);
                 let idxB = savedQueue.indexOf(b.id);
                 
-                // Si ambos están en el orden manual, respetar ese orden
                 if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-                // Si solo uno está, tiene prioridad manual
                 if (idxA !== -1) return -1;
                 if (idxB !== -1) return 1;
 
-                // Lógica de ordenación por defecto si no han sido movidos:
                 if (a.pjFlash === 0 && b.pjFlash > 0) return -1;
                 if (b.pjFlash === 0 && a.pjFlash > 0) return 1;
                 if (a.pjFlash === 0 && b.pjFlash === 0) return a.id - b.id;
                 return a.lastMatchId - b.lastMatchId; 
             });
 
-            // Guardar el orden oficial actual para habilitar Drag & Drop
             localStorage.setItem(lsKey, JSON.stringify(retadores.map(r => r.id)));
 
 
@@ -819,34 +796,67 @@
                 <div style="font-size:11px; font-weight:900; color:#ef4444; margin-bottom:12px; text-transform:uppercase; border-bottom:1px solid rgba(239,68,68,0.3); padding-bottom:6px;">
                     🔴 En Mesa (Jugando)
                 </div>
-                <div class="flash-grid">
             `;
 
             if (ocupados.length === 0) {
-                html += `<div style="grid-column: 1/-1; font-size:10px; color:#64748b; font-style:italic;">Las mesas están vacías en este momento.</div>`;
+                html += `<div style="font-size:10px; color:#64748b; font-style:italic;">Las mesas están vacías en este momento.</div>`;
             } else {
-                ocupados.forEach(j => {
-                    let divStr = localStorage.getItem(`flash_div_${ORG_ID}_${j.id}`);
-                    let divBadge = divStr === '1' ? `<span class="div-tag-1">Div 1</span>` : (divStr === '2' ? `<span class="div-tag-2">Div 2</span>` : `<span style="color:#64748b; font-style:italic; font-weight:800; font-size:9px;">Sin Div</span>`);
+                html += `<div style="display: flex; flex-direction: column; gap: 10px;">`;
+                
+                // Mapear por partido activo para dibujar por fila de Mesa
+                partidosFlashActivos.forEach((p, idx) => {
+                    let j1 = ocupados.find(o => o.id === p.jugador1_id);
+                    let j2 = ocupados.find(o => o.id === p.jugador2_id);
                     
-                    let pIdx = partidosFlashActivos.findIndex(p => p.id === j.partidoActivo.id);
-                    let colorSet = coloresMesasFlash[pIdx % coloresMesasFlash.length];
-                    
-                    let cardStyle = `border-color: ${colorSet.border}; background: ${colorSet.bg}; opacity: 0.8; cursor: not-allowed; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); padding-left:12px;`;
-                    let playingBadge = `<span style="background:${colorSet.badge}; color:${colorSet.text}; font-size:9px; padding:2px 6px; border-radius:4px; font-weight:900; text-shadow:none;">MESA ${j.partidoActivo.mesa}</span>`;
+                    if(j1 || j2) {
+                        let colorSet = coloresMesasFlash[idx % coloresMesasFlash.length];
+                        let cardStyle = `border-color: ${colorSet.border}; background: ${colorSet.bg}; opacity: 0.8; cursor: not-allowed; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); padding:10px 12px; border-radius:10px; border-width:1px; border-style:solid; display:flex; flex-direction:column; justify-content:space-between; min-height: 60px;`;
+                        
+                        let bgBadge = colorSet.badge ? colorSet.badge : colorSet.border;
+                        let textBadge = colorSet.text === '#fff' || colorSet.text === '#ffffff' ? '#fff' : '#000';
+                        let playingBadge = `<span style="background:${bgBadge}; color:${textBadge}; font-size:9px; padding:2px 6px; border-radius:4px; font-weight:900; text-shadow:none;">MESA ${p.mesa}</span>`;
 
-                    html += `
-                        <button class="flash-btn-jugador" style="${cardStyle}" onclick="alert('Este jugador está actualmente en la Mesa ${j.partidoActivo.mesa}.')">
-                            <div class="nombre">${j.nombre}</div>
-                            <div class="stats" style="margin-top:2px;">
-                                ${divBadge}
-                                ${playingBadge}
-                            </div>
-                        </button>
-                    `;
+                        html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">`;
+                        
+                        // JUGADOR 1
+                        if(j1) {
+                            let div1 = localStorage.getItem(`flash_div_${ORG_ID}_${j1.id}`);
+                            let divBadge1 = div1 === '1' ? `<span class="div-tag-1">Div 1</span>` : (div1 === '2' ? `<span class="div-tag-2">Div 2</span>` : `<span style="color:#64748b; font-style:italic; font-weight:800; font-size:9px;">Sin Div</span>`);
+                            html += `
+                                <button style="${cardStyle}" onclick="alert('Este jugador está actualmente en la Mesa ${p.mesa}.')">
+                                    <div style="font-size:11px; font-weight:800; color:#fff; text-align:left; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; pointer-events:none;">${j1.nombre}</div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%; pointer-events:none;">
+                                        ${divBadge1}
+                                        ${playingBadge}
+                                    </div>
+                                </button>
+                            `;
+                        } else {
+                            html += `<div style="border:1px dashed rgba(255,255,255,0.1); border-radius:10px;"></div>`;
+                        }
+
+                        // JUGADOR 2
+                        if(j2) {
+                            let div2 = localStorage.getItem(`flash_div_${ORG_ID}_${j2.id}`);
+                            let divBadge2 = div2 === '1' ? `<span class="div-tag-1">Div 1</span>` : (div2 === '2' ? `<span class="div-tag-2">Div 2</span>` : `<span style="color:#64748b; font-style:italic; font-weight:800; font-size:9px;">Sin Div</span>`);
+                            html += `
+                                <button style="${cardStyle}" onclick="alert('Este jugador está actualmente en la Mesa ${p.mesa}.')">
+                                    <div style="font-size:11px; font-weight:800; color:#fff; text-align:left; margin-bottom:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:100%; pointer-events:none;">${j2.nombre}</div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%; pointer-events:none;">
+                                        ${divBadge2}
+                                        ${playingBadge}
+                                    </div>
+                                </button>
+                            `;
+                        } else {
+                            html += `<div style="border:1px dashed rgba(255,255,255,0.1); border-radius:10px;"></div>`;
+                        }
+
+                        html += `</div>`;
+                    }
                 });
+                html += `</div>`;
             }
-            html += `</div>`;
 
             wrapper.innerHTML = html;
         }
@@ -881,7 +891,6 @@
             }
             seleccionFlash.push(jugadorObj);
             
-            // Lógica: Si el jugador seleccionado era un Rey en mesa, heredar esa mesa al input
             if (jugadorObj.racha > 0 && jugadorObj.racha < 5 && jugadorObj.lastMesa) {
                 document.getElementById('flash-mesa-input').value = jugadorObj.lastMesa;
             }
@@ -943,7 +952,6 @@
             const mesaVal = parseInt(document.getElementById('flash-mesa-input').value) || 1;
             const idCat = document.getElementById('filtro-categoria').value;
             
-            // VALIDACIÓN: Evitar mandar a mesa ocupada
             let mesaOcupada = partidosFlashActivos.some(p => p.mesa === mesaVal);
             if (mesaOcupada) {
                 alert(`⚠️ MESA OCUPADA\n\nLa Mesa ${mesaVal} ya tiene un partido en curso. Por favor elige otra mesa libre o registra el resultado del partido activo antes de mandar uno nuevo.`);
@@ -997,11 +1005,13 @@
             }
 
             partidosFlashActivos.forEach((p, idx) => {
-                // Selecciona el color de la paleta dinámicamente
                 let colorSet = coloresMesasFlash[idx % coloresMesasFlash.length];
                 
                 let n1 = p.j1 ? p.j1.nombre : 'Jugador 1';
                 let n2 = p.j2 ? p.j2.nombre : 'Jugador 2';
+
+                let bgBadge = colorSet.badge ? colorSet.badge : colorSet.border;
+                let textBadge = colorSet.text === '#fff' || colorSet.text === '#ffffff' ? '#fff' : '#000';
 
                 container.innerHTML += `
                     <div class="flash-mesa-card" style="border-left: 4px solid ${colorSet.border}; background: linear-gradient(90deg, ${colorSet.bg} 0%, rgba(0,0,0,0.4) 100%);">
@@ -1013,13 +1023,12 @@
                                 <span style="font-size:12px; font-weight:800; color:#fff;">${n2}</span>
                             </div>
                         </div>
-                        <button class="btn-console btn-gold" style="padding:6px 12px; font-size:9px; border-color:${colorSet.border}; color:${colorSet.text}; background:${colorSet.badge}; font-weight:900;" onclick="abrirModalResultadoFlash(${p.id}, '${n1.replace(/'/g, "\\'")}', '${n2.replace(/'/g, "\\'")}')">Registrar Res.</button>
+                        <button class="btn-console" style="padding:6px 12px; font-size:9px; border-color:${colorSet.border}; color:${textBadge}; background:${bgBadge}; font-weight:900;" onclick="abrirModalResultadoFlash(${p.id}, '${n1.replace(/'/g, "\\'")}', '${n2.replace(/'/g, "\\'")}')">Registrar Res.</button>
                     </div>
                 `;
             });
         }
 
-        // --- Funciones Modal Resultado Rápido ---
         function abrirModalResultadoFlash(idPartido, nombre1, nombre2) {
             idPartidoPendienteRes = idPartido;
             document.getElementById('res-nombre-1').innerText = nombre1;
@@ -1027,7 +1036,6 @@
             document.getElementById('res-sets-1').value = '0';
             document.getElementById('res-sets-2').value = '0';
 
-            // Buscar la información extra para el modal (Racha y H2H)
             let match = partidosFlashActivos.find(p => p.id === idPartido);
             if(match) {
                 let j1 = jugadoresListos.find(j => j.id === match.jugador1_id);
@@ -1038,7 +1046,6 @@
                 
                 let rachaHTML = '';
                 
-                // Mostrar solo a quien tiene la racha
                 if (r1 > 0 && r2 === 0) {
                     rachaHTML = `
                         <div style="color:#fbbf24; font-weight:900; font-size:12px; margin-bottom:4px;">👑 ${j1.nombre} lleva ${r1} victoria(s) en esta mesa</div>
@@ -1057,7 +1064,6 @@
                 
                 document.getElementById('res-racha-box').innerHTML = rachaHTML;
 
-                // Historial directo (H2H) del día
                 let winsJ1 = 0;
                 let winsJ2 = 0;
                 let h2hMatches = historialFlashGlobal.filter(p => 
@@ -1127,7 +1133,6 @@
                 const idCat = document.getElementById('filtro-categoria').value;
                 await cargarDatosFlash(idCat);
 
-                // REVISIÓN DE RACHA DE 5 (Si tenía 4, esta victoria es la número 5)
                 if (winnerObj && rachaPrevia === 4) {
                     setTimeout(() => {
                         alert(`🏆 ¡LÍMITE ALCANZADO!\n\n${winnerObj.nombre} ha ganado 5 partidos consecutivos en la Liga Continua.\n\nPor regla general, debe ceder la mesa y ha sido formado automáticamente al final de la fila de retadores.`);
@@ -1141,11 +1146,6 @@
                 btn.innerText = "Guardar y Liberar Mesa";
             }
         }
-
-
-        // ====================================================================
-        // ======================= LÓGICA MODO ROUND ROBIN ====================
-        // ====================================================================
 
         function algoritmoRoundRobin(jugadoresArr) {
             let arr = [...jugadoresArr];
@@ -1562,7 +1562,7 @@
                         <td>${juezBadge}</td>
                         <td class="no-print">
                             <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                                <a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 8px; font-size:9px; text-decoration:none;">🏓 Juez</a>
+                                <a href="juez.html?partido=${p.id}" class="btn-console btn-ws-style" style="padding:4px 8px; font-size:9px; text-decoration:none;">🏓 Juez</a>
                                 <a href="espectador.html?partido=${p.id}" class="btn-console btn-purple" style="padding:4px 8px; font-size:9px; text-decoration:none;">👁 Ver</a>
                             </div>
                         </td>
