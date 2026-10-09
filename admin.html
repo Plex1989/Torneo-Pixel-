@@ -8,12 +8,22 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- TRIPLE CANDADO DE SEGURIDAD (Solución para móviles) -->
     <script>
-        if (localStorage.getItem('admin_autenticado') !== 'true') {
+        const isAuthLocal = localStorage.getItem('admin_autenticado') === 'true';
+        const isAuthSession = sessionStorage.getItem('admin_autenticado') === 'true';
+        const isAuthCookie = document.cookie.includes('admin_autenticado=true');
+
+        if (!isAuthLocal && !isAuthSession && !isAuthCookie) {
             alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
             window.location.href = "torneos.html";
+        } else {
+            // Si el celular borró el localstorage pero la cookie/sesión sobrevivió, lo restauramos
+            localStorage.setItem('admin_autenticado', 'true');
         }
     </script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Orbitron:wght@700;800&display=swap');
 
@@ -44,6 +54,7 @@
         .panel-pink { border-bottom: 5px solid #500724; }
         .panel-red { border-bottom: 5px solid #450a0a; }
         .panel-gold { border-bottom: 5px solid #b45309; }
+        .panel-orange { border-bottom: 5px solid #ea580c; } /* Nuevo para Flash */
 
         h2, h3 { color: #ffffff; margin-top: 0; padding-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 20px; }
         
@@ -52,7 +63,8 @@
         select option { background-color: #0a0b10 !important; color: #ffffff !important; padding: 10px; }
         
         .btn-console { display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 9999px; color: #f1f5f9; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; text-decoration: none; }
-        .btn-console:hover { background: #06b6d4; color: #000000; border-color: #38bdf8; }
+        .btn-console:hover:not(:disabled) { background: #06b6d4; color: #000000; border-color: #38bdf8; }
+        .btn-console:disabled { opacity: 0.6; cursor: not-allowed; }
         .btn-gold { background: #f59e0b; color: #000; border-color: #fbbf24; }
         .btn-purple { background: #8b5cf6; color: #fff; border-color: #c084fc; }
         .btn-green { background: #10b981; color: #000; border-color: #34d399; }
@@ -66,7 +78,7 @@
         .tab-cat-pill.active { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.6); }
 
         table { width: 100%; border-collapse: separate; border-spacing: 0 6px; margin-top: 10px; font-size: 12px; }
-        th { color: #94a3b8; text-transform: uppercase; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; padding: 0 12px 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-align: left; }
+        th { color: #94a3b8; text-transform: uppercase; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; padding: 0 12px 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-align: left; position: sticky; top: 0; background: #0f172a; z-index: 10; }
         td { padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border-top: 1px solid rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02); color: #ffffff; }
         td:first-child { border-left: 1px solid rgba(255,255,255,0.02); border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
         td:last-child { border-right: 1px solid rgba(255,255,255,0.02); border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
@@ -281,6 +293,36 @@
             </table>
         </div>
 
+        <!-- MÓDULO NUEVO: INSCRIPCIÓN EXPRÉS (LIGA FLASH) -->
+        <div class="panel-3d panel-orange">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; margin-bottom: 18px;">
+                <h2 style="border:none; margin:0; padding:0; color:#fbbf24;">⚡ Inscripción Exprés (Liga Flash y Presencial)</h2>
+                <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <select id="select-cat-flash" class="input-tabla" style="max-width: 200px;">
+                        <option value="">-- Elige Categoría Destino --</option>
+                    </select>
+                    <button class="btn-console btn-gold" onclick="inscribirSeleccionadosFlash()">🚀 Inscribir Seleccionados</button>
+                </div>
+            </div>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px;">Selecciona los jugadores presenciales y asígnales su división. Se inscribirán automáticamente como "Pagados" en la categoría que elijas y su división quedará guardada para el Sorteo Flash.</p>
+            
+            <div style="max-height: 400px; overflow-y: auto; padding-right: 10px; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;">
+                <table style="margin-top: 0; border-spacing: 0;">
+                    <thead style="position: sticky; top: 0; background: #0f172a; z-index: 10; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);">
+                        <tr>
+                            <th style="width: 40px; text-align: center; border-radius: 0;">Sel.</th>
+                            <th style="border-radius: 0;">Jugador</th>
+                            <th style="border-radius: 0;">Ranking</th>
+                            <th style="text-align: center; border-radius: 0;">División (Para Flash)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabla-inscripcion-flash">
+                        <tr><td colspan="4" class="mensaje-vacio">Cargando jugadores...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- PAGOS PENDIENTES -->
         <div class="panel-3d panel-amber">
             <h2>💰 Validación de Pagos Pendientes</h2>
@@ -398,7 +440,6 @@
                     <span style="color:#94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase;">pts a los que avancen a la fase final.</span>
                     
                     <div style="margin-left: auto; display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                        <!-- ETIQUETA VISUAL DE SEMBRADO 1 MEJORADA -->
                         <div style="background: rgba(153, 27, 27, 0.4); border: 1px solid #ef4444; padding: 6px 12px; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
                             <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 14px;"></i>
                             <span style="color: #fca5a5; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
@@ -441,12 +482,14 @@
     <div id="area-impresion-memoria" class="memoria-print-area"></div>
 
     <script>
+        // ================= TRIPLE CANDADO PARA CERRAR SESIÓN =================
         function cerrarSesionAdmin() {
             localStorage.removeItem('admin_autenticado');
-            window.location.reload();
+            sessionStorage.removeItem('admin_autenticado');
+            document.cookie = "admin_autenticado=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
+            window.location.href = "torneos.html";
         }
 
-        // ================= ACTUALIZACIÓN MENSAJES WHATSAPP (PIXEL STUDIO T.) =================
         function compartirLinkInscripcionWS() {
             if (!torneoActivoObj) return alert("Cargando datos del torneo...");
             let url = window.location.origin + '/index.html?torneo=' + torneoActivoObj.id;
@@ -460,7 +503,6 @@
             let texto = `📺 *¡Sigue el Torneo en Vivo!* 📺\n\n*Pixel Studio T.*\nTorneo: *${torneoActivoObj.nombre}*\n\nSigue los marcadores y resultados en tiempo real aquí:\n👉 ${url}`;
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
         }
-        // =======================================================================================
 
         const supabaseUrl = 'https://stytjtqshyupkyihurpd.supabase.co';
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
@@ -529,6 +571,9 @@
                 todosLosClubsAdmin = resClubs.status === 'fulfilled' ? (resClubs.value.data || []) : [];
                 programacionCategoriasNube = resProg.status === 'fulfilled' ? (resProg.value.data || []) : [];
                 reglasRankingList = resReglas.status === 'fulfilled' ? (resReglas.value.data || []) : [];
+                
+                cargarInscripcionFlashView(); // <-- NUEVA LLAMADA PARA EL MÓDULO FLASH
+
             } catch(e) { console.error("Error en peticiones principales:", e); }
 
             try { poblarDropdownClubs(); } catch(e) { console.error(e); }
@@ -546,6 +591,105 @@
             try { activarSuscripcionEspectadores(); } catch(e) { console.error(e); }
             try { activarSuscripcionRealtime(); } catch(e) { console.error(e); }
         }
+
+        // ================= MÓDULO INSCRIPCIÓN EXPRÉS FLASH =================
+        function cargarInscripcionFlashView() {
+            const selectCat = document.getElementById('select-cat-flash');
+            if(selectCat) {
+                selectCat.innerHTML = '<option value="">-- Elige Categoría Destino --</option>';
+                todasLasCategoriasAdmin.forEach(c => {
+                    selectCat.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+                });
+            }
+
+            const tbody = document.getElementById('tabla-inscripcion-flash');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            // Ordenar alfabéticamente para que sea más fácil de buscar visualmente
+            let jugadoresOrdenados = [...todosLosJugadoresAdmin].sort((a,b) => a.nombre.localeCompare(b.nombre));
+
+            jugadoresOrdenados.forEach(j => {
+                let divGuardada = localStorage.getItem(`flash_div_${ORG_ID}_${j.id}`) || '1'; // Default 1
+                
+                tbody.innerHTML += `
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+                        <td style="text-align:center;">
+                            <input type="checkbox" class="check-flash-ins" value="${j.id}" style="width:16px; height:16px; accent-color:#f59e0b; cursor:pointer;">
+                        </td>
+                        <td>
+                            <strong style="color:#fff; font-size:12px;">${j.nombre}</strong><br>
+                            <span style="font-size:9px; color:#64748b;">${j.club || 'S/C'}</span>
+                        </td>
+                        <td style="color:#38bdf8; font-weight:800; font-family:'Orbitron', sans-serif; font-size:11px;">
+                            ${j.puntos_ranking} pts
+                        </td>
+                        <td style="text-align:center;">
+                            <div style="display:inline-flex; gap:10px; background:rgba(0,0,0,0.4); padding:4px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
+                                <label style="display:flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:#fff; cursor:pointer; margin:0; text-transform:none;">
+                                    <input type="radio" name="div_${j.id}" value="1" ${divGuardada === '1' ? 'checked' : ''} style="accent-color:#f43f5e;"> Div 1
+                                </label>
+                                <label style="display:flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:#fff; cursor:pointer; margin:0; text-transform:none;">
+                                    <input type="radio" name="div_${j.id}" value="2" ${divGuardada === '2' ? 'checked' : ''} style="accent-color:#eab308;"> Div 2
+                                </label>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function inscribirSeleccionadosFlash() {
+            const catId = document.getElementById('select-cat-flash').value;
+            if (!catId) return alert("⚠️ Selecciona la categoría destino primero (Ej. Libre).");
+            
+            const checkboxes = document.querySelectorAll('.check-flash-ins:checked');
+            if (checkboxes.length === 0) return alert("⚠️ Selecciona al menos un jugador de la lista.");
+
+            const btn = document.querySelector('button[onclick="inscribirSeleccionadosFlash()"]');
+            btn.disabled = true;
+            btn.innerText = "⏳ Inscribiendo...";
+
+            let inscripcionesNuevas = [];
+
+            checkboxes.forEach(chk => {
+                let jId = chk.value;
+                let divSel = document.querySelector(`input[name="div_${jId}"]:checked`).value;
+                
+                // Guardar division en LocalStorage para que el sorteo flash sepa el handicap
+                localStorage.setItem(`flash_div_${ORG_ID}_${jId}`, divSel);
+
+                inscripcionesNuevas.push({
+                    torneo_id: parseInt(idTorneoActivo),
+                    jugador_id: parseInt(jId),
+                    categoria_id: parseInt(catId),
+                    estatus_pago: 'Pagado',
+                    organizador_id: ORG_ID
+                });
+            });
+
+            try {
+                const { error } = await clienteSupabase.from('inscripciones').insert(inscripcionesNuevas);
+                if (error) {
+                    if(error.code === '23505') throw new Error("Algunos jugadores ya estaban inscritos en esta categoría.");
+                    else throw error;
+                }
+                
+                alert(`✅ ¡ÉXITO! Se inscribieron ${inscripcionesNuevas.length} jugadores y se guardó su división.`);
+                
+                // Desmarcar checkboxes
+                checkboxes.forEach(chk => chk.checked = false);
+                
+                // Recargar datos vitales
+                await cargarInscritosEnVivo();
+            } catch (e) {
+                alert("Error al inscribir: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "🚀 Inscribir Seleccionados";
+            }
+        }
+        // ================= FIN MÓDULO INSCRIPCIÓN EXPRÉS =================
 
         function activarSuscripcionEspectadores() {
             if (canalEspectadores) clienteSupabase.removeChannel(canalEspectadores);
@@ -643,7 +787,7 @@
             const porCategoria = {};
 
             partidosMonitoreo.forEach(m => {
-                if (!m.grupo_nombre) return;
+                if (!m.grupo_nombre || m.grupo_nombre === 'Flash') return; // Ignoramos flash
 
                 const catNombre = m.categorias?.nombre || 'General';
                 if (!porCategoria[catNombre]) porCategoria[catNombre] = { id: m.categorias?.id || 0, grupos: {} };
@@ -736,7 +880,8 @@
                 modalList.innerHTML = '<div class="mensaje-vacio">Este jugador no ha disputado partidos registrados aún.</div>';
             } else {
                 let html = '';
-                let estaEnLlaves = partidosJugador.some(p => !p.grupo_nombre && p.ronda_fase);
+                let estaEnLlaves = partidosJugador.some(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase && !p.grupo_nombre);
+                
                 if (bonoPaseActivo && bonoPaseValor > 0 && estaEnLlaves) {
                     deltaTotal += bonoPaseValor;
                     html += `
@@ -780,11 +925,13 @@
                         historialText = `<div style="font-size:10px; color:#94a3b8; margin-top:6px; font-weight:700;">Parciales: ${parciales.join(', ')}</div>`;
                     }
 
+                    let etiqGpo = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? 'Grupo ' + p.grupo_nombre : (p.ronda_fase || 'Fase Final'));
+
                     html += `
                         <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); padding:12px 16px; border-radius:12px;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                                 <span style="font-size:10px; color:#38bdf8; font-weight:800; text-transform:uppercase;">
-                                    ${p.grupo_nombre ? 'Grupo ' + p.grupo_nombre : (p.ronda_fase || 'Fase Final')} • Mesa ${p.mesa || 1}
+                                    ${etiqGpo} • Mesa ${p.mesa || 1}
                                 </span>
                                 ${estadoBadge}
                             </div>
@@ -830,15 +977,15 @@
                 const listaCategoriasNombres = Object.keys(resumenData);
 
                 if (listaCategoriasNombres.length === 0) {
-                    grid.innerHTML = `<div class="mensaje-vacio">No hay datos de categorías para generar resumen.</div>`;
+                    grid.innerHTML = `<div class="mensaje-vacio">No hay datos de grupos para generar resumen en este torneo.</div>`;
                     return;
                 }
 
                 let catNombreActual = categoriaResumenSelAdmin || (listaCategoriasNombres[0] || null);
 
-                const partidosCat = partidosMonitoreo.filter(m => (m.categorias?.nombre || 'General') === catNombreActual);
-                const totalPartidosGpo = partidosCat.filter(m => m.grupo_nombre).length;
-                const finalizadosGpo = partidosCat.filter(m => m.grupo_nombre && (m.estado || '').trim().toLowerCase() === 'finalizado').length;
+                const partidosCat = partidosMonitoreo.filter(m => m.grupo_nombre && m.grupo_nombre !== 'Flash' && (m.categorias?.nombre || 'General') === catNombreActual);
+                const totalPartidosGpo = partidosCat.length;
+                const finalizadosGpo = partidosCat.filter(m => (m.estado || '').trim().toLowerCase() === 'finalizado').length;
                 const gpoCompleto = totalPartidosGpo > 0 && totalPartidosGpo === finalizadosGpo;
 
                 let htmlContent = `
@@ -923,84 +1070,86 @@
                     const primeroB = getPosicionGrupoNombreAdmin(gpoB_arr, 0, '1° Grupo B');
                     const segundoB = getPosicionGrupoNombreAdmin(gpoB_arr, 1, '2° Grupo B');
 
-                    const partidosLlaveBD = partidosCat.filter(p => !p.grupo_nombre || p.ronda_fase?.toLowerCase().includes('cruce') || p.ronda_fase?.toLowerCase().includes('semifinal') || p.ronda_fase?.toLowerCase().includes('final'));
-                    const partidoSemi1 = partidosLlaveBD.find(p => p.ronda_fase?.toLowerCase().includes('semi') && (p.ronda_fase?.includes('1') || p.ronda_fase?.toLowerCase().includes('cruce 1')));
-                    const partidoSemi2 = partidosLlaveBD.find(p => p.ronda_fase?.toLowerCase().includes('semi') && (p.ronda_fase?.includes('2') || p.ronda_fase?.toLowerCase().includes('cruce 2')));
-                    const partidoFinal = partidosLlaveBD.find(p => p.ronda_fase?.toLowerCase().includes('final') && !p.ronda_fase?.toLowerCase().includes('semi'));
+                    const partidosLlaveBD = partidosMonitoreo.filter(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.categorias?.nombre === catNombreActual && (String(p.ronda_fase || '').toLowerCase().includes('cruce') || String(p.ronda_fase || '').toLowerCase().includes('semifinal') || String(p.ronda_fase || '').toLowerCase().includes('final')));
+                    const partidoSemi1 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('1') || String(p.ronda_fase || '').toLowerCase().includes('cruce 1')));
+                    const partidoSemi2 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('2') || String(p.ronda_fase || '').toLowerCase().includes('cruce 2')));
+                    const partidoFinal = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi'));
 
-                    let nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : primeroA;
-                    let nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : segundoB;
+                    if (partidoSemi1 || partidoSemi2 || partidoFinal) {
+                        let nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : primeroA;
+                        let nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : segundoB;
 
-                    let nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : primeroB;
-                    let nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : segundoA;
+                        let nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : primeroB;
+                        let nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : segundoA;
 
-                    let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Ganador Semi 1');
-                    let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Ganador Semi 2');
+                        let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Ganador Semi 1');
+                        let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Ganador Semi 2');
 
-                    htmlContent += `
-                        <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(245,158,11,0.3); border-radius:18px; padding:22px; margin-top:25px;">
-                            <div style="text-align:center; margin-bottom:16px;">
-                                <span style="color:#fbbf24; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:4px;">Fase Final de Eliminatoria Directa</span>
-                                <h3 style="margin:0; border:none; padding:0; font-size:16px; color:#ffffff;">🏆 Cuadro de Llaves Oficiales</h3>
-                            </div>
-
-                            ${gpoCompleto ? `
-                                <div style="background:rgba(16,185,129,0.2); border:1px solid rgba(16,185,129,0.5); color:#34d399; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:11px; text-transform:uppercase; margin-bottom:20px;">
-                                    ✅ ¡LLAVE DEFINITIVA CONFIRMADA! (Fase de grupos 100% completada)
-                                </div>
-                            ` : `
-                                <div style="background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.5); color:#fbbf24; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase; margin-bottom:20px;">
-                                    ⏳ PROYECCIÓN PRELIMINAR EN TIEMPO REAL (Resultados preliminares)
-                                </div>
-                            `}
-
-                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
-                                <div style="background:rgba(0,0,0,0.4); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
-                                    <span style="font-size:9px; color:#38bdf8; font-weight:800; text-transform:uppercase; display:block; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:10px;">Semifinal 1</span>
-                                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:8px;">
-                                        <strong style="font-size:12px; color:#fff;">🥇 ${nomSemi1_j1}</strong>
-                                        <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800;">1° Gpo A</span>
-                                    </div>
-                                    <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
-                                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">
-                                        <strong style="font-size:12px; color:#fff;">🥈 ${nomSemi1_j2}</strong>
-                                        <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">2° Gpo B</span>
-                                    </div>
+                        htmlContent += `
+                            <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(245,158,11,0.3); border-radius:18px; padding:22px; margin-top:25px;">
+                                <div style="text-align:center; margin-bottom:16px;">
+                                    <span style="color:#fbbf24; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:4px;">Fase Final de Eliminatoria Directa</span>
+                                    <h3 style="margin:0; border:none; padding:0; font-size:16px; color:#ffffff;">🏆 Cuadro de Llaves Oficiales</h3>
                                 </div>
 
-                                <div style="background:rgba(0,0,0,0.4); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
-                                    <span style="font-size:9px; color:#f0abfc; font-weight:800; text-transform:uppercase; display:block; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:10px;">Semifinal 2</span>
-                                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:8px;">
-                                        <strong style="font-size:12px; color:#fff;">🥇 ${nomSemi2_j1}</strong>
-                                        <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800;">1° Gpo B</span>
+                                ${gpoCompleto ? `
+                                    <div style="background:rgba(16,185,129,0.2); border:1px solid rgba(16,185,129,0.5); color:#34d399; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:11px; text-transform:uppercase; margin-bottom:20px;">
+                                        ✅ ¡LLAVE DEFINITIVA CONFIRMADA! (Fase de grupos 100% completada)
                                     </div>
-                                    <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
-                                    <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">
-                                        <strong style="font-size:12px; color:#fff;">🥈 ${nomSemi2_j2}</strong>
-                                        <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">2° Gpo A</span>
+                                ` : `
+                                    <div style="background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.5); color:#fbbf24; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase; margin-bottom:20px;">
+                                        ⏳ PROYECCIÓN PRELIMINAR EN TIEMPO REAL (Resultados preliminares)
                                     </div>
-                                </div>
-                                
-                                <div style="grid-column: 1 / -1; display:flex; justify-content:center; margin-top:10px;">
-                                    <div style="background:rgba(245,158,11,0.1); padding:16px; border-radius:14px; border:1px solid rgba(245,158,11,0.3); width:100%; max-width:450px; text-align:left;">
-                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                                            <span style="font-size:12px; color:#fbbf24; font-weight:900; text-transform:uppercase;">🏆 Gran Final</span>
-                                            <span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partidoFinal?.mesa || 1}</span>
-                                        </div>
-                                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
-                                            <strong style="font-size:14px; color:#fff;">🥇 ${nomFinal_j1}</strong>
-                                            <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">Gana Semi 1</span>
+                                `}
+
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
+                                    <div style="background:rgba(0,0,0,0.4); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
+                                        <span style="font-size:9px; color:#38bdf8; font-weight:800; text-transform:uppercase; display:block; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:10px;">Semifinal 1</span>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:8px;">
+                                            <strong style="font-size:12px; color:#fff;">🥇 ${nomSemi1_j1}</strong>
+                                            <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800;">1° Gpo A</span>
                                         </div>
                                         <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
-                                        <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
-                                            <strong style="font-size:14px; color:#fff;">🥈 ${nomFinal_j2}</strong>
-                                            <span style="font-size:9px; background:rgba(217,70,239,0.2); color:#d946ef; padding:2px 6px; border-radius:4px; font-weight:800;">Gana Semi 2</span>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">
+                                            <strong style="font-size:12px; color:#fff;">🥈 ${nomSemi1_j2}</strong>
+                                            <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">2° Gpo B</span>
+                                        </div>
+                                    </div>
+
+                                    <div style="background:rgba(0,0,0,0.4); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
+                                        <span style="font-size:9px; color:#f0abfc; font-weight:800; text-transform:uppercase; display:block; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:10px;">Semifinal 2</span>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:8px;">
+                                            <strong style="font-size:12px; color:#fff;">🥇 ${nomSemi2_j1}</strong>
+                                            <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800;">1° Gpo B</span>
+                                        </div>
+                                        <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
+                                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">
+                                            <strong style="font-size:12px; color:#fff;">🥈 ${nomSemi2_j2}</strong>
+                                            <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">2° Gpo A</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div style="grid-column: 1 / -1; display:flex; justify-content:center; margin-top:10px;">
+                                        <div style="background:rgba(245,158,11,0.1); padding:16px; border-radius:14px; border:1px solid rgba(245,158,11,0.3); width:100%; max-width:450px; text-align:left;">
+                                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                                                <span style="font-size:12px; color:#fbbf24; font-weight:900; text-transform:uppercase;">🏆 Gran Final</span>
+                                                <span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partidoFinal?.mesa || 1}</span>
+                                            </div>
+                                            <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                                                <strong style="font-size:14px; color:#fff;">🥇 ${nomFinal_j1}</strong>
+                                                <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">Gana Semi 1</span>
+                                            </div>
+                                            <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
+                                            <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+                                                <strong style="font-size:14px; color:#fff;">🥈 ${nomFinal_j2}</strong>
+                                                <span style="font-size:9px; background:rgba(217,70,239,0.2); color:#d946ef; padding:2px 6px; border-radius:4px; font-weight:800;">Gana Semi 2</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    `;
+                        `;
+                    }
                 }
 
                 grid.innerHTML = htmlContent;
@@ -1052,7 +1201,7 @@
                 let nombreJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
                 let nombreJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
 
-                let subtituloFase = p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Eliminatoria Directa');
+                let subtituloFase = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Eliminatoria Directa'));
 
                 let historialHtml = '';
                 if (isFin && p.historial_sets && p.historial_sets.length > 0) {
@@ -1345,7 +1494,6 @@
             await clienteSupabase.from('clubes').delete().eq('id', id).eq('organizador_id', ORG_ID); cargarDatosIniciales();
         }
 
-        // ================= MODAL DE RANKING WEB =================
         function mostrarRankingModal() {
             const tbody = document.getElementById('body-tabla-ranking-modal');
             tbody.innerHTML = '';
@@ -1401,7 +1549,6 @@
             document.getElementById('modal-ranking-global').style.display = 'flex';
         }
 
-        // ================= IMPRESIÓN DEL RANKING EN PDF =================
         function generarRankingPorCategoriasHTMLPDF() {
             const contenedor = document.getElementById('contenedor-ranking-categorias'); 
             if(!contenedor) return;
@@ -1701,7 +1848,6 @@
             };
         }
 
-        // ================= FUNCIÓN DE MEMORIA TÉCNICA (EXCLUYE AL SEMBRADO 1 DEL BONO) =================
         function generarMemoriaTecnica() {
             if(partidosMonitoreo.length === 0) { alert("No hay partidos en el torneo."); return; }
 
@@ -1710,7 +1856,6 @@
                 jugadoresExpediente: {}
             };
 
-            // 1. Inicializar expedientes de jugadores
             partidosMonitoreo.forEach(p => {
                 [p.j1, p.j2].forEach(j => {
                     if (j && !reporteData.jugadoresExpediente[j.id]) {
@@ -1723,7 +1868,6 @@
                 });
             });
 
-            // 2. Procesar partidos finalizados y registrar grupos
             partidosMonitoreo.filter(p => (p.estado||'').toLowerCase() === 'finalizado').forEach(p => {
                 let catNombre = p.categorias?.nombre || 'General';
                 if (!reporteData.categorias[catNombre]) reporteData.categorias[catNombre] = { grupos: {} };
@@ -1731,8 +1875,7 @@
                 let exp1 = reporteData.jugadoresExpediente[p.jugador1_id];
                 let exp2 = reporteData.jugadoresExpediente[p.jugador2_id];
 
-                // Guardar a qué grupo pertenece cada jugador para la lógica de bonos
-                if (p.grupo_nombre) {
+                if (p.grupo_nombre && p.grupo_nombre !== 'Flash') {
                     if(exp1) { exp1.grupo_pertenencia = p.grupo_nombre; exp1.categoria_pertenencia = catNombre; }
                     if(exp2) { exp2.grupo_pertenencia = p.grupo_nombre; exp2.categoria_pertenencia = catNombre; }
                 }
@@ -1754,13 +1897,12 @@
                         desc1 = `<span class="text-red">Derrota (${calculo.ptsPerdedor} pts)</span> vs ${exp2.nombre}`;
                     }
 
-                    let faseP = p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Llave');
+                    let faseP = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Llave'));
                     exp1.partidos.push({ fase: faseP, res: resSets, desc: desc1 });
                     exp2.partidos.push({ fase: faseP, res: `${p.sets_j2}-${p.sets_j1}`, desc: desc2 });
                 }
 
-                // Generar estadísticas de grupos para cuadrar posiciones
-                if(p.grupo_nombre) {
+                if(p.grupo_nombre && p.grupo_nombre !== 'Flash') {
                     let gpoObj = reporteData.categorias[catNombre].grupos;
                     if(!gpoObj[p.grupo_nombre]) gpoObj[p.grupo_nombre] = {};
                     
@@ -1783,43 +1925,37 @@
                 }
             });
 
-            // 3. LÓGICA DE BONO AUTOMÁTICO (Con regla de Sembrado 1 excluido)
             if (bonoPaseActivo && bonoPaseValor > 0) {
-                // Encontrar quiénes jugaron en llaves (clasificados)
                 let idsEnLlaves = new Set();
-                partidosMonitoreo.filter(p => !p.grupo_nombre && p.ronda_fase).forEach(p => {
+                partidosMonitoreo.filter(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase && !p.grupo_nombre).forEach(p => {
                     if (p.jugador1_id) idsEnLlaves.add(p.jugador1_id);
                     if (p.jugador2_id) idsEnLlaves.add(p.jugador2_id);
                 });
 
-                // Analizar a cada clasificado para ver si era el Sembrado 1 de su grupo
                 idsEnLlaves.forEach(id => {
                     let exp = reporteData.jugadoresExpediente[id];
                     if (exp && exp.grupo_pertenencia && exp.categoria_pertenencia) {
                         
-                        // Obtener a todos los jugadores del grupo de este clasificado
                         let grupoData = reporteData.categorias[exp.categoria_pertenencia].grupos[exp.grupo_pertenencia];
-                        let jugadoresGrupo = Object.values(grupoData);
-                        
-                        // Encontrar al Sembrado 1 (el que tenía más puntos de ranking al inicio del torneo)
-                        let sembrado1 = jugadoresGrupo.reduce((prev, current) => (prev.pts_ranking_ini > current.pts_ranking_ini) ? prev : current);
+                        if(grupoData) {
+                            let jugadoresGrupo = Object.values(grupoData);
+                            let sembrado1 = jugadoresGrupo.reduce((prev, current) => (prev.pts_ranking_ini > current.pts_ranking_ini) ? prev : current);
 
-                        // Aplicar el bono SOLO si el jugador NO es el sembrado 1
-                        if (id !== sembrado1.id) {
-                            exp.pts_ganados += bonoPaseValor;
-                            exp.ranking_final += bonoPaseValor;
-                            exp.partidos.unshift({
-                                fase: '🏆 Clasificación',
-                                res: '-',
-                                desc: `<span class="text-gold">Bono Pase a Llaves (+${bonoPaseValor} pts)</span>`
-                            });
-                        } else {
-                            // Si era el sembrado 1, se registra el avance pero sin bono
-                            exp.partidos.unshift({
-                                fase: '🏆 Clasificación',
-                                res: '-',
-                                desc: `<span style="color:#64748b; font-style:italic;">Avanza como Sembrado 1 (Sin bono)</span>`
-                            });
+                            if (id !== sembrado1.id) {
+                                exp.pts_ganados += bonoPaseValor;
+                                exp.ranking_final += bonoPaseValor;
+                                exp.partidos.unshift({
+                                    fase: '🏆 Clasificación',
+                                    res: '-',
+                                    desc: `<span class="text-gold">Bono Pase a Llaves (+${bonoPaseValor} pts)</span>`
+                                });
+                            } else {
+                                exp.partidos.unshift({
+                                    fase: '🏆 Clasificación',
+                                    res: '-',
+                                    desc: `<span style="color:#64748b; font-style:italic;">Avanza como Sembrado 1 (Sin bono)</span>`
+                                });
+                            }
                         }
                     }
                 });
