@@ -204,7 +204,7 @@
         let idTorneoActivo = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id') || 1;
         let partidoUrlId = urlParams.get('partido');
 
-        let ORG_ID = null; // EXTRAÍDO AUTOMÁTICAMENTE DEL TORNEO
+        let ORG_ID = null; 
         let todosLosPartidos = [];
         let reglasRankingList = [];
         let todasLasCategorias = [];
@@ -631,6 +631,173 @@
             document.getElementById('modal-jugador-admin').style.display = 'none';
         }
 
+        // =================================================================================
+        // ======================= MÓDULO ESTADÍSTICAS FLASH ===============================
+        // =================================================================================
+        function dibujarEstadisticasFlash(container) {
+            let partidosFlash = todosLosPartidos.filter(p => p.grupo_nombre === 'Flash');
+            
+            if (categoriaFiltro !== 'todas') {
+                partidosFlash = partidosFlash.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
+            }
+
+            if (partidosFlash.length === 0) {
+                container.innerHTML = `<div class="mensaje-vacio">No hay datos registrados en la Modalidad Flash bajo este filtro.</div>`;
+                return;
+            }
+
+            let stats = {};
+
+            // Función para deducir la división leyendo el texto del "Sorteo Flash" guardado en Supabase
+            const getDiv = (jId) => {
+                for (let p of partidosFlash) {
+                    if (p.ronda_fase && p.ronda_fase.includes('Div')) {
+                        let m = p.ronda_fase.match(/Div (\d|.) vs Div (\d|.)/);
+                        if (m) {
+                            if (p.jugador1_id === jId) return m[1];
+                            if (p.jugador2_id === jId) return m[2];
+                        }
+                    }
+                }
+                return '?';
+            };
+
+            // Contar stats
+            partidosFlash.forEach(m => {
+                let estLimpio = String(m.estado || '').trim().toLowerCase();
+                if (estLimpio === 'finalizado' && m.j1 && m.j2) {
+                    
+                    [m.j1, m.j2].forEach(j => {
+                        if (j && j.id && !stats[j.id]) {
+                            stats[j.id] = { id: j.id, nombre: j.nombre, club: j.club, div: getDiv(j.id), pj: 0, pg: 0, pp: 0, setsG: 0, setsP: 0 };
+                        }
+                    });
+
+                    if (stats[m.j1.id] && stats[m.j2.id]) {
+                        let j1 = stats[m.j1.id];
+                        let j2 = stats[m.j2.id];
+
+                        j1.pj++; j2.pj++;
+                        j1.setsG += (m.sets_j1 || 0); j1.setsP += (m.sets_j2 || 0);
+                        j2.setsG += (m.sets_j2 || 0); j2.setsP += (m.sets_j1 || 0);
+
+                        if (m.ganador_id === m.jugador1_id) { j1.pg++; j2.pp++; }
+                        else if (m.ganador_id === m.jugador2_id) { j2.pg++; j1.pp++; }
+                    }
+                }
+            });
+
+            let jugadoresArr = Object.values(stats);
+            
+            if (jugadoresArr.length === 0) {
+                container.innerHTML = `<div class="mensaje-vacio">Aún no hay partidos finalizados en la Liga Flash.</div>`;
+                return;
+            }
+
+            // Calcular Efectividad y Diferencia
+            jugadoresArr.forEach(j => {
+                j.efectividad = j.pj > 0 ? ((j.pg / j.pj) * 100).toFixed(1) : 0;
+                j.difSets = j.setsG - j.setsP;
+            });
+
+            // Ordenamiento (Reglas del Flyer)
+            jugadoresArr.sort((a, b) => {
+                let aQualifies = a.pj >= 5 ? 1 : 0;
+                let bQualifies = b.pj >= 5 ? 1 : 0;
+                
+                if (aQualifies !== bQualifies) return bQualifies - aQualifies;
+                if (parseFloat(b.efectividad) !== parseFloat(a.efectividad)) return parseFloat(b.efectividad) - parseFloat(a.efectividad);
+                
+                return b.difSets - a.difSets;
+            });
+
+            let div1 = jugadoresArr.filter(j => String(j.div) === '1');
+            let div2 = jugadoresArr.filter(j => String(j.div) === '2');
+            let sinDiv = jugadoresArr.filter(j => String(j.div) !== '1' && String(j.div) !== '2');
+
+            let html = `
+                <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(245,158,11,0.3); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">
+                    <div style="text-align:center; margin-bottom:20px;">
+                        <span style="font-size:14px; color:#fbbf24; font-weight:900; text-transform:uppercase; letter-spacing:2px; display:block;">⚡ Clasificación Liga Flash (Efectividad)</span>
+                        <span style="font-size:10px; color:#94a3b8; display:block; margin-top:6px;">Ordenados por % de Efectividad (Requieren mínimo 5 partidos para clasificar)</span>
+                    </div>
+            `;
+
+            html += renderTablaFlash('1', div1, '#f43f5e', '🏆 DIVISIÓN 1');
+            html += renderTablaFlash('2', div2, '#eab308', '🏆 DIVISIÓN 2');
+            if (sinDiv.length > 0) {
+                html += renderTablaFlash('?', sinDiv, '#94a3b8', 'Jugadores sin división registrada');
+            }
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function renderTablaFlash(divId, jugadores, colorHex, titulo) {
+            if (jugadores.length === 0) return '';
+            let html = `
+                <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:15px; margin-bottom:15px; border-top: 3px solid ${colorHex};">
+                    <span style="font-weight:900; font-size:13px; color:${colorHex}; text-transform:uppercase; display:block; margin-bottom:10px;">${titulo}</span>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+                            <thead>
+                                <tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);">
+                                    <th style="padding:6px;">Pos</th>
+                                    <th style="padding:6px;">Jugador</th>
+                                    <th style="padding:6px; text-align:center;">PJ</th>
+                                    <th style="padding:6px; text-align:center;">PG</th>
+                                    <th style="padding:6px; text-align:center;">PP</th>
+                                    <th style="padding:6px; text-align:center;">Dif Sets</th>
+                                    <th style="padding:6px; text-align:center; color:#34d399;">% Efectividad</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            jugadores.forEach((j, idx) => {
+                let qualifies = j.pj >= 5;
+                let opacity = qualifies ? '1' : '0.5';
+                let qualBadge = qualifies ? '' : '<span style="font-size:8px; background:rgba(239,68,68,0.2); color:#f87171; padding:2px 4px; border-radius:4px; margin-left:6px;">Faltan PJ</span>';
+                
+                let difStr = j.difSets >= 0 ? '+' + j.difSets : j.difSets;
+                let colorDif = j.difSets >= 0 ? '#38bdf8' : '#f87171';
+                
+                let rankTrophy = '';
+                if (qualifies) {
+                    if(idx === 0) rankTrophy = '🥇';
+                    else if (idx === 1) rankTrophy = '🥈';
+                    else if (idx === 2) rankTrophy = '🥉';
+                    else rankTrophy = `#${idx + 1}`;
+                } else {
+                    rankTrophy = '-';
+                }
+
+                let safeName = j.nombre ? String(j.nombre).replace(/'/g, "\\'") : '';
+                let safeClub = j.club ? String(j.club).replace(/'/g, "\\'") : 'Sin Club';
+                let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${safeName}', '${safeClub}')"` : '';
+
+                html += `
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.04); opacity: ${opacity}; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <td style="padding:8px 6px; font-weight:800; color:#64748b; font-size:14px;">${rankTrophy}</td>
+                        <td style="padding:8px 6px; cursor:pointer;" ${jClic}>
+                            <strong style="color:#ffffff;">${j.nombre}</strong> ${qualBadge}
+                            <small style="color:#64748b; display:block; font-size:9px;">${j.club || 'Sin Club'}</small>
+                        </td>
+                        <td style="padding:8px 6px; text-align:center; color:#94a3b8; font-weight:700;">${j.pj}</td>
+                        <td style="padding:8px 6px; text-align:center; color:#34d399; font-weight:700;">${j.pg}</td>
+                        <td style="padding:8px 6px; text-align:center; color:#f87171; font-weight:700;">${j.pp}</td>
+                        <td style="padding:8px 6px; text-align:center; font-weight:800; color:${colorDif};">${difStr}</td>
+                        <td style="padding:8px 6px; text-align:center; font-weight:900; color:#34d399; font-size:14px;">${j.efectividad}%</td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table></div></div>`;
+            return html;
+        }
+
+        // =================================================================================
+
         function dibujarPantalla() {
             const container = document.getElementById('contenedor-espectador');
             if (!container) return;
@@ -746,6 +913,12 @@
 
                     let etiqGpo = isFlash ? 'Liga Continua' : (p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Fase Final'));
 
+                    let safeNom1 = nomJ1 ? String(nomJ1).replace(/'/g, "\\'") : '';
+                    let safeClub1 = p.j1 && p.j1.club ? String(p.j1.club).replace(/'/g, "\\'") : 'Sin Club';
+
+                    let safeNom2 = nomJ2 ? String(nomJ2).replace(/'/g, "\\'") : '';
+                    let safeClub2 = p.j2 && p.j2.club ? String(p.j2.club).replace(/'/g, "\\'") : 'Sin Club';
+
                     container.innerHTML += `
                         <div class="card-mesa ${cardClass}" style="${customStyle}" onclick="abrirPartidoFullScreen(${p.id})">
                             <div class="top-bar">
@@ -761,7 +934,7 @@
 
                             <div class="score-container">
                                 <div class="jugador-box">
-                                    <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador1_id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(p.j1?.club || '').replace(/'/g, "\\'")}')">
+                                    <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador1_id}, '${safeNom1}', '${safeClub1}')">
                                         <span class="jugador-nombre">${iconJ1}${nomJ1}</span>
                                         ${txtRankJ1}
                                     </div>
@@ -769,7 +942,7 @@
                                 </div>
 
                                 <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
-                                    <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador2_id}, '${String(nomJ2).replace(/'/g, "\\'")}', '${String(p.j2?.club || '').replace(/'/g, "\\'")}')">
+                                    <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador2_id}, '${safeNom2}', '${safeClub2}')">
                                         <span class="jugador-nombre">${iconJ2}${nomJ2}</span>
                                         ${txtRankJ2}
                                     </div>
@@ -801,8 +974,13 @@
             if (s1 && s1.ganador_id) ter.push(s1.ganador_id === s1.jugador1_id ? s1.j2 : s1.j1);
             if (s2 && s2.ganador_id) ter.push(s2.ganador_id === s2.jugador1_id ? s2.j2 : s2.j1);
 
-            let clC = cObj ? `onclick="abrirModalJugadorAdmin(${cObj.id}, '${String(cObj.nombre||'').replace(/'/g, "\\'")}', '${String(cObj.club||'').replace(/'/g, "\\'")}')"` : '';
-            let clS = subObj ? `onclick="abrirModalJugadorAdmin(${subObj.id}, '${String(subObj.nombre||'').replace(/'/g, "\\'")}', '${String(subObj.club||'').replace(/'/g, "\\'")}')"` : '';
+            let safeNomC = cObj && cObj.nombre ? String(cObj.nombre).replace(/'/g, "\\'") : '';
+            let safeClubC = cObj && cObj.club ? String(cObj.club).replace(/'/g, "\\'") : 'Sin Club';
+            let clC = cObj ? `onclick="abrirModalJugadorAdmin(${cObj.id}, '${safeNomC}', '${safeClubC}')"` : '';
+
+            let safeNomS = subObj && subObj.nombre ? String(subObj.nombre).replace(/'/g, "\\'") : '';
+            let safeClubS = subObj && subObj.club ? String(subObj.club).replace(/'/g, "\\'") : 'Sin Club';
+            let clS = subObj ? `onclick="abrirModalJugadorAdmin(${subObj.id}, '${safeNomS}', '${safeClubS}')"` : '';
 
             return `
                 <div style="margin-bottom:20px; border:1px solid rgba(245,158,11,0.3); border-radius:16px; background:linear-gradient(135deg, rgba(245,158,11,0.15), rgba(120,53,15,0.05)); padding:20px; text-align:center; box-shadow:0 0 20px rgba(245,158,11,0.1);">
@@ -821,7 +999,9 @@
                             <div style="font-size:9px; color:#64748b; font-weight:800; text-transform:uppercase; letter-spacing:2px; margin-bottom:4px;">🥉 3ros Lugares</div>
                             <div style="display:flex; flex-direction:column; gap:4px;">
                                 ${ter.map(t => {
-                                    let cl = t ? `onclick="abrirModalJugadorAdmin(${t.id}, '${String(t.nombre||'').replace(/'/g, "\\'")}', '${String(t.club||'').replace(/'/g, "\\'")}')"` : '';
+                                    let safeNomT = t && t.nombre ? String(t.nombre).replace(/'/g, "\\'") : '';
+                                    let safeClubT = t && t.club ? String(t.club).replace(/'/g, "\\'") : 'Sin Club';
+                                    let cl = t ? `onclick="abrirModalJugadorAdmin(${t.id}, '${safeNomT}', '${safeClubT}')"` : '';
                                     return `<div style="font-size:13px; font-weight:800; color:#fb923c; text-transform:uppercase; cursor:pointer; display:inline-block; transition:0.2s;" ${cl} onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#fb923c'">${t?.nombre || ''}</div>`;
                                 }).join('')}
                             </div>
@@ -888,8 +1068,10 @@
                                             let dif = j.setsG - j.setsP;
                                             let difStr = dif >= 0 ? '+' + dif : dif;
                                             let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
-                                            // ¡Error resuelto aquí!
-                                            let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${String(j.nombre \vert{}\vert{} '').replace(/'/g, "\\'")}', '${String(j.club || 'Sin Club').replace(/'/g, "\\'")}')"` : '';
+
+                                            let safeName = j.nombre ? String(j.nombre).replace(/'/g, "\\'") : '';
+                                            let safeClub = j.club ? String(j.club).replace(/'/g, "\\'") : 'Sin Club';
+                                            let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${safeName}', '${safeClub}')"` : '';
 
                                             return `
                                                 <tr style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'" ${jClic}>
@@ -954,8 +1136,13 @@
             let clickAction = partido ? `onclick="abrirPartidoFullScreen(${partido.id})"` : '';
             let hoverFX = partido ? 'hover:-translate-y-1 hover:border-white/20 transition-all' : '';
 
-            let clickAccion1 = partido && partido.jugador1_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador1_id}, '${String(nomJ1||'').replace(/'/g, "\\'")}', '${String(partido.j1?.club || '').replace(/'/g, "\\'")}')"` : '';
-            let clickAccion2 = partido && partido.jugador2_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador2_id}, '${String(nomJ2||'').replace(/'/g, "\\'")}', '${String(partido.j2?.club || '').replace(/'/g, "\\'")}')"` : '';
+            let safeNom1 = nomJ1 ? String(nomJ1).replace(/'/g, "\\'") : '';
+            let safeClub1 = partido && partido.j1 && partido.j1.club ? String(partido.j1.club).replace(/'/g, "\\'") : 'Sin Club';
+            let clickAccion1 = partido && partido.jugador1_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador1_id}, '${safeNom1}', '${safeClub1}')"` : '';
+
+            let safeNom2 = nomJ2 ? String(nomJ2).replace(/'/g, "\\'") : '';
+            let safeClub2 = partido && partido.j2 && partido.j2.club ? String(partido.j2.club).replace(/'/g, "\\'") : 'Sin Club';
+            let clickAccion2 = partido && partido.jugador2_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador2_id}, '${safeNom2}', '${safeClub2}')"` : '';
 
             let flexWrapper = titulo === 'Gran Final' ? 'grid-column: 1 / -1; display:flex; justify-content:center; margin-top:10px;' : '';
             let innerStyle = `background:rgba(0,0,0,0.4); padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); ${opacidad} width:100%; ${cursor}`;
@@ -1163,7 +1350,10 @@
                                             </span>
                                         ` : '';
 
-                                        let accionClic = j.jugoTorneo ? `onclick="abrirModalJugadorAdmin(${j.id}, '${String(j.nombre\vert{}\vert{}'').replace(/'/g, "\\'")}', '${String(j.club || 'Sin Club').replace(/'/g, "\\'")}')"` : '';
+                                        let safeName = j.nombre ? String(j.nombre).replace(/'/g, "\\'") : '';
+                                        let safeClub = j.club ? String(j.club).replace(/'/g, "\\'") : 'Sin Club';
+                                        let accionClic = j.jugoTorneo ? `onclick="abrirModalJugadorAdmin(${j.id}, '${safeName}', '${safeClub}')"` : '';
+                                        
                                         let claseClic = j.jugoTorneo ? `cursor-pointer hover:bg-fuchsia-500/10 transition-colors` : `opacity-60`;
 
                                         return `
