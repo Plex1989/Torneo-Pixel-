@@ -397,12 +397,23 @@
 
         // ================= VARIABLES MODO FLASH =================
         let modoTorneoActual = 'normal'; // 'normal' o 'flash'
-        let seleccionFlash = []; // Arreglo para guardar los 2 IDs seleccionados
-        let partidosFlashActivos = []; // Guardar los de la BD
-        let idJugadorPendienteDiv = null; // Para el modal
-        let idPartidoPendienteRes = null; // Para el modal de resultado
+        let seleccionFlash = []; 
+        let partidosFlashActivos = []; 
+        let idJugadorPendienteDiv = null; 
+        let idPartidoPendienteRes = null; 
 
         const clasesColoresGrupo = ['gpo-cyan', 'gpo-purple', 'gpo-emerald', 'gpo-amber'];
+
+        // PALETA DE COLORES VISUALES PARA LAS MESAS FLASH (Súper útil para el organizador)
+        const coloresMesasFlash = [
+            { border: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', text: '#000', badge: '#10b981' }, // Verde
+            { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', text: '#fff', badge: '#3b82f6' }, // Azul
+            { border: '#d946ef', bg: 'rgba(217, 70, 239, 0.1)', text: '#fff', badge: '#d946ef' }, // Magenta
+            { border: '#eab308', bg: 'rgba(234, 179, 8, 0.1)', text: '#000', badge: '#eab308' }, // Amarillo
+            { border: '#a855f7', bg: 'rgba(168, 85, 247, 0.1)', text: '#fff', badge: '#a855f7' }, // Morado
+            { border: '#f97316', bg: 'rgba(249, 115, 22, 0.1)', text: '#fff', badge: '#f97316' }, // Naranja
+            { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)', text: '#000', badge: '#06b6d4' }   // Cyan
+        ];
 
         // ================= FUNCIÓN GLOBAL QUITAR ACENTOS =================
         function quitarAcentos(str) {
@@ -626,14 +637,22 @@
                 let isSelected = seleccionFlash.some(sel => sel.id === j.id);
                 let classSel = isSelected ? 'selected' : '';
 
-                // Saber si está jugando actualmente
-                let isPlaying = partidosFlashActivos.some(p => p.jugador1_id === j.id || p.jugador2_id === j.id);
-                
-                // MÁS VISIBLE: Borde rojo, fondo rojizo, opacidad baja para indicar que no está disponible
-                let cardStyle = isPlaying ? 'border-color: #ef4444; background: rgba(239, 68, 68, 0.1); opacity: 0.6; cursor: not-allowed;' : '';
-                
-                // Etiqueta abajo del nombre
-                let playingBadge = isPlaying ? `<span style="background:#ef4444; color:#fff; font-size:8px; padding:2px 4px; border-radius:4px; font-weight:900; animation: pulse 2s infinite;">🔴 EN MESA</span>` : '';
+                // Saber si está jugando actualmente y asignarle el color de la mesa
+                let partidoActivo = partidosFlashActivos.find(p => p.jugador1_id === j.id || p.jugador2_id === j.id);
+                let cardStyle = '';
+                let playingBadge = '';
+
+                if (partidoActivo) {
+                    let pIdx = partidosFlashActivos.findIndex(p => p.id === partidoActivo.id);
+                    let colorSet = coloresMesasFlash[pIdx % coloresMesasFlash.length];
+                    
+                    // Si está jugando: borde del color de su mesa, opacidad al 90%
+                    cardStyle = `border-color: ${colorSet.border}; background: ${colorSet.bg}; opacity: 0.9; cursor: not-allowed;`;
+                    playingBadge = `<span style="background:${colorSet.badge}; color:${colorSet.text}; font-size:9px; padding:3px 6px; border-radius:6px; font-weight:900; box-shadow: 0 0 10px ${colorSet.border}; text-shadow:none;">MESA ${partidoActivo.mesa}</span>`;
+                } else {
+                    // Si NO está jugando, se muestran sus PJ de manera normal
+                    playingBadge = `<span style="color:#38bdf8;">PJ: ${j.pjFlash}</span>`;
+                }
 
                 // Ocultar si no coincide con buscador activo
                 let nombreClean = quitarAcentos(j.nombre.toLowerCase());
@@ -644,7 +663,7 @@
                         <div class="nombre">${j.nombre}</div>
                         <div class="stats" style="margin-top:2px;">
                             ${divBadge}
-                            ${isPlaying ? playingBadge : `<span style="color:#38bdf8;">PJ: ${j.pjFlash}</span>`}
+                            ${playingBadge}
                         </div>
                     </button>
                 `;
@@ -791,21 +810,24 @@
                 return;
             }
 
-            partidosFlashActivos.forEach(p => {
+            partidosFlashActivos.forEach((p, idx) => {
+                // Selecciona el color de la paleta dinámicamente
+                let colorSet = coloresMesasFlash[idx % coloresMesasFlash.length];
+                
                 let n1 = p.j1 ? p.j1.nombre : 'Jugador 1';
                 let n2 = p.j2 ? p.j2.nombre : 'Jugador 2';
 
                 container.innerHTML += `
-                    <div class="flash-mesa-card">
+                    <div class="flash-mesa-card" style="border-left: 4px solid ${colorSet.border}; background: linear-gradient(90deg, ${colorSet.bg} 0%, rgba(0,0,0,0.4) 100%);">
                         <div>
-                            <div style="font-size:10px; color:#38bdf8; font-weight:800; margin-bottom:4px; text-transform:uppercase;">Mesa ${p.mesa}</div>
+                            <div style="font-size:11px; color:${colorSet.border}; font-weight:900; margin-bottom:4px; text-transform:uppercase;">MESA ${p.mesa}</div>
                             <div style="display:flex; align-items:center;">
                                 <span style="font-size:12px; font-weight:800; color:#fff;">${n1}</span>
-                                <span class="vs">VS</span>
+                                <span class="vs" style="color:${colorSet.border}">VS</span>
                                 <span style="font-size:12px; font-weight:800; color:#fff;">${n2}</span>
                             </div>
                         </div>
-                        <button class="btn-console btn-gold" style="padding:6px 12px; font-size:9px;" onclick="abrirModalResultadoFlash(${p.id}, '${n1.replace(/'/g, "\\'")}', '${n2.replace(/'/g, "\\'")}')">Registrar Res.</button>
+                        <button class="btn-console btn-gold" style="padding:6px 12px; font-size:9px; border-color:${colorSet.border}; color:${colorSet.text}; background:${colorSet.badge}; font-weight:900;" onclick="abrirModalResultadoFlash(${p.id}, '${n1.replace(/'/g, "\\'")}', '${n2.replace(/'/g, "\\'")}')">Registrar Res.</button>
                     </div>
                 `;
             });
@@ -1450,6 +1472,7 @@
             if (!confirm("⚠️ ¿Deseas ELIMINAR el sorteo guardado de esta categoría y generar uno nuevo?")) return;
 
             try {
+                // Solo elimina los partidos de Round Robin, no los Flash
                 await clienteSupabase.from('partidos').delete()
                     .eq('categoria_id', idCat)
                     .eq('torneo_id', idTorneoActivo)
