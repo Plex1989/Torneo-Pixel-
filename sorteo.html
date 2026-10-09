@@ -13,6 +13,7 @@
             window.location.href = "torneos.html";
         }
     </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
 
@@ -37,22 +38,37 @@
         .panel-3d { background: rgba(10, 15, 26, 0.45); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.03); padding: 26px; margin-bottom: 26px; transition: all 0.3s ease; }
         .panel-cyan { border-bottom: 5px solid #0e7490; }
         .panel-purple { border-bottom: 5px solid #2e1065; }
+        .panel-amber { border-bottom: 5px solid #d97706; }
 
         h2, h3 { color: #ffffff; margin-top: 0; padding-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 20px; }
 
-        .form-row input[type="text"], .form-row input[type="number"], .form-row input[type="time"], .form-row select, select { 
-            padding: 10px 14px; border: 1px solid rgba(255, 255, 255, 0.18) !important; background: rgba(10, 15, 26, 0.85) !important; color: #ffffff !important; border-radius: 10px; font-size: 12px; font-family: 'Sora', sans-serif; font-weight: 600;
+        .form-row input[type="text"], .form-row input[type="number"], .form-row input[type="time"], .form-row select, select, input[type="number"] { 
+            padding: 10px 14px; border: 1px solid rgba(255, 255, 255, 0.18) !important; background: rgba(10, 15, 26, 0.85) !important; color: #ffffff !important; border-radius: 10px; font-size: 12px; font-family: 'Sora', sans-serif; font-weight: 600; outline: none;
         }
+        input:focus, select:focus { border-color: #38bdf8 !important; }
 
         select option { background-color: #0a0b10 !important; color: #ffffff !important; padding: 10px; }
 
-        .btn-console { display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 9999px; color: #f1f5f9; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s ease; text-decoration: none; }
-        .btn-console:hover { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 25px rgba(6, 182, 212, 0.85); transform: translateY(-2px); }
-        .btn-gold:hover { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 25px rgba(245, 158, 11, 0.85); }
-        .btn-green:hover { background: #10b981; color: #000000; border-color: #34d399; box-shadow: 0 0 25px rgba(16, 185, 129, 0.85); }
-        .btn-red:hover { background: #ef4444; color: #ffffff; border-color: #f87171; box-shadow: 0 0 25px rgba(239, 68, 68, 0.85); }
+        .btn-console { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 20px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 9999px; color: #f1f5f9; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s ease; text-decoration: none; }
+        .btn-console:hover:not(:disabled) { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 25px rgba(6, 182, 212, 0.85); transform: translateY(-2px); }
+        .btn-console:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .btn-gold { background: #f59e0b; color: #000; border-color: #fbbf24; }
+        .btn-gold:hover:not(:disabled) { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 25px rgba(245, 158, 11, 0.85); }
+        
+        .btn-green { background: #10b981; color: #000; border-color: #34d399; }
+        .btn-green:hover:not(:disabled) { background: #10b981; color: #000000; border-color: #34d399; box-shadow: 0 0 25px rgba(16, 185, 129, 0.85); }
+        
+        .btn-red { background: #ef4444; color: #fff; border-color: #f87171; }
+        .btn-red:hover:not(:disabled) { background: #ef4444; color: #ffffff; border-color: #f87171; box-shadow: 0 0 25px rgba(239, 68, 68, 0.85); }
+        
         .btn-ws-style { border-color: rgba(34, 197, 94, 0.5); color: #4ade80; }
-        .btn-ws-style:hover { background: #22c55e; color: #000000; border-color: #22c55e; box-shadow: 0 0 25px rgba(34, 197, 94, 0.85); }
+        .btn-ws-style:hover:not(:disabled) { background: #22c55e; color: #000000; border-color: #22c55e; box-shadow: 0 0 25px rgba(34, 197, 94, 0.85); }
+
+        /* MODO TOGGLE CSS */
+        .btn-mode-toggle { padding: 10px 20px; font-size: 11px; font-weight: 800; border-radius: 12px; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.4); color: #94a3b8; cursor: pointer; }
+        .btn-mode-toggle.active { background: rgba(6, 182, 212, 0.15); border-color: #06b6d4; color: #38bdf8; box-shadow: 0 0 15px rgba(6, 182, 212, 0.3); }
+        .btn-mode-toggle.active-flash { background: rgba(245, 158, 11, 0.15); border-color: #f59e0b; color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.3); }
 
         .grupos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-top: 20px; }
         .grupo-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden; transition: all 0.3s ease; }
@@ -77,6 +93,36 @@
 
         .mensaje-vacio { text-align: center; color: #475569; font-style: italic; background: transparent !important; border: none !important; }
 
+        /* ================= ESTILOS MODO FLASH ================= */
+        .flash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 10px; }
+        .flash-grid::-webkit-scrollbar { width: 6px; }
+        .flash-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        
+        .flash-btn-jugador {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .flash-btn-jugador:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.3); }
+        .flash-btn-jugador.selected { background: rgba(16, 185, 129, 0.2); border-color: #10b981; box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.3); }
+        
+        .flash-btn-jugador .nombre { font-size: 11px; font-weight: 800; color: #ffffff; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .flash-btn-jugador .stats { font-size: 9px; color: #94a3b8; font-weight: 700; display: flex; justify-content: space-between; }
+        .flash-btn-jugador .div-tag { background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 2px 4px; border-radius: 4px; }
+        
+        .flash-mesa-card { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .flash-mesa-card .vs { color: #f87171; font-weight: 900; font-size: 10px; margin: 0 10px; }
+
+        /* MODALES */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .modal-card { background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; width: 100%; max-width: 400px; padding: 24px; color: white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center; }
+        
         @media print {
             body { background: white !important; color: black !important; padding: 0; }
             .no-print, .panel-3d:not(#seccion-partidos-rr) { display: none !important; }
@@ -88,6 +134,46 @@
     </style>
 </head>
 <body>
+
+    <!-- MODAL DE DIVISIÓN -->
+    <div id="modal-division" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <h3 style="color: #fbbf24; border:none; margin-bottom: 5px;">Asignar División</h3>
+            <p style="font-size: 12px; color: #94a3b8; margin-bottom: 20px;">¿A qué división pertenece <strong id="modal-div-nombre" style="color:#fff;">Jugador</strong>?</p>
+            
+            <div style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;">
+                <button class="btn-console btn-gold" onclick="guardarDivisionModal(1)" style="flex:1;">División 1</button>
+                <button class="btn-console btn-cyan" onclick="guardarDivisionModal(2)" style="flex:1; border-color:#06b6d4; color:#38bdf8; background:rgba(6,182,212,0.15);">División 2</button>
+            </div>
+            <button class="btn-console" onclick="cerrarModalDivision()" style="width: 100%; justify-content: center; border-color:#ef4444; color:#ef4444;">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- MODAL RESULTADO RÁPIDO -->
+    <div id="modal-resultado" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <h3 style="color: #10b981; border:none; margin-bottom: 5px;">Registrar Resultado</h3>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 20px;">Ingresa los sets ganados por cada jugador para cerrar la mesa.</p>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.05);">
+                <div style="text-align: center; width: 40%;">
+                    <div id="res-nombre-1" style="font-size: 11px; font-weight: 800; color: #38bdf8; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Jugador 1</div>
+                    <input type="number" id="res-sets-1" min="0" max="4" value="0" style="width: 60px; text-align: center; font-size: 16px; font-weight: 800;">
+                </div>
+                <div style="font-size: 10px; font-weight: 900; color: #64748b;">VS</div>
+                <div style="text-align: center; width: 40%;">
+                    <div id="res-nombre-2" style="font-size: 11px; font-weight: 800; color: #d946ef; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Jugador 2</div>
+                    <input type="number" id="res-sets-2" min="0" max="4" value="0" style="width: 60px; text-align: center; font-size: 16px; font-weight: 800;">
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px;">
+                <button class="btn-console btn-green" id="btn-guardar-res" onclick="guardarResultadoModal()" style="flex: 1; justify-content: center;">Guardar y Liberar Mesa</button>
+                <button class="btn-console" onclick="cerrarModalResultado()" style="border-color:#ef4444; color:#ef4444;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
 
     <nav class="navbar no-print">
         <div class="nav-title">CENTRAL DE TORNEOS</div>
@@ -104,14 +190,24 @@
     <div class="main-content">
         
         <div class="panel-3d panel-cyan no-print">
-            <h2>Cerebro del Torneo: Sorteo y Rol de Partidos 🧠🏆</h2>
-            <div id="banner-torneo-info" style="font-size: 12px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 18px;">Cargando torneo activo...</div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 20px; padding-bottom: 15px;">
+                <div>
+                    <h2 style="border:none; margin:0; padding:0;">Cerebro del Torneo: Sorteo y Rol 🧠🏆</h2>
+                    <div id="banner-torneo-info" style="font-size: 10px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">Cargando torneo activo...</div>
+                </div>
+                <!-- TOGGLE DE MODO -->
+                <div style="display: flex; gap: 10px; background: rgba(0,0,0,0.5); padding: 6px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05);">
+                    <button id="btn-toggle-rr" class="btn-mode-toggle active" onclick="cambiarModoTorneo('normal')">🎲 Modo Grupos (RR)</button>
+                    <button id="btn-toggle-flash" class="btn-mode-toggle" onclick="cambiarModoTorneo('flash')">⚡ Modo Flash</button>
+                </div>
+            </div>
             
             <div class="form-row" style="background: rgba(15,23,42,0.5); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); margin-bottom: 20px; display:flex; gap:12px; align-items:center; flex-wrap:wrap;">
                 <select id="filtro-categoria" onchange="cargarEstadoCategoria()">
                     <option value="">-- Selecciona una categoría --</option>
                 </select>
 
+                <!-- CONTROLES RR -->
                 <div id="controles-sorteo" style="display:flex; gap:10px; align-items:center;">
                     <select id="tamano-grupo" style="max-width: 200px;">
                         <option value="3">Grupos de 3 jugadores</option>
@@ -122,13 +218,65 @@
                     <button class="btn-console btn-gold" id="btn-ejecutar-sorteo" onclick="prepararSorteo()">🎲 Generar Acomodo</button>
                 </div>
 
-                <button class="btn-console btn-red" id="btn-rehacer-sorteo" style="display:none;" onclick="rehacerSorteo()">🔄 Borrar y Rehacer Sorteo</button>
+                <button class="btn-console btn-red" id="btn-rehacer-sorteo" style="display:none;" onclick="rehacerSorteo()">🔄 Borrar y Rehacer</button>
 
                 <div style="margin-left: auto; font-size: 11px; color:#94a3b8; font-weight: 800; text-transform: uppercase;">
                     Confirmados: <strong id="contador-jugadores" style="color:#ffffff; font-size: 15px; margin-left: 4px;">0</strong>
                 </div>
             </div>
 
+            <!-- ======================= MODO FLASH ======================= -->
+            <div id="panel-modo-flash" style="display: none;">
+                <div style="display: flex; flex-wrap: wrap; gap: 20px;">
+                    
+                    <!-- COLUMNA JUGADORES (FILA VIRTUAL) -->
+                    <div style="flex: 1; min-width: 300px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; padding: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <span style="font-size: 11px; font-weight: 800; color: #fbbf24; text-transform: uppercase;">📋 Fila de Jugadores</span>
+                            <span style="font-size: 9px; color: #94a3b8;">Selecciona 2 para armar partido</span>
+                        </div>
+                        <div id="flash-grid-jugadores" class="flash-grid">
+                            <div class="mensaje-vacio">Selecciona una categoría...</div>
+                        </div>
+                    </div>
+
+                    <!-- COLUMNA EMPAREJAMIENTO Y MESAS -->
+                    <div style="flex: 1; min-width: 300px; display: flex; flex-direction: column; gap: 20px;">
+                        
+                        <!-- CREADOR DE PARTIDO -->
+                        <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 14px; padding: 16px;">
+                            <div style="font-size: 11px; font-weight: 800; color: #34d399; text-transform: uppercase; margin-bottom: 12px; text-align: center;">🚀 Iniciar Nuevo Partido</div>
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.5); padding: 12px; border-radius: 10px; margin-bottom: 12px;">
+                                <div id="flash-slot-1" style="flex:1; text-align:center; font-size:11px; font-weight:800; color:#64748b;">Selecciona Jugador 1</div>
+                                <div style="font-weight:900; font-size:10px; color:#f87171; margin:0 10px;">VS</div>
+                                <div id="flash-slot-2" style="flex:1; text-align:center; font-size:11px; font-weight:800; color:#64748b;">Selecciona Jugador 2</div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <div style="display:flex; align-items:center; background:rgba(0,0,0,0.5); padding:4px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
+                                    <span style="font-size:10px; font-weight:800; color:#38bdf8; margin-right:8px; text-transform:uppercase;">Mesa</span>
+                                    <input type="number" id="flash-mesa-input" value="1" min="1" max="20" style="width:50px; padding:6px; font-size:12px; text-align:center; background:transparent !important; border:none !important; margin:0;">
+                                </div>
+                                <button class="btn-console btn-green" id="btn-flash-iniciar" style="flex:1; justify-content:center;" onclick="iniciarPartidoFlash()" disabled>Enviar a la Mesa</button>
+                            </div>
+                        </div>
+
+                        <!-- PARTIDOS ACTIVOS -->
+                        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; padding: 16px; flex: 1;">
+                            <div style="font-size: 11px; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 12px;">🔴 Mesas en Juego</div>
+                            <div id="flash-partidos-activos">
+                                <div class="mensaje-vacio">No hay partidos activos en este momento.</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            <!-- ======================= FIN MODO FLASH ======================= -->
+
+
+            <!-- MODO NORMAL (CONFIG HORARIOS) -->
             <div id="panel-config-horarios" style="display: none; background: rgba(15,23,42,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 18px; border-radius: 14px; margin-top: 15px;">
                 <h3 style="margin-top:0; font-size:12px; color:#ffffff;">⚙️ Asignación de Mesas y Horarios para esta Categoría</h3>
                 
@@ -181,6 +329,7 @@
                 <button class="btn-console btn-green" onclick="recalcularRolPartidos()" style="width:100%; justify-content:center;">⚡ Calcular Tiempos y Asignar Mesas</button>
             </div>
 
+            <!-- CONTENEDOR RR GRUPOS -->
             <div id="contenedor-grupos" class="grupos-grid"></div>
 
             <button id="btn-guardar-grupos" class="btn-console btn-green" style="display:none; width:100%; justify-content:center; margin-top:20px; padding:14px;" onclick="guardarGruposBD()">💾 Guardar Acomodo Definitivo en Base de Datos</button>
@@ -226,7 +375,6 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // EXTRAEMOS EL ID DEL ORGANIZADOR DEL LOCAL STORAGE
         const ORG_ID = localStorage.getItem('organizador_id');
         let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
         
@@ -237,11 +385,37 @@
         let partidosCargadosGlobal = [];
         let maxJuecesFaltantesSistema = 0; 
 
+        // ================= VARIABLES MODO FLASH =================
+        let modoTorneoActual = 'normal'; // 'normal' o 'flash'
+        let seleccionFlash = []; // Arreglo para guardar los 2 IDs seleccionados
+        let partidosFlashActivos = []; // Guardar los de la BD
+        let idJugadorPendienteDiv = null; // Para el modal
+        let idPartidoPendienteRes = null; // Para el modal de resultado
+
         const clasesColoresGrupo = ['gpo-cyan', 'gpo-purple', 'gpo-emerald', 'gpo-amber'];
+
+        // ================= FUNCIONES DE CAMBIO DE MODO =================
+        function cambiarModoTorneo(modo) {
+            modoTorneoActual = modo;
+            
+            // Actualizar botones
+            const btnRR = document.getElementById('btn-toggle-rr');
+            const btnFlash = document.getElementById('btn-toggle-flash');
+            
+            if (modo === 'normal') {
+                btnRR.classList.add('active');
+                btnFlash.classList.remove('active-flash');
+            } else {
+                btnRR.classList.remove('active');
+                btnFlash.classList.add('active-flash');
+            }
+            
+            // Recargar datos basados en el nuevo modo
+            cargarEstadoCategoria();
+        }
 
         async function inicializarSorteo() {
             try {
-                // BLINDAJE SAAS (Se agrega ORG_ID a todas las busquedas)
                 const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).eq('organizador_id', ORG_ID).single();
                 if (torneoData) {
                     torneoActivoObj = torneoData;
@@ -270,12 +444,17 @@
             try {
                 const idCat = document.getElementById('filtro-categoria').value;
                 const contador = document.getElementById('contador-jugadores');
+                
+                // Elementos RR
                 const contSorteo = document.getElementById('controles-sorteo');
                 const btnRehacer = document.getElementById('btn-rehacer-sorteo');
                 const contenedorGrupos = document.getElementById('contenedor-grupos');
                 const panelHorarios = document.getElementById('panel-config-horarios');
                 const btnGuardar = document.getElementById('btn-guardar-grupos');
                 const seccionPartidos = document.getElementById('seccion-partidos-rr');
+
+                // Elementos Flash
+                const panelFlash = document.getElementById('panel-modo-flash');
 
                 if (!idCat) { 
                     contador.innerText = '0';
@@ -285,55 +464,372 @@
                     seccionPartidos.style.display = 'none';
                     contSorteo.style.display = 'flex';
                     btnRehacer.style.display = 'none';
+                    panelFlash.style.display = 'none';
                     return; 
                 }
 
-                // BLINDAJE SAAS (Filtro organizador_id)
-                const { count } = await clienteSupabase.from('inscripciones')
-                    .select('*', { count: 'exact', head: true })
+                // 1. OBTENER JUGADORES PAGADOS (Sirve para ambos modos)
+                const { data: inscripcionesData, count } = await clienteSupabase.from('inscripciones')
+                    .select('jugadores ( id, nombre, puntos_ranking, club )', { count: 'exact' })
                     .eq('categoria_id', idCat)
                     .eq('torneo_id', idTorneoActivo)
                     .eq('organizador_id', ORG_ID)
                     .eq('estatus_pago', 'Pagado');
                 
                 contador.innerText = count || 0;
+                jugadoresListos = inscripcionesData ? inscripcionesData.map(ins => ins.jugadores).sort((a, b) => b.puntos_ranking - a.puntos_ranking) : [];
 
-                const { data: partidosBD, error } = await clienteSupabase
-                    .from('partidos')
-                    .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking)')
-                    .eq('categoria_id', idCat)
-                    .eq('torneo_id', idTorneoActivo)
-                    .eq('organizador_id', ORG_ID)
-                    .order('id', { ascending: true });
-
-                if (error) throw error;
-
-                if (partidosBD && partidosBD.length > 0) {
-                    partidosCargadosGlobal = partidosBD;
+                // LÓGICA DE RUTEO POR MODO
+                if (modoTorneoActual === 'flash') {
+                    // Ocultar UI de Round Robin
                     contSorteo.style.display = 'none';
-                    btnRehacer.style.display = 'inline-flex';
-                    panelHorarios.style.display = 'none';
-                    btnGuardar.style.display = 'none';
-
-                    reconstruirGruposDesdePartidosBD(partidosBD);
-                    poblarDropdownAgenda(partidosBD);
-                    
-                    seccionPartidos.style.display = 'block';
-                    dibujarTablaPartidosBD(partidosBD);
-                } else {
-                    partidosCargadosGlobal = [];
-                    contSorteo.style.display = 'flex';
                     btnRehacer.style.display = 'none';
                     contenedorGrupos.innerHTML = '';
                     panelHorarios.style.display = 'none';
                     btnGuardar.style.display = 'none';
                     seccionPartidos.style.display = 'none';
+
+                    // Mostrar UI Flash
+                    panelFlash.style.display = 'block';
+                    await cargarDatosFlash(idCat);
+
+                } else {
+                    // MODO NORMAL (ROUND ROBIN)
+                    panelFlash.style.display = 'none';
+                    seleccionFlash = []; // resetear por si acaso
+
+                    const { data: partidosBD, error } = await clienteSupabase
+                        .from('partidos')
+                        .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking)')
+                        .eq('categoria_id', idCat)
+                        .eq('torneo_id', idTorneoActivo)
+                        .eq('organizador_id', ORG_ID)
+                        .neq('grupo_nombre', 'Flash') // Ignorar los flash si existieran
+                        .order('id', { ascending: true });
+
+                    if (error) throw error;
+
+                    if (partidosBD && partidosBD.length > 0) {
+                        partidosCargadosGlobal = partidosBD;
+                        contSorteo.style.display = 'none';
+                        btnRehacer.style.display = 'inline-flex';
+                        panelHorarios.style.display = 'none';
+                        btnGuardar.style.display = 'none';
+
+                        reconstruirGruposDesdePartidosBD(partidosBD);
+                        poblarDropdownAgenda(partidosBD);
+                        
+                        seccionPartidos.style.display = 'block';
+                        dibujarTablaPartidosBD(partidosBD);
+                    } else {
+                        partidosCargadosGlobal = [];
+                        contSorteo.style.display = 'flex';
+                        btnRehacer.style.display = 'none';
+                        contenedorGrupos.innerHTML = '';
+                        panelHorarios.style.display = 'none';
+                        btnGuardar.style.display = 'none';
+                        seccionPartidos.style.display = 'none';
+                    }
                 }
             } catch (err) {
                 console.error("Error al cargar la categoría:", err);
-                alert("Ocurrió un problema al leer la base de datos para esta categoría.");
+                alert("Ocurrió un problema al leer la base de datos.");
             }
         }
+
+        // ====================================================================
+        // ======================= LÓGICA MODO FLASH ⚡ =======================
+        // ====================================================================
+
+        async function cargarDatosFlash(idCat) {
+            try {
+                // Fetch de partidos flash para calcular PJ (Partidos Jugados) y ver activos
+                const { data: partidosFlash } = await clienteSupabase.from('partidos')
+                    .select('*, j1:jugador1_id(id, nombre), j2:jugador2_id(id, nombre)')
+                    .eq('categoria_id', idCat)
+                    .eq('torneo_id', idTorneoActivo)
+                    .eq('organizador_id', ORG_ID)
+                    .eq('grupo_nombre', 'Flash');
+
+                let todosFlash = partidosFlash || [];
+                
+                // Calcular Partidos Jugados (PJ) por jugador
+                let pjMap = {};
+                jugadoresListos.forEach(j => pjMap[j.id] = 0);
+                
+                todosFlash.forEach(p => {
+                    if (p.jugador1_id) pjMap[p.jugador1_id] = (pjMap[p.jugador1_id] || 0) + 1;
+                    if (p.jugador2_id) pjMap[p.jugador2_id] = (pjMap[p.jugador2_id] || 0) + 1;
+                });
+
+                // Inyectar PJ a la lista y ordenar por PJ ascendente (los que han jugado menos van primero)
+                jugadoresListos.forEach(j => j.pjFlash = pjMap[j.id]);
+                jugadoresListos.sort((a, b) => {
+                    if (a.pjFlash !== b.pjFlash) return a.pjFlash - b.pjFlash;
+                    return a.nombre.localeCompare(b.nombre); // desempate alfabético
+                });
+
+                // Separar los partidos activos (en curso)
+                partidosFlashActivos = todosFlash.filter(p => p.estado === 'en_curso');
+
+                dibujarGridJugadoresFlash();
+                dibujarSetupFlash();
+                dibujarPartidosActivosFlash();
+
+            } catch (e) {
+                console.error("Error en Flash:", e);
+            }
+        }
+
+        function dibujarGridJugadoresFlash() {
+            const grid = document.getElementById('flash-grid-jugadores');
+            grid.innerHTML = '';
+
+            if (jugadoresListos.length === 0) {
+                grid.innerHTML = '<div class="mensaje-vacio">No hay jugadores pagados en esta categoría.</div>';
+                return;
+            }
+
+            jugadoresListos.forEach(j => {
+                let divStr = localStorage.getItem(`flash_div_${ORG_ID}_${j.id}`);
+                let divBadge = divStr ? `<span class="div-tag">Div ${divStr}</span>` : `<span style="color:#64748b; font-style:italic;">Sin Div</span>`;
+                
+                let isSelected = seleccionFlash.some(sel => sel.id === j.id);
+                let classSel = isSelected ? 'selected' : '';
+
+                // Saber si está jugando actualmente
+                let isPlaying = partidosFlashActivos.some(p => p.jugador1_id === j.id || p.jugador2_id === j.id);
+                let playingBadge = isPlaying ? `<span style="color:#ef4444; font-size:8px;"><i class="fa-solid fa-table-tennis-paddle-ball"></i></span>` : '';
+
+                grid.innerHTML += `
+                    <button class="flash-btn-jugador ${classSel}" onclick="toggleSeleccionFlash(${j.id})">
+                        <div class="nombre">${j.nombre} ${playingBadge}</div>
+                        <div class="stats">
+                            ${divBadge}
+                            <span style="color:#38bdf8;">PJ: ${j.pjFlash}</span>
+                        </div>
+                    </button>
+                `;
+            });
+        }
+
+        function toggleSeleccionFlash(id) {
+            // Verificar si ya está jugando (opcional, pero buena UX)
+            let isPlaying = partidosFlashActivos.some(p => p.jugador1_id === id || p.jugador2_id === id);
+            if (isPlaying) {
+                alert("Este jugador está actualmente en una mesa activa.");
+                return;
+            }
+
+            let jugadorObj = jugadoresListos.find(j => j.id === id);
+            
+            // Verificar si ya está seleccionado
+            let idx = seleccionFlash.findIndex(sel => sel.id === id);
+            if (idx > -1) {
+                seleccionFlash.splice(idx, 1); // Deseleccionar
+                dibujarGridJugadoresFlash();
+                dibujarSetupFlash();
+                return;
+            }
+
+            // Verificar si tiene división, si no, pedirla
+            let divAsignada = localStorage.getItem(`flash_div_${ORG_ID}_${id}`);
+            if (!divAsignada) {
+                idJugadorPendienteDiv = id;
+                document.getElementById('modal-div-nombre').innerText = jugadorObj.nombre;
+                document.getElementById('modal-division').style.display = 'flex';
+                return; // Cortamos el flujo aquí, el modal lo reanudará
+            }
+
+            // Agregar a la selección
+            if (seleccionFlash.length >= 2) {
+                seleccionFlash.shift(); // Quitar al primero si ya hay 2
+            }
+            seleccionFlash.push(jugadorObj);
+            
+            dibujarGridJugadoresFlash();
+            dibujarSetupFlash();
+        }
+
+        // --- Funciones del Modal de División ---
+        function guardarDivisionModal(divNumber) {
+            if (idJugadorPendienteDiv) {
+                localStorage.setItem(`flash_div_${ORG_ID}_${idJugadorPendienteDiv}`, divNumber);
+                let jugadorObj = jugadoresListos.find(j => j.id === idJugadorPendienteDiv);
+                
+                if (seleccionFlash.length >= 2) seleccionFlash.shift();
+                seleccionFlash.push(jugadorObj);
+                
+                idJugadorPendienteDiv = null;
+                cerrarModalDivision();
+                dibujarGridJugadoresFlash();
+                dibujarSetupFlash();
+            }
+        }
+        function cerrarModalDivision() {
+            document.getElementById('modal-division').style.display = 'none';
+            idJugadorPendienteDiv = null;
+        }
+
+        function dibujarSetupFlash() {
+            const slot1 = document.getElementById('flash-slot-1');
+            const slot2 = document.getElementById('flash-slot-2');
+            const btnIniciar = document.getElementById('btn-flash-iniciar');
+
+            let p1 = seleccionFlash[0];
+            let p2 = seleccionFlash[1];
+
+            if (p1) {
+                let d1 = localStorage.getItem(`flash_div_${ORG_ID}_${p1.id}`);
+                slot1.innerHTML = `<span style="color:#fff; font-size:13px;">${p1.nombre}</span><br><span style="color:#fbbf24; font-size:9px;">División ${d1}</span>`;
+            } else {
+                slot1.innerHTML = `Selecciona Jugador 1`;
+            }
+
+            if (p2) {
+                let d2 = localStorage.getItem(`flash_div_${ORG_ID}_${p2.id}`);
+                slot2.innerHTML = `<span style="color:#fff; font-size:13px;">${p2.nombre}</span><br><span style="color:#fbbf24; font-size:9px;">División ${d2}</span>`;
+            } else {
+                slot2.innerHTML = `Selecciona Jugador 2`;
+            }
+
+            btnIniciar.disabled = seleccionFlash.length !== 2;
+        }
+
+        async function iniciarPartidoFlash() {
+            if (seleccionFlash.length !== 2) return;
+            
+            const btn = document.getElementById('btn-flash-iniciar');
+            const mesaVal = document.getElementById('flash-mesa-input').value || '1';
+            const idCat = document.getElementById('filtro-categoria').value;
+            
+            let p1 = seleccionFlash[0];
+            let p2 = seleccionFlash[1];
+            let d1 = localStorage.getItem(`flash_div_${ORG_ID}_${p1.id}`);
+            let d2 = localStorage.getItem(`flash_div_${ORG_ID}_${p2.id}`);
+
+            let rondaString = `Liga Continua (Div ${d1} vs Div ${d2})`;
+
+            btn.disabled = true;
+            btn.innerText = "⏳ Iniciando...";
+
+            try {
+                const { error } = await clienteSupabase.from('partidos').insert([{
+                    torneo_id: parseInt(idTorneoActivo),
+                    categoria_id: parseInt(idCat),
+                    organizador_id: ORG_ID,
+                    grupo_nombre: 'Flash', 
+                    ronda_fase: rondaString,
+                    mesa: parseInt(mesaVal),
+                    modo_juego: '2-3', // A ganar 2 de 3 como dice el flyer
+                    jugador1_id: p1.id,
+                    jugador2_id: p2.id,
+                    juez: 'Autogestionado',
+                    estado: 'en_curso'
+                }]);
+
+                if (error) throw error;
+                
+                // Limpiar selección y recargar datos
+                seleccionFlash = [];
+                await cargarDatosFlash(idCat);
+
+            } catch(e) {
+                alert("Error al iniciar partido: " + e.message);
+            } finally {
+                btn.innerText = "Enviar a la Mesa";
+            }
+        }
+
+        function dibujarPartidosActivosFlash() {
+            const container = document.getElementById('flash-partidos-activos');
+            container.innerHTML = '';
+
+            if (partidosFlashActivos.length === 0) {
+                container.innerHTML = '<div class="mensaje-vacio">No hay mesas ocupadas en la Liga Continua.</div>';
+                return;
+            }
+
+            partidosFlashActivos.forEach(p => {
+                let n1 = p.j1 ? p.j1.nombre : 'Jugador 1';
+                let n2 = p.j2 ? p.j2.nombre : 'Jugador 2';
+
+                container.innerHTML += `
+                    <div class="flash-mesa-card">
+                        <div>
+                            <div style="font-size:10px; color:#38bdf8; font-weight:800; margin-bottom:4px; text-transform:uppercase;">Mesa ${p.mesa}</div>
+                            <div style="display:flex; align-items:center;">
+                                <span style="font-size:12px; font-weight:800; color:#fff;">${n1}</span>
+                                <span class="vs">VS</span>
+                                <span style="font-size:12px; font-weight:800; color:#fff;">${n2}</span>
+                            </div>
+                        </div>
+                        <button class="btn-console btn-gold" style="padding:6px 12px; font-size:9px;" onclick="abrirModalResultadoFlash(${p.id}, '${n1.replace(/'/g, "\\'")}', '${n2.replace(/'/g, "\\'")}')">Registrar Res.</button>
+                    </div>
+                `;
+            });
+        }
+
+        // --- Funciones Modal Resultado Rápido ---
+        function abrirModalResultadoFlash(idPartido, nombre1, nombre2) {
+            idPartidoPendienteRes = idPartido;
+            document.getElementById('res-nombre-1').innerText = nombre1;
+            document.getElementById('res-nombre-2').innerText = nombre2;
+            document.getElementById('res-sets-1').value = '0';
+            document.getElementById('res-sets-2').value = '0';
+            document.getElementById('modal-resultado').style.display = 'flex';
+        }
+        function cerrarModalResultado() {
+            document.getElementById('modal-resultado').style.display = 'none';
+            idPartidoPendienteRes = null;
+        }
+
+        async function guardarResultadoModal() {
+            if (!idPartidoPendienteRes) return;
+            const btn = document.getElementById('btn-guardar-res');
+            
+            let s1 = parseInt(document.getElementById('res-sets-1').value) || 0;
+            let s2 = parseInt(document.getElementById('res-sets-2').value) || 0;
+            
+            if (s1 === s2) {
+                alert("El partido no puede terminar en empate.");
+                return;
+            }
+
+            let partidoObj = partidosFlashActivos.find(p => p.id === idPartidoPendienteRes);
+            if (!partidoObj) return;
+
+            let idGanador = s1 > s2 ? partidoObj.jugador1_id : partidoObj.jugador2_id;
+
+            btn.disabled = true;
+            btn.innerText = "⏳ Guardando...";
+
+            try {
+                const { error } = await clienteSupabase.from('partidos').update({
+                    estado: 'finalizado',
+                    ganador_id: idGanador,
+                    sets_j1: s1,
+                    sets_j2: s2
+                }).eq('id', idPartidoPendienteRes);
+
+                if (error) throw error;
+
+                cerrarModalResultado();
+                const idCat = document.getElementById('filtro-categoria').value;
+                await cargarDatosFlash(idCat);
+
+            } catch (e) {
+                alert("Error al guardar resultado: " + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Guardar y Liberar Mesa";
+            }
+        }
+
+
+        // ====================================================================
+        // ======================= LÓGICA MODO ROUND ROBIN ====================
+        // ====================================================================
 
         function algoritmoRoundRobin(jugadoresArr) {
             let arr = [...jugadoresArr];
@@ -455,18 +951,7 @@
         async function prepararSorteo() {
             const idCategoria = document.getElementById('filtro-categoria').value;
             if (!idCategoria) { alert("Selecciona una categoría."); return; }
-
-            // BLINDAJE SAAS
-            const { data } = await clienteSupabase.from('inscripciones')
-                .select(`jugadores ( id, nombre, puntos_ranking, club )`)
-                .eq('categoria_id', idCategoria)
-                .eq('torneo_id', idTorneoActivo)
-                .eq('organizador_id', ORG_ID)
-                .eq('estatus_pago', 'Pagado');
-
-            if (!data || data.length === 0) { alert("No hay jugadores pagados en esta categoría."); return; }
-
-            jugadoresListos = data.map(ins => ins.jugadores).sort((a, b) => b.puntos_ranking - a.puntos_ranking);
+            if (!jugadoresListos || jugadoresListos.length === 0) { alert("No hay jugadores pagados en esta categoría."); return; }
 
             const tamanoGrupo = parseInt(document.getElementById('tamano-grupo').value);
             ejecutarSerpiente(tamanoGrupo);
@@ -752,7 +1237,7 @@
                         <td class="no-print">
                             <div style="display:flex; gap:6px; flex-wrap:wrap;">
                                 <a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 8px; font-size:9px; text-decoration:none;">🏓 Juez</a>
-                                <a href="espectador.html?partido=${p.id}" target="_blank" class="btn-console btn-purple" style="padding:4px 8px; font-size:9px; text-decoration:none;">👁️ Ver</a>
+                                <a href="espectador.html?partido=${p.id}" target="_blank" class="btn-console btn-purple" style="padding:4px 8px; font-size:9px; text-decoration:none;">👁 Ver</a>
                             </div>
                         </td>
                     </tr>
@@ -914,11 +1399,12 @@
             if (!confirm("⚠️ ¿Deseas ELIMINAR el sorteo guardado de esta categoría y generar uno nuevo?")) return;
 
             try {
-                // BLINDAJE SAAS
+                // Solo elimina los partidos de Round Robin, no los Flash
                 await clienteSupabase.from('partidos').delete()
                     .eq('categoria_id', idCat)
                     .eq('torneo_id', idTorneoActivo)
-                    .eq('organizador_id', ORG_ID);
+                    .eq('organizador_id', ORG_ID)
+                    .neq('grupo_nombre', 'Flash');
                 await cargarEstadoCategoria();
             } catch(e) {
                 alert("Error al borrar: " + e.message);
@@ -936,7 +1422,6 @@
             btn.innerText = "Guardando en Supabase...";
 
             try {
-                // BLINDAJE SAAS
                 const req1 = await clienteSupabase.from('torneos').update({ pin_jueces: pinJueces })
                     .eq('id', idTorneoActivo)
                     .eq('organizador_id', ORG_ID);
@@ -945,14 +1430,14 @@
                 const req2 = await clienteSupabase.from('partidos').delete()
                     .eq('categoria_id', idCategoria)
                     .eq('torneo_id', idTorneoActivo)
-                    .eq('organizador_id', ORG_ID);
+                    .eq('organizador_id', ORG_ID)
+                    .neq('grupo_nombre', 'Flash');
                 if (req2.error) throw new Error("Fallo al limpiar partidos antiguos: " + req2.error.message);
 
-                // IMPORTANTE: INYECTAR EL ORGANIZADOR AL CREAR LOS PARTIDOS
                 let partidosInsertar = partidosGeneradosRR.map(p => ({
                     torneo_id: parseInt(idTorneoActivo),
                     categoria_id: parseInt(idCategoria),
-                    organizador_id: ORG_ID, // <-- BLINDAJE
+                    organizador_id: ORG_ID,
                     grupo_nombre: p.grupoNombre || null,
                     ronda_fase: p.rondaFase || `Ronda ${p.r}`,
                     mesa: p.mesa || 1,
