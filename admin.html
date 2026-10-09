@@ -54,7 +54,7 @@
         .panel-pink { border-bottom: 5px solid #500724; }
         .panel-red { border-bottom: 5px solid #450a0a; }
         .panel-gold { border-bottom: 5px solid #b45309; }
-        .panel-orange { border-bottom: 5px solid #ea580c; } /* Nuevo para Flash */
+        .panel-orange { border-bottom: 5px solid #ea580c; } 
 
         h2, h3 { color: #ffffff; margin-top: 0; padding-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 20px; }
         
@@ -298,6 +298,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; margin-bottom: 18px;">
                 <h2 style="border:none; margin:0; padding:0; color:#fbbf24;">⚡ Inscripción Exprés (Liga Flash y Presencial)</h2>
                 <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                    <input type="text" id="buscador-flash" placeholder="🔎 Buscar jugador..." onkeyup="filtrarJugadoresFlash()" class="input-tabla" style="max-width: 180px;">
                     <select id="select-cat-flash" class="input-tabla" style="max-width: 200px;">
                         <option value="">-- Elige Categoría Destino --</option>
                     </select>
@@ -572,7 +573,7 @@
                 programacionCategoriasNube = resProg.status === 'fulfilled' ? (resProg.value.data || []) : [];
                 reglasRankingList = resReglas.status === 'fulfilled' ? (resReglas.value.data || []) : [];
                 
-                cargarInscripcionFlashView(); // <-- NUEVA LLAMADA PARA EL MÓDULO FLASH
+                cargarInscripcionFlashView(); // <-- LLAMADA PARA EL MÓDULO FLASH
 
             } catch(e) { console.error("Error en peticiones principales:", e); }
 
@@ -592,7 +593,7 @@
             try { activarSuscripcionRealtime(); } catch(e) { console.error(e); }
         }
 
-        // ================= MÓDULO INSCRIPCIÓN EXPRÉS FLASH =================
+        // ================= MÓDULO INSCRIPCIÓN EXPRÉS FLASH CON BUSCADOR =================
         function cargarInscripcionFlashView() {
             const selectCat = document.getElementById('select-cat-flash');
             if(selectCat) {
@@ -613,7 +614,7 @@
                 let divGuardada = localStorage.getItem(`flash_div_${ORG_ID}_${j.id}`) || '1'; // Default 1
                 
                 tbody.innerHTML += `
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+                    <tr class="tr-jugador-flash" style="border-bottom:1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
                         <td style="text-align:center;">
                             <input type="checkbox" class="check-flash-ins" value="${j.id}" style="width:16px; height:16px; accent-color:#f59e0b; cursor:pointer;">
                         </td>
@@ -636,6 +637,21 @@
                         </td>
                     </tr>
                 `;
+            });
+        }
+
+        // Función del buscador en tiempo real
+        function filtrarJugadoresFlash() {
+            const input = document.getElementById('buscador-flash').value.toLowerCase();
+            const filas = document.querySelectorAll('.tr-jugador-flash');
+            
+            filas.forEach(fila => {
+                const nombre = fila.querySelector('strong').innerText.toLowerCase();
+                if (nombre.includes(input)) {
+                    fila.style.display = '';
+                } else {
+                    fila.style.display = 'none';
+                }
             });
         }
 
@@ -677,8 +693,10 @@
                 
                 alert(`✅ ¡ÉXITO! Se inscribieron ${inscripcionesNuevas.length} jugadores y se guardó su división.`);
                 
-                // Desmarcar checkboxes
+                // Desmarcar checkboxes y resetear buscador
                 checkboxes.forEach(chk => chk.checked = false);
+                document.getElementById('buscador-flash').value = '';
+                filtrarJugadoresFlash(); // Vuelve a mostrar todo
                 
                 // Recargar datos vitales
                 await cargarInscritosEnVivo();
