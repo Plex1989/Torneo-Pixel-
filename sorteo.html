@@ -94,9 +94,7 @@
         .mensaje-vacio { text-align: center; color: #475569; font-style: italic; background: transparent !important; border: none !important; }
 
         /* ================= ESTILOS MODO FLASH ================= */
-        .flash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 10px; }
-        .flash-grid::-webkit-scrollbar { width: 6px; }
-        .flash-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        .flash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
         
         .flash-btn-jugador {
             background: rgba(15, 23, 42, 0.8);
@@ -107,7 +105,7 @@
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
-            overflow: hidden;
+            overflow: visible; /* Para que el número de fila no se corte */
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -116,15 +114,14 @@
         .flash-btn-jugador:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.3); }
         .flash-btn-jugador.selected { background: rgba(16, 185, 129, 0.2); border-color: #10b981; box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.3); }
         
-        .flash-btn-jugador .nombre { font-size: 11px; font-weight: 800; color: #ffffff; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; }
+        .flash-btn-jugador .nombre { font-size: 11px; font-weight: 800; color: #ffffff; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%; padding-right: 15px; }
         .flash-btn-jugador .stats { font-size: 9px; color: #94a3b8; font-weight: 700; display: flex; justify-content: space-between; align-items: center; width: 100%; }
         
-        /* Nuevos estilos de división fieles al flyer */
         .div-tag-1 { background: rgba(244, 63, 94, 0.2); color: #f43f5e; border: 1px solid rgba(244, 63, 94, 0.4); padding: 2px 6px; border-radius: 4px; font-weight: 800; }
         .div-tag-2 { background: rgba(234, 179, 8, 0.2); color: #eab308; border: 1px solid rgba(234, 179, 8, 0.4); padding: 2px 6px; border-radius: 4px; font-weight: 800; }
         
         .flash-mesa-card { background: rgba(0, 0, 0, 0.4); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-        .flash-mesa-card .vs { color: #f87171; font-weight: 900; font-size: 10px; margin: 0 10px; }
+        .flash-mesa-card .vs { font-weight: 900; font-size: 10px; margin: 0 10px; }
 
         .input-mini-buscar { background: rgba(0,0,0,0.5) !important; border: 1px solid rgba(255,255,255,0.2) !important; color: white !important; padding: 6px 12px !important; border-radius: 8px !important; font-size: 10px !important; outline: none; }
         .input-mini-buscar:focus { border-color: #06b6d4 !important; }
@@ -241,11 +238,13 @@
                     
                     <!-- COLUMNA JUGADORES (FILA VIRTUAL) -->
                     <div style="flex: 1; min-width: 300px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px; padding: 16px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap:wrap; gap:10px;">
-                            <span style="font-size: 11px; font-weight: 800; color: #fbbf24; text-transform: uppercase;">📋 Fila de Jugadores</span>
-                            <input type="text" id="buscador-flash-sorteo" placeholder="🔎 Buscar..." onkeyup="filtrarSorteoFlash()" class="input-mini-buscar" style="max-width: 140px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap:wrap; gap:10px;">
+                            <span style="font-size: 12px; font-weight: 900; color: #fbbf24; text-transform: uppercase;"><i class="fa-solid fa-users mr-2"></i> Gestión de Fila</span>
+                            <input type="text" id="buscador-flash-sorteo" placeholder="🔎 Buscar..." onkeyup="dibujarGridJugadoresFlash()" class="input-mini-buscar" style="max-width: 140px;">
                         </div>
-                        <div id="flash-grid-jugadores" class="flash-grid">
+                        
+                        <!-- Contenedor donde inyectaremos las dos zonas separadas -->
+                        <div id="flash-wrapper-jugadores" style="max-height: 500px; overflow-y: auto; padding-right: 10px;">
                             <div class="mensaje-vacio">Selecciona una categoría...</div>
                         </div>
                     </div>
@@ -396,7 +395,7 @@
         let maxJuecesFaltantesSistema = 0; 
 
         // ================= VARIABLES MODO FLASH =================
-        let modoTorneoActual = 'normal'; // 'normal' o 'flash'
+        let modoTorneoActual = 'normal'; 
         let seleccionFlash = []; 
         let partidosFlashActivos = []; 
         let idJugadorPendienteDiv = null; 
@@ -404,7 +403,7 @@
 
         const clasesColoresGrupo = ['gpo-cyan', 'gpo-purple', 'gpo-emerald', 'gpo-amber'];
 
-        // PALETA DE COLORES VISUALES PARA LAS MESAS FLASH (Súper útil para el organizador)
+        // PALETA DE COLORES VISUALES PARA LAS MESAS FLASH
         const coloresMesasFlash = [
             { border: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', text: '#000', badge: '#10b981' }, // Verde
             { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', text: '#fff', badge: '#3b82f6' }, // Azul
@@ -499,7 +498,7 @@
                     .eq('estatus_pago', 'Pagado');
                 
                 contador.innerText = count || 0;
-                jugadoresListos = inscripcionesData ? inscripcionesData.map(ins => ins.jugadores).sort((a, b) => b.puntos_ranking - a.puntos_ranking) : [];
+                jugadoresListos = inscripcionesData ? inscripcionesData.map(ins => ins.jugadores) : [];
 
                 if (modoTorneoActual === 'flash') {
                     contSorteo.style.display = 'none';
@@ -579,11 +578,8 @@
                 });
 
                 jugadoresListos.forEach(j => j.pjFlash = pjMap[j.id]);
-                jugadoresListos.sort((a, b) => {
-                    if (a.pjFlash !== b.pjFlash) return a.pjFlash - b.pjFlash;
-                    return a.nombre.localeCompare(b.nombre); 
-                });
-
+                
+                // Extraer activos
                 partidosFlashActivos = todosFlash.filter(p => p.estado === 'en_curso');
 
                 dibujarGridJugadoresFlash();
@@ -595,85 +591,116 @@
             }
         }
 
-        function filtrarSorteoFlash() {
-            const inputVal = document.getElementById('buscador-flash-sorteo').value.toLowerCase();
-            const inputClean = quitarAcentos(inputVal);
-            const botones = document.querySelectorAll('.flash-btn-jugador');
-            
-            botones.forEach(btn => {
-                const nombre = btn.getAttribute('data-nombre').toLowerCase();
-                const nombreClean = quitarAcentos(nombre);
-                if (nombreClean.includes(inputClean)) {
-                    btn.style.display = '';
-                } else {
-                    btn.style.display = 'none';
-                }
-            });
-        }
-
         function dibujarGridJugadoresFlash() {
-            const grid = document.getElementById('flash-grid-jugadores');
-            grid.innerHTML = '';
+            const wrapper = document.getElementById('flash-wrapper-jugadores');
+            wrapper.innerHTML = '';
 
             if (jugadoresListos.length === 0) {
-                grid.innerHTML = '<div class="mensaje-vacio">No hay jugadores pagados en esta categoría.</div>';
+                wrapper.innerHTML = '<div class="mensaje-vacio">No hay jugadores pagados en esta categoría.</div>';
                 return;
             }
 
-            // Aplicar el filtro actual si el usuario ya escribió algo
             const inputClean = quitarAcentos(document.getElementById('buscador-flash-sorteo').value.toLowerCase());
 
+            let disponibles = [];
+            let ocupados = [];
+
+            // Separar y filtrar
             jugadoresListos.forEach(j => {
-                let divStr = localStorage.getItem(`flash_div_${ORG_ID}_${j.id}`);
-                let divBadge = '';
-                if (divStr === '1') {
-                    divBadge = `<span class="div-tag-1">Div 1</span>`;
-                } else if (divStr === '2') {
-                    divBadge = `<span class="div-tag-2">Div 2</span>`;
+                let nombreClean = quitarAcentos(j.nombre.toLowerCase());
+                if (!nombreClean.includes(inputClean)) return; 
+
+                let isPlaying = partidosFlashActivos.some(p => p.jugador1_id === j.id || p.jugador2_id === j.id);
+                if (isPlaying) {
+                    j.partidoActivo = partidosFlashActivos.find(p => p.jugador1_id === j.id || p.jugador2_id === j.id);
+                    ocupados.push(j);
                 } else {
-                    divBadge = `<span style="color:#64748b; font-style:italic; font-weight:800; font-size:9px;">Sin Div</span>`;
+                    disponibles.push(j);
                 }
-                
-                let isSelected = seleccionFlash.some(sel => sel.id === j.id);
-                let classSel = isSelected ? 'selected' : '';
+            });
 
-                // Saber si está jugando actualmente y asignarle el color de la mesa
-                let partidoActivo = partidosFlashActivos.find(p => p.jugador1_id === j.id || p.jugador2_id === j.id);
-                let cardStyle = '';
-                let playingBadge = '';
+            // Ordenar la fila (Disponibles): Los de menos PJ van primero. Luego por ID (los primeros en registrarse)
+            disponibles.sort((a,b) => {
+                if(a.pjFlash !== b.pjFlash) return a.pjFlash - b.pjFlash;
+                return a.id - b.id; 
+            });
 
-                if (partidoActivo) {
-                    let pIdx = partidosFlashActivos.findIndex(p => p.id === partidoActivo.id);
+            // --- HTML ZONA DISPONIBLES ---
+            let html = `
+                <div style="font-size:11px; font-weight:900; color:#34d399; margin-bottom:12px; text-transform:uppercase; border-bottom:1px solid rgba(52,211,153,0.3); padding-bottom:6px;">
+                    🟢 Próximos en Fila (Disponibles)
+                </div>
+                <div class="flash-grid" style="margin-bottom:25px;">
+            `;
+
+            if (disponibles.length === 0) {
+                html += `<div style="grid-column: 1/-1; font-size:10px; color:#64748b; font-style:italic;">No hay jugadores esperando en fila.</div>`;
+            } else {
+                disponibles.forEach((j, idx) => {
+                    let divStr = localStorage.getItem(`flash_div_${ORG_ID}_${j.id}`);
+                    let divBadge = divStr === '1' ? `<span class="div-tag-1">Div 1</span>` : (divStr === '2' ? `<span class="div-tag-2">Div 2</span>` : `<span style="color:#64748b; font-style:italic; font-weight:800; font-size:9px;">Sin Div</span>`);
+                    
+                    let isSelected = seleccionFlash.some(sel => sel.id === j.id);
+                    let classSel = isSelected ? 'selected' : '';
+
+                    html += `
+                        <button class="flash-btn-jugador ${classSel}" onclick="toggleSeleccionFlash(${j.id})">
+                            <div style="position:absolute; top:-6px; right:-6px; background:#10b981; color:#000; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:10px; border:2px solid #04060a; z-index:10; box-shadow:0 0 10px rgba(16,185,129,0.5);">
+                                ${idx+1}
+                            </div>
+                            <div class="nombre">${j.nombre}</div>
+                            <div class="stats" style="margin-top:2px;">
+                                ${divBadge}
+                                <span style="color:#38bdf8;">PJ: ${j.pjFlash}</span>
+                            </div>
+                        </button>
+                    `;
+                });
+            }
+            html += `</div>`;
+
+            // --- HTML ZONA OCUPADOS ---
+            html += `
+                <div style="font-size:11px; font-weight:900; color:#ef4444; margin-bottom:12px; text-transform:uppercase; border-bottom:1px solid rgba(239,68,68,0.3); padding-bottom:6px;">
+                    🔴 En Mesa (Jugando)
+                </div>
+                <div class="flash-grid">
+            `;
+
+            if (ocupados.length === 0) {
+                html += `<div style="grid-column: 1/-1; font-size:10px; color:#64748b; font-style:italic;">Las mesas están vacías en este momento.</div>`;
+            } else {
+                ocupados.forEach(j => {
+                    let divStr = localStorage.getItem(`flash_div_${ORG_ID}_${j.id}`);
+                    let divBadge = divStr === '1' ? `<span class="div-tag-1">Div 1</span>` : (divStr === '2' ? `<span class="div-tag-2">Div 2</span>` : `<span style="color:#64748b; font-style:italic; font-weight:800; font-size:9px;">Sin Div</span>`);
+                    
+                    let pIdx = partidosFlashActivos.findIndex(p => p.id === j.partidoActivo.id);
                     let colorSet = coloresMesasFlash[pIdx % coloresMesasFlash.length];
                     
-                    // Si está jugando: borde del color de su mesa, opacidad al 90%
-                    cardStyle = `border-color: ${colorSet.border}; background: ${colorSet.bg}; opacity: 0.9; cursor: not-allowed;`;
-                    playingBadge = `<span style="background:${colorSet.badge}; color:${colorSet.text}; font-size:9px; padding:3px 6px; border-radius:6px; font-weight:900; box-shadow: 0 0 10px ${colorSet.border}; text-shadow:none;">MESA ${partidoActivo.mesa}</span>`;
-                } else {
-                    // Si NO está jugando, se muestran sus PJ de manera normal
-                    playingBadge = `<span style="color:#38bdf8;">PJ: ${j.pjFlash}</span>`;
-                }
+                    let cardStyle = `border-color: ${colorSet.border}; background: ${colorSet.bg}; opacity: 0.8; cursor: not-allowed; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);`;
+                    let playingBadge = `<span style="background:${colorSet.badge}; color:${colorSet.text}; font-size:9px; padding:2px 6px; border-radius:4px; font-weight:900; text-shadow:none;">MESA ${j.partidoActivo.mesa}</span>`;
 
-                // Ocultar si no coincide con buscador activo
-                let nombreClean = quitarAcentos(j.nombre.toLowerCase());
-                let displayStyle = nombreClean.includes(inputClean) ? '' : 'display: none;';
+                    html += `
+                        <button class="flash-btn-jugador" style="${cardStyle}" onclick="alert('Este jugador está actualmente en la Mesa ${j.partidoActivo.mesa}.')">
+                            <div class="nombre">${j.nombre}</div>
+                            <div class="stats" style="margin-top:2px;">
+                                ${divBadge}
+                                ${playingBadge}
+                            </div>
+                        </button>
+                    `;
+                });
+            }
+            html += `</div>`;
 
-                grid.innerHTML += `
-                    <button class="flash-btn-jugador ${classSel}" style="${cardStyle} ${displayStyle}" onclick="toggleSeleccionFlash(${j.id})" data-nombre="${j.nombre}">
-                        <div class="nombre">${j.nombre}</div>
-                        <div class="stats" style="margin-top:2px;">
-                            ${divBadge}
-                            ${playingBadge}
-                        </div>
-                    </button>
-                `;
-            });
+            wrapper.innerHTML = html;
         }
 
         function toggleSeleccionFlash(id) {
+            // Check de seguridad por si le dan clic rapido
             let isPlaying = partidosFlashActivos.some(p => p.jugador1_id === id || p.jugador2_id === id);
             if (isPlaying) {
-                alert("⚠️ Este jugador ya está disputando un partido en este momento. Espera a que termine.");
+                alert("⚠️ Este jugador ya está disputando un partido en este momento.");
                 return;
             }
 
@@ -757,7 +784,6 @@
             const mesaVal = parseInt(document.getElementById('flash-mesa-input').value) || 1;
             const idCat = document.getElementById('filtro-categoria').value;
             
-            // VALIDACIÓN: Evitar mandar a mesa ocupada
             let mesaOcupada = partidosFlashActivos.some(p => p.mesa === mesaVal);
             if (mesaOcupada) {
                 alert(`⚠️ MESA OCUPADA\n\nLa Mesa ${mesaVal} ya tiene un partido en curso. Por favor elige otra mesa libre o registra el resultado del partido activo antes de mandar uno nuevo.`);
@@ -811,7 +837,6 @@
             }
 
             partidosFlashActivos.forEach((p, idx) => {
-                // Selecciona el color de la paleta dinámicamente
                 let colorSet = coloresMesasFlash[idx % coloresMesasFlash.length];
                 
                 let n1 = p.j1 ? p.j1.nombre : 'Jugador 1';
