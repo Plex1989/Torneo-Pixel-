@@ -100,12 +100,12 @@
             background: rgba(15, 23, 42, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            padding: 12px 12px 12px 22px; /* Espacio extra a la izq para el grip */
+            padding: 12px 12px 12px 22px; 
             text-align: left;
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
-            overflow: visible;
+            overflow: visible; 
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -175,6 +175,12 @@
                     <div id="res-nombre-2" style="font-size: 11px; font-weight: 800; color: #d946ef; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Jugador 2</div>
                     <input type="number" id="res-sets-2" min="0" max="4" value="0" style="width: 60px; text-align: center; font-size: 16px; font-weight: 800;">
                 </div>
+            </div>
+
+            <!-- CONTENEDOR NUEVO: RACHA E HISTORIAL H2H -->
+            <div id="res-info-extra" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 11px; color: #94a3b8; border: 1px solid rgba(255,255,255,0.05);">
+                <div id="res-racha-box" style="margin-bottom: 8px; text-align: center; font-size: 12px;"></div>
+                <div id="res-h2h-box" style="text-align: center; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 8px;"></div>
             </div>
             
             <div style="display: flex; gap: 10px;">
@@ -401,6 +407,7 @@
         let modoTorneoActual = 'normal'; 
         let seleccionFlash = []; 
         let partidosFlashActivos = []; 
+        let historialFlashGlobal = []; // <-- NUEVO: Guardar historial finalizado flash
         let idJugadorPendienteDiv = null; 
         let idPartidoPendienteRes = null; 
 
@@ -574,6 +581,9 @@
 
                 let todosFlash = partidosFlash || [];
                 partidosFlashActivos = todosFlash.filter(p => p.estado === 'en_curso');
+                
+                // Guardar historial para el H2H de la ventanita Modal
+                historialFlashGlobal = todosFlash.filter(p => p.estado === 'finalizado');
 
                 jugadoresListos.forEach(j => {
                     let misPartidos = todosFlash.filter(p => p.estado === 'finalizado' && (p.jugador1_id === j.id || p.jugador2_id === j.id));
@@ -992,8 +1002,47 @@
             document.getElementById('res-nombre-2').innerText = nombre2;
             document.getElementById('res-sets-1').value = '0';
             document.getElementById('res-sets-2').value = '0';
+
+            // Buscar la información extra para el modal (Racha y H2H)
+            let match = partidosFlashActivos.find(p => p.id === idPartido);
+            if(match) {
+                let j1 = jugadoresListos.find(j => j.id === match.jugador1_id);
+                let j2 = jugadoresListos.find(j => j.id === match.jugador2_id);
+                
+                // Racha actual en mesa
+                let rachaHTML = '';
+                if(j1 && j1.racha > 0) rachaHTML += `<span style="color:#fbbf24; font-weight:900;">👑 ${j1.nombre} lleva ${j1.racha} victoria(s) en esta mesa</span><br>`;
+                if(j2 && j2.racha > 0) rachaHTML += `<span style="color:#fbbf24; font-weight:900;">👑 ${j2.nombre} lleva ${j2.racha} victoria(s) en esta mesa</span>`;
+                if(!rachaHTML) rachaHTML = '<span style="color:#64748b; font-style:italic;">Primer partido en esta mesa para ambos</span>';
+                document.getElementById('res-racha-box').innerHTML = rachaHTML;
+
+                // Historial directo (H2H) del día
+                let winsJ1 = 0;
+                let winsJ2 = 0;
+                let h2hMatches = historialFlashGlobal.filter(p => 
+                    (p.jugador1_id === match.jugador1_id && p.jugador2_id === match.jugador2_id) ||
+                    (p.jugador1_id === match.jugador2_id && p.jugador2_id === match.jugador1_id)
+                );
+
+                h2hMatches.forEach(p => {
+                    if(p.ganador_id === match.jugador1_id) winsJ1++;
+                    else if(p.ganador_id === match.jugador2_id) winsJ2++;
+                });
+
+                let totalH2H = h2hMatches.length;
+                if(totalH2H === 0) {
+                    document.getElementById('res-h2h-box').innerHTML = '⚔️ <strong style="color:#fff;">Primer enfrentamiento</strong> del día entre ellos.';
+                } else {
+                    document.getElementById('res-h2h-box').innerHTML = `
+                        <div style="color:#fff; font-weight:800; margin-bottom:4px;">⚔️ Historial Directo de Hoy (${totalH2H} partidos)</div>
+                        <span style="color:#38bdf8; font-weight:900;">${nombre1} (${winsJ1})</span> <span style="color:#64748b; margin:0 6px;">vs</span> <span style="color:#d946ef; font-weight:900;">${nombre2} (${winsJ2})</span>
+                    `;
+                }
+            }
+
             document.getElementById('modal-resultado').style.display = 'flex';
         }
+        
         function cerrarModalResultado() {
             document.getElementById('modal-resultado').style.display = 'none';
             idPartidoPendienteRes = null;
