@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 15px; background-color: #04060a; color: #f8fafc; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
         
@@ -80,7 +81,7 @@
             </div>
             
             <div id="modal-jugador-partidos-list" style="display: flex; flex-direction: column; gap: 10px;">
-                <div class="mensaje-vacio">Cargando expediente...</div>
+                <div class="mensaje-vacio">El detalle del ranking no está disponible en la vista de mesas. Ve al administrador para ver el expediente completo.</div>
             </div>
             
             <button onclick="cerrarModalJugadorAdmin()" style="width: 100%; justify-content: center; margin-top: 20px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; padding: 12px; border-radius: 9999px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease;">Cerrar Detalle</button>
@@ -104,9 +105,8 @@
 
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">📌 Estado de Juego / Vista:</div>
     <div class="scrolling-bar">
-        <!-- BOTONES REORDENADOS PARA CELULAR -->
         <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Todos</button>
-        <button class="btn-filter-pill" id="tab-flash" onclick="filtrarEstado('flash')" style="color: #fbbf24; border-color: rgba(245,158,11,0.5);">⚡ Estadísticas Flash</button>
+        <button class="btn-filter-pill" id="tab-flash" onclick="filtrarEstado('flash')" style="color: #fbbf24; border-color: rgba(245,158,11,0.5);">⚡ Fila y Estadísticas Flash</button>
         <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')">📊 Resumen Grupos/Llaves</button>
         <button class="btn-filter-pill" id="tab-vivo" onclick="filtrarEstado('en_curso')">🔴 En Vivo</button>
         <button class="btn-filter-pill" id="tab-pendientes" onclick="filtrarEstado('pendiente')">⏳ Pendientes</button>
@@ -128,10 +128,9 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         let idTorneoActivo = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id') || 1;
-        let orgId = localStorage.getItem('organizador_id'); 
-        let vistaParam = urlParams.get('vista');
+        let vistaParam = urlParams.get('vista'); 
+        let orgId = null; 
 
-        // INYECCIÓN DE URL INTELIGENTE: Pega el ?torneo=X si no lo tiene
         if (!urlParams.has('torneo')) {
             try {
                 const newUrl = new URL(window.location.href);
@@ -141,6 +140,8 @@
         }
 
         let todosLosPartidos = [];
+        let todasLasCategorias = [];
+        let inscripcionesGlobales = [];
         let mesaFiltro = 'todas';
         let estadoFiltro = 'todos';
         let categoriaFiltro = 'todas';
@@ -169,17 +170,21 @@
 
         async function inicializar() {
             try {
-                // Obtenemos los datos y el orgId de la nube por si es un juez que abrió el link
                 const { data: torneoData, error } = await clienteSupabase
                     .from('torneos')
                     .select('nombre, pin_jueces, organizador_id')
                     .eq('id', idTorneoActivo)
-                    .single();
+                    .maybeSingle();
+
+                if (error) throw error;
 
                 if (torneoData) {
                     document.getElementById('nombre-torneo').innerText = torneoData.nombre;
                     if (torneoData.pin_jueces) pinJuecesActual = torneoData.pin_jueces;
-                    orgId = torneoData.organizador_id; // Seteamos el organizador dinámicamente
+                    orgId = torneoData.organizador_id; 
+                } else {
+                    document.getElementById('contenedor-partidos').innerHTML = '<div class="mensaje-vacio">Torneo no encontrado. Verifica el enlace.</div>';
+                    return;
                 }
 
                 await cargarPartidos();
@@ -198,6 +203,7 @@
                     .subscribe();
             } catch (err) {
                 console.error("Error inicializando mesas:", err);
+                document.getElementById('contenedor-partidos').innerHTML = '<div class="mensaje-vacio text-rose-500">Error de conexión. Recarga la página.</div>';
             }
         }
 
@@ -221,14 +227,16 @@
 
         async function cargarPartidos() {
             try {
-                const { data } = await clienteSupabase
-                    .from('partidos')
-                    .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)')
-                    .eq('torneo_id', idTorneoActivo)
-                    .eq('organizador_id', orgId)
-                    .order('id', { ascending: true });
+                const [resPartidos, resInsc, resCat] = await Promise.all([
+                    clienteSupabase.from('partidos').select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)').eq('torneo_id', idTorneoActivo).eq('organizador_id', orgId).order('id', { ascending: true }),
+                    clienteSupabase.from('inscripciones').select('categoria_id, estatus_pago, jugadores(id, nombre, club, puntos_ranking)').eq('torneo_id', idTorneoActivo).eq('organizador_id', orgId),
+                    clienteSupabase.from('categorias').select('*').eq('organizador_id', orgId)
+                ]);
 
-                todosLosPartidos = data || [];
+                todosLosPartidos = resPartidos.data || [];
+                inscripcionesGlobales = resInsc.data || [];
+                todasLasCategorias = resCat.data || [];
+
                 generarBotonesCategorias();
                 generarBotonesMesas();
                 dibujarPantalla();
@@ -372,9 +380,6 @@
         function abrirModalJugadorAdmin(jugadorId, nombre, club) {
             document.getElementById('modal-jugador-nombre').innerText = nombre;
             document.getElementById('modal-jugador-club').innerText = club || 'Sin Club';
-
-            const modalList = document.getElementById('modal-jugador-partidos-list');
-            modalList.innerHTML = '<div class="mensaje-vacio">El detalle del ranking no está disponible en la vista de mesas. Ve al administrador para ver el expediente completo.</div>';
             document.getElementById('modal-jugador-admin').style.display = 'flex';
         }
 
@@ -462,7 +467,6 @@
                         score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`;
                     }
 
-                    // Estilo Neón para las mesas Flash
                     let cardClass = isVivo && !isFlash ? 'vivo' : (isFin ? 'finalizado' : '');
                     let customStyle = '';
                     let mesaColor = '';
@@ -478,7 +482,7 @@
                         }
                     }
 
-                    let etiqGpo = isFlash ? 'Liga Continua' : (p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Fase Final'));
+                    let etiqGpo = isFlash ? 'Liga Continua' : (p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Fase Final'));
 
                     container.innerHTML += `
                         <div class="card-mesa ${cardClass}" style="${customStyle}">
@@ -525,20 +529,101 @@
         }
 
         // =================================================================================
-        // ======================= MÓDULO ESTADÍSTICAS FLASH ===============================
+        // ======================= MÓDULO ESTADÍSTICAS Y FILA FLASH ========================
         // =================================================================================
-        function dibujarEstadisticasFlash(container) {
-            let partidosFlash = todosLosPartidos.filter(p => p.grupo_nombre === 'Flash');
+        function renderQueueHtml(catId) {
+            let html = '';
+            let partidosFlash = todosLosPartidos.filter(p => p.grupo_nombre === 'Flash' && p.categoria_id === catId);
+            let partidosActivos = partidosFlash.filter(p => p.estado === 'en_curso');
+            let historial = partidosFlash.filter(p => p.estado === 'finalizado');
+
+            let insCat = inscripcionesGlobales.filter(ins => ins.categoria_id === catId && ins.jugadores && ins.estatus_pago === 'Pagado');
+            let jugadores = insCat.map(ins => ins.jugadores);
+
+            jugadores.forEach(j => {
+                let misPartidos = historial.filter(p => p.jugador1_id === j.id || p.jugador2_id === j.id);
+                misPartidos.sort((a,b) => a.id - b.id);
+                
+                j.pjFlash = misPartidos.length;
+                let racha = 0;
+                for (let p of misPartidos) {
+                    if (p.ganador_id === j.id) racha++;
+                    else racha = 0;
+                }
+                j.racha = racha;
+                j.lastMatchId = misPartidos.length > 0 ? misPartidos[misPartidos.length - 1].id : 0;
+                j.isPlaying = partidosActivos.some(p => p.jugador1_id === j.id || p.jugador2_id === j.id);
+            });
+
+            let reyes = jugadores.filter(j => !j.isPlaying && j.racha > 0 && j.racha < 5).sort((a, b) => b.lastMatchId - a.lastMatchId);
+            let retadores = jugadores.filter(j => !j.isPlaying && (j.racha === 0 || j.racha >= 5));
+            let ocupados = jugadores.filter(j => j.isPlaying);
+
+            const lsKey = `flash_queue_${orgId}_${idTorneoActivo}`;
+            let savedQueue = JSON.parse(localStorage.getItem(lsKey) || "[]");
+            retadores.sort((a, b) => {
+                let idxA = savedQueue.indexOf(a.id);
+                let idxB = savedQueue.indexOf(b.id);
+                if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+                if (idxA !== -1) return -1;
+                if (idxB !== -1) return 1;
+                if (a.pjFlash === 0 && b.pjFlash > 0) return -1;
+                if (b.pjFlash === 0 && a.pjFlash > 0) return 1;
+                if (a.pjFlash === 0 && b.pjFlash === 0) return a.id - b.id;
+                return a.lastMatchId - b.lastMatchId;
+            });
+
+            html += `<div style="background:rgba(0,0,0,0.3); border-radius:14px; padding:16px; margin-bottom:25px; border:1px solid rgba(255,255,255,0.05);">`;
+            html += `<h4 style="font-size:13px; color:#fff; font-weight:900; text-transform:uppercase; margin-bottom:15px;"><i class="fa-solid fa-users mr-2"></i> Gestión de Fila en Vivo</h4>`;
             
-            if (categoriaFiltro !== 'todas') {
-                partidosFlash = partidosFlash.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
+            if (reyes.length > 0) {
+                html += `<div style="font-size:11px; font-weight:900; color:#fbbf24; margin-bottom:12px; text-transform:uppercase; border-bottom:1px solid rgba(245,158,11,0.3); padding-bottom:6px;">👑 Reyes en Mesa (Esperando Retador)</div>`;
+                html += `<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:10px; margin-bottom:20px;">`;
+                reyes.forEach(j => {
+                    let divStr = localStorage.getItem(`flash_div_${orgId}_${j.id}`);
+                    let divBadge = divStr === '1' ? `<span style="background:rgba(244,63,94,0.2); color:#f43f5e; padding:2px 4px; border-radius:4px; font-size:8px;">Div 1</span>` : (divStr === '2' ? `<span style="background:rgba(234,179,8,0.2); color:#eab308; padding:2px 4px; border-radius:4px; font-size:8px;">Div 2</span>` : '');
+                    
+                    html += `
+                        <div style="background:rgba(245,158,11,0.1); border:1px solid #fbbf24; border-radius:10px; padding:12px;">
+                            <div style="font-size:11px; font-weight:800; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${j.nombre}</div>
+                            <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
+                                ${divBadge}
+                                <span style="background:#fbbf24; color:#000; font-size:9px; padding:2px 6px; border-radius:4px; font-weight:900;">👑 RACHA: ${j.racha}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += `</div>`;
             }
 
-            if (partidosFlash.length === 0) {
-                container.innerHTML = `<div class="mensaje-vacio">No hay datos registrados en la Modalidad Flash bajo este filtro.</div>`;
-                return;
+            html += `<div style="font-size:11px; font-weight:900; color:#34d399; margin-bottom:12px; text-transform:uppercase; border-bottom:1px solid rgba(52,211,153,0.3); padding-bottom:6px;">🟢 Próximos en Fila (Retadores)</div>`;
+            html += `<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap:10px; margin-bottom:15px;">`;
+            if (retadores.length === 0) {
+                html += `<div style="grid-column: 1/-1; font-size:10px; color:#64748b; font-style:italic;">No hay jugadores esperando.</div>`;
+            } else {
+                retadores.forEach((j, idx) => {
+                    let divStr = localStorage.getItem(`flash_div_${orgId}_${j.id}`);
+                    let divBadge = divStr === '1' ? `<span style="background:rgba(244,63,94,0.2); color:#f43f5e; padding:2px 4px; border-radius:4px; font-size:8px;">Div 1</span>` : (divStr === '2' ? `<span style="background:rgba(234,179,8,0.2); color:#eab308; padding:2px 4px; border-radius:4px; font-size:8px;">Div 2</span>` : '');
+                    
+                    html += `
+                        <div style="background:rgba(15,23,42,0.8); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:12px; position:relative;">
+                            <div style="position:absolute; top:-6px; right:-6px; background:#10b981; color:#000; width:20px; height:20px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:9px; border:2px solid #04060a;">${idx+1}</div>
+                            <div style="font-size:11px; font-weight:800; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${j.nombre}</div>
+                            <div style="margin-top:6px; display:flex; justify-content:space-between; align-items:center;">
+                                ${divBadge}
+                                <span style="font-size:9px; color:#38bdf8; font-weight:800;">PJ: ${j.pjFlash}</span>
+                            </div>
+                        </div>
+                    `;
+                });
             }
+            html += `</div></div>`;
 
+            return html;
+        }
+
+        function renderStatsHtml(catId) {
+            let partidosFlash = todosLosPartidos.filter(p => p.grupo_nombre === 'Flash' && p.categoria_id === catId);
             let stats = {};
 
             const getDiv = (jId) => {
@@ -557,21 +642,17 @@
             partidosFlash.forEach(m => {
                 let estLimpio = String(m.estado || '').trim().toLowerCase();
                 if (estLimpio === 'finalizado' && m.j1 && m.j2) {
-                    
                     [m.j1, m.j2].forEach(j => {
                         if (j && j.id && !stats[j.id]) {
                             stats[j.id] = { id: j.id, nombre: j.nombre, club: j.club, div: getDiv(j.id), pj: 0, pg: 0, pp: 0, setsG: 0, setsP: 0 };
                         }
                     });
-
                     if (stats[m.j1.id] && stats[m.j2.id]) {
                         let j1 = stats[m.j1.id];
                         let j2 = stats[m.j2.id];
-
                         j1.pj++; j2.pj++;
                         j1.setsG += (m.sets_j1 || 0); j1.setsP += (m.sets_j2 || 0);
                         j2.setsG += (m.sets_j2 || 0); j2.setsP += (m.sets_j1 || 0);
-
                         if (m.ganador_id === m.jugador1_id) { j1.pg++; j2.pp++; }
                         else if (m.ganador_id === m.jugador2_id) { j2.pg++; j1.pp++; }
                     }
@@ -579,27 +660,18 @@
             });
 
             let jugadoresArr = Object.values(stats);
-            
-            if (jugadoresArr.length === 0) {
-                container.innerHTML = `<div class="mensaje-vacio">Aún no hay partidos finalizados en la Liga Flash.</div>`;
-                return;
-            }
+            if (jugadoresArr.length === 0) return `<div class="mensaje-vacio">Aún no hay partidos finalizados para calcular estadísticas.</div>`;
 
-            // Calcular Efectividad y Diferencia
             jugadoresArr.forEach(j => {
                 j.efectividad = j.pj > 0 ? ((j.pg / j.pj) * 100).toFixed(1) : 0;
                 j.difSets = j.setsG - j.setsP;
             });
 
-            // Ordenamiento
             jugadoresArr.sort((a, b) => {
                 let aQualifies = a.pj >= 5 ? 1 : 0;
                 let bQualifies = b.pj >= 5 ? 1 : 0;
-                
                 if (aQualifies !== bQualifies) return bQualifies - aQualifies;
-                
                 if (parseFloat(b.efectividad) !== parseFloat(a.efectividad)) return parseFloat(b.efectividad) - parseFloat(a.efectividad);
-                
                 return b.difSets - a.difSets;
             });
 
@@ -607,21 +679,45 @@
             let div2 = jugadoresArr.filter(j => String(j.div) === '2');
             let sinDiv = jugadoresArr.filter(j => String(j.div) !== '1' && String(j.div) !== '2');
 
-            let html = `
-                <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(245,158,11,0.3); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">
-                    <div style="text-align:center; margin-bottom:20px;">
-                        <span style="font-size:14px; color:#fbbf24; font-weight:900; text-transform:uppercase; letter-spacing:2px; display:block;">⚡ Clasificación Liga Flash (Efectividad)</span>
-                        <span style="font-size:10px; color:#94a3b8; display:block; margin-top:6px;">Ordenados por % de Efectividad (Requieren mínimo 5 partidos para clasificar)</span>
-                    </div>
-            `;
-
+            let html = `<h4 style="font-size:13px; color:#fff; font-weight:900; text-transform:uppercase; margin-bottom:15px;"><i class="fa-solid fa-chart-simple mr-2"></i> Tabla de Efectividad</h4>`;
             html += renderTablaFlash('1', div1, '#f43f5e', '🏆 DIVISIÓN 1');
             html += renderTablaFlash('2', div2, '#eab308', '🏆 DIVISIÓN 2');
-            if (sinDiv.length > 0) {
-                html += renderTablaFlash('?', sinDiv, '#94a3b8', 'Jugadores sin división registrada');
+            if (sinDiv.length > 0) html += renderTablaFlash('?', sinDiv, '#94a3b8', 'Jugadores sin división registrada');
+            
+            return html;
+        }
+
+        function dibujarEstadisticasFlash(container) {
+            let html = '';
+            let categoriasSet = new Set();
+            todosLosPartidos.forEach(p => {
+                if (p.grupo_nombre === 'Flash' && p.categorias) categoriasSet.add(p.categorias.id);
+            });
+
+            let catsToRender = Array.from(categoriasSet);
+            if (categoriaFiltro !== 'todas') {
+                let catObj = todasLasCategorias.find(c => c.nombre === categoriaFiltro);
+                if (catObj) catsToRender = [catObj.id];
             }
 
-            html += `</div>`;
+            if (catsToRender.length === 0) {
+                container.innerHTML = `<div class="mensaje-vacio">No hay datos de Liga Flash para esta selección.</div>`;
+                return;
+            }
+
+            catsToRender.forEach(catId => {
+                let catObj = todasLasCategorias.find(c => c.id === catId);
+                let catNombre = catObj ? catObj.nombre : 'Categoría';
+
+                html += `<div style="background:rgba(10,15,26,0.85); border:1px solid rgba(245,158,11,0.3); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">`;
+                html += `<h3 style="font-size:16px; color:#fbbf24; font-weight:900; text-transform:uppercase; margin-bottom:20px; border-bottom:1px solid rgba(245,158,11,0.2); padding-bottom:10px;">⚡ LIGA FLASH: ${catNombre}</h3>`;
+
+                html += renderQueueHtml(catId);
+                html += renderStatsHtml(catId);
+
+                html += `</div>`;
+            });
+
             container.innerHTML = html;
         }
 
@@ -1034,7 +1130,7 @@
                         if (resJ2 && !p.jugador2_id) updates.jugador2_id = resJ2;
 
                         if (Object.keys(updates).length > 0) {
-                            await clienteSupabase.from('partidos').update(updates).eq('id', p.id).eq('organizador_id', ORG_ID);
+                            await clienteSupabase.from('partidos').update(updates).eq('id', p.id).eq('organizador_id', orgId);
                         }
                     } else {
                         alert("⚠️ No se pudieron determinar los jugadores para este partido. Asegúrate de que las fases anteriores tengan resultados válidos en el sistema.");
