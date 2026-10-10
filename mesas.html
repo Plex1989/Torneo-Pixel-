@@ -129,9 +129,9 @@
         const urlParams = new URLSearchParams(window.location.search);
         let idTorneoActivo = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id') || 1;
         let vistaParam = urlParams.get('vista'); 
-        let ORG_ID = null; 
+        let ORG_ID = null; // Autodetectado para que los jueces no necesiten iniciar sesión
 
-        // INYECCIÓN DE URL SEGURA PARA MOVILES (toString evita bloqueos en iOS/Safari)
+        // TRUCO: Inyectar el ID a la URL automáticamente si no lo tiene.
         if (!urlParams.has('torneo')) {
             try {
                 const newUrl = new URL(window.location.href);
@@ -169,6 +169,7 @@
 
         async function inicializar() {
             try {
+                // Autodetecta el organizador del torneo para no bloquear a los jueces
                 const { data: torneoData, error } = await clienteSupabase
                     .from('torneos')
                     .select('nombre, pin_jueces, organizador_id')
@@ -681,8 +682,6 @@
             return html;
         }
 
-        // =================================================================================
-
         function obtenerCuadroDeHonorHtml(catNombre) {
             const pCat = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash'));
             const pF = pCat.find(p => String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi'));
@@ -956,7 +955,7 @@
                             </div>
                         ` : `
                             <div style="background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.5); color:#fbbf24; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase; margin-bottom:18px;">
-                                ⏳ PROYECCIÓN PRELIMINAR EN TIEMPO REAL (En espera de finalizar grupos)
+                                ⏳ PROYECCIÓN PRELIMINAR EN TIEMPO REAL (Resultados preliminares)
                             </div>
                         `}
 
