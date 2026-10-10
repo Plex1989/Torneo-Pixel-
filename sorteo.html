@@ -13,6 +13,16 @@
             window.location.href = "torneos.html";
         }
 
+        // FUNCIÓN PARA NO ABRIR PESTAÑAS DUPLICADAS
+        function enfocarPestana(url, nombreVentana) {
+            let win = window.open(url, nombreVentana);
+            if (win) {
+                win.focus();
+            } else {
+                alert("Por favor, permite las ventanas emergentes (pop-ups) en tu navegador para abrir esta pantalla.");
+            }
+        }
+
         // NUEVA FUNCIÓN INTELIGENTE: Fuerza al navegador a abrir la vista correcta sin reciclar pestañas congeladas
         function abrirVistaInteligente(destino) {
             const idTorneo = localStorage.getItem('torneo_activo_id') || 1;
@@ -214,6 +224,7 @@
             <a href="torneos.html" class="nav-btn">Mis Torneos</a>
             <a href="admin.html" class="nav-btn">Administrador</a>
             <a href="sorteo.html" class="nav-btn active">Sorteo y Rol</a>
+            <!-- NUEVOS BOTONES INTELIGENTES QUE ROMPEN EL CACHÉ Y MANDAN EL PARÁMETRO FLASH -->
             <a href="#" onclick="abrirVistaInteligente('mesas'); return false;" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
             <a href="#" onclick="abrirVistaInteligente('espectador'); return false;" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador</a>
             <a href="#" onclick="abrirVistaInteligente('index'); return false;" class="nav-btn public">Portal Público</a>
@@ -268,12 +279,10 @@
                             <span style="font-size: 12px; font-weight: 900; color: #fbbf24; text-transform: uppercase;"><i class="fa-solid fa-users mr-2"></i> Gestión de Fila</span>
                             <div style="display: flex; gap: 8px;">
                                 <input type="text" id="buscador-flash-sorteo" placeholder="🔎 Buscar..." onkeyup="filtrarSorteoFlash()" class="input-mini-buscar" style="max-width: 140px;">
-                                <button class="btn-console btn-ws-style" onclick="compartirFlashWS()" style="padding: 6px 10px; font-size: 10px;" title="Compartir Link a Fans"><i class="fa-brands fa-whatsapp"></i></button>
                                 <button class="btn-console btn-red" onclick="reiniciarLigaFlash()" style="padding: 6px 10px; font-size: 10px;" title="Borrar partidos y reiniciar fila"><i class="fa-solid fa-rotate-left"></i></button>
                             </div>
                         </div>
                         
-                        <!-- Contenedor donde inyectaremos las tres zonas separadas (Reyes, Próximos, Ocupados) -->
                         <div id="flash-wrapper-jugadores" style="max-height: 600px; overflow-y: auto; padding-right: 10px;">
                             <div class="mensaje-vacio">Selecciona una categoría...</div>
                         </div>
@@ -468,12 +477,6 @@
             cargarEstadoCategoria();
         }
 
-        function compartirFlashWS() {
-            let url = window.location.origin + '/espectador.html?torneo=' + idTorneoActivo + '&vista=flash';
-            let texto = `⚡ *¡Sigue la Liga Flash en Vivo!* ⚡\n\n🏆 Torneo: *${torneoActivoObj ? torneoActivoObj.nombre : ''}*\n\nSigue el acomodo de las mesas y posiciones en tiempo real aquí:\n👉 ${url}`;
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
-        }
-
         async function inicializarSorteo() {
             try {
                 const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).eq('organizador_id', ORG_ID).single();
@@ -568,7 +571,8 @@
                         .eq('categoria_id', idCat)
                         .eq('torneo_id', idTorneoActivo)
                         .eq('organizador_id', ORG_ID)
-                        .neq('grupo_nombre', 'Flash') 
+                        // EXCLUSIÓN SEGURA: Para no borrar por error si grupo_nombre es NULL (ej. Finales)
+                        .or('grupo_nombre.neq.Flash,grupo_nombre.is.null') 
                         .order('id', { ascending: true });
 
                     if (error) throw error;
@@ -1788,12 +1792,12 @@
             if (!confirm("⚠️ ¿Deseas ELIMINAR el sorteo guardado de esta categoría y generar uno nuevo?")) return;
 
             try {
-                // Solo elimina los partidos de Round Robin, no los Flash
+                // Solo elimina los partidos de Round Robin, no los Flash (Manejo correcto de nulos)
                 await clienteSupabase.from('partidos').delete()
                     .eq('categoria_id', idCat)
                     .eq('torneo_id', idTorneoActivo)
                     .eq('organizador_id', ORG_ID)
-                    .neq('grupo_nombre', 'Flash');
+                    .or('grupo_nombre.neq.Flash,grupo_nombre.is.null');
                 await cargarEstadoCategoria();
             } catch(e) {
                 alert("Error al borrar: " + e.message);
@@ -1820,7 +1824,7 @@
                     .eq('categoria_id', idCategoria)
                     .eq('torneo_id', idTorneoActivo)
                     .eq('organizador_id', ORG_ID)
-                    .neq('grupo_nombre', 'Flash');
+                    .or('grupo_nombre.neq.Flash,grupo_nombre.is.null');
                 if (req2.error) throw new Error("Fallo al limpiar partidos antiguos: " + req2.error.message);
 
                 let partidosInsertar = partidosGeneradosRR.map(p => ({
