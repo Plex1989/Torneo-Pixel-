@@ -13,21 +13,14 @@
             window.location.href = "torneos.html";
         }
 
-        // NUEVA FUNCIÓN INTELIGENTE: Fuerza al navegador a abrir la vista correcta sin reciclar pestañas congeladas
-        function abrirVistaInteligente(destino) {
-            const idTorneo = localStorage.getItem('torneo_activo_id') || 1;
-            let url = destino + ".html?torneo=" + idTorneo;
-            
-            // Si estás viendo el modo Flash, le avisa al link que abra esa pestaña
-            if (typeof modoTorneoActual !== 'undefined' && modoTorneoActual === 'flash') {
-                url += "&vista=flash";
+        // FUNCIÓN PARA NO ABRIR PESTAÑAS DUPLICADAS
+        function enfocarPestana(url, nombreVentana) {
+            let win = window.open(url, nombreVentana);
+            if (win) {
+                win.focus();
+            } else {
+                alert("Por favor, permite las ventanas emergentes (pop-ups) en tu navegador para abrir esta pantalla.");
             }
-            
-            // Rompe el caché para que no te cargue una versión trabada
-            url += "&v=" + new Date().getTime();
-
-            // Abrimos en una pestaña nueva para forzar la carga correcta y evitar que el navegador ignore el link
-            window.open(url, '_blank');
         }
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -194,6 +187,7 @@
                 </div>
             </div>
 
+            <!-- CONTENEDOR NUEVO: RACHA E HISTORIAL H2H -->
             <div id="res-info-extra" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 11px; color: #94a3b8; border: 1px solid rgba(255,255,255,0.05);">
                 <div id="res-racha-box" style="margin-bottom: 8px; text-align: center; font-size: 12px;"></div>
                 <div id="res-h2h-box" style="text-align: center; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 8px;"></div>
@@ -213,9 +207,9 @@
             <a href="torneos.html" class="nav-btn">Mis Torneos</a>
             <a href="admin.html" class="nav-btn">Administrador</a>
             <a href="sorteo.html" class="nav-btn active">Sorteo y Rol</a>
-            <a href="#" onclick="abrirVistaInteligente('mesas'); return false;" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
-            <a href="#" onclick="abrirVistaInteligente('espectador'); return false;" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador</a>
-            <a href="#" onclick="abrirVistaInteligente('index'); return false;" class="nav-btn public">Portal Público</a>
+            <a href="#" onclick="enfocarPestana('mesas.html', 'PixelMesas'); return false;" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
+            <a href="#" onclick="enfocarPestana('espectador.html', 'PixelEspectador'); return false;" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador</a>
+            <a href="#" onclick="enfocarPestana('index.html', 'PixelPortal'); return false;" class="nav-btn public">Portal Público</a>
         </div>
     </nav>
 
@@ -267,11 +261,11 @@
                             <span style="font-size: 12px; font-weight: 900; color: #fbbf24; text-transform: uppercase;"><i class="fa-solid fa-users mr-2"></i> Gestión de Fila</span>
                             <div style="display: flex; gap: 8px;">
                                 <input type="text" id="buscador-flash-sorteo" placeholder="🔎 Buscar..." onkeyup="filtrarSorteoFlash()" class="input-mini-buscar" style="max-width: 140px;">
-                                <button class="btn-console btn-ws-style" onclick="compartirFlashWS()" style="padding: 6px 10px; font-size: 10px;" title="Compartir Link a Fans"><i class="fa-brands fa-whatsapp"></i></button>
                                 <button class="btn-console btn-red" onclick="reiniciarLigaFlash()" style="padding: 6px 10px; font-size: 10px;" title="Borrar partidos y reiniciar fila"><i class="fa-solid fa-rotate-left"></i></button>
                             </div>
                         </div>
                         
+                        <!-- Contenedor donde inyectaremos las tres zonas separadas (Reyes, Próximos, Ocupados) -->
                         <div id="flash-wrapper-jugadores" style="max-height: 600px; overflow-y: auto; padding-right: 10px;">
                             <div class="mensaje-vacio">Selecciona una categoría...</div>
                         </div>
@@ -464,12 +458,6 @@
             }
             
             cargarEstadoCategoria();
-        }
-
-        function compartirFlashWS() {
-            let url = window.location.origin + '/espectador.html?torneo=' + idTorneoActivo + '&vista=flash';
-            let texto = `⚡ *¡Sigue la Liga Flash en Vivo!* ⚡\n\n🏆 Torneo: *${torneoActivoObj ? torneoActivoObj.nombre : ''}*\n\nSigue el acomodo de las mesas y posiciones en tiempo real aquí:\n👉 ${url}`;
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
         }
 
         async function inicializarSorteo() {
@@ -1060,7 +1048,7 @@
             container.innerHTML = '';
 
             if (partidosFlashActivos.length === 0) {
-                container.innerHTML = '<div class="mensaje-vacio">No hay partidos activos en este momento.</div>';
+                container.innerHTML = '<div class="mensaje-vacio">No hay mesas ocupadas en la Liga Continua.</div>';
                 return;
             }
 
