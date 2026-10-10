@@ -10,7 +10,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
     <style>
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 15px; background-color: #04060a; color: #f8fafc; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
         
@@ -105,6 +104,7 @@
 
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">📌 Estado de Juego / Vista:</div>
     <div class="scrolling-bar">
+        <!-- BOTONES REORDENADOS PARA QUE DESTAQUEN EN CELULAR -->
         <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Todos</button>
         <button class="btn-filter-pill" id="tab-flash" onclick="filtrarEstado('flash')" style="color: #fbbf24; border-color: rgba(245,158,11,0.5);">⚡ Estadísticas Flash</button>
         <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')">📊 Resumen Grupos/Llaves</button>
@@ -129,9 +129,8 @@
         const urlParams = new URLSearchParams(window.location.search);
         let idTorneoActivo = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id') || 1;
         let vistaParam = urlParams.get('vista'); 
-        let ORG_ID = null; // Autodetectado para que los jueces no necesiten iniciar sesión
+        let ORG_ID = null; 
 
-        // TRUCO: Inyectar el ID a la URL automáticamente si no lo tiene.
         if (!urlParams.has('torneo')) {
             try {
                 const newUrl = new URL(window.location.href);
@@ -169,7 +168,6 @@
 
         async function inicializar() {
             try {
-                // Autodetecta el organizador del torneo para no bloquear a los jueces
                 const { data: torneoData, error } = await clienteSupabase
                     .from('torneos')
                     .select('nombre, pin_jueces, organizador_id')
@@ -364,6 +362,15 @@
                 const rSetB = b.setsG / (b.setsP || 0.0001);
                 return rSetB - rSetA;
             });
+        }
+
+        function getPosNombre(grupoArr, posIndex, fallbackText) {
+            if (!grupoArr || grupoArr.length <= posIndex) return fallbackText;
+            const jugador = grupoArr[posIndex];
+            if (jugador && (jugador.pts > 0 || jugador.pj > 0)) {
+                return jugador.nombre;
+            }
+            return fallbackText;
         }
 
         function abrirModalJugadorAdmin(jugadorId, nombre, club) {
@@ -955,7 +962,7 @@
                             </div>
                         ` : `
                             <div style="background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.5); color:#fbbf24; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase; margin-bottom:18px;">
-                                ⏳ PROYECCIÓN PRELIMINAR EN TIEMPO REAL (Resultados preliminares)
+                                ⏳ PROYECCIÓN PRELIMINAR EN TIEMPO REAL (En espera de finalizar grupos)
                             </div>
                         `}
 
