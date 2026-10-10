@@ -10,14 +10,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script>
-        // BLINDAJE SAAS: Verifica usuario activo
-        const orgIdCheck = localStorage.getItem('organizador_id');
-        if (!orgIdCheck) {
-            alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
-            window.location.href = "torneos.html";
-        }
-    </script>
     <style>
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 15px; background-color: #04060a; color: #f8fafc; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
         
@@ -112,12 +104,13 @@
 
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">📌 Estado de Juego / Vista:</div>
     <div class="scrolling-bar">
+        <!-- BOTONES REORDENADOS PARA CELULAR -->
         <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Todos</button>
+        <button class="btn-filter-pill" id="tab-flash" onclick="filtrarEstado('flash')" style="color: #fbbf24; border-color: rgba(245,158,11,0.5);">⚡ Estadísticas Flash</button>
+        <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')">📊 Resumen Grupos/Llaves</button>
         <button class="btn-filter-pill" id="tab-vivo" onclick="filtrarEstado('en_curso')">🔴 En Vivo</button>
         <button class="btn-filter-pill" id="tab-pendientes" onclick="filtrarEstado('pendiente')">⏳ Pendientes</button>
         <button class="btn-filter-pill" id="tab-finalizados" onclick="filtrarEstado('finalizado')">🏁 Finalizados</button>
-        <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')">📊 Resumen Grupos/Llaves</button>
-        <button class="btn-filter-pill" id="tab-flash" onclick="filtrarEstado('flash')" style="color: #fbbf24; border-color: rgba(245,158,11,0.5);">⚡ Estadísticas Flash</button>
     </div>
 
     <div class="scrolling-bar" id="bar-mesas">
@@ -133,8 +126,19 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
-        const orgId = localStorage.getItem('organizador_id'); 
+        const urlParams = new URLSearchParams(window.location.search);
+        let idTorneoActivo = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id') || 1;
+        let orgId = localStorage.getItem('organizador_id'); 
+        let vistaParam = urlParams.get('vista');
+
+        // INYECCIÓN DE URL INTELIGENTE: Pega el ?torneo=X si no lo tiene
+        if (!urlParams.has('torneo')) {
+            try {
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.set('torneo', idTorneoActivo);
+                window.history.replaceState({}, '', newUrl.toString());
+            } catch(e) {}
+        }
 
         let todosLosPartidos = [];
         let mesaFiltro = 'todas';
@@ -165,13 +169,25 @@
 
         async function inicializar() {
             try {
-                const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre, pin_jueces').eq('id', idTorneoActivo).eq('organizador_id', orgId).single();
+                // Obtenemos los datos y el orgId de la nube por si es un juez que abrió el link
+                const { data: torneoData, error } = await clienteSupabase
+                    .from('torneos')
+                    .select('nombre, pin_jueces, organizador_id')
+                    .eq('id', idTorneoActivo)
+                    .single();
+
                 if (torneoData) {
                     document.getElementById('nombre-torneo').innerText = torneoData.nombre;
                     if (torneoData.pin_jueces) pinJuecesActual = torneoData.pin_jueces;
+                    orgId = torneoData.organizador_id; // Seteamos el organizador dinámicamente
                 }
 
                 await cargarPartidos();
+
+                if (vistaParam) {
+                    filtrarEstado(vistaParam);
+                }
+
                 iniciarPresenciaEspectadores();
 
                 clienteSupabase
@@ -494,7 +510,7 @@
                             </div>
 
                             <div style="display:flex; gap:10px;">
-                                <a href="juez.html?partido=${p.id}" target="_blank" class="btn-arbitrar ${isFin ? 'btn-reabrir' : ''}">
+                                <a href="javascript:abrirScoreboardJuez(${p.id})" class="btn-arbitrar ${isFin ? 'btn-reabrir' : ''}">
                                     ${isFin ? '🏁 REABRIR PARTIDO' : '🏓 Arbitrar Partido'}
                                 </a>
                             </div>
@@ -575,10 +591,7 @@
                 j.difSets = j.setsG - j.setsP;
             });
 
-            // Ordenamiento (Reglas del Flyer):
-            // 1. Min 5 PJ primero
-            // 2. Efectividad mayor
-            // 3. Diferencia de sets mayor
+            // Ordenamiento
             jugadoresArr.sort((a, b) => {
                 let aQualifies = a.pj >= 5 ? 1 : 0;
                 let bQualifies = b.pj >= 5 ? 1 : 0;
@@ -651,10 +664,14 @@
                     rankTrophy = '-';
                 }
 
+                let safeName = j.nombre ? String(j.nombre).replace(/'/g, "\\'") : '';
+                let safeClub = j.club ? String(j.club).replace(/'/g, "\\'") : 'Sin Club';
+                let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${safeName}', '${safeClub}')"` : '';
+
                 html += `
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.04); opacity: ${opacity}; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'" onmouseout="this.style.backgroundColor='transparent'">
                         <td style="padding:8px 6px; font-weight:800; color:#64748b; font-size:14px;">${rankTrophy}</td>
-                        <td style="padding:8px 6px; cursor:pointer;" onclick="abrirModalJugadorAdmin(${j.id}, '${String(j.nombre).replace(/'/g, "\\'")}', '${String(j.club).replace(/'/g, "\\'")}')">
+                        <td style="padding:8px 6px; cursor:pointer;" ${jClic}>
                             <strong style="color:#ffffff;">${j.nombre}</strong> ${qualBadge}
                             <small style="color:#64748b; display:block; font-size:9px;">${j.club || 'Sin Club'}</small>
                         </td>
@@ -671,8 +688,6 @@
             return html;
         }
 
-        // =================================================================================
-        // ========================= FIN ESTADÍSTICAS FLASH ================================
         // =================================================================================
 
         function obtenerCuadroDeHonorHtml(catNombre) {
@@ -738,7 +753,6 @@
             catsList.forEach(catNombre => {
                 const gruposCat = standings[catNombre] || {};
                 
-                // Si la categoría solo tiene modalidad flash, nos la saltamos en este resumen
                 if (Object.keys(gruposCat).length === 0) {
                     const llavesFlash = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase);
                     if(llavesFlash.length === 0) return;
@@ -778,7 +792,7 @@
                                             let dif = j.setsG - j.setsP;
                                             let difStr = dif >= 0 ? '+' + dif : dif;
                                             let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
-                                            let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${String(j.nombre||'').replace(/'/g, "\\'")}', '${String(j.club || 'Sin Club').replace(/'/g, "\\'")}')"` : '';
+                                            let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${String(j.nombre\vert{}\vert{}'').replace(/'/g, "\\'")}', '${String(j.club || 'Sin Club').replace(/'/g, "\\'")}')"` : '';
 
                                             return `
                                                 <tr style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'" ${jClic}>
@@ -814,7 +828,7 @@
             dibujarLlavesInferiores(container);
         }
 
-        function generarTarjetaLlave(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2, colorDesc2) {
+        function generarTarjetaLlaveEspectador(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2, colorDesc2) {
             let isFin = partido && String(partido.estado || '').trim().toLowerCase() === 'finalizado';
             let isVivo = partido && String(partido.estado || '').trim().toLowerCase() === 'en_curso';
             
@@ -880,7 +894,7 @@
                             <span style="font-size:9px; background:${colorDesc2}; padding:2px 6px; border-radius:4px; font-weight:800; margin-left:8px;">${descJ2}</span>
                         </div>
                     </div>
-                    
+
                     <button class="${btnClass} mt-4" onclick="abrirScoreboardJuez(${partido ? partido.id : 0})">
                         ${btnText}
                     </button>
@@ -921,7 +935,6 @@
                 const partidoSemi2 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('2') || String(p.ronda_fase || '').toLowerCase().includes('cruce 2')));
                 const partidoFinal = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi'));
 
-                // Si no hay llave para esta categoría (ej. es solo flash), ignorar
                 if(!partidoSemi1 && !partidoSemi2 && !partidoFinal) return;
 
                 let nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : primeroA;
@@ -933,9 +946,9 @@
                 let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Ganador Semi 1');
                 let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Ganador Semi 2');
 
-                let cardS1 = generarTarjetaLlave(partidoSemi1, 'Semifinal 1', '#38bdf8', 1, nomSemi1_j1, nomSemi1_j2, '1° Gpo A', '2° Gpo B', 'rgba(6,182,212,0.2); color:#38bdf8;');
-                let cardS2 = generarTarjetaLlave(partidoSemi2, 'Semifinal 2', '#f0abfc', 2, nomSemi2_j1, nomSemi2_j2, '1° Gpo B', '2° Gpo A', 'rgba(6,182,212,0.2); color:#38bdf8;');
-                let cardFinal = generarTarjetaLlave(partidoFinal, 'Gran Final', '#fbbf24', 1, nomFinal_j1, nomFinal_j2, 'Gana Semi 1', 'Gana Semi 2', 'rgba(217,70,239,0.2); color:#d946ef;');
+                let cardS1 = generarTarjetaLlaveEspectador(partidoSemi1, 'Semifinal 1', '#38bdf8', 1, nomSemi1_j1, nomSemi1_j2, '1° Gpo A', '2° Gpo B', 'rgba(6,182,212,0.2); color:#38bdf8;');
+                let cardS2 = generarTarjetaLlaveEspectador(partidoSemi2, 'Semifinal 2', '#f0abfc', 2, nomSemi2_j1, nomSemi2_j2, '1° Gpo B', '2° Gpo A', 'rgba(6,182,212,0.2); color:#38bdf8;');
+                let cardFinal = generarTarjetaLlaveEspectador(partidoFinal, 'Gran Final', '#fbbf24', 1, nomFinal_j1, nomFinal_j2, 'Gana Semi 1', 'Gana Semi 2', 'rgba(217,70,239,0.2); color:#d946ef;');
 
                 container.innerHTML += `
                     <div class="seccion-llaves-footer">
@@ -949,7 +962,7 @@
                                 ✅ ¡LLAVE DEFINITIVA CONFIRMADA! (Fase de grupos 100% completada)
                             </div>
                         ` : `
-                            <div style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase; margin-bottom:18px;">
+                            <div style="background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.5); color:#fbbf24; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase; margin-bottom:18px;">
                                 ⏳ PROYECCIÓN PRELIMINAR EN TIEMPO REAL (En espera de finalizar grupos)
                             </div>
                         `}
@@ -1021,7 +1034,7 @@
                         if (resJ2 && !p.jugador2_id) updates.jugador2_id = resJ2;
 
                         if (Object.keys(updates).length > 0) {
-                            await clienteSupabase.from('partidos').update(updates).eq('id', p.id).eq('organizador_id', orgId);
+                            await clienteSupabase.from('partidos').update(updates).eq('id', p.id).eq('organizador_id', ORG_ID);
                         }
                     } else {
                         alert("⚠️ No se pudieron determinar los jugadores para este partido. Asegúrate de que las fases anteriores tengan resultados válidos en el sistema.");
