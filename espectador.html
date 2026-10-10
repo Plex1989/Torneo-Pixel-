@@ -253,8 +253,15 @@
 
         async function inicializarEspectador() {
             try {
-                const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre, organizador_id').eq('id', idTorneoActivo).single();
-                
+                // Se usa maybeSingle() para evitar que crashee si la base de datos no lo encuentra
+                const { data: torneoData, error } = await clienteSupabase
+                    .from('torneos')
+                    .select('nombre, organizador_id')
+                    .eq('id', idTorneoActivo)
+                    .maybeSingle();
+
+                if (error) throw error;
+
                 if (torneoData) {
                     document.getElementById('torneo-nombre-header').innerText = torneoData.nombre;
                     ORG_ID = torneoData.organizador_id;
@@ -437,7 +444,7 @@
             let ptsPrevJ2 = p.j2 ? calcularRankingEnVivo(p.j2.id, p.j2.puntos_ranking || 0, finMatches, p.id) : 0;
             let impacto = calcularImpacto(ptsPrevJ1, ptsPrevJ2);
 
-            let isFin = String(p.estado || '').toLowerCase() === 'finalizado';
+            let isFin = String(p.estado || '').trim().toLowerCase() === 'finalizado';
             let ptsFinalJ1 = ptsPrevJ1;
             let ptsFinalJ2 = ptsPrevJ2;
             let deltaJ1 = 0;
@@ -508,15 +515,6 @@
                 const rSetB = b.setsG / (b.setsP || 0.0001);
                 return rSetB - rSetA;
             });
-        }
-
-        function getPosNombre(grupoArr, posIndex, fallbackText) {
-            if (!grupoArr || grupoArr.length <= posIndex) return fallbackText;
-            const jugador = grupoArr[posIndex];
-            if (jugador && (jugador.pts > 0 || jugador.pj > 0)) {
-                return jugador.nombre;
-            }
-            return fallbackText;
         }
 
         function abrirModalJugadorAdmin(jugadorId, nombre, club) {
@@ -590,7 +588,7 @@
                     else if (ganoPlayer) estadoBadge = `<span style="font-size:9px; background:rgba(16,185,129,0.2); color:#34d399; padding:3px 8px; border-radius:99px; font-weight:800;">🏆 VICTORIA (+${deltaPartido} pts)</span>`;
                     else if (perdioPlayer) estadoBadge = `<span style="font-size:9px; background:rgba(239,68,68,0.2); color:#f87171; padding:3px 8px; border-radius:99px; font-weight:800;">❌ DERROTA (${deltaPartido} pts)</span>`;
 
-                    let marcadorText = esFin ? (esJ1 ? `${p.sets_j1} - ${p.sets_j2}` : `${p.sets_j2} - ${p.sets_j1}`) + ' Sets' : (esVivo ? (esJ1 ? `${p.puntos_j1} - ${p.puntos_j2}` : `${p.puntos_j2} - ${p.puntos_j1}`) + ' Pts' : 'VS');
+                    let marcadorText = esFin ? (esJ1 ? `${p.sets_j1} -${p.sets_j2}` : `${p.sets_j2} -${p.sets_j1}`) + ' Sets' : (esVivo ? (esJ1 ? `${p.puntos_j1} -${p.puntos_j2}` : `${p.puntos_j2} -${p.puntos_j1}`) + ' Pts' : 'VS');
 
                     let historialText = '';
                     if (p.historial_sets && Array.isArray(p.historial_sets) && p.historial_sets.length > 0) {
@@ -598,15 +596,16 @@
                         historialText = `<div style="font-size:10px; color:#94a3b8; margin-top:6px; font-weight:700;">Parciales: ${parciales.join(', ')}</div>`;
                     }
 
-                    let etiqGpo = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? 'Grupo ' + p.grupo_nombre : (p.ronda_fase || 'Fase Final'));
+                    let partesFase = (p.ronda_fase || '').split('|');
+                    let nombreFase = partesFase[0] || (p.ronda_fase || 'Fase Final');
+
+                    let etiqGpo = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? 'Grupo ' + p.grupo_nombre : nombreFase);
 
                     html += `
                         <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); padding:12px 16px; border-radius:12px;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                                 <span style="font-size:10px; color:#38bdf8; font-weight:800; text-transform:uppercase;">
-                                    ${etiqGpo} • Mesa ${p.mesa || 1}
-                                </span>
-                                ${estadoBadge}
+                                    ${etiqGpo} • Mesa ${p.mesa \vert{}\vert{} 1}                                 </span>${estadoBadge}
                             </div>
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <div>
@@ -638,6 +637,168 @@
             document.getElementById('modal-jugador-admin').style.display = 'none';
         }
 
+        function dibujarPantalla() {
+            const container = document.getElementById('contenedor-espectador');
+            if (!container) return;
+            
+            container.innerHTML = '';
+
+            if (estadoFiltro === 'resumen') {
+                container.style.display = 'block';
+                dibujarResumenYLlaves(container);
+                return;
+            }
+
+            if (estadoFiltro === 'ranking') {
+                container.style.display = 'block';
+                const finMatches = todosLosPartidos.filter(p => String(p.estado || '').toLowerCase() === 'finalizado');
+                dibujarRankingGlobal(container, finMatches);
+                return;
+            }
+            
+            if (estadoFiltro === 'flash') {
+                container.style.display = 'block';
+                dibujarEstadisticasFlash(container);
+                return;
+            }
+
+            container.style.display = 'grid';
+
+            let filtrados = todosLosPartidos.filter(p => p.grupo_nombre); // Solo grupos y flash para la vista general
+
+            if (mesaFiltro !== 'todas') {
+                filtrados = filtrados.filter(p => p.mesa == mesaFiltro);
+            }
+
+            if (categoriaFiltro !== 'todas') {
+                filtrados = filtrados.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
+            }
+
+            if (estadoFiltro === 'en_curso') {
+                filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'en_curso');
+            } else if (estadoFiltro === 'pendiente') {
+                filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'pendiente');
+            } else if (estadoFiltro === 'finalizado') {
+                filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'finalizado');
+            }
+
+            if (filtrados.length === 0) {
+                container.innerHTML = `<div class="mensaje-vacio">No hay partidos registrados bajo este filtro.</div>`;
+                return;
+            }
+
+            const gruposPorHora = {};
+            filtrados.forEach(p => {
+                const h = p.hora || '09:00 AM';
+                if(!gruposPorHora[h]) gruposPorHora[h] = [];
+                gruposPorHora[h].push(p);
+            });
+
+            const horasOrdenadas = Object.keys(gruposPorHora).sort((a, b) => timeStringToMinutes(a) - timeStringToMinutes(b));
+            
+            const finMatches = todosLosPartidos.filter(p => String(p.estado || '').toLowerCase() === 'finalizado');
+
+            horasOrdenadas.forEach(hora => {
+                container.innerHTML += `<div class="header-hora">⏰ ${hora}</div>`;
+
+                gruposPorHora[hora].forEach(p => {
+                    let est = String(p.estado || '').toLowerCase();
+                    let isFin = est === 'finalizado';
+                    let isVivo = est === 'en_curso';
+                    let isFlash = p.grupo_nombre === 'Flash';
+
+                    let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : 
+                                  (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
+
+                    // Parse the magic string for dynamic names
+                    let partesFase = (p.ronda_fase || '').split('|');
+                    let nombreFase = partesFase[0] || p.ronda_fase || 'Por definir';
+
+                    let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${nombreFase} J1` : 'Por definir');
+                    let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${nombreFase} J2` : 'Por definir');
+
+                    let iconJ1 = (isFin && p.ganador_id === p.jugador1_id) ? '🏆 ' : '';
+                    let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '🏆 ' : '';
+
+                    let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
+
+                    let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : '';
+                    let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
+                    
+                    if (isVivo) {
+                        score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`;
+                        score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`;
+                    }
+                    
+                    let rDetails = calcularDetallesRankingPartido(p, finMatches);
+                    let txtRankJ1 = '';
+                    let txtRankJ2 = '';
+
+                    if (p.mostrar_ranking) {
+                        txtRankJ1 = `<small style="font-size:9px; color:#38bdf8; display:block;">${isFin ? rDetails.ptsFinalJ1 + ' pts' : rDetails.ptsPrevJ1 + ' pts'}</small>`;
+                        txtRankJ2 = `<small style="font-size:9px; color:#f0abfc; display:block;">${isFin ? rDetails.ptsFinalJ2 + ' pts' : rDetails.ptsPrevJ2 + ' pts'}</small>`;
+                    }
+                    
+                    let cardClass = isVivo && !isFlash ? 'vivo' : (isFin ? 'finalizado' : '');
+                    let customStyle = '';
+                    let mesaColor = '';
+                    
+                    if (isFlash && (isVivo || isFin)) {
+                        let colorIdx = (p.mesa || 1) - 1;
+                        let colorSet = coloresMesasFlash[colorIdx % coloresMesasFlash.length];
+                        mesaColor = `color:${colorSet.border};`;
+                        
+                        if (isVivo) {
+                            cardClass = 'hover:-translate-y-1 hover:border-white/20 transition-all cursor-pointer';
+                            customStyle = `border-left: 4px solid ${colorSet.border}; background: linear-gradient(90deg,${colorSet.bg} 0%, rgba(0,0,0,0.4) 100%);`;
+                        }
+                    }
+
+                    let etiqGpo = isFlash ? 'Liga Continua' : (p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : nombreFase);
+
+                    let safeNom1 = nomJ1 ? String(nomJ1).replace(/'/g, "\\'") : '';
+                    let safeClub1 = p.j1 && p.j1.club ? String(p.j1.club).replace(/'/g, "\\'") : 'Sin Club';
+
+                    let safeNom2 = nomJ2 ? String(nomJ2).replace(/'/g, "\\'") : '';
+                    let safeClub2 = p.j2 && p.j2.club ? String(p.j2.club).replace(/'/g, "\\'") : 'Sin Club';
+
+                    container.innerHTML += `
+                        <div class="card-mesa ${cardClass}" style="${customStyle}" onclick="abrirPartidoFullScreen(${p.id})">
+                            <div class="top-bar">
+                                <span class="mesa-title" style="${mesaColor}">MESA ${p.mesa \vert{}\vert{} 1}</span>${badgeEst}
+                            </div>
+
+                            <div style="margin-bottom:12px;">
+                                <span class="cat-badge" style="color:${catStyle.text}; background:${catStyle.bg}; border:1px solid${catStyle.border};">
+                                    🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'} • ${etiqGpo}
+                                </span>
+                            </div>
+
+                            <div class="score-container">
+                                <div class="jugador-box">
+                                    <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador1_id}, '${safeNom1}', '${safeClub1}')">
+                                        <span class="jugador-nombre">${iconJ1}${nomJ1}</span>${txtRankJ1}
+                                    </div>
+                                    <div style="display:flex; align-items:center;">${score1}</div>
+                                </div>
+
+                                <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
+                                    <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador2_id}, '${safeNom2}', '${safeClub2}')">
+                                        <span class="jugador-nombre">${iconJ2}${nomJ2}</span>${txtRankJ2}
+                                    </div>
+                                    <div style="display:flex; align-items:center;">${score2}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+
+            if (mesaFiltro === 'todas') {
+                dibujarLlavesInferiores(container);
+            }
+        }
+
         // =================================================================================
         // ======================= MÓDULO ESTADÍSTICAS FLASH ===============================
         // =================================================================================
@@ -655,7 +816,6 @@
 
             let stats = {};
 
-            // Función para deducir la división leyendo el texto del "Sorteo Flash" guardado en Supabase
             const getDiv = (jId) => {
                 for (let p of partidosFlash) {
                     if (p.ronda_fase && p.ronda_fase.includes('Div')) {
@@ -669,7 +829,6 @@
                 return '?';
             };
 
-            // Contar stats
             partidosFlash.forEach(m => {
                 let estLimpio = String(m.estado || '').trim().toLowerCase();
                 if (estLimpio === 'finalizado' && m.j1 && m.j2) {
@@ -707,7 +866,7 @@
                 j.difSets = j.setsG - j.setsP;
             });
 
-            // Ordenamiento (Reglas del Flyer)
+            // Ordenamiento
             jugadoresArr.sort((a, b) => {
                 let aQualifies = a.pj >= 5 ? 1 : 0;
                 let bQualifies = b.pj >= 5 ? 1 : 0;
@@ -787,7 +946,7 @@
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.04); opacity: ${opacity}; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'" onmouseout="this.style.backgroundColor='transparent'">
                         <td style="padding:8px 6px; font-weight:800; color:#64748b; font-size:14px;">${rankTrophy}</td>
                         <td style="padding:8px 6px; cursor:pointer;" ${jClic}>
-                            <strong style="color:#ffffff;">${j.nombre}</strong> ${qualBadge}
+                            <strong style="color:#ffffff;">${j.nombre}</strong>${qualBadge}
                             <small style="color:#64748b; display:block; font-size:9px;">${j.club || 'Sin Club'}</small>
                         </td>
                         <td style="padding:8px 6px; text-align:center; color:#94a3b8; font-weight:700;">${j.pj}</td>
@@ -843,7 +1002,7 @@
             let clickAccion2 = partido && partido.jugador2_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador2_id}, '${safeNom2}', '${safeClub2}')"` : '';
 
             let flexWrapper = titulo === 'Gran Final' ? 'grid-column: 1 / -1; display:flex; justify-content:center; margin-top:10px;' : '';
-            let innerStyle = `background:rgba(0,0,0,0.4); padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); ${opacidad} width:100%; ${cursor}`;
+            let innerStyle = `background:rgba(0,0,0,0.4); padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); ${opacidad} width:100\%;${cursor}`;
             if(titulo === 'Gran Final') innerStyle += ' max-width:450px; text-align:left;';
 
             return `
@@ -851,8 +1010,7 @@
                 <div style="${innerStyle}" class="${hoverFX}" ${clickAction}>
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <span style="font-size:${titulo==='Gran Final' ? '12px' : '10px'}; color:${colorTitulo}; font-weight:900; text-transform:uppercase;">${titulo==='Gran Final' ? '🏆 ' : ''}${titulo}</span>
-                            ${partido ? badgeEst : ''}
+                            <span style="font-size:${titulo==='Gran Final' ? '12px' : '10px'}; color:${colorTitulo}; font-weight:900; text-transform:uppercase;">${titulo==='Gran Final' ? '🏆 ' : ''}${titulo}</span>${partido ? badgeEst : ''}
                         </div>
                         <span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partido?.mesa || mesaDefault}</span>
                     </div>
@@ -894,7 +1052,8 @@
 
             if (catsList.length === 0) return;
 
-            const partidosLlaveBD = todosLosPartidos.filter(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase && (String(p.ronda_fase).toLowerCase().includes('cruce') || String(p.ronda_fase).toLowerCase().includes('semi') || String(p.ronda_fase).toLowerCase().includes('final')));
+            // Busca cualquier partido que no tenga grupo (las llaves dinámicas que ahora tienen el separador "|")
+            const partidosLlaveBD = todosLosPartidos.filter(p => (!p.grupo_nombre || p.grupo_nombre === ''));
 
             catsList.forEach(catNombre => {
                 const gruposCat = standings[catNombre] || {};
@@ -915,16 +1074,23 @@
 
                 let llavesHtml = '';
                 llavesCat.forEach(p => {
-                    let nomJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase || 'Por definir');
-                    let nomJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase || 'Por definir');
-                    
-                    let isFinal = String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi');
-                    let isSemi = String(p.ronda_fase || '').toLowerCase().includes('semi');
-                    
+                    // Magia del separador para llaves dinámicas (Cuartos, Octavos, Semis)
+                    let partesFase = (p.ronda_fase || '').split('|');
+                    let tituloFase = partesFase[0] || p.ronda_fase || 'Llave';
+                    let desc1 = partesFase[1] || 'Por definir';
+                    let desc2 = partesFase[2] || 'Por definir';
+
+                    let nomJ1 = p.j1 ? p.j1.nombre : desc1;
+                    let nomJ2 = p.j2 ? p.j2.nombre : desc2;
+
+                    let tfLower = tituloFase.toLowerCase();
+                    let isFinal = tfLower.includes('final') && !tfLower.includes('semi') && !tfLower.includes('cuarto') && !tfLower.includes('octavo');
+                    let isSemi = tfLower.includes('semi');
+
                     let colorTit = isFinal ? '#fbbf24' : (isSemi ? '#f0abfc' : '#38bdf8');
                     let colorDesc2 = isFinal ? 'rgba(217,70,239,0.2); color:#d946ef;' : 'rgba(6,182,212,0.2); color:#38bdf8;';
-                    
-                    llavesHtml += generarTarjetaLlaveEspectador(p, p.ronda_fase, colorTit, p.mesa, nomJ1, nomJ2, 'Llave', 'Llave', colorDesc2);
+
+                    llavesHtml += generarTarjetaLlaveEspectador(p, tituloFase, colorTit, p.mesa, nomJ1, nomJ2, desc1, desc2, colorDesc2);
                 });
 
                 container.innerHTML += `
@@ -934,148 +1100,4 @@
                             <h3 style="margin:0; border:none; padding:0; font-size:16px; color:#ffffff;">🏆 LLAVES ELIMINATORIAS - ${catNombre}</h3>
                         </div>
 
-                        ${totalGpo > 0 ? (gpoCompleto ? `
-                            <div style="background:rgba(16,185,129,0.2); border:1px solid rgba(16,185,129,0.5); color:#34d399; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:11px; text-transform:uppercase; margin-bottom:18px;">
-                                ✅ ¡LLAVE DEFINITIVA CONFIRMADA! (Fase de grupos 100% completada)
-                            </div>
-                        ` : `
-                            <div style="background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.5); color:#fbbf24; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase; margin-bottom:18px;">
-                                ⏳ PROYECCIÓN PRELIMINAR EN TIEMPO REAL (En espera de finalizar grupos)
-                            </div>
-                        `) : ''}
-
-                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
-                            ${llavesHtml}
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function abrirPartidoFullScreen(partidoId) {
-            if (!partidoId || partidoId === 0) return;
-            activePartidoFullScreenId = partidoId;
-            const modal = document.getElementById('modal-fullscreen-partido');
-            modal.style.display = 'flex';
-            actualizarModalFullScreen();
-        }
-
-        function cerrarPartidoFullScreen() {
-            activePartidoFullScreenId = null;
-            const modal = document.getElementById('modal-fullscreen-partido');
-            modal.style.display = 'none';
-            
-            if(partidoUrlId) {
-                const url = new URL(window.location);
-                url.searchParams.delete('partido');
-                window.history.pushState({}, '', url);
-                partidoUrlId = null;
-            }
-        }
-
-        function actualizarModalFullScreen() {
-            if (!activePartidoFullScreenId) return;
-
-            const p = todosLosPartidos.find(item => item.id == activePartidoFullScreenId);
-            if (!p) return;
-
-            let est = String(p.estado || '').toLowerCase();
-            let isFin = est === 'finalizado';
-
-            document.getElementById('fs-mesa-fase').innerText = `MESA ${p.mesa || 1} • ${p.grupo_nombre === 'Flash' ? 'LIGA CONTINUA' : (p.grupo_nombre ? 'GRUPO ' + p.grupo_nombre : (p.ronda_fase || 'FASE FINAL'))}`;
-            document.getElementById('fs-cat-nombre').innerText = `🏆 ${p.categorias?.nombre || 'CATEGORÍA'}`;
-
-            let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
-            let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
-
-            document.getElementById('fs-name-j1').innerText = nomJ1;
-            document.getElementById('fs-name-j2').innerText = nomJ2;
-            document.getElementById('fs-club-j1').innerText = p.j1?.club || 'Sin Club';
-            document.getElementById('fs-club-j2').innerText = p.j2?.club || 'Sin Club';
-
-            const scoreJ1 = isFin ? p.sets_j1 : p.puntos_j1 || 0;
-            const scoreJ2 = isFin ? p.sets_j2 : p.puntos_j2 || 0;
-
-            document.getElementById('fs-score-j1').innerText = scoreJ1;
-            document.getElementById('fs-score-j2').innerText = scoreJ2;
-            document.getElementById('fs-sets-j1').innerText = p.sets_j1 || 0;
-            document.getElementById('fs-sets-j2').innerText = p.sets_j2 || 0;
-
-            if (isFin && p.ganador_id === p.jugador1_id) {
-                document.getElementById('fs-winner-icon1').classList.remove('hidden');
-                document.getElementById('fs-winner-icon2').classList.add('hidden');
-            } else if (isFin && p.ganador_id === p.jugador2_id) {
-                document.getElementById('fs-winner-icon1').classList.add('hidden');
-                document.getElementById('fs-winner-icon2').classList.remove('hidden');
-            } else {
-                document.getElementById('fs-winner-icon1').classList.add('hidden');
-                document.getElementById('fs-winner-icon2').classList.add('hidden');
-            }
-
-            let txtRankJ1 = `<small style="font-size:9px; color:#38bdf8; display:block;">${p.j1?.puntos_ranking || 0} pts</small>`;
-            let txtRankJ2 = `<small style="font-size:9px; color:#f0abfc; display:block;">${p.j2?.puntos_ranking || 0} pts</small>`;
-
-            document.getElementById('fs-ranking-j1').innerHTML = txtRankJ1;
-            document.getElementById('fs-ranking-j2').innerHTML = txtRankJ2;
-            document.getElementById('fs-proyeccion-box').style.display = 'none';
-
-            const fsListSets = document.getElementById('fs-list-sets');
-            fsListSets.innerHTML = '';
-            if (p.historial_sets && p.historial_sets.length > 0) {
-                p.historial_sets.forEach(s => {
-                    let c1 = s.s1 > s.s2 ? 'text-cyan-400' : 'text-zinc-400';
-                    let c2 = s.s2 > s.s1 ? 'text-fuchsia-400' : 'text-zinc-400';
-                    fsListSets.innerHTML += `
-                        <span class="bg-black/60 border border-white/10 px-3 py-1 rounded-lg text-xs font-bold">
-                            Set ${s.numSet}: <span class="${c1}">${s.s1}</span> - <span class="${c2}">${s.s2}</span>
-                        </span>
-                    `;
-                });
-            }
-
-            let currentScoreStr = `${scoreJ1}-${scoreJ2}`;
-            if (lastAnnouncedScore !== currentScoreStr && !isFin) {
-                lastAnnouncedScore = currentScoreStr;
-                anunciarMarcadorEspectador(nomJ1, scoreJ1, nomJ2, scoreJ2);
-            }
-        }
-
-        function toggleAudioEspectador() {
-            audioMuted = !audioMuted;
-            document.getElementById('fs-btn-audio').innerHTML = audioMuted ? '<i class="fa-solid fa-volume-xmark text-rose-400"></i>' : '<i class="fa-solid fa-volume-high text-cyan-400"></i>';
-        }
-
-        function anunciarMarcadorEspectador(n1, s1, n2, s2) {
-            if (audioMuted || !window.speechSynthesis) return;
-            window.speechSynthesis.cancel();
-            let texto = `${getApellido(n1)} ${s1}, ${getApellido(n2)} ${s2}`;
-            let u = new SpeechSynthesisUtterance(texto);
-            u.lang = 'es-MX';
-            window.speechSynthesis.speak(u);
-        }
-
-        function compartirPartidoWhatsAppActual() {
-            if (!activePartidoFullScreenId) return;
-            const p = todosLosPartidos.find(item => item.id == activePartidoFullScreenId);
-            if (!p) return;
-
-            let nomJ1 = p.j1?.nombre || 'J1';
-            let nomJ2 = p.j2?.nombre || 'J2';
-            let score1 = String(p.estado || '').toLowerCase() === 'finalizado' ? p.sets_j1 : p.puntos_j1 || 0;
-            let score2 = String(p.estado || '').toLowerCase() === 'finalizado' ? p.sets_j2 : p.puntos_j2 || 0;
-
-            const urlPartido = `${window.location.origin}/espectador.html?torneo=${idTorneoActivo}&partido=${p.id}`;
-            let textoWS = `🏓 *MARCADOR EN VIVO - PIXEL STUDIO* 🏓\n\n` +
-                          `🏆 Categoría: *${p.categorias?.nombre || 'Torneo'}*\n` +
-                          `📍 Mesa: *Mesa ${p.mesa || 1}*\n\n` +
-                          `👤 *${nomJ1}* (${score1})\n` +
-                          `👤 *${nomJ2}* (${score2})\n\n` +
-                          `Sigue los puntos en tiempo real ingresando aquí:\n👉 ${urlPartido}`;
-
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWS)}`, '_blank');
-        }
-
-        inicializarEspectador();
-    </script>
-</body>
-</html>
+                        ${
