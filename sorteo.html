@@ -22,6 +22,22 @@
                 alert("Por favor, permite las ventanas emergentes (pop-ups) en tu navegador para abrir esta pantalla.");
             }
         }
+
+        // NUEVA FUNCIÓN INTELIGENTE: Pasa el torneo, el modo (Flash/Grupos) y rompe el caché congelado
+        function abrirVistaInteligente(destino) {
+            const idTorneo = localStorage.getItem('torneo_activo_id') || 1;
+            let url = destino + ".html?torneo=" + idTorneo;
+            
+            // Si el botón de Flash está activo en esta pantalla, avisa a las otras pantallas
+            if (typeof modoTorneoActual !== 'undefined' && modoTorneoActual === 'flash') {
+                url += "&vista=flash";
+            }
+            
+            // Este truco obliga al navegador a recargar y olvidar si la página se había congelado antes
+            url += "&v=" + new Date().getTime();
+
+            enfocarPestana(url, 'Pixel' + destino);
+        }
     </script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -187,7 +203,6 @@
                 </div>
             </div>
 
-            <!-- CONTENEDOR NUEVO: RACHA E HISTORIAL H2H -->
             <div id="res-info-extra" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 12px; margin-bottom: 20px; font-size: 11px; color: #94a3b8; border: 1px solid rgba(255,255,255,0.05);">
                 <div id="res-racha-box" style="margin-bottom: 8px; text-align: center; font-size: 12px;"></div>
                 <div id="res-h2h-box" style="text-align: center; border-top: 1px dashed rgba(255,255,255,0.1); padding-top: 8px;"></div>
@@ -207,9 +222,10 @@
             <a href="torneos.html" class="nav-btn">Mis Torneos</a>
             <a href="admin.html" class="nav-btn">Administrador</a>
             <a href="sorteo.html" class="nav-btn active">Sorteo y Rol</a>
-            <a href="#" onclick="enfocarPestana('mesas.html', 'PixelMesas'); return false;" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
-            <a href="#" onclick="enfocarPestana('espectador.html', 'PixelEspectador'); return false;" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador</a>
-            <a href="#" onclick="enfocarPestana('index.html', 'PixelPortal'); return false;" class="nav-btn public">Portal Público</a>
+            <!-- NUEVOS BOTONES INTELIGENTES QUE ROMPEN EL CACHÉ Y MANDAN EL PARÁMETRO FLASH -->
+            <a href="#" onclick="abrirVistaInteligente('mesas'); return false;" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
+            <a href="#" onclick="abrirVistaInteligente('espectador'); return false;" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador</a>
+            <a href="#" onclick="abrirVistaInteligente('index'); return false;" class="nav-btn public">Portal Público</a>
         </div>
     </nav>
 
@@ -265,7 +281,6 @@
                             </div>
                         </div>
                         
-                        <!-- Contenedor donde inyectaremos las tres zonas separadas (Reyes, Próximos, Ocupados) -->
                         <div id="flash-wrapper-jugadores" style="max-height: 600px; overflow-y: auto; padding-right: 10px;">
                             <div class="mensaje-vacio">Selecciona una categoría...</div>
                         </div>
@@ -596,7 +611,6 @@
             if (!confirmacion) return;
 
             try {
-                // Borrar partidos Flash de la BD
                 const { error } = await clienteSupabase
                     .from('partidos')
                     .delete()
@@ -607,11 +621,9 @@
 
                 if (error) throw error;
 
-                // Limpiar orden personalizado de la fila
                 const lsKey = `flash_queue_${ORG_ID}_${idTorneoActivo}`;
                 localStorage.removeItem(lsKey);
 
-                // Recargar
                 seleccionFlash = [];
                 alert("✅ Liga Flash reiniciada a cero.");
                 await cargarDatosFlash(idCat);
@@ -632,7 +644,6 @@
 
                 let todosFlash = partidosFlash || [];
                 
-                // ORDENAR SIEMPRE POR MESA ASCENDENTE
                 partidosFlashActivos = todosFlash.filter(p => p.estado === 'en_curso').sort((a, b) => (a.mesa || 0) - (b.mesa || 0));
                 
                 historialFlashGlobal = todosFlash.filter(p => p.estado === 'finalizado');
@@ -766,7 +777,6 @@
             localStorage.setItem(lsKey, JSON.stringify(retadores.map(r => r.id)));
 
 
-            // ================== ZONA 1: REYES EN MESA ==================
             let html = '';
             if (reyes.length > 0) {
                 html += `
@@ -795,7 +805,6 @@
                 html += `</div>`;
             }
 
-            // ================== ZONA 2: PRÓXIMOS EN FILA ==================
             html += `
                 <div style="font-size:11px; font-weight:900; color:#34d399; margin-bottom:12px; text-transform:uppercase; border-bottom:1px solid rgba(52,211,153,0.3); padding-bottom:6px;">
                     🟢 Próximos en Fila (Retadores)
@@ -838,7 +847,6 @@
             }
             html += `</div>`;
 
-            // ================== ZONA 3: EN MESA ==================
             html += `
                 <div style="font-size:11px; font-weight:900; color:#ef4444; margin-bottom:12px; text-transform:uppercase; border-bottom:1px solid rgba(239,68,68,0.3); padding-bottom:6px;">
                     🔴 En Mesa (Jugando)
@@ -850,7 +858,6 @@
             } else {
                 html += `<div style="display: flex; flex-direction: column; gap: 10px;">`;
                 
-                // Mapear por partido activo para dibujar por fila de Mesa
                 partidosFlashActivos.forEach((p, idx) => {
                     let j1 = ocupados.find(o => o.id === p.jugador1_id);
                     let j2 = ocupados.find(o => o.id === p.jugador2_id);
@@ -866,7 +873,6 @@
 
                         html += `<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">`;
                         
-                        // JUGADOR 1
                         if(j1) {
                             let div1 = localStorage.getItem(`flash_div_${ORG_ID}_${j1.id}`);
                             let divBadge1 = div1 === '1' ? `<span class="div-tag-1">Div 1</span>` : (div1 === '2' ? `<span class="div-tag-2">Div 2</span>` : `<span style="color:#64748b; font-style:italic; font-weight:800; font-size:9px;">Sin Div</span>`);
@@ -883,7 +889,6 @@
                             html += `<div style="border:1px dashed rgba(255,255,255,0.1); border-radius:10px;"></div>`;
                         }
 
-                        // JUGADOR 2
                         if(j2) {
                             let div2 = localStorage.getItem(`flash_div_${ORG_ID}_${j2.id}`);
                             let divBadge2 = div2 === '1' ? `<span class="div-tag-1">Div 1</span>` : (div2 === '2' ? `<span class="div-tag-2">Div 2</span>` : `<span style="color:#64748b; font-style:italic; font-weight:800; font-size:9px;">Sin Div</span>`);
@@ -1048,7 +1053,7 @@
             container.innerHTML = '';
 
             if (partidosFlashActivos.length === 0) {
-                container.innerHTML = '<div class="mensaje-vacio">No hay mesas ocupadas en la Liga Continua.</div>';
+                container.innerHTML = '<div class="mensaje-vacio">No hay partidos activos en este momento.</div>';
                 return;
             }
 
@@ -1774,7 +1779,6 @@
             if (!confirm("⚠️ ¿Deseas ELIMINAR el sorteo guardado de esta categoría y generar uno nuevo?")) return;
 
             try {
-                // Solo elimina los partidos de Round Robin, no los Flash
                 await clienteSupabase.from('partidos').delete()
                     .eq('categoria_id', idCat)
                     .eq('torneo_id', idTorneoActivo)
