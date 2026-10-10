@@ -10,6 +10,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 15px; background-color: #04060a; color: #f8fafc; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
         
@@ -104,7 +105,6 @@
 
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">📌 Estado de Juego / Vista:</div>
     <div class="scrolling-bar">
-        <!-- BOTONES REORDENADOS PARA QUE DESTAQUEN EN CELULAR -->
         <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Todos</button>
         <button class="btn-filter-pill" id="tab-flash" onclick="filtrarEstado('flash')" style="color: #fbbf24; border-color: rgba(245,158,11,0.5);">⚡ Estadísticas Flash</button>
         <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')">📊 Resumen Grupos/Llaves</button>
@@ -481,6 +481,10 @@
 
                     let etiqGpo = isFlash ? 'Liga Continua' : (p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Fase Final'));
 
+                    // Aquí se muestra el ranking base obtenido directamente de la BD sin hacer cálculos en vivo
+                    let txtRankJ1 = `<small style="font-size:9px; color:#38bdf8; display:block;">${p.j1?.puntos_ranking || 0} pts</small>`;
+                    let txtRankJ2 = `<small style="font-size:9px; color:#f0abfc; display:block;">${p.j2?.puntos_ranking || 0} pts</small>`;
+
                     container.innerHTML += `
                         <div class="card-mesa ${cardClass}" style="${customStyle}">
                             <div class="top-bar">
@@ -498,6 +502,7 @@
                                 <div class="jugador-box">
                                     <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador1_id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(p.j1?.club || '').replace(/'/g, "\\'")}')">
                                         <span class="jugador-nombre">${iconJ1}${nomJ1}</span>
+                                        ${txtRankJ1}
                                     </div>
                                     <div style="display:flex; align-items:center;">${score1}</div>
                                 </div>
@@ -505,6 +510,7 @@
                                 <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
                                     <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador2_id}, '${String(nomJ2).replace(/'/g, "\\'")}', '${String(p.j2?.club || '').replace(/'/g, "\\'")}')">
                                         <span class="jugador-nombre">${iconJ2}${nomJ2}</span>
+                                        ${txtRankJ2}
                                     </div>
                                     <div style="display:flex; align-items:center;">${score2}</div>
                                 </div>
@@ -688,6 +694,8 @@
             html += `</tbody></table></div></div>`;
             return html;
         }
+
+        // =================================================================================
 
         function obtenerCuadroDeHonorHtml(catNombre) {
             const pCat = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash'));
