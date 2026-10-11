@@ -268,9 +268,9 @@
                     <div><label style="font-size:9px; color:#38bdf8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Mesa Inicial</label><input type="number" id="rr-mesa-inicio" value="1" min="1" max="50" style="width:80px;" onchange="simularJuecesYActualizarUI()"></div>
                     <div><label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">N° Mesas a Usar</label><input type="number" id="rr-num-mesas" value="2" min="1" max="20" style="width:80px;" onchange="simularJuecesYActualizarUI()"></div>
                     <div><label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Hora Inicio</label><input type="time" id="rr-hora-inicio" value="09:00" onchange="simularJuecesYActualizarUI()"></div>
-                    <div><label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Min/Partido</label><input type="number" id="rr-duracion-partido" value="30" min="10" style="width:70px;"></div>
-                    <div><label style="font-size:9px; color:#f87171; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Hora Break (Opcional)</label><input type="time" id="rr-hora-break"></div>
-                    <div><label style="font-size:9px; color:#f87171; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Min. Break</label><input type="number" id="rr-duracion-break" value="30" min="0" style="width:70px;"></div>
+                    <div><label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Min/Partido</label><input type="number" id="rr-duracion-partido" value="30" min="10" style="width:70px;" onchange="simularJuecesYActualizarUI()"></div>
+                    <div><label style="font-size:9px; color:#f87171; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Hora Break (Opcional)</label><input type="time" id="rr-hora-break" onchange="simularJuecesYActualizarUI()"></div>
+                    <div><label style="font-size:9px; color:#f87171; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Min. Break</label><input type="number" id="rr-duracion-break" value="30" min="0" style="width:70px;" onchange="simularJuecesYActualizarUI()"></div>
                 </div>
 
                 <div class="form-row" style="margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap;">
@@ -280,6 +280,12 @@
                         </select>
                     </div>
                     <div><label style="font-size:9px; color:#38bdf8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">PIN Jueces</label><input type="text" id="rr-pin-jueces" value="1234" maxlength="4" style="width:80px; text-align:center;"></div>
+                </div>
+
+                <div class="form-row" style="margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px dashed rgba(245,158,11,0.3);">
+                    <div style="width: 100%; font-size: 11px; color: #fbbf24; font-weight: 800; text-transform: uppercase; margin-bottom: 5px;"><i class="fa-solid fa-trophy mr-2"></i> Fase Final (Llaves)</div>
+                    <div><label style="font-size:9px; color:#fbbf24; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">N° Mesas a Usar</label><input type="number" id="rr-mesas-finales" value="2" min="1" max="20" style="width:100px;" onchange="simularJuecesYActualizarUI()"></div>
+                    <div><label style="font-size:9px; color:#fbbf24; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Min/Partido</label><input type="number" id="rr-duracion-finales" value="45" min="10" style="width:100px;" onchange="simularJuecesYActualizarUI()"></div>
                 </div>
 
                 <div id="contenedor-jueces-externos" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom:15px; border: 1px dashed rgba(255,255,255,0.1);">
@@ -739,6 +745,9 @@
             const numMesas = parseInt(document.getElementById('rr-num-mesas').value) || 2;
             const duracionPartido = parseInt(document.getElementById('rr-duracion-partido').value) || 30;
             const modoJuego = document.getElementById('rr-modo-juego').value || '3-5';
+
+            const duracionFinales = parseInt(document.getElementById('rr-duracion-finales').value) || 45;
+            const numMesasFinales = parseInt(document.getElementById('rr-mesas-finales').value) || 2;
             
             let externalNames = [];
             for(let i=0; i<maxJuecesFaltantesSistema; i++) externalNames.push(document.getElementById(`juez-ext-${i}`)?.value.trim() || `Juez Externo ${i+1}`);
@@ -784,29 +793,48 @@
                 currentTimeMins += duracionPartido;
             }
 
-            let horaSemiStr = minutesToTimeStr(currentTimeMins);
-            let horaFinalStr = minutesToTimeStr(currentTimeMins + duracionPartido);
-
-            // SISTEMA DINÁMICO DE LLAVES BASADO EN TOP 8 ABSOLUTO
+            // SISTEMA DINÁMICO DE LLAVES BASADO EN TOP 8 ABSOLUTO CON NUEVOS HORARIOS
+            let rondasLlaves = [];
             if (gruposGlobal.length > 2) {
-                // Generar Cuartos
-                partidosGeneradosRR.push({ mesa: mesaInicio, hora: horaSemiStr, rondaFase: 'Cuartos 1', j1NombreTemp: 'Mejor 1° (Seed 1)', j2NombreTemp: 'Peor 2° (Seed 8)', modoJuego, juez: 'Comité Oficial' });
-                partidosGeneradosRR.push({ mesa: mesaInicio + 1 <= numMesas ? mesaInicio + 1 : mesaInicio, hora: horaSemiStr, rondaFase: 'Cuartos 2', j1NombreTemp: '4° Mejor (Seed 4)', j2NombreTemp: '5° Mejor (Seed 5)', modoJuego, juez: 'Comité Oficial' });
-                partidosGeneradosRR.push({ mesa: mesaInicio + 2 <= numMesas ? mesaInicio + 2 : mesaInicio, hora: horaSemiStr, rondaFase: 'Cuartos 3', j1NombreTemp: '3° Mejor (Seed 3)', j2NombreTemp: '6° Mejor (Seed 6)', modoJuego, juez: 'Comité Oficial' });
-                partidosGeneradosRR.push({ mesa: mesaInicio + 3 <= numMesas ? mesaInicio + 3 : mesaInicio, hora: horaSemiStr, rondaFase: 'Cuartos 4', j1NombreTemp: '2° Mejor (Seed 2)', j2NombreTemp: '7° Mejor (Seed 7)', modoJuego, juez: 'Comité Oficial' });
-                
-                let horaSemi2Str = minutesToTimeStr(currentTimeMins + duracionPartido);
-                let horaFinal2Str = minutesToTimeStr(currentTimeMins + (duracionPartido * 2));
-
-                partidosGeneradosRR.push({ mesa: mesaInicio, hora: horaSemi2Str, rondaFase: 'Semifinal 1', j1NombreTemp: 'Gana Cuartos 1', j2NombreTemp: 'Gana Cuartos 2', modoJuego, juez: 'Comité Oficial' });
-                partidosGeneradosRR.push({ mesa: mesaInicio + 1 <= numMesas ? mesaInicio + 1 : mesaInicio, hora: horaSemi2Str, rondaFase: 'Semifinal 2', j1NombreTemp: 'Gana Cuartos 3', j2NombreTemp: 'Gana Cuartos 4', modoJuego, juez: 'Comité Oficial' });
-                partidosGeneradosRR.push({ mesa: mesaInicio, hora: horaFinal2Str, rondaFase: 'Gran Final', j1NombreTemp: 'Gana Semi 1', j2NombreTemp: 'Gana Semi 2', modoJuego, juez: 'Comité Oficial' });
+                rondasLlaves.push([
+                    { rondaFase: 'Cuartos 1', j1NombreTemp: 'Mejor 1° (Seed 1)', j2NombreTemp: 'Peor 2° (Seed 8)', modoJuego, juez: 'Comité Oficial' },
+                    { rondaFase: 'Cuartos 2', j1NombreTemp: '4° Mejor (Seed 4)', j2NombreTemp: '5° Mejor (Seed 5)', modoJuego, juez: 'Comité Oficial' },
+                    { rondaFase: 'Cuartos 3', j1NombreTemp: '3° Mejor (Seed 3)', j2NombreTemp: '6° Mejor (Seed 6)', modoJuego, juez: 'Comité Oficial' },
+                    { rondaFase: 'Cuartos 4', j1NombreTemp: '2° Mejor (Seed 2)', j2NombreTemp: '7° Mejor (Seed 7)', modoJuego, juez: 'Comité Oficial' }
+                ]);
+                rondasLlaves.push([
+                    { rondaFase: 'Semifinal 1', j1NombreTemp: 'Gana Cuartos 1', j2NombreTemp: 'Gana Cuartos 2', modoJuego, juez: 'Comité Oficial' },
+                    { rondaFase: 'Semifinal 2', j1NombreTemp: 'Gana Cuartos 3', j2NombreTemp: 'Gana Cuartos 4', modoJuego, juez: 'Comité Oficial' }
+                ]);
+                rondasLlaves.push([
+                    { rondaFase: 'Gran Final', j1NombreTemp: 'Gana Semi 1', j2NombreTemp: 'Gana Semi 2', modoJuego, juez: 'Comité Oficial' }
+                ]);
             } else {
-                // Solo Semis para 2 grupos
-                partidosGeneradosRR.push({ mesa: mesaInicio, hora: horaSemiStr, rondaFase: 'Semifinal 1', j1NombreTemp: 'Seed 1 (Mejor 1°)', j2NombreTemp: 'Seed 4 (Peor 2°)', modoJuego, juez: 'Comité Oficial' });
-                partidosGeneradosRR.push({ mesa: mesaInicio + 1 <= numMesas ? mesaInicio + 1 : mesaInicio, hora: horaSemiStr, rondaFase: 'Semifinal 2', j1NombreTemp: 'Seed 2 (Peor 1°)', j2NombreTemp: 'Seed 3 (Mejor 2°)', modoJuego, juez: 'Comité Oficial' });
-                partidosGeneradosRR.push({ mesa: mesaInicio, hora: horaFinalStr, rondaFase: 'Gran Final', j1NombreTemp: 'Ganador Semi 1', j2NombreTemp: 'Ganador Semi 2', modoJuego, juez: 'Comité Oficial' });
+                rondasLlaves.push([
+                    { rondaFase: 'Semifinal 1', j1NombreTemp: 'Seed 1 (Mejor 1°)', j2NombreTemp: 'Seed 4 (Peor 2°)', modoJuego, juez: 'Comité Oficial' },
+                    { rondaFase: 'Semifinal 2', j1NombreTemp: 'Seed 2 (Peor 1°)', j2NombreTemp: 'Seed 3 (Mejor 2°)', modoJuego, juez: 'Comité Oficial' }
+                ]);
+                rondasLlaves.push([
+                    { rondaFase: 'Gran Final', j1NombreTemp: 'Ganador Semi 1', j2NombreTemp: 'Ganador Semi 2', modoJuego, juez: 'Comité Oficial' }
+                ]);
             }
+
+            rondasLlaves.forEach(ronda => {
+                let matchesAsignadosRonda = 0;
+                while(matchesAsignadosRonda < ronda.length) {
+                    let horaStr = minutesToTimeStr(currentTimeMins);
+                    let tableCounter = 0;
+                    while (tableCounter < numMesasFinales && matchesAsignadosRonda < ronda.length) {
+                        let m = ronda[matchesAsignadosRonda];
+                        m.mesa = mesaInicio + tableCounter;
+                        m.hora = horaStr;
+                        partidosGeneradosRR.push(m);
+                        matchesAsignadosRonda++;
+                        tableCounter++;
+                    }
+                    currentTimeMins += duracionFinales;
+                }
+            });
             
             document.getElementById('seccion-partidos-rr').style.display = 'block';
             dibujarTablaPartidosGenerados(partidosGeneradosRR);
