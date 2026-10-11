@@ -45,7 +45,7 @@
 
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .mesa-title { font-size: 12px; font-weight: 800; color: #38bdf8; letter-spacing: 1px; }
-        .cat-badge { font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; }
+        .cat-badge { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; }
 
         .badge-estado { padding: 3px 8px; border-radius: 9999px; font-weight: 800; font-size: 9px; text-transform: uppercase; }
         .est-pendiente { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; }
@@ -137,6 +137,7 @@
         const orgId = localStorage.getItem('organizador_id'); 
 
         let todosLosPartidos = [];
+        let reglasRankingList = [];
         let mesaFiltro = 'todas';
         let estadoFiltro = 'todos';
         let categoriaFiltro = 'todas';
@@ -194,6 +195,10 @@
                     document.getElementById('nombre-torneo').innerText = torneoData.nombre;
                     if (torneoData.pin_jueces) pinJuecesActual = torneoData.pin_jueces;
                 }
+
+                // Cargar reglas de ranking para las proyecciones detalladas
+                const { data: reglasData } = await clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', orgId).order('diferencia_min', { ascending: true });
+                if (reglasData) reglasRankingList = reglasData;
 
                 await cargarPartidos();
                 iniciarPresenciaEspectadores();
@@ -331,7 +336,11 @@
 
                 [m.j1, m.j2].forEach(j => {
                     if (j && j.id && !grupoObj[j.id]) {
-                        grupoObj[j.id] = { id: j.id, nombre: j.nombre, club: j.club, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0 };
+                        grupoObj[j.id] = { 
+                            id: j.id, nombre: j.nombre, club: j.club, 
+                            pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, 
+                            rankImpact: 0, rivalesStr: [] 
+                        };
                     }
                 });
 
@@ -345,12 +354,37 @@
                         j1.setsG += (m.sets_j1 || 0); j1.setsP += (m.sets_j2 || 0);
                         j2.setsG += (m.sets_j2 || 0); j2.setsP += (m.sets_j1 || 0);
 
+                        // Calcular Impacto de Ranking del Partido
+                        let r1 = m.j1.puntos_ranking || 0;
+                        let r2 = m.j2.puntos_ranking || 0;
+                        let diff = Math.abs(r1 - r2);
+                        let favJ1 = r1 >= r2;
+                        let esUpset = m.ganador_id !== (favJ1 ? m.jugador1_id : m.jugador2_id);
+
+                        let regla = reglasRankingList.find(r => 
+                            diff >= r.diferencia_min && diff <= r.diferencia_max && 
+                            ((esUpset && r.resultado_esperado === 'gana_retador') || (!esUpset && r.resultado_esperado === 'gana_favorito'))
+                        );
+                        let ptsGana = regla ? regla.puntos_ganador : 10;
+                        let ptsPierde = regla ? -Math.abs(regla.puntos_perdedor) : -5;
+
+                        let nomCorto1 = m.j1.nombre.split(' ')[0];
+                        let nomCorto2 = m.j2.nombre.split(' ')[0];
+
                         if (m.ganador_id === m.jugador1_id) {
                             j1.pg += 1; j1.pts += 2;
                             j2.pp += 1; j2.pts += 1;
+                            j1.rankImpact += ptsGana;
+                            j2.rankImpact += ptsPierde;
+                            j1.rivalesStr.push(`<span style="color:#34d399">✅ vs ${nomCorto2} (+${ptsGana})</span>`);
+                            j2.rivalesStr.push(`<span style="color:#f87171">❌ vs ${nomCorto1} (${ptsPierde})</span>`);
                         } else if (m.ganador_id === m.jugador2_id) {
                             j2.pg += 1; j2.pts += 2;
                             j1.pp += 1; j1.pts += 1;
+                            j2.rankImpact += ptsGana;
+                            j1.rankImpact += ptsPierde;
+                            j2.rivalesStr.push(`<span style="color:#34d399">✅ vs ${nomCorto1} (+${ptsGana})</span>`);
+                            j1.rivalesStr.push(`<span style="color:#f87171">❌ vs ${nomCorto2} (${ptsPierde})</span>`);
                         }
                     }
                 }
@@ -364,7 +398,8 @@
                 if (b.pts !== a.pts) return b.pts - a.pts;
                 const rSetA = a.setsG / (a.setsP || 0.0001);
                 const rSetB = b.setsG / (b.setsP || 0.0001);
-                return rSetB - rSetA;
+                if (Math.abs(rSetB - rSetA) > 0.0001) return rSetB - rSetA;
+                return b.pg - a.pg; // Desempate por ganados si todo es igual
             });
         }
 
@@ -501,7 +536,8 @@
 
             container.style.display = 'grid';
 
-            let filtrados = todosLosPartidos.filter(p => p.grupo_nombre !== 'Flash');
+            // NO INCLUIR LAS LLAVES DE FASE FINAL EN EL GRID SUPERIOR DE MESAS
+            let filtrados = todosLosPartidos.filter(p => p.grupo_nombre && p.grupo_nombre !== 'Flash');
 
             if (mesaFiltro !== 'todas') {
                 filtrados = filtrados.filter(p => p.mesa == mesaFiltro);
@@ -767,10 +803,14 @@
                     rankTrophy = '-';
                 }
 
+                let safeName = j.nombre ? String(j.nombre).replace(/'/g, "\\'") : '';
+                let safeClub = j.club ? String(j.club).replace(/'/g, "\\'") : 'Sin Club';
+                let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${safeName}', '${safeClub}')"` : '';
+
                 html += `
                     <tr style="border-bottom:1px solid rgba(255,255,255,0.04); opacity: ${opacity}; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'" onmouseout="this.style.backgroundColor='transparent'">
                         <td style="padding:8px 6px; font-weight:800; color:#64748b; font-size:14px;">${rankTrophy}</td>
-                        <td style="padding:8px 6px; cursor:pointer;" onclick="abrirModalJugadorAdmin(${j.id}, '${String(j.nombre).replace(/'/g, "\\'")}', '${String(j.club).replace(/'/g, "\\'")}')">
+                        <td style="padding:8px 6px; cursor:pointer;" ${jClic}>
                             <strong style="color:#ffffff;">${j.nombre}</strong> ${qualBadge}
                             <small style="color:#64748b; display:block; font-size:9px;">${j.club || 'Sin Club'}</small>
                         </td>
@@ -790,8 +830,6 @@
         // =================================================================================
 
         function generarTarjetaLlave(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2) {
-            if (!partido) return '';
-
             let isFin = partido && String(partido.estado || '').trim().toLowerCase() === 'finalizado';
             let isVivo = partido && String(partido.estado || '').trim().toLowerCase() === 'en_curso';
             
@@ -834,7 +872,7 @@
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                         <div style="display:flex; align-items:center; gap:8px;">
                             <span style="font-size:${titulo==='Gran Final' ? '12px' : '10px'}; color:${colorTitulo}; font-weight:900; text-transform:uppercase;">${titulo==='Gran Final' ? '🏆 ' : ''}${titulo}</span>
-                            ${badgeEst}
+                            ${partido ? badgeEst : ''}
                         </div>
                         <div style="text-align:right;">
                             <span style="font-size:9px; color:#38bdf8; font-weight:800; display:block; margin-bottom:2px;"><i class="fa-regular fa-clock"></i> ${partido?.hora || '--:--'}</span>
@@ -864,7 +902,7 @@
                         </div>
                     </div>
                     
-                    <button class="${btnClass} mt-4" onclick="abrirScoreboardJuez(${partido.id})">
+                    <button class="${btnClass} mt-4" onclick="abrirScoreboardJuez(${partido ? partido.id : 0})">
                         ${btnText}
                     </button>
                 </div>
@@ -872,7 +910,8 @@
             `;
         }
 
-        function dibujarLlavesInferiores(container) {
+        function dibujarResumenYLlaves(container) {
+            const standings = calcularStandingsGrupos();
             const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
             let catsList = [...categoriasSet];
 
@@ -880,18 +919,170 @@
                 catsList = catsList.filter(c => c === categoriaFiltro);
             }
 
-            if (catsList.length === 0) return;
+            if (catsList.length === 0) {
+                container.innerHTML = `<div class="mensaje-vacio">No hay información de grupos o llaves para mostrar en este momento.</div>`;
+                return;
+            }
 
-            const mapaProy = precalcularProyecciones();
+            let htmlContent = '';
 
             catsList.forEach(catNombre => {
+                const gruposCat = standings[catNombre] || {};
+                
+                // Si la categoría solo tiene modalidad flash, nos la saltamos en este resumen
+                if (Object.keys(gruposCat).length === 0) {
+                    const llavesFlash = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase);
+                    if(llavesFlash.length === 0) return;
+                }
+
+                htmlContent += `
+                    <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">
+                        <div style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; margin-bottom:15px;">
+                            <span style="font-size:14px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:1.5px;">🏆 Categoría: ${catNombre}</span>
+                        </div>
+                `;
+
+                // Renderizar TABLAS DE GRUPOS DETALLADAS (Memoria Técnica)
+                Object.keys(gruposCat).sort().forEach(gpoNombre => {
+                    const listaJugadores = ordenarJugadoresITTF(Object.values(gruposCat[gpoNombre]));
+                    const cGpo = obtenerColorGrupo(gpoNombre);
+
+                    htmlContent += `
+                        <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:15px; margin-bottom:15px; border-left: 4px solid ${cGpo.color};">
+                            <span style="font-weight:800; font-size:13px; color:${cGpo.color}; text-transform:uppercase; display:flex; align-items:center; margin-bottom:12px;">
+                                <i class="fa-solid fa-users mr-2"></i> Grupo ${gpoNombre}
+                            </span>
+                            <div style="overflow-x:auto;">
+                                <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left; min-width: 800px;">
+                                    <thead>
+                                        <tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);">
+                                            <th style="padding:6px;">Pos</th>
+                                            <th style="padding:6px;">Jugador</th>
+                                            <th style="padding:6px; text-align:center;">PJ</th>
+                                            <th style="padding:6px; text-align:center;">PG</th>
+                                            <th style="padding:6px; text-align:center;">PP</th>
+                                            <th style="padding:6px; text-align:center;">% Efectividad</th>
+                                            <th style="padding:6px; text-align:center;">Sets (G - P)</th>
+                                            <th style="padding:6px; text-align:center;">Dif</th>
+                                            <th style="padding:6px; text-align:center; color:#fbbf24;">Pts</th>
+                                            <th style="padding:6px; text-align:center; color:#a855f7;">+/- Rank</th>
+                                            <th style="padding:6px;">Historial del Jugador</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${listaJugadores.map((j, idx) => {
+                                            let dif = j.setsG - j.setsP;
+                                            let difStr = dif >= 0 ? '+' + dif : dif;
+                                            let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
+                                            let efectividad = j.pj > 0 ? Math.round((j.pg / j.pj) * 100) : 0;
+                                            let colorRank = j.rankImpact >= 0 ? '#34d399' : '#f87171';
+                                            let rankStr = j.rankImpact >= 0 ? '+' + j.rankImpact : j.rankImpact;
+                                            let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${String(j.nombre).replace(/'/g, "\\'")}', '${String(j.club || 'Sin Club').replace(/'/g, "\\'")}')"` : '';
+
+                                            return `
+                                                <tr style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'" ${jClic}>
+                                                    <td style="padding:8px 6px; font-weight:800; color:#64748b;">#${idx + 1}</td>
+                                                    <td style="padding:8px 6px;">
+                                                        <strong style="color:#ffffff;">${j.nombre}</strong>
+                                                        <small style="color:#64748b; display:block; font-size:9px;">${j.club || 'Sin Club'}</small>
+                                                    </td>
+                                                    <td style="padding:8px 6px; text-align:center; color:#94a3b8; font-weight:700;">${j.pj}</td>
+                                                    <td style="padding:8px 6px; text-align:center; color:#34d399; font-weight:700;">${j.pg}</td>
+                                                    <td style="padding:8px 6px; text-align:center; color:#f87171; font-weight:700;">${j.pp}</td>
+                                                    <td style="padding:8px 6px; text-align:center; font-weight:800; color:#fbbf24;">${efectividad}%</td>
+                                                    <td style="padding:8px 6px; text-align:center;">
+                                                        <span style="color:#34d399; font-weight:800;">${j.setsG}</span>
+                                                        <span style="color:#64748b; margin:0 2px;">:</span>
+                                                        <span style="color:#f87171; font-weight:800;">${j.setsP}</span>
+                                                    </td>
+                                                    <td style="padding:8px 6px; text-align:center; font-weight:800; color:${colorDif};">${difStr}</td>
+                                                    <td style="padding:8px 6px; text-align:center; color:#fbbf24; font-weight:800; font-size:14px;">${j.pts}</td>
+                                                    <td style="padding:8px 6px; text-align:center; font-weight:800; color:${colorRank};">${rankStr}</td>
+                                                    <td style="padding:8px 6px; font-size:9px; line-height:1.4;">${j.rivalesStr.length > 0 ? j.rivalesStr.join('<br>') : '<span style="color:#475569; font-style:italic;">Sin partidos</span>'}</td>
+                                                </tr>
+                                            `;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                const numGrupos = Object.keys(gruposCat).length;
+                let clasificados = [];
+                Object.keys(gruposCat).forEach(gpoNombre => {
+                    let jugArr = ordenarJugadoresITTF(Object.values(gruposCat[gpoNombre]));
+                    if(jugArr[0]) clasificados.push({ ...jugArr[0], seedType: 1, gpo: gpoNombre });
+                    if(jugArr[1]) clasificados.push({ ...jugArr[1], seedType: 2, gpo: gpoNombre });
+                });
+                
+                clasificados.sort((a,b) => {
+                    if(a.seedType !== b.seedType) return a.seedType - b.seedType;
+                    if(b.pts !== a.pts) return b.pts - a.pts;
+                    let diffA = (a.setsG||0) - (a.setsP||0);
+                    let diffB = (b.setsG||0) - (b.setsP||0);
+                    return diffB - diffA;
+                });
+
+                if (clasificados.length > 0) {
+                    htmlContent += `
+                        <div style="background:rgba(15,23,42,0.8); border: 1px solid rgba(245,158,11,0.4); border-radius: 16px; padding: 18px; margin-bottom: 25px;">
+                            <h3 style="color:#fbbf24; font-weight:900; margin-top:0; text-transform:uppercase; font-size:13px; display:flex; align-items:center; gap:8px;"><i class="fa-solid fa-scale-balanced"></i> Clasificación Oficial (Corte a Top 8)</h3>
+                            <p style="font-size:10px; color:#94a3b8; margin-bottom:12px; line-height:1.5;">El sistema ordena a los mejores 1° y 2° lugares de todos los grupos. Sólo los 8 mejores avanzan a Cuartos de Final. <strong style="color:#e2e8f0;">Criterios de desempate: 1. Posición en grupo (Seed 1 o 2), 2. Puntos, 3. Diferencia de Sets.</strong></p>
+                            <div style="overflow-x:auto;">
+                                <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left;">
+                                    <thead>
+                                        <tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);">
+                                            <th style="padding:6px;">Seed / Rango</th>
+                                            <th style="padding:6px;">Jugador</th>
+                                            <th style="padding:6px; text-align:center;">Grupo</th>
+                                            <th style="padding:6px; text-align:center;">Pts</th>
+                                            <th style="padding:6px; text-align:center;">Dif. Sets</th>
+                                            <th style="padding:6px; text-align:right;">Estatus</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+
+                    clasificados.forEach((j, idx) => {
+                        let isTop8 = idx < 8;
+                        let statusBadge = isTop8 ? `<span style="background:rgba(16,185,129,0.2); color:#34d399; padding:3px 8px; border-radius:6px; font-weight:800; font-size:9px;">✅ CLASIFICADO</span>` : `<span style="background:rgba(239,68,68,0.2); color:#f87171; padding:3px 8px; border-radius:6px; font-weight:800; font-size:9px;">❌ ELIMINADO</span>`;
+                        let bgColor = isTop8 ? 'rgba(16,185,129,0.05)' : 'rgba(239,68,68,0.05)';
+                        let dif = j.setsG - j.setsP;
+                        let difStr = dif >= 0 ? '+' + dif : dif;
+
+                        htmlContent += `
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.04); background:${bgColor};">
+                                <td style="padding:8px 6px; font-weight:900; color:${isTop8 ? '#34d399' : '#f87171'};">Seed ${idx + 1}</td>
+                                <td style="padding:8px 6px; font-weight:800; color:#fff;">${j.nombre}</td>
+                                <td style="padding:8px 6px; text-align:center; font-weight:800; color:#38bdf8;">${j.seedType}° Gpo ${j.gpo}</td>
+                                <td style="padding:8px 6px; text-align:center; font-weight:900; color:#fbbf24;">${j.pts}</td>
+                                <td style="padding:8px 6px; text-align:center; font-weight:800; color:#cbd5e1;">${difStr}</td>
+                                <td style="padding:8px 6px; text-align:right;">${statusBadge}</td>
+                            </tr>
+                        `;
+                    });
+
+                    htmlContent += `</tbody></table></div></div>`;
+                }
+
+                const s1 = clasificados[0] || { nombre: 'Seed 1', gpo: '-' };
+                const s2 = clasificados[1] || { nombre: 'Seed 2', gpo: '-' };
+                const s3 = clasificados[2] || { nombre: 'Seed 3', gpo: '-' };
+                const s4 = clasificados[3] || { nombre: 'Seed 4', gpo: '-' };
+                const s5 = clasificados[4] || { nombre: 'Seed 5', gpo: '-' };
+                const s6 = clasificados[5] || { nombre: 'Seed 6', gpo: '-' };
+                const s7 = clasificados[6] || { nombre: 'Seed 7', gpo: '-' };
+                const s8 = clasificados[7] || { nombre: 'Seed 8', gpo: '-' };
+
                 const partidosCatGpo = todosLosPartidos.filter(p => p.grupo_nombre && p.grupo_nombre !== 'Flash' && p.categorias?.nombre === catNombre);
                 const totalGpo = partidosCatGpo.length;
                 const finGpo = partidosCatGpo.filter(p => String(p.estado || '').trim().toLowerCase() === 'finalizado').length;
                 const gpoCompleto = totalGpo > 0 && totalGpo === finGpo;
 
                 const partidosLlaveBD = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase);
-
+                
                 const pCuartos1 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('1'));
                 const pCuartos2 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('2'));
                 const pCuartos3 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('3'));
@@ -901,22 +1092,56 @@
                 const partidoSemi2 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('2') || String(p.ronda_fase || '').toLowerCase().includes('cruce 2')));
                 const partidoFinal = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi'));
 
-                let hayCuartos = pCuartos1 || pCuartos2 || pCuartos3 || pCuartos4;
-                if(!hayCuartos && !partidoSemi1 && !partidoSemi2 && !partidoFinal) return;
+                let hayCuartos = pCuartos1 || pCuartos2 || pCuartos3 || pCuartos4 || numGrupos > 2;
+
+                if(!hayCuartos && !partidoSemi1 && !partidoSemi2 && !partidoFinal && numGrupos === 0) return;
+
+                let nomC1_j1 = pCuartos1?.j1 ? pCuartos1.j1.nombre : s1.nombre;
+                let nomC1_j2 = pCuartos1?.j2 ? pCuartos1.j2.nombre : s8.nombre;
+                let nomC2_j1 = pCuartos2?.j1 ? pCuartos2.j1.nombre : s4.nombre;
+                let nomC2_j2 = pCuartos2?.j2 ? pCuartos2.j2.nombre : s5.nombre;
+                let nomC3_j1 = pCuartos3?.j1 ? pCuartos3.j1.nombre : s3.nombre;
+                let nomC3_j2 = pCuartos3?.j2 ? pCuartos3.j2.nombre : s6.nombre;
+                let nomC4_j1 = pCuartos4?.j1 ? pCuartos4.j1.nombre : s2.nombre;
+                let nomC4_j2 = pCuartos4?.j2 ? pCuartos4.j2.nombre : s7.nombre;
+
+                let nomSemi1_j1, nomSemi1_j2, nomSemi2_j1, nomSemi2_j2;
+                let tS1_1, tS1_2, tS2_1, tS2_2;
+                
+                if (hayCuartos) {
+                    nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : (pCuartos1?.ganador_id ? (pCuartos1.ganador_id === pCuartos1.jugador1_id ? nomC1_j1 : nomC1_j2) : 'Gana Cuartos 1');
+                    nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : (pCuartos2?.ganador_id ? (pCuartos2.ganador_id === pCuartos2.jugador1_id ? nomC2_j1 : nomC2_j2) : 'Gana Cuartos 2');
+                    tS1_1 = 'Gana C1'; tS1_2 = 'Gana C2';
+                    
+                    nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : (pCuartos3?.ganador_id ? (pCuartos3.ganador_id === pCuartos3.jugador1_id ? nomC3_j1 : nomC3_j2) : 'Gana Cuartos 3');
+                    nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : (pCuartos4?.ganador_id ? (pCuartos4.ganador_id === pCuartos4.jugador1_id ? nomC4_j1 : nomC4_j2) : 'Gana Cuartos 4');
+                    tS2_1 = 'Gana C3'; tS2_2 = 'Gana C4';
+                } else {
+                    nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : s1.nombre;
+                    nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : s4.nombre;
+                    tS1_1 = `Seed 1 (${s1.gpo})`; tS1_2 = `Seed 4 (${s4.gpo})`;
+                    
+                    nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : s2.nombre;
+                    nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : s3.nombre;
+                    tS2_1 = `Seed 2 (${s2.gpo})`; tS2_2 = `Seed 3 (${s3.gpo})`;
+                }
+
+                let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Gana Semi 1');
+                let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Gana Semi 2');
 
                 let cardsHtml = '';
                 if (hayCuartos) {
-                    if (pCuartos1) cardsHtml += generarTarjetaLlave(pCuartos1, 'Cuartos 1', '#10b981', 1, mapaProy[pCuartos1.id]?.n1, mapaProy[pCuartos1.id]?.n2, mapaProy[pCuartos1.id]?.d1, mapaProy[pCuartos1.id]?.d2);
-                    if (pCuartos2) cardsHtml += generarTarjetaLlave(pCuartos2, 'Cuartos 2', '#10b981', 2, mapaProy[pCuartos2.id]?.n1, mapaProy[pCuartos2.id]?.n2, mapaProy[pCuartos2.id]?.d1, mapaProy[pCuartos2.id]?.d2);
-                    if (pCuartos3) cardsHtml += generarTarjetaLlave(pCuartos3, 'Cuartos 3', '#10b981', 3, mapaProy[pCuartos3.id]?.n1, mapaProy[pCuartos3.id]?.n2, mapaProy[pCuartos3.id]?.d1, mapaProy[pCuartos3.id]?.d2);
-                    if (pCuartos4) cardsHtml += generarTarjetaLlave(pCuartos4, 'Cuartos 4', '#10b981', 4, mapaProy[pCuartos4.id]?.n1, mapaProy[pCuartos4.id]?.n2, mapaProy[pCuartos4.id]?.d1, mapaProy[pCuartos4.id]?.d2);
+                    cardsHtml += generarTarjetaLlave(pCuartos1, 'Cuartos 1', '#10b981', 1, nomC1_j1, nomC1_j2, `Seed 1 (Gpo ${s1.gpo})`, `Seed 8 (Gpo ${s8.gpo})`);
+                    cardsHtml += generarTarjetaLlave(pCuartos2, 'Cuartos 2', '#10b981', 2, nomC2_j1, nomC2_j2, `Seed 4 (Gpo ${s4.gpo})`, `Seed 5 (Gpo ${s5.gpo})`);
+                    cardsHtml += generarTarjetaLlave(pCuartos3, 'Cuartos 3', '#10b981', 3, nomC3_j1, nomC3_j2, `Seed 3 (Gpo ${s3.gpo})`, `Seed 6 (Gpo ${s6.gpo})`);
+                    cardsHtml += generarTarjetaLlave(pCuartos4, 'Cuartos 4', '#10b981', 4, nomC4_j1, nomC4_j2, `Seed 2 (Gpo ${s2.gpo})`, `Seed 7 (Gpo ${s7.gpo})`);
                 }
                 
-                if (partidoSemi1) cardsHtml += generarTarjetaLlave(partidoSemi1, 'Semifinal 1', '#38bdf8', 1, mapaProy[partidoSemi1.id]?.n1, mapaProy[partidoSemi1.id]?.n2, mapaProy[partidoSemi1.id]?.d1, mapaProy[partidoSemi1.id]?.d2);
-                if (partidoSemi2) cardsHtml += generarTarjetaLlave(partidoSemi2, 'Semifinal 2', '#f0abfc', 2, mapaProy[partidoSemi2.id]?.n1, mapaProy[partidoSemi2.id]?.n2, mapaProy[partidoSemi2.id]?.d1, mapaProy[partidoSemi2.id]?.d2);
-                if (partidoFinal) cardsHtml += generarTarjetaLlave(partidoFinal, 'Gran Final', '#fbbf24', 1, mapaProy[partidoFinal.id]?.n1, mapaProy[partidoFinal.id]?.n2, mapaProy[partidoFinal.id]?.d1, mapaProy[partidoFinal.id]?.d2);
+                cardsHtml += generarTarjetaLlave(partidoSemi1, 'Semifinal 1', '#38bdf8', 1, nomSemi1_j1, nomSemi1_j2, tS1_1, tS1_2);
+                cardsHtml += generarTarjetaLlave(partidoSemi2, 'Semifinal 2', '#f0abfc', 2, nomSemi2_j1, nomSemi2_j2, tS2_1, tS2_2);
+                cardsHtml += generarTarjetaLlave(partidoFinal, 'Gran Final', '#fbbf24', 1, nomFinal_j1, nomFinal_j2, 'Gana Semi 1', 'Gana Semi 2');
 
-                container.innerHTML += `
+                htmlContent += `
                     <div class="seccion-llaves-footer">
                         <div style="text-align:center; margin-bottom:15px;">
                             <span style="font-size:10px; color:#fbbf24; font-weight:800; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:4px;">Fase Final de Eliminatoria Directa</span>
@@ -937,8 +1162,11 @@
                             ${cardsHtml}
                         </div>
                     </div>
+                </div>
                 `;
             });
+
+            container.innerHTML = htmlContent;
         }
 
         async function abrirScoreboardJuez(partidoId) {
@@ -996,13 +1224,11 @@
                     let resJ1 = null, resJ2 = null;
                     const rf = String(p.ronda_fase || '').toLowerCase();
 
-                    // Mapeo automático Top 8 Cuartos
                     if (rf.includes('cuartos') && rf.includes('1')) { resJ1 = s1?.id; resJ2 = s8?.id; }
                     else if (rf.includes('cuartos') && rf.includes('2')) { resJ1 = s4?.id; resJ2 = s5?.id; }
                     else if (rf.includes('cuartos') && rf.includes('3')) { resJ1 = s3?.id; resJ2 = s6?.id; }
                     else if (rf.includes('cuartos') && rf.includes('4')) { resJ1 = s2?.id; resJ2 = s7?.id; }
 
-                    // Mapeo Semis
                     else if (rf.includes('semi') && (rf.includes('1') || rf.includes('cruce 1'))) {
                         const c1 = partidosCat.find(m => String(m.ronda_fase || '').toLowerCase().includes('cuartos') && String(m.ronda_fase || '').includes('1'));
                         const c2 = partidosCat.find(m => String(m.ronda_fase || '').toLowerCase().includes('cuartos') && String(m.ronda_fase || '').includes('2'));
