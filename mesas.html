@@ -163,6 +163,21 @@
             return paleta[(catId || 0) % paleta.length];
         };
 
+        const obtenerColorGrupo = (texto) => {
+            if (!texto) return { color: '#94a3b8', bg: 'rgba(148,163,184,0.15)', border: 'rgba(148,163,184,0.4)' };
+            const match = String(texto).match(/([A-Z])$/i);
+            const letra = match ? match[1].toUpperCase() : '';
+            switch(letra) {
+                case 'A': return { color: '#06b6d4', bg: 'rgba(6,182,212,0.15)', border: 'rgba(6,182,212,0.4)' };
+                case 'B': return { color: '#a855f7', bg: 'rgba(168,85,247,0.15)', border: 'rgba(168,85,247,0.4)' };
+                case 'C': return { color: '#10b981', bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.4)' };
+                case 'D': return { color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)' };
+                case 'E': return { color: '#f43f5e', bg: 'rgba(244,63,94,0.15)', border: 'rgba(244,63,94,0.4)' };
+                case 'F': return { color: '#3b82f6', bg: 'rgba(59,130,246,0.15)', border: 'rgba(59,130,246,0.4)' };
+                default:  return { color: '#cbd5e1', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' };
+            }
+        };
+
         async function inicializar() {
             try {
                 const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre, pin_jueces').eq('id', idTorneoActivo).eq('organizador_id', orgId).single();
@@ -507,9 +522,6 @@
             }
         }
 
-        // =================================================================================
-        // ======================= MÓDULO ESTADÍSTICAS FLASH ===============================
-        // =================================================================================
         function dibujarEstadisticasFlash(container) {
             let partidosFlash = todosLosPartidos.filter(p => p.grupo_nombre === 'Flash');
             
@@ -662,9 +674,7 @@
             return html;
         }
 
-        // =================================================================================
-
-        function generarTarjetaLlave(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2, colorDesc2) {
+        function generarTarjetaLlave(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2) {
             let isFin = partido && String(partido.estado || '').trim().toLowerCase() === 'finalizado';
             let isVivo = partido && String(partido.estado || '').trim().toLowerCase() === 'en_curso';
             
@@ -691,6 +701,9 @@
             let icon1 = win1 ? '🏆 ' : '';
             let icon2 = win2 ? '🏆 ' : '';
 
+            let cJ1 = obtenerColorGrupo(descJ1);
+            let cJ2 = obtenerColorGrupo(descJ2);
+
             let clickAccion1 = partido && partido.jugador1_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador1_id}, '${String(nomJ1||'').replace(/'/g, "\\'")}', '${String(partido.j1?.club || '').replace(/'/g, "\\'")}')"` : '';
             let clickAccion2 = partido && partido.jugador2_id ? `onclick="event.stopPropagation(); abrirModalJugadorAdmin(${partido.jugador2_id}, '${String(nomJ2||'').replace(/'/g, "\\'")}', '${String(partido.j2?.club || '').replace(/'/g, "\\'")}')"` : '';
 
@@ -709,25 +722,25 @@
                         <span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partido?.mesa || mesaDefault}</span>
                     </div>
 
-                    <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center; border-left: 3px solid ${cJ1.color};">
                         <div style="cursor:pointer; z-index:10;" ${clickAccion1}>
                             <strong style="font-size:14px; ${styleN1}">${icon1}${nomJ1}</strong>
                         </div>
                         <div style="display:flex; align-items:center;">
                             ${score1}
-                            <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800; margin-left:8px;">${descJ1}</span>
+                            <span style="font-size:9px; background:${cJ1.bg}; color:${cJ1.color}; border: 1px solid ${cJ1.border}; padding:2px 6px; border-radius:4px; font-weight:800; margin-left:8px;">${descJ1}</span>
                         </div>
                     </div>
 
                     <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
 
-                    <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center;">
+                    <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; border-left: 3px solid ${cJ2.color};">
                         <div style="cursor:pointer; z-index:10;" ${clickAccion2}>
                             <strong style="font-size:14px; ${styleN2}">${icon2}${nomJ2}</strong>
                         </div>
                         <div style="display:flex; align-items:center;">
                             ${score2}
-                            <span style="font-size:9px; background:${colorDesc2}; padding:2px 6px; border-radius:4px; font-weight:800; margin-left:8px;">${descJ2}</span>
+                            <span style="font-size:9px; background:${cJ2.bg}; color:${cJ2.color}; border: 1px solid ${cJ2.border}; padding:2px 6px; border-radius:4px; font-weight:800; margin-left:8px;">${descJ2}</span>
                         </div>
                     </div>
                     
@@ -756,7 +769,6 @@
                 const gruposCat = standings[catNombre] || {};
                 const numGrupos = Object.keys(gruposCat).length;
                 
-                // 1. Extraer y clasificar al TOP 8 Absoluto (Seeds)
                 let clasificados = [];
                 Object.keys(gruposCat).forEach(gpoNombre => {
                     let jugArr = ordenarJugadoresITTF(Object.values(gruposCat[gpoNombre]));
@@ -764,7 +776,6 @@
                     if(jugArr[1]) clasificados.push({ ...jugArr[1], seedType: 2, gpo: gpoNombre });
                 });
                 
-                // Ordenar: 1ros lugares arriba, luego Puntos, luego Diferencia Sets
                 clasificados.sort((a,b) => {
                     if(a.seedType !== b.seedType) return a.seedType - b.seedType;
                     if(b.pts !== a.pts) return b.pts - a.pts;
@@ -833,19 +844,17 @@
                 let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Gana Semi 1');
                 let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Gana Semi 2');
 
-                const fnTarjeta = typeof generarTarjetaLlaveEspectador === 'function' ? generarTarjetaLlaveEspectador : generarTarjetaLlave;
-
                 let cardsHtml = '';
                 if (hayCuartos) {
-                    cardsHtml += fnTarjeta(pCuartos1, 'Cuartos 1', '#10b981', 1, nomC1_j1, nomC1_j2, `Seed 1 (${s1.gpo})`, `Seed 8 (${s8.gpo})`, 'rgba(16,185,129,0.2); color:#10b981;');
-                    cardsHtml += fnTarjeta(pCuartos2, 'Cuartos 2', '#10b981', 2, nomC2_j1, nomC2_j2, `Seed 4 (${s4.gpo})`, `Seed 5 (${s5.gpo})`, 'rgba(16,185,129,0.2); color:#10b981;');
-                    cardsHtml += fnTarjeta(pCuartos3, 'Cuartos 3', '#10b981', 3, nomC3_j1, nomC3_j2, `Seed 3 (${s3.gpo})`, `Seed 6 (${s6.gpo})`, 'rgba(16,185,129,0.2); color:#10b981;');
-                    cardsHtml += fnTarjeta(pCuartos4, 'Cuartos 4', '#10b981', 4, nomC4_j1, nomC4_j2, `Seed 2 (${s2.gpo})`, `Seed 7 (${s7.gpo})`, 'rgba(16,185,129,0.2); color:#10b981;');
+                    cardsHtml += generarTarjetaLlave(pCuartos1, 'Cuartos 1', '#10b981', 1, nomC1_j1, nomC1_j2, `Seed 1 (${s1.gpo})`, `Seed 8 (${s8.gpo})`);
+                    cardsHtml += generarTarjetaLlave(pCuartos2, 'Cuartos 2', '#10b981', 2, nomC2_j1, nomC2_j2, `Seed 4 (${s4.gpo})`, `Seed 5 (${s5.gpo})`);
+                    cardsHtml += generarTarjetaLlave(pCuartos3, 'Cuartos 3', '#10b981', 3, nomC3_j1, nomC3_j2, `Seed 3 (${s3.gpo})`, `Seed 6 (${s6.gpo})`);
+                    cardsHtml += generarTarjetaLlave(pCuartos4, 'Cuartos 4', '#10b981', 4, nomC4_j1, nomC4_j2, `Seed 2 (${s2.gpo})`, `Seed 7 (${s7.gpo})`);
                 }
                 
-                cardsHtml += fnTarjeta(partidoSemi1, 'Semifinal 1', '#38bdf8', 1, nomSemi1_j1, nomSemi1_j2, tS1_1, tS1_2, 'rgba(6,182,212,0.2); color:#38bdf8;');
-                cardsHtml += fnTarjeta(partidoSemi2, 'Semifinal 2', '#f0abfc', 2, nomSemi2_j1, nomSemi2_j2, tS2_1, tS2_2, 'rgba(6,182,212,0.2); color:#38bdf8;');
-                cardsHtml += fnTarjeta(partidoFinal, 'Gran Final', '#fbbf24', 1, nomFinal_j1, nomFinal_j2, 'Gana Semi 1', 'Gana Semi 2', 'rgba(217,70,239,0.2); color:#d946ef;');
+                cardsHtml += generarTarjetaLlave(partidoSemi1, 'Semifinal 1', '#38bdf8', 1, nomSemi1_j1, nomSemi1_j2, tS1_1, tS1_2);
+                cardsHtml += generarTarjetaLlave(partidoSemi2, 'Semifinal 2', '#f0abfc', 2, nomSemi2_j1, nomSemi2_j2, tS2_1, tS2_2);
+                cardsHtml += generarTarjetaLlave(partidoFinal, 'Gran Final', '#fbbf24', 1, nomFinal_j1, nomFinal_j2, 'Gana Semi 1', 'Gana Semi 2');
 
                 container.innerHTML += `
                     <div class="seccion-llaves-footer">
@@ -927,13 +936,11 @@
                     let resJ1 = null, resJ2 = null;
                     const rf = String(p.ronda_fase || '').toLowerCase();
 
-                    // Mapeo automático Top 8 Cuartos
                     if (rf.includes('cuartos') && rf.includes('1')) { resJ1 = s1?.id; resJ2 = s8?.id; }
                     else if (rf.includes('cuartos') && rf.includes('2')) { resJ1 = s4?.id; resJ2 = s5?.id; }
                     else if (rf.includes('cuartos') && rf.includes('3')) { resJ1 = s3?.id; resJ2 = s6?.id; }
                     else if (rf.includes('cuartos') && rf.includes('4')) { resJ1 = s2?.id; resJ2 = s7?.id; }
 
-                    // Mapeo Semis
                     else if (rf.includes('semi') && (rf.includes('1') || rf.includes('cruce 1'))) {
                         const c1 = partidosCat.find(m => String(m.ronda_fase || '').toLowerCase().includes('cuartos') && String(m.ronda_fase || '').includes('1'));
                         const c2 = partidosCat.find(m => String(m.ronda_fase || '').toLowerCase().includes('cuartos') && String(m.ronda_fase || '').includes('2'));
