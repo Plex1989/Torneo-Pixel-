@@ -25,7 +25,6 @@
         body::after { content: ""; fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
         @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
 
-        /* HEADER FIJO STICKY */
         .navbar { background: rgba(10, 15, 26, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 100; }
         .nav-title { font-weight: 800; font-size: 15px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
         .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -619,13 +618,13 @@
             } catch(e) { console.error("Error cargando torneo:", e); }
 
             try {
-                // MODIFICADO: Usar (*) para uniones dinámicas y evitar colapsos por cambios de esquema
+                // MODIFICADO: Consultar explícitamente los campos para evitar problemas de caché con "select(*)"
                 const [resJug, resCat, resClubs, resProg, resReglas] = await Promise.allSettled([
-                    clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID).order('puntos_ranking', { ascending: false }),
-                    clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: false }),
-                    clienteSupabase.from('clubes').select('*').eq('organizador_id', ORG_ID).order('nombre', { ascending: true }),
-                    clienteSupabase.from('programacion_categorias').select('*').eq('torneo_id', idTorneoActivo),
-                    clienteSupabase.from('reglas_ranking').select('*').order('diferencia_min', { ascending: true })
+                    clienteSupabase.from('jugadores').select('id, nombre, club, puntos_ranking, puntos_ranking_ant, nip_seguridad, division, handicap').eq('organizador_id', ORG_ID).order('puntos_ranking', { ascending: false }),
+                    clienteSupabase.from('categorias').select('id, nombre, puntos_minimos, puntos_maximos, costo_inscripcion, activa').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: false }),
+                    clienteSupabase.from('clubes').select('id, nombre').eq('organizador_id', ORG_ID).order('nombre', { ascending: true }),
+                    clienteSupabase.from('programacion_categorias').select('id, categoria_id, fecha, hora, lugar, costo_inscripcion, activa').eq('torneo_id', idTorneoActivo),
+                    clienteSupabase.from('reglas_ranking').select('id, diferencia_min, diferencia_max, resultado_esperado, puntos_ganador, puntos_perdedor').order('diferencia_min', { ascending: true })
                 ]);
 
                 todosLosJugadoresAdmin = resJug.status === 'fulfilled' ? (resJug.value.data || []) : [];
@@ -844,10 +843,10 @@
 
         async function cargarPartidosEnVivo() {
             try {
-                // MODIFICADO: Evitar fallos con asterisco * en inner joins
+                // MODIFICADO: Consultar explícitamente para evitar fallos de caché en los JOINs
                 const { data } = await clienteSupabase
                     .from('partidos')
-                    .select('*, j1:jugador1_id(*), j2:jugador2_id(*), categorias(*)')
+                    .select('id, torneo_id, categoria_id, organizador_id, grupo_nombre, ronda_fase, mesa, hora, modo_juego, jugador1_id, jugador2_id, ganador_id, estado, puntos_j1, puntos_j2, sets_j1, sets_j2, historial_sets, j1:jugador1_id(id, nombre, club, puntos_ranking, division, handicap), j2:jugador2_id(id, nombre, club, puntos_ranking, division, handicap), categorias(id, nombre)')
                     .eq('torneo_id', idTorneoActivo);
 
                 partidosMonitoreo = data || [];
@@ -1521,4 +1520,521 @@
                     if (errIn) throw new Error("Fallo al insertar en programacion_categorias: " + errIn.message);
                 }
 
-                const { error: errCat
+                const { error: errCat } = await clienteSupabase
+                    .from('categorias')
+                    .update({ costo_inscripcion: costo, activa: activa })
+                    .eq('id', catId);
+                
+                if (errCat) throw new Error("Fallo en tabla categorias: " + errCat.message);
+
+                alert("✅ Configuración de categoría guardada con éxito."); 
+                await cargarDatosIniciales();
+            } catch(e) {
+                console.error(e);
+                alert("❌ Error al guardar: " + e.message);
+            }
+        }
+
+        async function cargarInscritosEnVivo() {
+            try {
+                // MODIFICADO: Consultar explícitamente los campos para evitar problemas de esquema no recargado
+                const { data, error } = await clienteSupabase.from('inscripciones').select(`id, categoria_id, estatus_pago, jugadores ( id, nombre, club, puntos_ranking, division, handicap ), categorias ( id, nombre )`).eq('torneo_id', idTorneoActivo);
+                
+                if (error) {
+                    console.error("Error Supabase:", error);
+                    // No mostrar alert para evitar spam, pero sí loguear el error.
+                    return;
+                }
+
+                const tbody = document.getElementById('tabla-inscritos-vivo'); 
+                const cantReg = document.getElementById('cant-registrados'); 
+                const cantPag = document.getElementById('cant-pagados');
+                
+                if (!tbody) return;
+                tbody.innerHTML = '';
+                
+                if (!data || data.length === 0) { 
+                    tbody.innerHTML = '<tr><td colspan="6" class="mensaje-vacio">Aún no hay inscritos en este torneo.</td></tr>'; 
+                    if (cantReg) cantReg.innerText = '0'; 
+                    if (cantPag) cantPag.innerText = '0'; 
+                    return; 
+                }
+
+                let validData = data.filter(ins => ins.categorias && ins.jugadores);
+                if (cantReg) cantReg.innerText = validData.length; 
+                if (cantPag) cantPag.innerText = validData.filter(i => i.estatus_pago === 'Pagado').length;
+
+                const agrupados = {};
+                validData.forEach(ins => {
+                    let catName = ins.categorias.nombre;
+                    if (!agrupados[catName]) {
+                        agrupados[catName] = { id: ins.categorias.id, inscripciones: [] };
+                    }
+                    agrupados[catName].inscripciones.push(ins);
+                });
+
+                const categoriasOrdenadas = Object.keys(agrupados).sort();
+
+                categoriasOrdenadas.forEach(catName => {
+                    const catObj = agrupados[catName];
+                    const estiloCat = obtenerEstiloCategoria(catObj.id);
+                    
+                    catObj.inscripciones.sort((a, b) => (b.jugadores.puntos_ranking || 0) - (a.jugadores.puntos_ranking || 0));
+
+                    const pagados = catObj.inscripciones.filter(i => i.estatus_pago === 'Pagado').length;
+                    const total = catObj.inscripciones.length;
+
+                    tbody.innerHTML += `
+                        <tr class="tr-header" style="background: ${estiloCat.bg}; border-left: 4px solid ${estiloCat.text};">
+                            <td colspan="6" style="padding: 10px 15px; border-radius: 0;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <strong style="color: ${estiloCat.text}; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">🏆 ${catName}</strong>
+                                    <span style="color: ${estiloCat.text}; font-size: 10px; font-weight: 800; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px;">${pagados} Pagados / ${total} Inscritos</span>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+
+                    catObj.inscripciones.forEach(ins => {
+                        const esPagado = ins.estatus_pago === 'Pagado';
+                        let selectCatHtml = `<select id="select-cambiar-cat-${ins.id}" class="input-tabla" style="padding: 6px; font-size: 10px; margin-right: 6px; width: 110px; font-weight: 700;">`;
+                        todasLasCategoriasAdmin.forEach(c => { selectCatHtml += `<option value="${c.id}" ${c.id === ins.categoria_id ? 'selected' : ''}>${c.nombre}</option>`; });
+                        selectCatHtml += `</select>`;
+
+                        let div = ins.jugadores.division || 1;
+                        let handicap = ins.jugadores.handicap !== undefined && ins.jugadores.handicap !== null ? ins.jugadores.handicap : 5;
+
+                        tbody.innerHTML += `
+                            <tr>
+                                <td><strong style="color:#ffffff; font-size:12px;">${ins.jugadores.nombre}</strong></td>
+                                <td style="color:#94a3b8; font-size:11px;">${ins.jugadores.club || 'Sin Club'}</td>
+                                <td style="color:${estiloCat.text}; font-weight:800; font-size:11px;">${ins.categorias.nombre}</td>
+                                <td>
+                                    <div style="display:inline-flex; gap:8px; align-items:center;">
+                                        <label style="display:flex; align-items:center; gap:2px; font-size:10px; color:#fff; cursor:pointer;">
+                                            <input type="radio" name="div_ins_${ins.jugadores.id}" value="1" ${div == 1 ? 'checked' : ''} style="accent-color:#f43f5e;" onchange="actualizarDivHandicap(${ins.jugadores.id}, 'ins')"> Div 1
+                                        </label>
+                                        <label style="display:flex; align-items:center; gap:2px; font-size:10px; color:#fff; cursor:pointer;">
+                                            <input type="radio" name="div_ins_${ins.jugadores.id}" value="2" ${div == 2 ? 'checked' : ''} style="accent-color:#eab308;" onchange="actualizarDivHandicap(${ins.jugadores.id}, 'ins')"> Div 2
+                                        </label>
+                                        <input type="number" id="ventaja_ins_${ins.jugadores.id}" value="${handicap}" class="input-tabla" style="width: 45px; padding: 2px; font-size: 10px; display: ${div == 2 ? 'block' : 'none'};" onchange="actualizarDivHandicap(${ins.jugadores.id}, 'ins')">
+                                    </div>
+                                </td>
+                                <td><span class="badge-pago ${esPagado ? 'pago-ok' : 'pago-pend'}">${ins.estatus_pago}</span></td>
+                                <td><div style="display:flex; align-items:center;">${selectCatHtml}<button class="btn-console btn-gold" style="padding: 4px 8px; font-size: 9px;" onclick="cambiarCategoriaInscripcion(${ins.id})">💾</button><button class="btn-console btn-red" style="padding: 4px 8px; font-size: 9px; margin-left: 4px;" onclick="eliminarInscripcion(${ins.id}, '${ins.jugadores.nombre.replace(/'/g, "\\'")}')">🗑️</button></div></td>
+                            </tr>
+                        `;
+                    });
+                });
+            } catch(e) { console.error("Error al cargar inscritos:", e); }
+        }
+
+        async function cambiarCategoriaInscripcion(idInscripcion) {
+            const nuevaCatId = document.getElementById(`select-cambiar-cat-${idInscripcion}`).value;
+            await clienteSupabase.from('inscripciones').update({ categoria_id: parseInt(nuevaCatId) }).eq('id', idInscripcion);
+            alert("✅ Categoría cambiada."); cargarDatosIniciales();
+        }
+
+        async function eliminarInscripcion(idInscripcion, nombreJugador) {
+            if (!confirm(`¿Eliminar a "${nombreJugador}"?`)) return;
+            await clienteSupabase.from('inscripciones').delete().eq('id', idInscripcion);
+            alert("✅ Inscripción eliminada."); cargarDatosIniciales();
+        }
+
+        async function cargarPendientes() {
+            try {
+                const { data } = await clienteSupabase.from('inscripciones').select(`id, estatus_pago, jugadores ( nombre, puntos_ranking, club ), categorias ( nombre )`).eq('torneo_id', idTorneoActivo).eq('estatus_pago', 'Pendiente de Pago');
+                const tbody = document.getElementById('tabla-pendientes');
+                if(!tbody) return;
+                tbody.innerHTML = '';
+                if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="mensaje-vacio">No hay pagos pendientes en este torneo.</td></tr>'; return; }
+                data.forEach(ins => tbody.innerHTML += `<tr><td><strong style="color:#ffffff; font-size:12px;">${ins.jugadores ? ins.jugadores.nombre : 'Desconocido'}</strong> <small style="color:#64748b; font-weight:700; margin-left:6px; font-size:10px;">(${ins.jugadores ? ins.jugadores.club : 'S/C'})</small></td><td style="color:#38bdf8; font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;">${ins.categorias ? ins.categorias.nombre : 'N/A'}</td><td style="color:#fbbf24; font-weight:800; font-size:11px;">${ins.jugadores ? ins.jugadores.puntos_ranking : 0} pts</td><td><button class="btn-console btn-green" style="padding:4px 10px; font-size:9px;" onclick="aprobarPago(${ins.id})">Validar Pago</button></td></tr>`);
+            } catch(e) { console.error("Error pagos pendientes:", e); }
+        }
+
+        async function aprobarPago(id) {
+            if (!confirm(`¿Confirmas el pago?`)) return;
+            await clienteSupabase.from('inscripciones').update({ estatus_pago: 'Pagado' }).eq('id', id);
+            cargarDatosIniciales();
+        }
+
+        async function cargarPendientesRanking() {
+            try {
+                const { data } = await clienteSupabase.from('jugadores').select('*').eq('puntos_ranking', 0).eq('organizador_id', ORG_ID).order('created_at', { ascending: false });
+                const tbody = document.getElementById('tabla-pendientes-ranking');
+                if(!tbody) return;
+                if (!data || data.length === 0) { document.getElementById('modulo-pendientes-ranking').style.display = 'none'; return; }
+                document.getElementById('modulo-pendientes-ranking').style.display = 'block'; tbody.innerHTML = '';
+                data.forEach(j => {
+                    tbody.innerHTML += `<tr><td><strong style="color:#ffffff; font-size:12px;">${j.nombre}</strong></td><td>${j.club || 'Sin Club'}</td><td><input type="number" id="input-ranking-${j.id}" placeholder="Puntos" style="width:90px;" class="input-tabla text-center"></td><td><button class="btn-console btn-gold" style="padding:6px 12px; font-size:9px;" onclick="asignarRankingInicial(${j.id}, '${j.nombre.replace(/'/g, "\\'")}')">Guardar</button></td></tr>`;
+                });
+            } catch(e) { console.error("Error pendientes ranking:", e); }
+        }
+
+        async function asignarRankingInicial(idJugador, nombreJugador) {
+            const pts = parseInt(document.getElementById(`input-ranking-${idJugador}`).value);
+            if (!pts || pts <= 0) return;
+            await clienteSupabase.from('jugadores').update({ puntos_ranking: pts }).eq('id', idJugador);
+            alert(`✅ Ranking asignado.`); cargarDatosIniciales();
+        }
+
+        function poblarDropdownClubs() {
+            const select = document.getElementById('nuevo-club'); 
+            const selectFlash = document.getElementById('flash-new-club'); // Para modal flash
+            
+            if(!select || !selectFlash) return;
+            select.innerHTML = '<option value="Sin Club">Sin Club</option>';
+            selectFlash.innerHTML = '<option value="Sin Club">Sin Club</option>';
+            
+            todosLosClubsAdmin.forEach(club => { 
+                let opt = document.createElement('option'); opt.value = club.nombre; opt.textContent = club.nombre; 
+                select.appendChild(opt); 
+                
+                let optF = document.createElement('option'); optF.value = club.nombre; optF.textContent = club.nombre; 
+                selectFlash.appendChild(optF); 
+            });
+        }
+
+        function dibujarTablaClubs() {
+            const tbody = document.getElementById('tabla-clubs');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            if (todosLosClubsAdmin.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="mensaje-vacio">No hay clubs.</td></tr>'; return; }
+            todosLosClubsAdmin.forEach(c => {
+                const esDefault = c.nombre === 'Sin Club';
+                tbody.innerHTML += `<tr><td>#${c.id}</td><td><input type="text" id="club-nombre-${c.id}" value="${c.nombre}" ${esDefault ? 'disabled' : ''} class="input-tabla w-full"></td><td>${!esDefault ? `<button class="btn-console btn-purple" style="padding: 5px 10px; font-size: 9px; margin-right: 4px;" onclick="actualizarClub(${c.id}, '${c.nombre}')">Guardar</button><button class="btn-console btn-red" style="padding: 5px 10px; font-size: 9px;" onclick="eliminarClub(${c.id}, '${c.nombre}')">Eliminar</button>` : '<small>Sistema</small>'}</td></tr>`;
+            });
+        }
+
+        async function crearClub() {
+            const nombre = document.getElementById('nuevo-nombre-club').value.toUpperCase().trim(); if (!nombre) return;
+            await clienteSupabase.from('clubes').insert([{ nombre: nombre, organizador_id: ORG_ID }]);
+            document.getElementById('nuevo-nombre-club').value = ''; cargarDatosIniciales();
+        }
+
+        async function actualizarClub(id, nombreAntiguo) {
+            const nuevoNombre = document.getElementById(`club-nombre-${id}`).value.toUpperCase().trim(); if (!nuevoNombre || nuevoNombre === nombreAntiguo) return;
+            await clienteSupabase.from('clubes').update({ nombre: nuevoNombre }).eq('id', id).eq('organizador_id', ORG_ID);
+            await clienteSupabase.from('jugadores').update({ club: nuevoNombre }).eq('club', nombreAntiguo).eq('organizador_id', ORG_ID);
+            cargarDatosIniciales();
+        }
+
+        async function eliminarClub(id, nombreClub) {
+            if (nombreClub === 'Sin Club' || !confirm(`¿Eliminar el club "${nombreClub}"?`)) return;
+            await clienteSupabase.from('jugadores').update({ club: 'Sin Club' }).eq('club', nombreClub).eq('organizador_id', ORG_ID);
+            await clienteSupabase.from('clubes').delete().eq('id', id).eq('organizador_id', ORG_ID); cargarDatosIniciales();
+        }
+
+        function mostrarRankingModal() {
+            const tbody = document.getElementById('body-tabla-ranking-modal');
+            tbody.innerHTML = '';
+
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
+            
+            let globalRank = 1;
+            
+            const styles = [
+                { bg: '#fbbf24', text: '#000000' }, // Oro / Primera
+                { bg: '#94a3b8', text: '#000000' }, // Plata / Segunda
+                { bg: '#d97706', text: '#ffffff' }, // Bronce / Tercera
+                { bg: '#06b6d4', text: '#000000' }, // Cyan / Cuarta
+                { bg: '#a855f7', text: '#ffffff' }  // Púrpura / Quinta
+            ];
+
+            categoriasFuerza.forEach((cat, index) => {
+                const style = styles[index % styles.length];
+                const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos).sort((a,b) => b.puntos_ranking - a.puntos_ranking);
+                
+                if (jugadoresCat.length > 0) {
+                    tbody.innerHTML += `
+                        <tr style="background: ${style.bg}; color: ${style.text}; border-bottom: 2px solid #000;">
+                            <td colspan="5" style="padding: 6px 12px; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>🏆 ${cat.nombre}</span>
+                                    <span>${cat.puntos_minimos} - ${cat.puntos_maximos} PTS</span>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+
+                    jugadoresCat.forEach(j => {
+                        let diff = (j.puntos_ranking || 0) - (j.puntos_ranking_ant || 0);
+                        let flecha = diff > 0 ? `<span style="color:#10b981; margin-left:4px;"><i class="fa-solid fa-arrow-up"></i> ${diff}</span>` : 
+                                     (diff < 0 ? `<span style="color:#ef4444; margin-left:4px;"><i class="fa-solid fa-arrow-down"></i> ${Math.abs(diff)}</span>` : 
+                                     `<span style="color:#475569; margin-left:4px;"><i class="fa-solid fa-minus"></i></span>`);
+
+                        tbody.innerHTML += `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(0,0,0,0.2)'">
+                                <td style="padding: 6px 10px; font-weight: 800; color: #64748b; text-align:center; width:50px; font-size: 11px;">#${globalRank}</td>
+                                <td style="padding: 6px 10px; font-weight: 800; color: #e2e8f0; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${j.nombre}</td>
+                                <td style="padding: 6px 10px;"><span style="color: #94a3b8; font-size: 9px; font-weight: 700;">${j.club || 'S/C'}</span></td>
+                                <td style="padding: 6px 10px; text-align: center; color: #64748b; font-family: 'Orbitron', sans-serif; font-size: 10px;">${j.puntos_ranking_ant || 0}</td>
+                                <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #38bdf8; font-family: 'Orbitron', sans-serif; font-size: 12px; white-space: nowrap;">${j.puntos_ranking || 0} ${flecha}</td>
+                            </tr>
+                        `;
+                        globalRank++;
+                    });
+                }
+            });
+
+            document.getElementById('modal-ranking-global').style.display = 'flex';
+        }
+
+        function generarRankingPorCategoriasHTMLPDF() {
+            const contenedor = document.getElementById('contenedor-ranking-categorias'); 
+            if(!contenedor) return;
+            
+            let html = `
+                <div class="impresion-ranking">
+                    <div class="print-header">
+                        <div class="print-header-left">
+                            <h2>VETEME</h2>
+                            <h3>Asociación Veracruzana de<br>Tenis de Mesa A.C.</h3>
+                        </div>
+                        <div class="print-header-center">
+                            <h1>RANKING ESTATAL</h1>
+                            <span id="fecha-impresion-doc"></span>
+                        </div>
+                        <div class="print-header-right">
+                            <strong>${todosLosJugadoresAdmin.length} ATLETAS</strong><br>ACTIVOS
+                        </div>
+                    </div>
+            `;
+
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
+            let globalRank = 1;
+            
+            const styles = ['bg-cat-0', 'bg-cat-1', 'bg-cat-2', 'bg-cat-3', 'bg-cat-4'];
+
+            categoriasFuerza.forEach((cat, index) => {
+                const styleClass = styles[index % styles.length];
+                const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos).sort((a,b) => b.puntos_ranking - a.puntos_ranking);
+                
+                if (jugadoresCat.length > 0) {
+                    html += `
+                        <div class="print-cat-wrapper">
+                            <div class="print-cat-header ${styleClass}">
+                                <h4>${cat.nombre}</h4>
+                                <span>${cat.puntos_minimos} - ${cat.puntos_maximos} PTS</span>
+                            </div>
+                            <table class="print-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px; text-align: center;">RKN</th>
+                                        <th>NOMBRE COMPLETO</th>
+                                        <th style="width: 80px; text-align: center;">CLUB</th>
+                                        <th style="width: 60px; text-align: center;">ANT</th>
+                                        <th style="width: 60px; text-align: center;">ACT</th>
+                                        <th style="width: 50px; text-align: center;">+/-</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    jugadoresCat.forEach(j => {
+                        let diff = (j.puntos_ranking || 0) - (j.puntos_ranking_ant || 0);
+                        let arrow = '';
+                        let arrowClass = 'diff-same';
+                        
+                        if (diff > 0) { arrow = `▲ +${diff}`; arrowClass = 'diff-up'; }
+                        else if (diff < 0) { arrow = `▼ ${diff}`; arrowClass = 'diff-down'; }
+                        else { arrow = '-'; }
+
+                        html += `
+                                    <tr>
+                                        <td class="pt-rank">${globalRank}</td>
+                                        <td class="pt-name">${j.nombre}</td>
+                                        <td style="text-align: center;"><span class="pt-club">${j.club || ''}</span></td>
+                                        <td class="pt-score-ant">${j.puntos_ranking_ant || 0}</td>
+                                        <td class="pt-score-act">${j.puntos_ranking || 0}</td>
+                                        <td class="pt-diff ${arrowClass}">${arrow}</td>
+                                    </tr>
+                        `;
+                        globalRank++;
+                    });
+
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+            });
+
+            html += `</div>`;
+            contenedor.innerHTML = html;
+
+            const meses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+            const d = new Date();
+            const fechaEl = document.getElementById('fecha-impresion-doc');
+            if(fechaEl) {
+                fechaEl.innerText = `${meses[d.getMonth()]} ${d.getFullYear()}`;
+            }
+        }
+
+        function imprimirRanking() { 
+            const printArea = document.getElementById('area-impresion-memoria');
+            const rankingContent = document.getElementById('contenedor-ranking-categorias').innerHTML;
+            printArea.innerHTML = rankingContent;
+            window.print(); 
+        }
+
+        function filtrarYAutoSeleccionarAdmin() {
+            const inputEl = document.getElementById('buscador-jugador');
+            const select = document.getElementById('select-jugador-admin');
+            if(!inputEl || !select) return;
+
+            const texto = quitarAcentos(inputEl.value.toLowerCase().trim());
+            select.innerHTML = '<option value="">-- Nuevo Jugador (Modo Crear) --</option>';
+            const filtrados = todosLosJugadoresAdmin.filter(j => j.nombre && quitarAcentos(j.nombre.toLowerCase()).includes(texto));
+            filtrados.forEach(j => { let opt = document.createElement('option'); opt.value = j.id; opt.textContent = `${j.nombre} [${j.club || 'Sin Club'}] (${j.puntos_ranking} pts)`; select.appendChild(opt); });
+            if (texto.length > 0 && filtrados.length > 0) { select.value = filtrados[0].id; cargarDatosJugadorEditar(); }
+            else if (texto.length === 0) resetFormularioJugador();
+        }
+
+        function cargarDatosJugadorEditar() {
+            const idSel = document.getElementById('select-jugador-admin').value;
+            if (!idSel) { resetFormularioJugador(); return; }
+            const j = todosLosJugadoresAdmin.find(item => item.id == idSel);
+            if (j) {
+                document.getElementById('nuevo-nombre').value = j.nombre; document.getElementById('nuevo-club').value = j.club || 'Sin Club';
+                document.getElementById('nuevo-ranking-ant').value = j.puntos_ranking_ant || 0;
+                document.getElementById('nuevo-ranking').value = j.puntos_ranking || 0; 
+                document.getElementById('nuevo-nip').value = j.nip_seguridad || '1234';
+                document.getElementById('titulo-modo-jugador').innerText = `✏️ Editando a: ${j.nombre}`;
+                const btnGuardar = document.getElementById('btn-guardar-jugador'); btnGuardar.innerText = "Actualizar Cambios"; btnGuardar.className = "btn-console btn-green";
+                document.getElementById('btn-eliminar-jugador').style.display = "inline-flex"; document.getElementById('btn-cancelar-jugador').style.display = "inline-flex";
+            }
+        }
+
+        function resetFormularioJugador() {
+            document.getElementById('select-jugador-admin').value = ""; document.getElementById('nuevo-nombre').value = ""; document.getElementById('nuevo-club').value = "Sin Club";
+            document.getElementById('nuevo-ranking-ant').value = "0"; document.getElementById('nuevo-ranking').value = ""; document.getElementById('nuevo-nip').value = "1234";
+            document.getElementById('titulo-modo-jugador').innerText = "➕ Registrando Nuevo Jugador";
+            const btnGuardar = document.getElementById('btn-guardar-jugador'); btnGuardar.innerText = "Crear Jugador"; btnGuardar.className = "btn-console btn-gold";
+            document.getElementById('btn-eliminar-jugador').style.display = "none"; document.getElementById('btn-cancelar-jugador').style.display = "none";
+        }
+
+        async function guardarJugador() {
+            const idSel = document.getElementById('select-jugador-admin').value; const nombre = document.getElementById('nuevo-nombre').value.toUpperCase().trim();
+            const club = document.getElementById('nuevo-club').value; const puntos = document.getElementById('nuevo-ranking').value;
+            const puntosAnt = document.getElementById('nuevo-ranking-ant').value || 0;
+            const nip = document.getElementById('nuevo-nip').value.trim() || '1234';
+            if (!nombre || !puntos) return;
+            if (idSel) { await clienteSupabase.from('jugadores').update({ nombre: nombre, club: club, puntos_ranking_ant: parseInt(puntosAnt), puntos_ranking: parseInt(puntos), nip_seguridad: nip }).eq('id', idSel).eq('organizador_id', ORG_ID); } 
+            else { await clienteSupabase.from('jugadores').insert([{ nombre: nombre, club: club, puntos_ranking_ant: parseInt(puntosAnt), puntos_ranking: parseInt(puntos), nip_seguridad: nip, organizador_id: ORG_ID }]); }
+            document.getElementById('buscador-jugador').value = ''; resetFormularioJugador(); cargarDatosIniciales();
+        }
+
+        async function eliminarJugador() {
+            const idSel = document.getElementById('select-jugador-admin').value; if (!idSel) return;
+            const j = todosLosJugadoresAdmin.find(item => item.id == idSel); if (!j) return;
+            if (!confirm(`⚠️ ¿Eliminar a "${j.nombre}" de la BD?`)) return;
+            await clienteSupabase.from('inscripciones').delete().eq('jugador_id', idSel).eq('organizador_id', ORG_ID);
+            await clienteSupabase.from('jugadores').delete().eq('id', idSel).eq('organizador_id', ORG_ID);
+            alert(`✅ Eliminado.`); document.getElementById('buscador-jugador').value = ''; resetFormularioJugador(); cargarDatosIniciales();
+        }
+
+        function exportarExcel() {
+            let csv = 'Posicion,Jugador,Club,Ranking_Anterior,Ranking_Actual,Categoria\n';
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
+            categoriasFuerza.forEach(cat => {
+                const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos);
+                jugadoresCat.forEach((j, idx) => { csv += `${idx + 1},"${j.nombre}","${j.club || 'Sin Club'}",${j.puntos_ranking_ant || 0},${j.puntos_ranking},"${cat.nombre}"\n`; });
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(blob)); link.setAttribute("download", `Ranking_Oficial_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        function compartirRankingWhatsApp() {
+            let textoWS = `🏓 *RANKING OFICIAL DE JUGADORES* 🏓\n\n`;
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
+            categoriasFuerza.forEach(cat => {
+                const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos);
+                if (jugadoresCat.length > 0) {
+                    textoWS += `🏆 *${cat.nombre.toUpperCase()}*\n`;
+                    jugadoresCat.forEach((j, idx) => { 
+                        let diff = j.puntos_ranking - (j.puntos_ranking_ant || 0);
+                        let flecha = diff > 0 ? ` (+${diff})` : (diff < 0 ? ` (${diff})` : '');
+                        textoWS += `${idx + 1}. *${j.nombre}* (${j.puntos_ranking} pts${flecha}) - _${j.club || 'Sin Club'}_\n`; 
+                    });
+                    textoWS += `\n`;
+                }
+            });
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWS)}`, '_blank');
+        }
+
+        async function cargarCategoriasAdminView() {
+            const tbody = document.getElementById('tabla-categorias');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            if (!todasLasCategoriasAdmin || todasLasCategoriasAdmin.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="mensaje-vacio">No hay categorías.</td></tr>';
+                return;
+            }
+            todasLasCategoriasAdmin.forEach(cat => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong style="color:#ffffff; font-size:12px;">${cat.nombre}</strong></td>
+                        <td>
+                            <input type="number" id="cat-min-${cat.id}" class="input-tabla w-20 text-center" value="${cat.puntos_minimos}"> pts
+                        </td>
+                        <td>
+                            <input type="number" id="cat-max-${cat.id}" class="input-tabla w-20 text-center" value="${cat.puntos_maximos}"> pts
+                        </td>
+                        <td>
+                            $<input type="number" id="cat-precio-${cat.id}" class="input-tabla w-20 text-center" value="${cat.costo_inscripcion || 200}">
+                        </td>
+                        <td>
+                            <button class="btn-console btn-pink" style="padding:4px 10px; font-size:9px;" onclick="actualizarCategoria(${cat.id})">Guardar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function actualizarCategoria(id) {
+            const min = document.getElementById(`cat-min-${id}`).value; const max = document.getElementById(`cat-max-${id}`).value; const costo = document.getElementById(`cat-precio-${id}`).value;
+            let objUpdate = { puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) }; if (costo) objUpdate.costo_inscripcion = parseFloat(costo);
+            await clienteSupabase.from('categorias').update(objUpdate).eq('id', id).eq('organizador_id', ORG_ID); cargarDatosIniciales();
+        }
+
+        async function crearCategoria() {
+            const nombre = document.getElementById('nueva-cat-nombre').value.trim(); const min = document.getElementById('nueva-cat-min').value; const max = document.getElementById('nueva-cat-max').value; const costo = document.getElementById('nueva-cat-precio').value;
+            if (!nombre || !min || !max) return;
+            let objInsert = { nombre: nombre, puntos_minimos: parseInt(min), puntos_maximos: parseInt(max), organizador_id: ORG_ID }; if (costo) objInsert.costo_inscripcion = parseFloat(costo);
+            await clienteSupabase.from('categorias').insert([objInsert]); location.reload();
+        }
+
+        async function cargarReglasAdminView() {
+            const tbody = document.getElementById('tabla-reglas');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            if (!reglasRankingList || reglasRankingList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="mensaje-vacio">Sin reglas configuradas.</td></tr>';
+                return;
+            }
+            reglasRankingList.forEach(regla => {
+                let escenario = regla.resultado_esperado === 'gana_favorito' ? 'Gana Favorito' : '<strong style="color:#ef4444;">Gana Retador (Upset)</strong>';
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="color:#94a3b8; font-size:11px; font-weight:600;">De ${regla.diferencia_min} a ${regla.diferencia_max} pts</td>
+                        <td style="color:#ffffff; font-size:11px; font-weight:700;">${escenario}</td>
+                        <td>+ <input type="number" id="regla-ganador-${regla.id}" style="width:60px;" value="${regla.puntos_ganador}" class="input-tabla text-center"></td>
+                        <td> <input type="number" id="regla-perdedor-${regla.id}" style="width:60px;" value="${regla.puntos_perdedor}" class="input-tabla text-center"></td>
+                        <td><button class="btn-console btn-red" style="padding:4px 10px; font-size:9px;" onclick="actualizarRegla(${regla.id})">Guardar</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function actualizarRegla(id) {
+            const ptsGanador = document.getElementById(`regla-ganador-${id}`).value, ptsPerdedor = document.getElementById(`regla-perdedor-${id}`).value;
+            await clienteSupabase.from('reglas_ranking').update({ puntos_ganador: parseInt(ptsGanador), puntos_perdedor: parseInt(ptsPerdedor) }).eq('id', id);
+            alert("✅ Regla actualizada.");
+        }
+
+        async function cargarBono() {
+            const { data } = await clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).maybeSingle();
+            if (data) {
