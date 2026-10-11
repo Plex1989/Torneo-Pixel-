@@ -25,7 +25,7 @@
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 0; background-color: #04060a; color: #f8fafc; min-height: 100vh; position: relative; overflow-x: hidden; }
         
         body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 10s infinite alternate; }
-        body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
+        body::after { content: ""; fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
         @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
 
         /* HEADER FIJO STICKY */
@@ -1231,7 +1231,6 @@
                         let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Ganador Semi 1');
                         let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Ganador Semi 2');
 
-                        // Función constructora para las tarjetas de HTML en Admin
                         const renderCard = (pObj, titulo, color, tag1, tag2, cBadge) => {
                             if(!pObj) return '';
                             let nom1 = pObj.j1 ? pObj.j1.nombre : tag1;
@@ -1433,6 +1432,10 @@
                     costoVal = cat.costo_inscripcion;
                 }
 
+                const estaActiva = prog.activa !== false; // Si es nulo, asume true por defecto
+                const btnClase = estaActiva ? 'btn-green' : 'btn-red';
+                const btnIcono = estaActiva ? '✅ ACTIVA' : '🚫 BLOQUEADA';
+
                 tbody.innerHTML += `
                     <tr>
                         <td><strong style="color:#ffffff; font-size:12px;">${cat.nombre || 'Sin Nombre'}</strong></td>
@@ -1440,10 +1443,30 @@
                         <td><input type="time" id="cat-hora-${cat.id}" value="${horaVal}" class="input-tabla"></td>
                         <td><input type="text" id="cat-lugar-${cat.id}" value="${lugarVal}" placeholder="Lugar / Mesas" class="input-tabla w-full"></td>
                         <td><input type="number" id="cat-inscripcion-${cat.id}" value="${costoVal}" style="width:80px;" placeholder="$" class="input-tabla text-center"></td>
-                        <td><button class="btn-console btn-gold" style="padding: 4px 10px; font-size: 9px;" onclick="guardarHorarioCat(${cat.id})">💾 Guardar</button></td>
+                        <td>
+                            <div style="display:flex; gap:6px;">
+                                <button id="btn-estado-cat-${cat.id}" class="btn-console ${btnClase}" style="padding: 4px 10px; font-size: 9px; min-width: 100px;" onclick="toggleEstadoCat(${cat.id})" data-activa="${estaActiva}">${btnIcono}</button>
+                                <button class="btn-console btn-gold" style="padding: 4px 10px; font-size: 9px;" onclick="guardarHorarioCat(${cat.id})">💾</button>
+                            </div>
+                        </td>
                     </tr>
                 `;
             });
+        }
+
+        function toggleEstadoCat(catId) {
+            const btn = document.getElementById(`btn-estado-cat-${catId}`);
+            const isActive = btn.getAttribute('data-activa') === 'true';
+            const newState = !isActive;
+            btn.setAttribute('data-activa', newState);
+            
+            if (newState) {
+                btn.className = 'btn-console btn-green';
+                btn.innerHTML = '✅ ACTIVA';
+            } else {
+                btn.className = 'btn-console btn-red';
+                btn.innerHTML = '🚫 BLOQUEADA';
+            }
         }
 
         async function guardarHorarioCat(catId) {
@@ -1452,6 +1475,7 @@
                 const hora = document.getElementById(`cat-hora-${catId}`).value;
                 const lugar = document.getElementById(`cat-lugar-${catId}`).value.trim();
                 const costo = parseFloat(document.getElementById(`cat-inscripcion-${catId}`).value) || 200;
+                const activa = document.getElementById(`btn-estado-cat-${catId}`).getAttribute('data-activa') === 'true';
 
                 const { data: existe, error: errSearch } = await clienteSupabase
                     .from('programacion_categorias')
@@ -1465,13 +1489,13 @@
                 if (existe && existe.id) {
                     const { error: errUp } = await clienteSupabase
                         .from('programacion_categorias')
-                        .update({ fecha: fecha, hora: hora, lugar: lugar, costo_inscripcion: costo })
+                        .update({ fecha: fecha, hora: hora, lugar: lugar, costo_inscripcion: costo, activa: activa })
                         .eq('id', existe.id);
                     if (errUp) throw new Error("No se pudo actualizar el horario: " + errUp.message);
                 } else {
                     const { error: errIn } = await clienteSupabase
                         .from('programacion_categorias')
-                        .insert([{ torneo_id: parseInt(idTorneoActivo), categoria_id: catId, fecha: fecha, hora: hora, lugar: lugar, costo_inscripcion: costo }]);
+                        .insert([{ torneo_id: parseInt(idTorneoActivo), categoria_id: catId, fecha: fecha, hora: hora, lugar: lugar, costo_inscripcion: costo, activa: activa }]);
                     if (errIn) console.warn("Advertencia al insertar en programacion_categorias:", errIn.message);
                 }
 
@@ -1481,7 +1505,7 @@
                     .eq('id', catId);
                 if (errCat) console.error("Error al actualizar precio en categorias base:", errCat);
 
-                alert("✅ Programación de categoría guardada con éxito."); 
+                alert("✅ Configuración de categoría guardada con éxito."); 
                 await cargarDatosIniciales();
             } catch(e) {
                 alert("❌ Error al guardar: " + e.message);
