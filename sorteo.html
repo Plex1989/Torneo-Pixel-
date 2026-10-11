@@ -787,28 +787,25 @@
             let horaSemiStr = minutesToTimeStr(currentTimeMins);
             let horaFinalStr = minutesToTimeStr(currentTimeMins + duracionPartido);
 
-            // NUEVO: SISTEMA DINÁMICO DE LLAVES (Soporta Cuartos de Final si hay > 2 grupos)
+            // SISTEMA DINÁMICO DE LLAVES BASADO EN TOP 8 ABSOLUTO
             if (gruposGlobal.length > 2) {
                 // Generar Cuartos
-                partidosGeneradosRR.push({ mesa: mesaInicio, hora: horaSemiStr, rondaFase: 'Cuartos 1', j1NombreTemp: '1° Gpo A', j2NombreTemp: '2° Gpo C', modoJuego, juez: 'Comité Oficial' });
-                partidosGeneradosRR.push({ mesa: mesaInicio + 1 <= numMesas ? mesaInicio + 1 : mesaInicio, hora: horaSemiStr, rondaFase: 'Cuartos 2', j1NombreTemp: '1° Gpo B', j2NombreTemp: '2° Gpo D', modoJuego, juez: 'Comité Oficial' });
-                partidosGeneradosRR.push({ mesa: mesaInicio + 2 <= numMesas ? mesaInicio + 2 : mesaInicio, hora: horaSemiStr, rondaFase: 'Cuartos 3', j1NombreTemp: '1° Gpo C', j2NombreTemp: '2° Gpo A', modoJuego, juez: 'Comité Oficial' });
-                partidosGeneradosRR.push({ mesa: mesaInicio + 3 <= numMesas ? mesaInicio + 3 : mesaInicio, hora: horaSemiStr, rondaFase: 'Cuartos 4', j1NombreTemp: '1° Gpo D', j2NombreTemp: '2° Gpo B', modoJuego, juez: 'Comité Oficial' });
+                partidosGeneradosRR.push({ mesa: mesaInicio, hora: horaSemiStr, rondaFase: 'Cuartos 1', j1NombreTemp: 'Mejor 1° (Seed 1)', j2NombreTemp: 'Peor 2° (Seed 8)', modoJuego, juez: 'Comité Oficial' });
+                partidosGeneradosRR.push({ mesa: mesaInicio + 1 <= numMesas ? mesaInicio + 1 : mesaInicio, hora: horaSemiStr, rondaFase: 'Cuartos 2', j1NombreTemp: '4° Mejor (Seed 4)', j2NombreTemp: '5° Mejor (Seed 5)', modoJuego, juez: 'Comité Oficial' });
+                partidosGeneradosRR.push({ mesa: mesaInicio + 2 <= numMesas ? mesaInicio + 2 : mesaInicio, hora: horaSemiStr, rondaFase: 'Cuartos 3', j1NombreTemp: '3° Mejor (Seed 3)', j2NombreTemp: '6° Mejor (Seed 6)', modoJuego, juez: 'Comité Oficial' });
+                partidosGeneradosRR.push({ mesa: mesaInicio + 3 <= numMesas ? mesaInicio + 3 : mesaInicio, hora: horaSemiStr, rondaFase: 'Cuartos 4', j1NombreTemp: '2° Mejor (Seed 2)', j2NombreTemp: '7° Mejor (Seed 7)', modoJuego, juez: 'Comité Oficial' });
                 
                 let horaSemi2Str = minutesToTimeStr(currentTimeMins + duracionPartido);
                 let horaFinal2Str = minutesToTimeStr(currentTimeMins + (duracionPartido * 2));
 
-                // Generar Semis
                 partidosGeneradosRR.push({ mesa: mesaInicio, hora: horaSemi2Str, rondaFase: 'Semifinal 1', j1NombreTemp: 'Gana Cuartos 1', j2NombreTemp: 'Gana Cuartos 2', modoJuego, juez: 'Comité Oficial' });
                 partidosGeneradosRR.push({ mesa: mesaInicio + 1 <= numMesas ? mesaInicio + 1 : mesaInicio, hora: horaSemi2Str, rondaFase: 'Semifinal 2', j1NombreTemp: 'Gana Cuartos 3', j2NombreTemp: 'Gana Cuartos 4', modoJuego, juez: 'Comité Oficial' });
-                
-                // Final
                 partidosGeneradosRR.push({ mesa: mesaInicio, hora: horaFinal2Str, rondaFase: 'Gran Final', j1NombreTemp: 'Gana Semi 1', j2NombreTemp: 'Gana Semi 2', modoJuego, juez: 'Comité Oficial' });
             } else {
-                // Original logic for 2 groups
-                partidosGeneradosRR.push({ mesa: mesaInicio, hora: horaSemiStr, rondaFase: 'Semifinal 1', j1NombreTemp: '1° Gpo A', j2NombreTemp: '2° Gpo B', modoJuego, juez: 'Comité Oficial' });
-                partidosGeneradosRR.push({ mesa: mesaInicio + 1 <= numMesas ? mesaInicio + 1 : mesaInicio, hora: horaSemiStr, rondaFase: 'Semifinal 2', j1NombreTemp: '1° Gpo B', j2NombreTemp: '2° Gpo A', modoJuego, juez: 'Comité Oficial' });
-                partidosGeneradosRR.push({ mesa: mesaInicio, hora: horaFinalStr, rondaFase: 'Gran Final', j1NombreTemp: 'Ganador Semifinal 1', j2NombreTemp: 'Ganador Semifinal 2', modoJuego, juez: 'Comité Oficial' });
+                // Solo Semis para 2 grupos
+                partidosGeneradosRR.push({ mesa: mesaInicio, hora: horaSemiStr, rondaFase: 'Semifinal 1', j1NombreTemp: 'Seed 1 (Mejor 1°)', j2NombreTemp: 'Seed 4 (Peor 2°)', modoJuego, juez: 'Comité Oficial' });
+                partidosGeneradosRR.push({ mesa: mesaInicio + 1 <= numMesas ? mesaInicio + 1 : mesaInicio, hora: horaSemiStr, rondaFase: 'Semifinal 2', j1NombreTemp: 'Seed 2 (Peor 1°)', j2NombreTemp: 'Seed 3 (Mejor 2°)', modoJuego, juez: 'Comité Oficial' });
+                partidosGeneradosRR.push({ mesa: mesaInicio, hora: horaFinalStr, rondaFase: 'Gran Final', j1NombreTemp: 'Ganador Semi 1', j2NombreTemp: 'Ganador Semi 2', modoJuego, juez: 'Comité Oficial' });
             }
             
             document.getElementById('seccion-partidos-rr').style.display = 'block';
@@ -894,8 +891,14 @@
                     if (p.j1 && p.jugador1_id) mapaJugadores.set(p.jugador1_id, p.j1);
                     if (p.j2 && p.jugador2_id) mapaJugadores.set(p.jugador2_id, p.j2);
                 });
+                
+                // ORDENAR JUGADORES POR RANKING DE MAYOR A MENOR
+                let jugadoresOrdenados = Array.from(mapaJugadores.values()).sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
+
                 let html = `<div class="grupo-card ${clasesColoresGrupo[idx % clasesColoresGrupo.length]}"><div class="grupo-header">Grupo ${nombreGpo}</div>`;
-                mapaJugadores.forEach((jObj) => { html += `<div class="jugador-item"><div class="jugador-info"><strong style="color:#ffffff;">${jObj.nombre || 'Desconocido'}</strong><div><span class="tag-club">${jObj.club || 'Sin Club'}</span></div><span style="font-size:10px; color:#94a3b8;">${jObj.puntos_ranking || 0} pts</span></div></div>`; });
+                jugadoresOrdenados.forEach((jObj, i) => { 
+                    html += `<div class="jugador-item"><div class="jugador-info"><strong style="color:#ffffff;">${jObj.nombre || 'Desconocido'}</strong><div><span class="tag-club">${jObj.club || 'Sin Club'}</span></div><span style="font-size:10px; color:#94a3b8;">${jObj.puntos_ranking || 0} pts (Seed #${i + 1})</span></div></div>`; 
+                });
                 contenedor.innerHTML += html + `</div>`;
             });
         }
