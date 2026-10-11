@@ -1962,4 +1962,251 @@
 
         async function actualizarRegla(id) {
             const ptsGanador = document.getElementById(`regla-ganador-${id}`).value, ptsPerdedor = document.getElementById(`regla-perdedor-${id}`).value;
-            await clienteSupabase.from
+            await clienteSupabase.from('reglas_ranking').update({ puntos_ganador: parseInt(ptsGanador), puntos_perdedor: parseInt(ptsPerdedor) }).eq('id', id);
+            alert("✅ Regla actualizada.");
+        }
+
+        async function cargarBono() {
+            const { data } = await clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).maybeSingle();
+            if (data) { 
+                const chk = document.getElementById('bono-activo');
+                const inp = document.getElementById('bono-puntos');
+                if(chk) chk.checked = data.activo; 
+                if(inp) inp.value = data.valor;
+                
+                bonoPaseActivo = data.activo;
+                bonoPaseValor = data.valor;
+            }
+        }
+
+        async function guardarBono() {
+            const activo = document.getElementById('bono-activo').checked, valor = parseInt(document.getElementById('bono-puntos').value) || 0;
+            const { data: existe } = await clienteSupabase.from('configuracion').select('id').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).maybeSingle();
+            
+            if(existe) {
+                await clienteSupabase.from('configuracion').update({ activo: activo, valor: valor }).eq('id', existe.id); 
+            } else {
+                await clienteSupabase.from('configuracion').insert([{ clave: 'bono_pase_grupos', activo: activo, valor: valor, organizador_id: ORG_ID }]); 
+            }
+            
+            bonoPaseActivo = activo;
+            bonoPaseValor = valor;
+            alert('✅ Bono guardado.');
+        }
+
+        function calcularPuntosMatch(p1Pts, p2Pts, ganadorId, j1Id, j2Id) {
+            let diff = Math.abs(p1Pts - p2Pts);
+            let favoritoId = p1Pts >= p2Pts ? j1Id : j2Id;
+            let esUpset = ganadorId !== favoritoId; 
+
+            let reglaExacta = reglasRankingList.find(r => 
+                diff >= r.diferencia_min && diff <= r.diferencia_max && 
+                ((esUpset && r.resultado_esperado === 'gana_retador') || (!esUpset && r.resultado_esperado === 'gana_favorito'))
+            );
+
+            return { 
+                ptsGanador: reglaExacta ? reglaExacta.puntos_ganador : 10, 
+                ptsPerdedor: reglaExacta ? -Math.abs(reglaExacta.puntos_perdedor) : -5 
+            };
+        }
+
+        function generarMemoriaTecnica() {
+            if(partidosMonitoreo.length === 0) { alert("No hay partidos en el torneo."); return; }
+
+            let reporteData = {
+                categorias: {},
+                jugadoresExpediente: {}
+            };
+
+            partidosMonitoreo.forEach(p => {
+                [p.j1, p.j2].forEach(j => {
+                    if (j && !reporteData.jugadoresExpediente[j.id]) {
+                        reporteData.jugadoresExpediente[j.id] = {
+                            id: j.id, nombre: j.nombre, club: j.club, ranking_inicial: j.puntos_ranking || 0,
+                            pts_ganados: 0, pts_perdidos: 0, partidos: [], ranking_final: j.puntos_ranking || 0,
+                            grupo_pertenencia: null, categoria_pertenencia: null
+                        };
+                    }
+                });
+            });
+
+            partidosMonitoreo.filter(p => (p.estado||'').toLowerCase() === 'finalizado').forEach(p => {
+                let catNombre = p.categorias?.nombre || 'General';
+                if (!reporteData.categorias[catNombre]) reporteData.categorias[catNombre] = { grupos: {} };
+                
+                let exp1 = reporteData.jugadoresExpediente[p.jugador1_id];
+                let exp2 = reporteData.jugadoresExpediente[p.jugador2_id];
+
+                if (p.grupo_nombre && p.grupo_nombre !== 'Flash') {
+                    if(exp1) { exp1.grupo_pertenencia = p.grupo_nombre; exp1.categoria_pertenencia = catNombre; }
+                    if(exp2) { exp2.grupo_pertenencia = p.grupo_nombre; exp2.categoria_pertenencia = catNombre; }
+                }
+
+                if (exp1 && exp2) {
+                    let calculo = calcularPuntosMatch(exp1.ranking_inicial, exp2.ranking_inicial, p.ganador_id, p.jugador1_id, p.jugador2_id);
+                    let desc1="", desc2="";
+                    let resSets = `${p.sets_j1}-${p.sets_j2}`;
+
+                    if(p.ganador_id === p.jugador1_id) {
+                        exp1.pts_ganados += calculo.ptsGanador; exp1.ranking_final += calculo.ptsGanador;
+                        exp2.pts_perdidos += calculo.ptsPerdedor; exp2.ranking_final += calculo.ptsPerdedor;
+                        desc1 = `<span class="text-green">Victoria (+${calculo.ptsGanador} pts)</span> vs ${exp2.nombre}`;
+                        desc2 = `<span class="text-red">Derrota (${calculo.ptsPerdedor} pts)</span> vs ${exp1.nombre}`;
+                    } else {
+                        exp2.pts_ganados += calculo.ptsGanador; exp2.ranking_final += calculo.ptsGanador;
+                        exp1.pts_perdidos += calculo.ptsPerdedor; exp1.ranking_final += calculo.ptsPerdedor;
+                        desc2 = `<span class="text-green">Victoria (+${calculo.ptsGanador} pts)</span> vs ${exp1.nombre}`;
+                        desc1 = `<span class="text-red">Derrota (${calculo.ptsPerdedor} pts)</span> vs ${exp2.nombre}`;
+                    }
+
+                    let faseP = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Llave'));
+                    exp1.partidos.push({ fase: faseP, res: resSets, desc: desc1 });
+                    exp2.partidos.push({ fase: faseP, res: `${p.sets_j2}-${p.sets_j1}`, desc: desc2 });
+                }
+
+                if(p.grupo_nombre && p.grupo_nombre !== 'Flash') {
+                    let gpoObj = reporteData.categorias[catNombre].grupos;
+                    if(!gpoObj[p.grupo_nombre]) gpoObj[p.grupo_nombre] = {};
+                    
+                    [p.j1, p.j2].forEach(j => { 
+                        if(j && !gpoObj[p.grupo_nombre][j.id]) {
+                            gpoObj[p.grupo_nombre][j.id] = {id:j.id, nombre:j.nombre, pts_ranking_ini: j.puntos_ranking || 0, pj:0, pg:0, pts:0, setsGanados:0, setsPerdidos:0, puntosGanados:0, puntosPerdidos:0};
+                        }
+                    });
+
+                    if(p.j1 && p.j2) {
+                        let obj1 = gpoObj[p.grupo_nombre][p.j1.id];
+                        let obj2 = gpoObj[p.grupo_nombre][p.j2.id];
+                        obj1.pj++; obj2.pj++;
+                        obj1.setsGanados += (p.sets_j1||0); obj1.setsPerdidos += (p.sets_j2||0);
+                        obj2.setsGanados += (p.sets_j2||0); obj2.setsPerdidos += (p.sets_j1||0);
+
+                        if(p.ganador_id === p.jugador1_id) { obj1.pg++; obj1.pts+=2; obj2.pp++; obj2.pts+=1; }
+                        else { obj2.pg++; obj2.pts+=2; obj1.pp++; obj1.pts+=1; }
+                    }
+                }
+            });
+
+            if (bonoPaseActivo && bonoPaseValor > 0) {
+                let idsEnLlaves = new Set();
+                partidosMonitoreo.filter(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase && !p.grupo_nombre).forEach(p => {
+                    if (p.jugador1_id) idsEnLlaves.add(p.jugador1_id);
+                    if (p.jugador2_id) idsEnLlaves.add(p.jugador2_id);
+                });
+
+                idsEnLlaves.forEach(id => {
+                    let exp = reporteData.jugadoresExpediente[id];
+                    if (exp && exp.grupo_pertenencia && exp.categoria_pertenencia) {
+                        
+                        let grupoData = reporteData.categorias[exp.categoria_pertenencia].grupos[exp.grupo_pertenencia];
+                        if(grupoData) {
+                            let jugadoresGrupo = Object.values(grupoData);
+                            let sembrado1 = jugadoresGrupo.reduce((prev, current) => (prev.pts_ranking_ini > current.pts_ranking_ini) ? prev : current);
+
+                            if (id !== sembrado1.id) {
+                                exp.pts_ganados += bonoPaseValor;
+                                exp.ranking_final += bonoPaseValor;
+                                exp.partidos.unshift({
+                                    fase: '🏆 Clasificación',
+                                    res: '-',
+                                    desc: `<span class="text-gold">Bono Pase a Llaves (+${bonoPaseValor} pts)</span>`
+                                });
+                            } else {
+                                exp.partidos.unshift({
+                                    fase: '🏆 Clasificación',
+                                    res: '-',
+                                    desc: `<span style="color:#64748b; font-style:italic;">Avanza como Sembrado 1 (Sin bono)</span>`
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+
+            dataMemoriaGlobal = reporteData;
+            dibujarMemoriaHTML();
+            
+            document.getElementById('btn-wa-memoria').style.display = 'inline-flex'; 
+            document.getElementById('caja-aplicar-ranking').style.display = 'block';
+        }
+
+        function dibujarMemoriaHTML() {
+            const preview = document.getElementById('preview-memoria');
+            let expedientesOrdenados = Object.values(dataMemoriaGlobal.jugadoresExpediente).sort((a,b) => b.ranking_final - a.ranking_inicial);
+            
+            let htmlUI = `<div style="text-align:center; margin-bottom:20px; color:#34d399; font-weight:800; font-size:13px;">✅ Memoria Calculada. Lista para revisar y confirmar.</div>`;
+            expedientesOrdenados.forEach(e => {
+                let dif = e.ranking_final - e.ranking_inicial;
+                let difStr = dif >= 0 ? `<span class="text-green">+${dif}</span>` : `<span class="text-red">${dif}</span>`;
+                
+                let trs = e.partidos.map(p => `<tr><td>${p.fase}</td><td>${p.desc}</td><td style="text-align:center; font-family:'Orbitron',sans-serif;">${p.res}</td></tr>`).join('');
+                if(e.partidos.length === 0) trs = `<tr><td colspan="3" style="text-align:center; color:#64748b; font-style:italic;">No jugó partidos en este torneo.</td></tr>`;
+
+                htmlUI += `
+                    <div class="expediente-card">
+                        <div class="expediente-header">
+                            <div>${e.nombre} <span style="font-size:10px; color:#64748b; font-weight:700;">(${e.club || 'Sin Club'})</span></div>
+                            <div style="text-align:right;">
+                                <div style="color:#fbbf24; font-size:16px;">${e.ranking_final} <span style="font-size:9px; color:#94a3b8;">pts</span></div>
+                                <div style="font-size:10px;">Variación: ${difStr}</div>
+                            </div>
+                        </div>
+                        <table class="memoria-table-dark">
+                            <thead><tr><th>Fase</th><th>Resumen del Partido</th><th style="text-align:center;">Resultado</th></tr></thead>
+                            <tbody>${trs}</tbody>
+                        </table>
+                    </div>
+                `;
+            });
+            
+            preview.innerHTML = htmlUI;
+            preview.classList.remove('hidden');
+        }
+
+        function compartirMemoriaWA() {
+            let urlMemoria = `${window.location.origin}/memoria.html?torneo=${torneoActivoObj.id}`;
+            let texto = `*📊 MEMORIA TÉCNICA Y NUEVOS RANKINGS - ${torneoActivoObj.nombre}*\n\n*Top Movimientos de Ranking:*\n`;
+            let exp = Object.values(dataMemoriaGlobal.jugadoresExpediente).sort((a,b) => (b.ranking_final - b.ranking_inicial) - (a.ranking_final - a.ranking_inicial)).slice(0,10);
+            
+            exp.forEach(e => {
+                let dif = e.ranking_final - e.ranking_inicial;
+                let signo = dif >= 0 ? '+' : '';
+                texto += `👤 ${e.nombre}: ${e.ranking_inicial} ➔ *${e.ranking_final} pts* (${signo}${dif})\n`;
+            });
+            texto += `\n🔗 *Revisa el reporte interactivo completo, llaves y expedientes de todos los jugadores aquí:*\n👉 ${urlMemoria}`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+
+        async function aplicarRankingPermanente() {
+            if(!dataMemoriaGlobal) { alert("Genera la Memoria Técnica primero."); return; }
+            let confirmar = prompt('⚠️ ACCIÓN IRREVERSIBLE ⚠️\nEsto sobrescribirá el ranking de todos los jugadores en la base de datos oficial.\n\nEscribe "CONFIRMAR" para proceder:');
+            if(confirmar !== 'CONFIRMAR') { alert("Operación cancelada."); return; }
+
+            const btn = document.querySelector('#caja-aplicar-ranking button');
+            btn.innerText = "Guardando en Supabase..."; btn.disabled = true;
+
+            try {
+                let expedientes = Object.values(dataMemoriaGlobal.jugadoresExpediente);
+                for(let i=0; i<expedientes.length; i++) {
+                    let e = expedientes[i];
+                    if(e.ranking_final !== e.ranking_inicial) {
+                        await clienteSupabase.from('jugadores').update({ puntos_ranking_ant: e.ranking_inicial, puntos_ranking: e.ranking_final }).eq('id', e.id).eq('organizador_id', ORG_ID);
+                    }
+                }
+                alert("✅ ¡ÉXITO! Los nuevos rankings han sido guardados en la BD de Jugadores de manera permanente.");
+                
+                document.getElementById('btn-wa-memoria').style.display = 'inline-flex'; 
+                document.getElementById('caja-aplicar-ranking').style.display = 'none';
+                cargarDatosIniciales();
+
+            } catch(e) {
+                alert("❌ Error: " + e.message);
+            } finally {
+                btn.innerText = "🔒 CERRAR TORNEO Y ACTUALIZAR RANKINGS OFICIALES"; btn.disabled = false;
+            }
+        }
+
+        window.onload = cargarDatosIniciales;
+    </script>
+</body>
+</html>
