@@ -106,16 +106,12 @@
 
         .memoria-print-area { display: none; background: #fff !important; color: #000 !important; padding: 40px; font-family: 'Arial', sans-serif; }
         
-        /* ================= CSS EXCLUSIVO PARA IMPRESIÓN DEL RANKING ================= */
         @media print {
             body > *:not(#area-impresion-memoria) { display: none !important; }
             body { background: #ffffff !important; }
             #area-impresion-memoria { display: block !important; }
             .memoria-print-area { display: block !important; padding: 0 !important; }
-            
             .impresion-ranking { font-family: 'Arial', sans-serif !important; color: #0f172a !important; width: 100%; max-width: 850px; margin: 0 auto; }
-            
-            /* Encabezado Principal */
             .print-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #0f172a; padding-bottom: 15px; margin-bottom: 25px; }
             .print-header-left h2 { margin: 0; font-size: 28px; font-weight: 900; color: #0f172a !important; letter-spacing: -1px; }
             .print-header-left h3 { margin: 0; font-size: 11px; font-weight: 600; color: #475569 !important; text-transform: uppercase; letter-spacing: 1px; }
@@ -123,23 +119,15 @@
             .print-header-center span { font-weight: 700; font-size: 11px; color: #3b82f6 !important; text-transform: uppercase; letter-spacing: 1px; display: block; margin-top: 4px; }
             .print-header-right { text-align: right; font-size: 11px; color: #475569 !important; font-weight: 600; text-transform: uppercase;}
             .print-header-right strong { font-size: 16px; color: #0f172a !important; font-weight: 900; }
-
-            /* Contenedor de la categoría para evitar saltos raros */
             .print-cat-wrapper { margin-bottom: 25px; page-break-inside: avoid; }
-            
-            /* Tablas de PDF */
             .print-table { width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1; font-size: 11px; }
             .print-table th { padding: 8px 10px; text-align: left; font-size: 9px; font-weight: 800; color: #475569 !important; text-transform: uppercase; border-bottom: 2px solid #94a3b8; background: #f8fafc !important; -webkit-print-color-adjust: exact; }
             .print-table td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; color: #0f172a !important; }
-            
-            /* Colores específicos de la cabecera en el PDF */
-            .bg-cat-0 { background-color: #fbbf24 !important; color: #000 !important; -webkit-print-color-adjust: exact; } /* Oro */
-            .bg-cat-1 { background-color: #94a3b8 !important; color: #000 !important; -webkit-print-color-adjust: exact; } /* Plata */
-            .bg-cat-2 { background-color: #d97706 !important; color: #fff !important; -webkit-print-color-adjust: exact; } /* Bronce */
-            .bg-cat-3 { background-color: #06b6d4 !important; color: #000 !important; -webkit-print-color-adjust: exact; } /* Cyan */
-            .bg-cat-4 { background-color: #a855f7 !important; color: #fff !important; -webkit-print-color-adjust: exact; } /* Purpura */
-            
-            /* Elementos de la tabla */
+            .bg-cat-0 { background-color: #fbbf24 !important; color: #000 !important; -webkit-print-color-adjust: exact; } 
+            .bg-cat-1 { background-color: #94a3b8 !important; color: #000 !important; -webkit-print-color-adjust: exact; } 
+            .bg-cat-2 { background-color: #d97706 !important; color: #fff !important; -webkit-print-color-adjust: exact; } 
+            .bg-cat-3 { background-color: #06b6d4 !important; color: #000 !important; -webkit-print-color-adjust: exact; } 
+            .bg-cat-4 { background-color: #a855f7 !important; color: #fff !important; -webkit-print-color-adjust: exact; } 
             .pt-rank { font-weight: 800; color: #64748b !important; text-align: center; }
             .pt-name { font-weight: 800; font-size: 12px; }
             .pt-club { font-size: 9px; font-weight: 700; color: #64748b !important; text-transform: uppercase;}
@@ -151,9 +139,7 @@
             .diff-same { color: #94a3b8 !important; }
         }
 
-        .input-tabla {
-            background: rgba(0, 0, 0, 0.5) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 8px !important; padding: 8px !important; color: #ffffff !important; font-size: 11px !important; outline: none !important; transition: all 0.2s !important;
-        }
+        .input-tabla { background: rgba(0, 0, 0, 0.5) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 8px !important; padding: 8px !important; color: #ffffff !important; font-size: 11px !important; outline: none !important; transition: all 0.2s !important; }
         .input-tabla:focus { border-color: #06b6d4 !important; }
     </style>
 </head>
@@ -200,11 +186,12 @@
                 <div style="display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
                     <span style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">División:</span>
                     <label style="display:flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#fff; cursor:pointer;">
-                        <input type="radio" name="flash_new_div" value="1" checked style="accent-color:#f43f5e;"> Div 1
+                        <input type="radio" name="flash_new_div" value="1" checked style="accent-color:#f43f5e;" onchange="toggleVentajaFlashNew()"> Div 1
                     </label>
                     <label style="display:flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#fff; cursor:pointer;">
-                        <input type="radio" name="flash_new_div" value="2" style="accent-color:#eab308;"> Div 2
+                        <input type="radio" name="flash_new_div" value="2" style="accent-color:#eab308;" onchange="toggleVentajaFlashNew()"> Div 2
                     </label>
+                    <input type="number" id="flash-new-ventaja" placeholder="Pts ventaja" class="input-tabla" style="width: 80px; display: none; margin-left: auto;" value="5">
                 </div>
             </div>
             
@@ -212,7 +199,7 @@
         </div>
     </div>
 
-    <!-- MODAL RANKING WEB (UNA FILA COMPACTA CON COLORES) -->
+    <!-- MODAL RANKING WEB -->
     <div id="modal-ranking-global" class="modal-overlay" style="display: none;">
         <div class="modal-card modal-card-ranking" style="padding: 0; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column;">
             <div style="padding: 16px 24px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 20;">
@@ -314,12 +301,12 @@
                 <div>Confirmados: <strong id="cant-pagados" style="color:#34d399; font-size: 14px; margin-left: 6px;">0</strong></div>
             </div>
             <table>
-                <thead><tr><th>Jugador</th><th>Club</th><th>Categoría Registrada</th><th>División / Hándicap</th><th>Estatus Pago</th><th style="width: 160px;">Acción</th></tr></thead>
+                <thead><tr><th>Jugador</th><th>Club</th><th>Categoría Registrada</th><th>División / Hándicap</th><th>Estatus Pago</th><th style="width: 140px;">Acción</th></tr></thead>
                 <tbody id="tabla-inscritos-vivo"><tr><td colspan="6" class="mensaje-vacio">Cargando inscritos...</td></tr></tbody>
             </table>
         </div>
 
-        <!-- MÓDULO NUEVO: INSCRIPCIÓN EXPRÉS (LIGA FLASH) -->
+        <!-- MÓDULO NUEVO: INSCRIPCIÓN EXPRÉS -->
         <div class="panel-3d panel-orange">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; margin-bottom: 18px;">
                 <h2 style="border:none; margin:0; padding:0; color:#fbbf24;">⚡ Inscripción Exprés (Liga Flash y Presencial)</h2>
@@ -341,7 +328,7 @@
                             <th style="width: 40px; text-align: center; border-radius: 0;">Sel.</th>
                             <th style="border-radius: 0;">Jugador</th>
                             <th style="border-radius: 0;">Ranking</th>
-                            <th style="text-align: center; border-radius: 0;">División (Para Flash)</th>
+                            <th style="text-align: center; border-radius: 0;">División / Hándicap (Para Flash)</th>
                         </tr>
                     </thead>
                     <tbody id="tabla-inscripcion-flash">
@@ -416,7 +403,6 @@
                 </div>
             </div>
 
-            <!-- CONTENEDOR RANKING OCULTO (Para generación de código de impresión) -->
             <div id="contenedor-ranking-categorias" style="display:none;"></div>
         </div>
 
@@ -506,10 +492,20 @@
 
     </div>
 
-    <!-- ÁREA DE IMPRESIÓN OCULTA PARA PDF (1 COLUMNA PROFESIONAL) -->
+    <!-- ÁREA DE IMPRESIÓN OCULTA PARA PDF -->
     <div id="area-impresion-memoria" class="memoria-print-area"></div>
 
     <script>
+        function toggleVentajaFlashNew() {
+            const div2 = document.querySelector('input[name="flash_new_div"][value="2"]').checked;
+            document.getElementById('flash-new-ventaja').style.display = div2 ? 'block' : 'none';
+        }
+
+        function toggleVentajaRow(jugadorId) {
+            const isDiv2 = document.querySelector(`input[name="div_flash_${jugadorId}"][value="2"]`).checked;
+            document.getElementById(`ventaja_flash_${jugadorId}`).style.display = isDiv2 ? 'block' : 'none';
+        }
+
         // ================= FUNCIÓN GLOBAL PARA ACTUALIZAR DIVISIÓN Y HANDICAP =================
         async function actualizarDivHandicap(jugadorId, prefix) {
             const divNode = document.querySelector(`input[name="div_${prefix}_${jugadorId}"]:checked`);
@@ -534,6 +530,14 @@
                     todosLosJugadoresAdmin[jIndex].handicap = ventaja;
                 }
 
+                // Dar feedback visual sin recargar la página
+                const fila = divNode.closest('tr');
+                if(fila) {
+                    const bgOriginal = fila.style.background;
+                    fila.style.background = 'rgba(16, 185, 129, 0.2)'; // Brillo verde
+                    setTimeout(() => { fila.style.background = bgOriginal; }, 500);
+                }
+
                 // Sincronizar la otra tabla si el jugador aparece en ambas
                 const otherPrefix = prefix === 'ins' ? 'flash' : 'ins';
                 const otherDiv = document.querySelector(`input[name="div_${otherPrefix}_${jugadorId}"][value="${div}"]`);
@@ -546,11 +550,6 @@
             } catch (err) {
                 console.error("Error al guardar división/handicap:", err);
             }
-        }
-
-        function toggleVentajaRow(jugadorId) {
-            const isDiv2 = document.querySelector(`input[name="div_flash_${jugadorId}"][value="2"]`).checked;
-            document.getElementById(`ventaja_flash_${jugadorId}`).style.display = isDiv2 ? 'block' : 'none';
         }
 
         // ================= FUNCIÓN GLOBAL PARA QUITAR ACENTOS =================
@@ -635,6 +634,7 @@
             } catch(e) { console.error("Error cargando torneo:", e); }
 
             try {
+                // MODIFICADO: NO USAR * EN LOS INNER JOINS PARA EVITAR ERRORES DE CACHÉ DE SUPABASE
                 const [resJug, resCat, resClubs, resProg, resReglas] = await Promise.allSettled([
                     clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID).order('puntos_ranking', { ascending: false }),
                     clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: false }),
@@ -669,7 +669,7 @@
             try { activarSuscripcionRealtime(); } catch(e) { console.error(e); }
         }
 
-        // ================= MÓDULO INSCRIPCIÓN EXPRÉS FLASH CON BUSCADOR =================
+        // ================= MÓDULO INSCRIPCIÓN EXPRÉS FLASH =================
         function cargarInscripcionFlashView() {
             const selectCat = document.getElementById('select-cat-flash');
             if(selectCat) {
@@ -686,8 +686,8 @@
             let jugadoresOrdenados = [...todosLosJugadoresAdmin].sort((a,b) => a.nombre.localeCompare(b.nombre));
 
             jugadoresOrdenados.forEach(j => {
-                let divGuardada = j.division || 1;
-                let ventajaGuardada = j.handicap !== undefined && j.handicap !== null ? j.handicap : 5;
+                let div = j.division || 1;
+                let handicap = j.handicap !== undefined && j.handicap !== null ? j.handicap : 5;
                 
                 tbody.innerHTML += `
                     <tr class="tr-jugador-flash" style="border-bottom:1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
@@ -704,12 +704,12 @@
                         <td style="text-align:center;">
                             <div style="display:inline-flex; gap:10px; align-items:center; background:rgba(0,0,0,0.4); padding:4px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
                                 <label style="display:flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:#fff; cursor:pointer; margin:0; text-transform:none;">
-                                    <input type="radio" name="div_flash_${j.id}" value="1" ${divGuardada == 1 ? 'checked' : ''} style="accent-color:#f43f5e;" onchange="actualizarDivHandicap(${j.id}, 'flash')"> Div 1
+                                    <input type="radio" name="div_flash_${j.id}" value="1" ${div == 1 ? 'checked' : ''} style="accent-color:#f43f5e;" onchange="actualizarDivHandicap(${j.id}, 'flash')"> Div 1
                                 </label>
                                 <label style="display:flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:#fff; cursor:pointer; margin:0; text-transform:none;">
-                                    <input type="radio" name="div_flash_${j.id}" value="2" ${divGuardada == 2 ? 'checked' : ''} style="accent-color:#eab308;" onchange="actualizarDivHandicap(${j.id}, 'flash')"> Div 2
+                                    <input type="radio" name="div_flash_${j.id}" value="2" ${div == 2 ? 'checked' : ''} style="accent-color:#eab308;" onchange="actualizarDivHandicap(${j.id}, 'flash')"> Div 2
                                 </label>
-                                <input type="number" id="ventaja_flash_${j.id}" value="${ventajaGuardada}" placeholder="Pts" class="input-tabla" style="width: 50px; padding: 2px 4px; font-size: 10px; display: ${divGuardada == 2 ? 'block' : 'none'};" onchange="actualizarDivHandicap(${j.id}, 'flash')">
+                                <input type="number" id="ventaja_flash_${j.id}" value="${handicap}" placeholder="Pts" class="input-tabla" style="width: 50px; padding: 2px 4px; font-size: 10px; display: ${div == 2 ? 'block' : 'none'};" onchange="actualizarDivHandicap(${j.id}, 'flash')">
                             </div>
                         </td>
                     </tr>
@@ -778,11 +778,6 @@
                 btn.disabled = false;
                 btn.innerText = "🚀 Inscribir Seleccionados";
             }
-        }
-
-        function toggleVentajaFlashNew() {
-            const div2 = document.querySelector('input[name="flash_new_div"][value="2"]').checked;
-            document.getElementById('flash-new-ventaja').style.display = div2 ? 'block' : 'none';
         }
 
         async function guardarNuevoJugadorFlash() {
@@ -864,9 +859,10 @@
 
         async function cargarPartidosEnVivo() {
             try {
+                // MODIFICADO: Evitamos usar * para evitar errores de caché
                 const { data } = await clienteSupabase
                     .from('partidos')
-                    .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)')
+                    .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking, division, handicap), j2:jugador2_id(id, nombre, club, puntos_ranking, division, handicap), categorias(id, nombre)')
                     .eq('torneo_id', idTorneoActivo);
 
                 partidosMonitoreo = data || [];
@@ -1557,10 +1553,10 @@
 
         async function cargarInscritosEnVivo() {
             try {
-                // MODIFICADO: Cambiado a select('*') en los inner joins para evitar que la memoria caché de Supabase bloquee la carga cuando hay nuevas columnas
+                // MODIFICADO: Se especifican las columnas exactas para la tabla principal, pero se piden los nested objects con las columnas nuevas explícitas.
                 const { data, error } = await clienteSupabase
                     .from('inscripciones')
-                    .select(`*, jugadores(*), categorias(*)`)
+                    .select(`id, categoria_id, estatus_pago, jugadores ( id, nombre, club, puntos_ranking, division, handicap ), categorias ( id, nombre )`)
                     .eq('torneo_id', idTorneoActivo);
                 
                 if (error) {
@@ -2130,174 +2126,4 @@
 
                 if (p.grupo_nombre && p.grupo_nombre !== 'Flash') {
                     if(exp1) { exp1.grupo_pertenencia = p.grupo_nombre; exp1.categoria_pertenencia = catNombre; }
-                    if(exp2) { exp2.grupo_pertenencia = p.grupo_nombre; exp2.categoria_pertenencia = catNombre; }
-                }
-
-                if (exp1 && exp2) {
-                    let calculo = calcularPuntosMatch(exp1.ranking_inicial, exp2.ranking_inicial, p.ganador_id, p.jugador1_id, p.jugador2_id);
-                    let desc1="", desc2="";
-                    let resSets = `${p.sets_j1}-${p.sets_j2}`;
-
-                    if(p.ganador_id === p.jugador1_id) {
-                        exp1.pts_ganados += calculo.ptsGanador; exp1.ranking_final += calculo.ptsGanador;
-                        exp2.pts_perdidos += calculo.ptsPerdedor; exp2.ranking_final += calculo.ptsPerdedor;
-                        desc1 = `<span class="text-green">Victoria (+${calculo.ptsGanador} pts)</span> vs ${exp2.nombre}`;
-                        desc2 = `<span class="text-red">Derrota (${calculo.ptsPerdedor} pts)</span> vs ${exp1.nombre}`;
-                    } else {
-                        exp2.pts_ganados += calculo.ptsGanador; exp2.ranking_final += calculo.ptsGanador;
-                        exp1.pts_perdidos += calculo.ptsPerdedor; exp1.ranking_final += calculo.ptsPerdedor;
-                        desc2 = `<span class="text-green">Victoria (+${calculo.ptsGanador} pts)</span> vs ${exp1.nombre}`;
-                        desc1 = `<span class="text-red">Derrota (${calculo.ptsPerdedor} pts)</span> vs ${exp2.nombre}`;
-                    }
-
-                    let faseP = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Llave'));
-                    exp1.partidos.push({ fase: faseP, res: resSets, desc: desc1 });
-                    exp2.partidos.push({ fase: faseP, res: `${p.sets_j2}-${p.sets_j1}`, desc: desc2 });
-                }
-
-                if(p.grupo_nombre && p.grupo_nombre !== 'Flash') {
-                    let gpoObj = reporteData.categorias[catNombre].grupos;
-                    if(!gpoObj[p.grupo_nombre]) gpoObj[p.grupo_nombre] = {};
-                    
-                    [p.j1, p.j2].forEach(j => { 
-                        if(j && !gpoObj[p.grupo_nombre][j.id]) {
-                            gpoObj[p.grupo_nombre][j.id] = {id:j.id, nombre:j.nombre, pts_ranking_ini: j.puntos_ranking || 0, pj:0, pg:0, pts:0, setsGanados:0, setsPerdidos:0, puntosGanados:0, puntosPerdidos:0};
-                        }
-                    });
-
-                    if(p.j1 && p.j2) {
-                        let obj1 = gpoObj[p.grupo_nombre][p.j1.id];
-                        let obj2 = gpoObj[p.grupo_nombre][p.j2.id];
-                        obj1.pj++; obj2.pj++;
-                        obj1.setsGanados += (p.sets_j1||0); obj1.setsPerdidos += (p.sets_j2||0);
-                        obj2.setsGanados += (p.sets_j2||0); obj2.setsPerdidos += (p.sets_j1||0);
-
-                        if(p.ganador_id === p.jugador1_id) { obj1.pg++; obj1.pts+=2; obj2.pp++; obj2.pts+=1; }
-                        else { obj2.pg++; obj2.pts+=2; obj1.pp++; obj1.pts+=1; }
-                    }
-                }
-            });
-
-            if (bonoPaseActivo && bonoPaseValor > 0) {
-                let idsEnLlaves = new Set();
-                partidosMonitoreo.filter(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase && !p.grupo_nombre).forEach(p => {
-                    if (p.jugador1_id) idsEnLlaves.add(p.jugador1_id);
-                    if (p.jugador2_id) idsEnLlaves.add(p.jugador2_id);
-                });
-
-                idsEnLlaves.forEach(id => {
-                    let exp = reporteData.jugadoresExpediente[id];
-                    if (exp && exp.grupo_pertenencia && exp.categoria_pertenencia) {
-                        
-                        let grupoData = reporteData.categorias[exp.categoria_pertenencia].grupos[exp.grupo_pertenencia];
-                        if(grupoData) {
-                            let jugadoresGrupo = Object.values(grupoData);
-                            let sembrado1 = jugadoresGrupo.reduce((prev, current) => (prev.pts_ranking_ini > current.pts_ranking_ini) ? prev : current);
-
-                            if (id !== sembrado1.id) {
-                                exp.pts_ganados += bonoPaseValor;
-                                exp.ranking_final += bonoPaseValor;
-                                exp.partidos.unshift({
-                                    fase: '🏆 Clasificación',
-                                    res: '-',
-                                    desc: `<span class="text-gold">Bono Pase a Llaves (+${bonoPaseValor} pts)</span>`
-                                });
-                            } else {
-                                exp.partidos.unshift({
-                                    fase: '🏆 Clasificación',
-                                    res: '-',
-                                    desc: `<span style="color:#64748b; font-style:italic;">Avanza como Sembrado 1 (Sin bono)</span>`
-                                });
-                            }
-                        }
-                    }
-                });
-            }
-
-            dataMemoriaGlobal = reporteData;
-            dibujarMemoriaHTML();
-            
-            document.getElementById('btn-wa-memoria').style.display = 'inline-flex'; 
-            document.getElementById('caja-aplicar-ranking').style.display = 'block';
-        }
-
-        function dibujarMemoriaHTML() {
-            const preview = document.getElementById('preview-memoria');
-            let expedientesOrdenados = Object.values(dataMemoriaGlobal.jugadoresExpediente).sort((a,b) => b.ranking_final - a.ranking_inicial);
-            
-            let htmlUI = `<div style="text-align:center; margin-bottom:20px; color:#34d399; font-weight:800; font-size:13px;">✅ Memoria Calculada. Lista para revisar y confirmar.</div>`;
-            expedientesOrdenados.forEach(e => {
-                let dif = e.ranking_final - e.ranking_inicial;
-                let difStr = dif >= 0 ? `<span class="text-green">+${dif}</span>` : `<span class="text-red">${dif}</span>`;
-                
-                let trs = e.partidos.map(p => `<tr><td>${p.fase}</td><td>${p.desc}</td><td style="text-align:center; font-family:'Orbitron',sans-serif;">${p.res}</td></tr>`).join('');
-                if(e.partidos.length === 0) trs = `<tr><td colspan="3" style="text-align:center; color:#64748b; font-style:italic;">No jugó partidos en este torneo.</td></tr>`;
-
-                htmlUI += `
-                    <div class="expediente-card">
-                        <div class="expediente-header">
-                            <div>${e.nombre} <span style="font-size:10px; color:#64748b; font-weight:700;">(${e.club || 'Sin Club'})</span></div>
-                            <div style="text-align:right;">
-                                <div style="color:#fbbf24; font-size:16px;">${e.ranking_final} <span style="font-size:9px; color:#94a3b8;">pts</span></div>
-                                <div style="font-size:10px;">Variación: ${difStr}</div>
-                            </div>
-                        </div>
-                        <table class="memoria-table-dark">
-                            <thead><tr><th>Fase</th><th>Resumen del Partido</th><th style="text-align:center;">Resultado</th></tr></thead>
-                            <tbody>${trs}</tbody>
-                        </table>
-                    </div>
-                `;
-            });
-            
-            preview.innerHTML = htmlUI;
-            preview.classList.remove('hidden');
-        }
-
-        function compartirMemoriaWA() {
-            let urlMemoria = `${window.location.origin}/memoria.html?torneo=${torneoActivoObj.id}`;
-            let texto = `*📊 MEMORIA TÉCNICA Y NUEVOS RANKINGS - ${torneoActivoObj.nombre}*\n\n*Top Movimientos de Ranking:*\n`;
-            let exp = Object.values(dataMemoriaGlobal.jugadoresExpediente).sort((a,b) => (b.ranking_final - b.ranking_inicial) - (a.ranking_final - a.ranking_inicial)).slice(0,10);
-            
-            exp.forEach(e => {
-                let dif = e.ranking_final - e.ranking_inicial;
-                let signo = dif >= 0 ? '+' : '';
-                texto += `👤 ${e.nombre}: ${e.ranking_inicial} ➔ *${e.ranking_final} pts* (${signo}${dif})\n`;
-            });
-            texto += `\n🔗 *Revisa el reporte interactivo completo, llaves y expedientes de todos los jugadores aquí:*\n👉 ${urlMemoria}`;
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
-        }
-
-        async function aplicarRankingPermanente() {
-            if(!dataMemoriaGlobal) { alert("Genera la Memoria Técnica primero."); return; }
-            let confirmar = prompt('⚠️ ACCIÓN IRREVERSIBLE ⚠️\nEsto sobrescribirá el ranking de todos los jugadores en la base de datos oficial.\n\nEscribe "CONFIRMAR" para proceder:');
-            if(confirmar !== 'CONFIRMAR') { alert("Operación cancelada."); return; }
-
-            const btn = document.querySelector('#caja-aplicar-ranking button');
-            btn.innerText = "Guardando en Supabase..."; btn.disabled = true;
-
-            try {
-                let expedientes = Object.values(dataMemoriaGlobal.jugadoresExpediente);
-                for(let i=0; i<expedientes.length; i++) {
-                    let e = expedientes[i];
-                    if(e.ranking_final !== e.ranking_inicial) {
-                        await clienteSupabase.from('jugadores').update({ puntos_ranking_ant: e.ranking_inicial, puntos_ranking: e.ranking_final }).eq('id', e.id).eq('organizador_id', ORG_ID);
-                    }
-                }
-                alert("✅ ¡ÉXITO! Los nuevos rankings han sido guardados en la BD de Jugadores de manera permanente.");
-                
-                document.getElementById('btn-wa-memoria').style.display = 'inline-flex'; 
-                document.getElementById('caja-aplicar-ranking').style.display = 'none';
-                cargarDatosIniciales();
-
-            } catch(e) {
-                alert("❌ Error: " + e.message);
-            } finally {
-                btn.innerText = "🔒 CERRAR TORNEO Y ACTUALIZAR RANKINGS OFICIALES"; btn.disabled = false;
-            }
-        }
-
-        window.onload = cargarDatosIniciales;
-    </script>
-</body>
-</html>
+                    if(exp2) { exp2.grupo_pertenencia = p.grupo_nombre; exp2.categoria_pertenencia = catNombre;
