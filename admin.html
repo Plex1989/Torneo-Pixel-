@@ -245,7 +245,6 @@
     <nav class="navbar no-print">
         <div class="nav-title">CENTRAL DE TORNEOS</div>
         <div class="nav-links">
-            <!-- A los enlaces se les retiró el target="_blank" para que no abran pestañas basura en celular -->
             <a href="torneos.html" class="nav-btn">Mis Torneos</a>
             <a href="admin.html" class="nav-btn active">Administrador</a>
             <a href="sorteo.html" class="nav-btn">Sorteo y Rol</a>
@@ -1180,26 +1179,77 @@
 
                     const gpoA_arr = resumenData[catNombreActual]?.grupos['A'] ? ordenarJugadoresITTF(Object.values(resumenData[catNombreActual].grupos['A'])) : [];
                     const gpoB_arr = resumenData[catNombreActual]?.grupos['B'] ? ordenarJugadoresITTF(Object.values(resumenData[catNombreActual].grupos['B'])) : [];
+                    const gpoC_arr = resumenData[catNombreActual]?.grupos['C'] ? ordenarJugadoresITTF(Object.values(resumenData[catNombreActual].grupos['C'])) : [];
+                    const gpoD_arr = resumenData[catNombreActual]?.grupos['D'] ? ordenarJugadoresITTF(Object.values(resumenData[catNombreActual].grupos['D'])) : [];
 
                     const primeroA = getPosicionGrupoNombreAdmin(gpoA_arr, 0, '1° Grupo A');
                     const segundoA = getPosicionGrupoNombreAdmin(gpoA_arr, 1, '2° Grupo A');
                     const primeroB = getPosicionGrupoNombreAdmin(gpoB_arr, 0, '1° Grupo B');
                     const segundoB = getPosicionGrupoNombreAdmin(gpoB_arr, 1, '2° Grupo B');
+                    const primeroC = getPosicionGrupoNombreAdmin(gpoC_arr, 0, '1° Grupo C');
+                    const segundoC = getPosicionGrupoNombreAdmin(gpoC_arr, 1, '2° Grupo C');
+                    const primeroD = getPosicionGrupoNombreAdmin(gpoD_arr, 0, '1° Grupo D');
+                    const segundoD = getPosicionGrupoNombreAdmin(gpoD_arr, 1, '2° Grupo D');
 
-                    const partidosLlaveBD = partidosMonitoreo.filter(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.categorias?.nombre === catNombreActual && (String(p.ronda_fase || '').toLowerCase().includes('cruce') || String(p.ronda_fase || '').toLowerCase().includes('semifinal') || String(p.ronda_fase || '').toLowerCase().includes('final')));
+                    const partidosLlaveBD = partidosMonitoreo.filter(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.categorias?.nombre === catNombreActual && (String(p.ronda_fase || '').toLowerCase().includes('cuarto') || String(p.ronda_fase || '').toLowerCase().includes('cruce') || String(p.ronda_fase || '').toLowerCase().includes('semifinal') || String(p.ronda_fase || '').toLowerCase().includes('final')));
+
+                    const pCuartos1 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('1'));
+                    const pCuartos2 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('2'));
+                    const pCuartos3 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('3'));
+                    const pCuartos4 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('4'));
+
                     const partidoSemi1 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('1') || String(p.ronda_fase || '').toLowerCase().includes('cruce 1')));
                     const partidoSemi2 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('2') || String(p.ronda_fase || '').toLowerCase().includes('cruce 2')));
                     const partidoFinal = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi'));
 
-                    if (partidoSemi1 || partidoSemi2 || partidoFinal) {
-                        let nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : primeroA;
-                        let nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : segundoB;
+                    if (pCuartos1 || partidoSemi1 || partidoSemi2 || partidoFinal) {
+                        let hayCuartos = pCuartos1 || pCuartos2 || pCuartos3 || pCuartos4;
 
-                        let nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : primeroB;
-                        let nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : segundoA;
+                        let nomC1_j1 = pCuartos1?.j1 ? pCuartos1.j1.nombre : primeroA;
+                        let nomC1_j2 = pCuartos1?.j2 ? pCuartos1.j2.nombre : segundoC;
+                        let nomC2_j1 = pCuartos2?.j1 ? pCuartos2.j1.nombre : primeroB;
+                        let nomC2_j2 = pCuartos2?.j2 ? pCuartos2.j2.nombre : segundoD;
+                        let nomC3_j1 = pCuartos3?.j1 ? pCuartos3.j1.nombre : primeroC;
+                        let nomC3_j2 = pCuartos3?.j2 ? pCuartos3.j2.nombre : segundoA;
+                        let nomC4_j1 = pCuartos4?.j1 ? pCuartos4.j1.nombre : primeroD;
+                        let nomC4_j2 = pCuartos4?.j2 ? pCuartos4.j2.nombre : segundoB;
+
+                        let nomSemi1_j1, nomSemi1_j2, nomSemi2_j1, nomSemi2_j2;
+
+                        if (hayCuartos) {
+                            nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : (pCuartos1?.ganador_id ? (pCuartos1.ganador_id === pCuartos1.jugador1_id ? nomC1_j1 : nomC1_j2) : 'Gana C1');
+                            nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : (pCuartos2?.ganador_id ? (pCuartos2.ganador_id === pCuartos2.jugador1_id ? nomC2_j1 : nomC2_j2) : 'Gana C2');
+                            nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : (pCuartos3?.ganador_id ? (pCuartos3.ganador_id === pCuartos3.jugador1_id ? nomC3_j1 : nomC3_j2) : 'Gana C3');
+                            nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : (pCuartos4?.ganador_id ? (pCuartos4.ganador_id === pCuartos4.jugador1_id ? nomC4_j1 : nomC4_j2) : 'Gana C4');
+                        } else {
+                            nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : primeroA;
+                            nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : segundoB;
+                            nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : primeroB;
+                            nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : segundoA;
+                        }
 
                         let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Ganador Semi 1');
                         let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Ganador Semi 2');
+
+                        // Función constructora para las tarjetas de HTML en Admin
+                        const renderCard = (pObj, titulo, color, tag1, tag2, cBadge) => {
+                            if(!pObj) return '';
+                            let nom1 = pObj.j1 ? pObj.j1.nombre : tag1;
+                            let nom2 = pObj.j2 ? pObj.j2.nombre : tag2;
+                            return `
+                            <div style="background:rgba(0,0,0,0.4); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
+                                <span style="font-size:9px; color:${color}; font-weight:800; text-transform:uppercase; display:block; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:10px;">${titulo}</span>
+                                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:8px;">
+                                    <strong style="font-size:12px; color:#fff;">🥇 ${nom1}</strong>
+                                    <span style="font-size:9px; background:${cBadge}; padding:2px 6px; border-radius:4px; font-weight:800;">${tag1}</span>
+                                </div>
+                                <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
+                                <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">
+                                    <strong style="font-size:12px; color:#fff;">🥈 ${nom2}</strong>
+                                    <span style="font-size:9px; background:${cBadge}; padding:2px 6px; border-radius:4px; font-weight:800;">${tag2}</span>
+                                </div>
+                            </div>`;
+                        };
 
                         htmlContent += `
                             <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(245,158,11,0.3); border-radius:18px; padding:22px; margin-top:25px;">
@@ -1219,32 +1269,19 @@
                                 `}
 
                                 <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
-                                    <div style="background:rgba(0,0,0,0.4); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
-                                        <span style="font-size:9px; color:#38bdf8; font-weight:800; text-transform:uppercase; display:block; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:10px;">Semifinal 1</span>
-                                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:8px;">
-                                            <strong style="font-size:12px; color:#fff;">🥇 ${nomSemi1_j1}</strong>
-                                            <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800;">1° Gpo A</span>
-                                        </div>
-                                        <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
-                                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">
-                                            <strong style="font-size:12px; color:#fff;">🥈 ${nomSemi1_j2}</strong>
-                                            <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">2° Gpo B</span>
-                                        </div>
-                                    </div>
+                        `;
 
-                                    <div style="background:rgba(0,0,0,0.4); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);">
-                                        <span style="font-size:9px; color:#f0abfc; font-weight:800; text-transform:uppercase; display:block; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:10px;">Semifinal 2</span>
-                                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:8px;">
-                                            <strong style="font-size:12px; color:#fff;">🥇 ${nomSemi2_j1}</strong>
-                                            <span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 6px; border-radius:4px; font-weight:800;">1° Gpo B</span>
-                                        </div>
-                                        <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
-                                        <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;">
-                                            <strong style="font-size:12px; color:#fff;">🥈 ${nomSemi2_j2}</strong>
-                                            <span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">2° Gpo A</span>
-                                        </div>
-                                    </div>
-                                    
+                        if (hayCuartos) {
+                            htmlContent += renderCard(pCuartos1, 'Cuartos 1', '#10b981', '1° Gpo A', '2° Gpo C', 'rgba(16,185,129,0.2); color:#10b981;');
+                            htmlContent += renderCard(pCuartos2, 'Cuartos 2', '#10b981', '1° Gpo B', '2° Gpo D', 'rgba(16,185,129,0.2); color:#10b981;');
+                            htmlContent += renderCard(pCuartos3, 'Cuartos 3', '#10b981', '1° Gpo C', '2° Gpo A', 'rgba(16,185,129,0.2); color:#10b981;');
+                            htmlContent += renderCard(pCuartos4, 'Cuartos 4', '#10b981', '1° Gpo D', '2° Gpo B', 'rgba(16,185,129,0.2); color:#10b981;');
+                        }
+
+                        htmlContent += renderCard(partidoSemi1, 'Semifinal 1', '#38bdf8', hayCuartos ? 'Gana C1' : '1° Gpo A', hayCuartos ? 'Gana C2' : '2° Gpo B', 'rgba(6,182,212,0.2); color:#38bdf8;');
+                        htmlContent += renderCard(partidoSemi2, 'Semifinal 2', '#f0abfc', hayCuartos ? 'Gana C3' : '1° Gpo B', hayCuartos ? 'Gana C4' : '2° Gpo A', 'rgba(217,70,239,0.2); color:#d946ef;');
+
+                        htmlContent += `
                                     <div style="grid-column: 1 / -1; display:flex; justify-content:center; margin-top:10px;">
                                         <div style="background:rgba(245,158,11,0.1); padding:16px; border-radius:14px; border:1px solid rgba(245,158,11,0.3); width:100%; max-width:450px; text-align:left;">
                                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -1925,251 +1962,4 @@
 
         async function actualizarRegla(id) {
             const ptsGanador = document.getElementById(`regla-ganador-${id}`).value, ptsPerdedor = document.getElementById(`regla-perdedor-${id}`).value;
-            await clienteSupabase.from('reglas_ranking').update({ puntos_ganador: parseInt(ptsGanador), puntos_perdedor: parseInt(ptsPerdedor) }).eq('id', id);
-            alert("✅ Regla actualizada.");
-        }
-
-        async function cargarBono() {
-            const { data } = await clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).maybeSingle();
-            if (data) { 
-                const chk = document.getElementById('bono-activo');
-                const inp = document.getElementById('bono-puntos');
-                if(chk) chk.checked = data.activo; 
-                if(inp) inp.value = data.valor;
-                
-                bonoPaseActivo = data.activo;
-                bonoPaseValor = data.valor;
-            }
-        }
-
-        async function guardarBono() {
-            const activo = document.getElementById('bono-activo').checked, valor = parseInt(document.getElementById('bono-puntos').value) || 0;
-            const { data: existe } = await clienteSupabase.from('configuracion').select('id').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).maybeSingle();
-            
-            if(existe) {
-                await clienteSupabase.from('configuracion').update({ activo: activo, valor: valor }).eq('id', existe.id); 
-            } else {
-                await clienteSupabase.from('configuracion').insert([{ clave: 'bono_pase_grupos', activo: activo, valor: valor, organizador_id: ORG_ID }]); 
-            }
-            
-            bonoPaseActivo = activo;
-            bonoPaseValor = valor;
-            alert('✅ Bono guardado.');
-        }
-
-        function calcularPuntosMatch(p1Pts, p2Pts, ganadorId, j1Id, j2Id) {
-            let diff = Math.abs(p1Pts - p2Pts);
-            let favoritoId = p1Pts >= p2Pts ? j1Id : j2Id;
-            let esUpset = ganadorId !== favoritoId; 
-
-            let reglaExacta = reglasRankingList.find(r => 
-                diff >= r.diferencia_min && diff <= r.diferencia_max && 
-                ((esUpset && r.resultado_esperado === 'gana_retador') || (!esUpset && r.resultado_esperado === 'gana_favorito'))
-            );
-
-            return { 
-                ptsGanador: reglaExacta ? reglaExacta.puntos_ganador : 10, 
-                ptsPerdedor: reglaExacta ? -Math.abs(reglaExacta.puntos_perdedor) : -5 
-            };
-        }
-
-        function generarMemoriaTecnica() {
-            if(partidosMonitoreo.length === 0) { alert("No hay partidos en el torneo."); return; }
-
-            let reporteData = {
-                categorias: {},
-                jugadoresExpediente: {}
-            };
-
-            partidosMonitoreo.forEach(p => {
-                [p.j1, p.j2].forEach(j => {
-                    if (j && !reporteData.jugadoresExpediente[j.id]) {
-                        reporteData.jugadoresExpediente[j.id] = {
-                            id: j.id, nombre: j.nombre, club: j.club, ranking_inicial: j.puntos_ranking || 0,
-                            pts_ganados: 0, pts_perdidos: 0, partidos: [], ranking_final: j.puntos_ranking || 0,
-                            grupo_pertenencia: null, categoria_pertenencia: null
-                        };
-                    }
-                });
-            });
-
-            partidosMonitoreo.filter(p => (p.estado||'').toLowerCase() === 'finalizado').forEach(p => {
-                let catNombre = p.categorias?.nombre || 'General';
-                if (!reporteData.categorias[catNombre]) reporteData.categorias[catNombre] = { grupos: {} };
-                
-                let exp1 = reporteData.jugadoresExpediente[p.jugador1_id];
-                let exp2 = reporteData.jugadoresExpediente[p.jugador2_id];
-
-                if (p.grupo_nombre && p.grupo_nombre !== 'Flash') {
-                    if(exp1) { exp1.grupo_pertenencia = p.grupo_nombre; exp1.categoria_pertenencia = catNombre; }
-                    if(exp2) { exp2.grupo_pertenencia = p.grupo_nombre; exp2.categoria_pertenencia = catNombre; }
-                }
-
-                if (exp1 && exp2) {
-                    let calculo = calcularPuntosMatch(exp1.ranking_inicial, exp2.ranking_inicial, p.ganador_id, p.jugador1_id, p.jugador2_id);
-                    let desc1="", desc2="";
-                    let resSets = `${p.sets_j1}-${p.sets_j2}`;
-
-                    if(p.ganador_id === p.jugador1_id) {
-                        exp1.pts_ganados += calculo.ptsGanador; exp1.ranking_final += calculo.ptsGanador;
-                        exp2.pts_perdidos += calculo.ptsPerdedor; exp2.ranking_final += calculo.ptsPerdedor;
-                        desc1 = `<span class="text-green">Victoria (+${calculo.ptsGanador} pts)</span> vs ${exp2.nombre}`;
-                        desc2 = `<span class="text-red">Derrota (${calculo.ptsPerdedor} pts)</span> vs ${exp1.nombre}`;
-                    } else {
-                        exp2.pts_ganados += calculo.ptsGanador; exp2.ranking_final += calculo.ptsGanador;
-                        exp1.pts_perdidos += calculo.ptsPerdedor; exp1.ranking_final += calculo.ptsPerdedor;
-                        desc2 = `<span class="text-green">Victoria (+${calculo.ptsGanador} pts)</span> vs ${exp1.nombre}`;
-                        desc1 = `<span class="text-red">Derrota (${calculo.ptsPerdedor} pts)</span> vs ${exp2.nombre}`;
-                    }
-
-                    let faseP = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Llave'));
-                    exp1.partidos.push({ fase: faseP, res: resSets, desc: desc1 });
-                    exp2.partidos.push({ fase: faseP, res: `${p.sets_j2}-${p.sets_j1}`, desc: desc2 });
-                }
-
-                if(p.grupo_nombre && p.grupo_nombre !== 'Flash') {
-                    let gpoObj = reporteData.categorias[catNombre].grupos;
-                    if(!gpoObj[p.grupo_nombre]) gpoObj[p.grupo_nombre] = {};
-                    
-                    [p.j1, p.j2].forEach(j => { 
-                        if(j && !gpoObj[p.grupo_nombre][j.id]) {
-                            gpoObj[p.grupo_nombre][j.id] = {id:j.id, nombre:j.nombre, pts_ranking_ini: j.puntos_ranking || 0, pj:0, pg:0, pts:0, setsGanados:0, setsPerdidos:0, puntosGanados:0, puntosPerdidos:0};
-                        }
-                    });
-
-                    if(p.j1 && p.j2) {
-                        let obj1 = gpoObj[p.grupo_nombre][p.j1.id];
-                        let obj2 = gpoObj[p.grupo_nombre][p.j2.id];
-                        obj1.pj++; obj2.pj++;
-                        obj1.setsGanados += (p.sets_j1||0); obj1.setsPerdidos += (p.sets_j2||0);
-                        obj2.setsGanados += (p.sets_j2||0); obj2.setsPerdidos += (p.sets_j1||0);
-
-                        if(p.ganador_id === p.jugador1_id) { obj1.pg++; obj1.pts+=2; obj2.pp++; obj2.pts+=1; }
-                        else { obj2.pg++; obj2.pts+=2; obj1.pp++; obj1.pts+=1; }
-                    }
-                }
-            });
-
-            if (bonoPaseActivo && bonoPaseValor > 0) {
-                let idsEnLlaves = new Set();
-                partidosMonitoreo.filter(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase && !p.grupo_nombre).forEach(p => {
-                    if (p.jugador1_id) idsEnLlaves.add(p.jugador1_id);
-                    if (p.jugador2_id) idsEnLlaves.add(p.jugador2_id);
-                });
-
-                idsEnLlaves.forEach(id => {
-                    let exp = reporteData.jugadoresExpediente[id];
-                    if (exp && exp.grupo_pertenencia && exp.categoria_pertenencia) {
-                        
-                        let grupoData = reporteData.categorias[exp.categoria_pertenencia].grupos[exp.grupo_pertenencia];
-                        if(grupoData) {
-                            let jugadoresGrupo = Object.values(grupoData);
-                            let sembrado1 = jugadoresGrupo.reduce((prev, current) => (prev.pts_ranking_ini > current.pts_ranking_ini) ? prev : current);
-
-                            if (id !== sembrado1.id) {
-                                exp.pts_ganados += bonoPaseValor;
-                                exp.ranking_final += bonoPaseValor;
-                                exp.partidos.unshift({
-                                    fase: '🏆 Clasificación',
-                                    res: '-',
-                                    desc: `<span class="text-gold">Bono Pase a Llaves (+${bonoPaseValor} pts)</span>`
-                                });
-                            } else {
-                                exp.partidos.unshift({
-                                    fase: '🏆 Clasificación',
-                                    res: '-',
-                                    desc: `<span style="color:#64748b; font-style:italic;">Avanza como Sembrado 1 (Sin bono)</span>`
-                                });
-                            }
-                        }
-                    }
-                });
-            }
-
-            dataMemoriaGlobal = reporteData;
-            dibujarMemoriaHTML();
-            
-            document.getElementById('btn-wa-memoria').style.display = 'inline-flex'; 
-            document.getElementById('caja-aplicar-ranking').style.display = 'block';
-        }
-
-        function dibujarMemoriaHTML() {
-            const preview = document.getElementById('preview-memoria');
-            let expedientesOrdenados = Object.values(dataMemoriaGlobal.jugadoresExpediente).sort((a,b) => b.ranking_final - a.ranking_inicial);
-            
-            let htmlUI = `<div style="text-align:center; margin-bottom:20px; color:#34d399; font-weight:800; font-size:13px;">✅ Memoria Calculada. Lista para revisar y confirmar.</div>`;
-            expedientesOrdenados.forEach(e => {
-                let dif = e.ranking_final - e.ranking_inicial;
-                let difStr = dif >= 0 ? `<span class="text-green">+${dif}</span>` : `<span class="text-red">${dif}</span>`;
-                
-                let trs = e.partidos.map(p => `<tr><td>${p.fase}</td><td>${p.desc}</td><td style="text-align:center; font-family:'Orbitron',sans-serif;">${p.res}</td></tr>`).join('');
-                if(e.partidos.length === 0) trs = `<tr><td colspan="3" style="text-align:center; color:#64748b; font-style:italic;">No jugó partidos en este torneo.</td></tr>`;
-
-                htmlUI += `
-                    <div class="expediente-card">
-                        <div class="expediente-header">
-                            <div>${e.nombre} <span style="font-size:10px; color:#64748b; font-weight:700;">(${e.club || 'Sin Club'})</span></div>
-                            <div style="text-align:right;">
-                                <div style="color:#fbbf24; font-size:16px;">${e.ranking_final} <span style="font-size:9px; color:#94a3b8;">pts</span></div>
-                                <div style="font-size:10px;">Variación: ${difStr}</div>
-                            </div>
-                        </div>
-                        <table class="memoria-table-dark">
-                            <thead><tr><th>Fase</th><th>Resumen del Partido</th><th style="text-align:center;">Resultado</th></tr></thead>
-                            <tbody>${trs}</tbody>
-                        </table>
-                    </div>
-                `;
-            });
-            
-            preview.innerHTML = htmlUI;
-            preview.classList.remove('hidden');
-        }
-
-        function compartirMemoriaWA() {
-            let urlMemoria = `${window.location.origin}/memoria.html?torneo=${torneoActivoObj.id}`;
-            let texto = `*📊 MEMORIA TÉCNICA Y NUEVOS RANKINGS - ${torneoActivoObj.nombre}*\n\n*Top Movimientos de Ranking:*\n`;
-            let exp = Object.values(dataMemoriaGlobal.jugadoresExpediente).sort((a,b) => (b.ranking_final - b.ranking_inicial) - (a.ranking_final - a.ranking_inicial)).slice(0,10);
-            
-            exp.forEach(e => {
-                let dif = e.ranking_final - e.ranking_inicial;
-                let signo = dif >= 0 ? '+' : '';
-                texto += `👤 ${e.nombre}: ${e.ranking_inicial} ➔ *${e.ranking_final} pts* (${signo}${dif})\n`;
-            });
-            texto += `\n🔗 *Revisa el reporte interactivo completo, llaves y expedientes de todos los jugadores aquí:*\n👉 ${urlMemoria}`;
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
-        }
-
-        async function aplicarRankingPermanente() {
-            if(!dataMemoriaGlobal) { alert("Genera la Memoria Técnica primero."); return; }
-            let confirmar = prompt('⚠️ ACCIÓN IRREVERSIBLE ⚠️\nEsto sobrescribirá el ranking de todos los jugadores en la base de datos oficial.\n\nEscribe "CONFIRMAR" para proceder:');
-            if(confirmar !== 'CONFIRMAR') { alert("Operación cancelada."); return; }
-
-            const btn = document.querySelector('#caja-aplicar-ranking button');
-            btn.innerText = "Guardando en Supabase..."; btn.disabled = true;
-
-            try {
-                let expedientes = Object.values(dataMemoriaGlobal.jugadoresExpediente);
-                for(let i=0; i<expedientes.length; i++) {
-                    let e = expedientes[i];
-                    if(e.ranking_final !== e.ranking_inicial) {
-                        await clienteSupabase.from('jugadores').update({ puntos_ranking_ant: e.ranking_inicial, puntos_ranking: e.ranking_final }).eq('id', e.id).eq('organizador_id', ORG_ID);
-                    }
-                }
-                alert("✅ ¡ÉXITO! Los nuevos rankings han sido guardados en la BD de Jugadores de manera permanente.");
-                
-                document.getElementById('btn-wa-memoria').style.display = 'inline-flex'; 
-                document.getElementById('caja-aplicar-ranking').style.display = 'none';
-                cargarDatosIniciales();
-
-            } catch(e) {
-                alert("❌ Error: " + e.message);
-            } finally {
-                btn.innerText = "🔒 CERRAR TORNEO Y ACTUALIZAR RANKINGS OFICIALES"; btn.disabled = false;
-            }
-        }
-
-        window.onload = cargarDatosIniciales;
-    </script>
-</body>
-</html>
+            await clienteSupabase.from
