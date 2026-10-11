@@ -314,8 +314,8 @@
                 <div>Confirmados: <strong id="cant-pagados" style="color:#34d399; font-size: 14px; margin-left: 6px;">0</strong></div>
             </div>
             <table>
-                <thead><tr><th>Jugador</th><th>Club</th><th>Categoría Registrada</th><th>Estatus Pago</th><th style="width: 180px;">Acción</th></tr></thead>
-                <tbody id="tabla-inscritos-vivo"><tr><td colspan="5" class="mensaje-vacio">Cargando inscritos...</td></tr></tbody>
+                <thead><tr><th>Jugador</th><th>Club</th><th>Categoría Registrada</th><th>División / Hándicap</th><th>Estatus Pago</th><th style="width: 160px;">Acción</th></tr></thead>
+                <tbody id="tabla-inscritos-vivo"><tr><td colspan="6" class="mensaje-vacio">Cargando inscritos...</td></tr></tbody>
             </table>
         </div>
 
@@ -510,6 +510,49 @@
     <div id="area-impresion-memoria" class="memoria-print-area"></div>
 
     <script>
+        // ================= FUNCIÓN GLOBAL PARA ACTUALIZAR DIVISIÓN Y HANDICAP =================
+        async function actualizarDivHandicap(jugadorId, prefix) {
+            const divNode = document.querySelector(`input[name="div_${prefix}_${jugadorId}"]:checked`);
+            if(!divNode) return;
+            const div = parseInt(divNode.value);
+            const inputVentaja = document.getElementById(`ventaja_${prefix}_${jugadorId}`);
+            
+            if (inputVentaja) {
+                inputVentaja.style.display = div === 2 ? 'block' : 'none';
+            }
+            
+            const ventaja = div === 2 ? (parseInt(inputVentaja ? inputVentaja.value : 0) || 0) : 0;
+
+            try {
+                // Actualiza en BD
+                await clienteSupabase.from('jugadores').update({ division: div, handicap: ventaja }).eq('id', jugadorId);
+                
+                // Actualiza memoria local
+                const jIndex = todosLosJugadoresAdmin.findIndex(x => x.id === jugadorId);
+                if(jIndex > -1) {
+                    todosLosJugadoresAdmin[jIndex].division = div;
+                    todosLosJugadoresAdmin[jIndex].handicap = ventaja;
+                }
+
+                // Sincronizar la otra tabla si el jugador aparece en ambas
+                const otherPrefix = prefix === 'ins' ? 'flash' : 'ins';
+                const otherDiv = document.querySelector(`input[name="div_${otherPrefix}_${jugadorId}"][value="${div}"]`);
+                if (otherDiv) otherDiv.checked = true;
+                const otherInput = document.getElementById(`ventaja_${otherPrefix}_${jugadorId}`);
+                if (otherInput) {
+                    otherInput.value = ventaja;
+                    otherInput.style.display = div === 2 ? 'block' : 'none';
+                }
+            } catch (err) {
+                console.error("Error al guardar división/handicap:", err);
+            }
+        }
+
+        function toggleVentajaRow(jugadorId) {
+            const isDiv2 = document.querySelector(`input[name="div_flash_${jugadorId}"][value="2"]`).checked;
+            document.getElementById(`ventaja_flash_${jugadorId}`).style.display = isDiv2 ? 'block' : 'none';
+        }
+
         // ================= FUNCIÓN GLOBAL PARA QUITAR ACENTOS =================
         function quitarAcentos(str) {
             if (!str) return "";
@@ -606,7 +649,7 @@
                 programacionCategoriasNube = resProg.status === 'fulfilled' ? (resProg.value.data || []) : [];
                 reglasRankingList = resReglas.status === 'fulfilled' ? (resReglas.value.data || []) : [];
                 
-                cargarInscripcionFlashView(); // <-- LLAMADA PARA EL MÓDULO FLASH
+                cargarInscripcionFlashView(); 
 
             } catch(e) { console.error("Error en peticiones principales:", e); }
 
@@ -614,7 +657,7 @@
             try { dibujarTablaClubs(); } catch(e) { console.error(e); }
             try { filtrarYAutoSeleccionarAdmin(); } catch(e) { console.error(e); }
             try { generarRankingPorCategoriasHTMLPDF(); } catch(e) { console.error(e); }
-            try { cargarInscritosEnVivo(); } catch(e) { console.error(e); }
+            try { await cargarInscritosEnVivo(); } catch(e) { console.error(e); }
             try { dibujarTablaProgramacionCategorias(); } catch(e) { console.error(e); }
             try { cargarPendientes(); } catch(e) { console.error(e); }
             try { cargarPendientesRanking(); } catch(e) { console.error(e); }
@@ -640,11 +683,11 @@
             if(!tbody) return;
             tbody.innerHTML = '';
             
-            // Ordenar alfabéticamente para que sea más fácil de buscar visualmente
             let jugadoresOrdenados = [...todosLosJugadoresAdmin].sort((a,b) => a.nombre.localeCompare(b.nombre));
 
             jugadoresOrdenados.forEach(j => {
-                let divGuardada = localStorage.getItem(`flash_div_${ORG_ID}_${j.id}`) || '1'; // Default 1
+                let divGuardada = j.division || 1;
+                let ventajaGuardada = j.handicap !== undefined && j.handicap !== null ? j.handicap : 5;
                 
                 tbody.innerHTML += `
                     <tr class="tr-jugador-flash" style="border-bottom:1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
@@ -659,13 +702,14 @@
                             ${j.puntos_ranking} pts
                         </td>
                         <td style="text-align:center;">
-                            <div style="display:inline-flex; gap:10px; background:rgba(0,0,0,0.4); padding:4px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
+                            <div style="display:inline-flex; gap:10px; align-items:center; background:rgba(0,0,0,0.4); padding:4px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
                                 <label style="display:flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:#fff; cursor:pointer; margin:0; text-transform:none;">
-                                    <input type="radio" name="div_${j.id}" value="1" ${divGuardada === '1' ? 'checked' : ''} style="accent-color:#f43f5e;"> Div 1
+                                    <input type="radio" name="div_flash_${j.id}" value="1" ${divGuardada == 1 ? 'checked' : ''} style="accent-color:#f43f5e;" onchange="actualizarDivHandicap(${j.id}, 'flash')"> Div 1
                                 </label>
                                 <label style="display:flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:#fff; cursor:pointer; margin:0; text-transform:none;">
-                                    <input type="radio" name="div_${j.id}" value="2" ${divGuardada === '2' ? 'checked' : ''} style="accent-color:#eab308;"> Div 2
+                                    <input type="radio" name="div_flash_${j.id}" value="2" ${divGuardada == 2 ? 'checked' : ''} style="accent-color:#eab308;" onchange="actualizarDivHandicap(${j.id}, 'flash')"> Div 2
                                 </label>
+                                <input type="number" id="ventaja_flash_${j.id}" value="${ventajaGuardada}" placeholder="Pts" class="input-tabla" style="width: 50px; padding: 2px 4px; font-size: 10px; display: ${divGuardada == 2 ? 'block' : 'none'};" onchange="actualizarDivHandicap(${j.id}, 'flash')">
                             </div>
                         </td>
                     </tr>
@@ -673,7 +717,6 @@
             });
         }
 
-        // Función del buscador en tiempo real
         function filtrarJugadoresFlash() {
             const inputVal = document.getElementById('buscador-flash').value.toLowerCase();
             const inputClean = quitarAcentos(inputVal);
@@ -706,11 +749,6 @@
 
             checkboxes.forEach(chk => {
                 let jId = chk.value;
-                let divSel = document.querySelector(`input[name="div_${jId}"]:checked`).value;
-                
-                // Guardar division en LocalStorage para que el sorteo flash sepa el handicap
-                localStorage.setItem(`flash_div_${ORG_ID}_${jId}`, divSel);
-
                 inscripcionesNuevas.push({
                     torneo_id: parseInt(idTorneoActivo),
                     jugador_id: parseInt(jId),
@@ -727,14 +765,12 @@
                     else throw error;
                 }
                 
-                alert(`✅ ¡ÉXITO! Se inscribieron ${inscripcionesNuevas.length} jugadores y se guardó su división.`);
+                alert(`✅ ¡ÉXITO! Se inscribieron ${inscripcionesNuevas.length} jugadores.`);
                 
-                // Desmarcar checkboxes y resetear buscador
                 checkboxes.forEach(chk => chk.checked = false);
                 document.getElementById('buscador-flash').value = '';
-                filtrarJugadoresFlash(); // Vuelve a mostrar todo
+                filtrarJugadoresFlash(); 
                 
-                // Recargar datos vitales
                 await cargarInscritosEnVivo();
             } catch (e) {
                 alert("Error al inscribir: " + e.message);
@@ -744,12 +780,17 @@
             }
         }
 
-        // ================= CREACIÓN DE JUGADOR DIRECTO DESDE FLASH =================
+        function toggleVentajaFlashNew() {
+            const div2 = document.querySelector('input[name="flash_new_div"][value="2"]').checked;
+            document.getElementById('flash-new-ventaja').style.display = div2 ? 'block' : 'none';
+        }
+
         async function guardarNuevoJugadorFlash() {
             const nombre = document.getElementById('flash-new-name').value.toUpperCase().trim();
             const club = document.getElementById('flash-new-club').value;
             const puntos = parseInt(document.getElementById('flash-new-rank').value) || 0;
-            const div = document.querySelector('input[name="flash_new_div"]:checked').value;
+            const div = parseInt(document.querySelector('input[name="flash_new_div"]:checked').value);
+            const ventaja = div === 2 ? (parseInt(document.getElementById('flash-new-ventaja').value) || 0) : 0;
             
             if (!nombre || puntos === 0) {
                 alert("Por favor ingresa un nombre y sus puntos de ranking.");
@@ -768,26 +809,23 @@
                         puntos_ranking_ant: puntos, 
                         puntos_ranking: puntos, 
                         nip_seguridad: '1234', 
-                        organizador_id: ORG_ID 
+                        organizador_id: ORG_ID,
+                        division: div,
+                        handicap: ventaja
                     }])
                     .select();
 
                 if (error) throw error;
 
                 const newPlayerId = data[0].id;
-                
-                // Guardar la división elegida para este jugador
-                localStorage.setItem(`flash_div_${ORG_ID}_${newPlayerId}`, div);
 
-                // Cerrar y limpiar modal
                 document.getElementById('modal-nuevo-flash').style.display = 'none';
                 document.getElementById('flash-new-name').value = '';
                 document.getElementById('flash-new-rank').value = '';
+                document.getElementById('flash-new-ventaja').value = '5';
 
-                // Recargar toda la página para asegurar que el DOM de la tabla Flash se reconstruya
                 await cargarDatosIniciales();
                 
-                // Buscar el nuevo checkbox y marcarlo automáticamente
                 setTimeout(() => {
                     const checkbox = document.querySelector(`.check-flash-ins[value="${newPlayerId}"]`);
                     if (checkbox) {
@@ -902,7 +940,7 @@
             const porCategoria = {};
 
             partidosMonitoreo.forEach(m => {
-                if (!m.grupo_nombre || m.grupo_nombre === 'Flash') return; // Ignoramos flash
+                if (!m.grupo_nombre || m.grupo_nombre === 'Flash') return; 
 
                 const catNombre = m.categorias?.nombre || 'General';
                 if (!porCategoria[catNombre]) porCategoria[catNombre] = { id: m.categorias?.id || 0, grupos: {} };
@@ -1432,7 +1470,10 @@
                     costoVal = cat.costo_inscripcion;
                 }
 
-                const estaActiva = prog.activa !== false; // Si es nulo, asume true por defecto
+                let estaActiva = true;
+                if (prog.activa === false || prog.activa === 'false' || prog.activa === 0) estaActiva = false;
+                if (cat.activa === false || cat.activa === 'false' || cat.activa === 0) estaActiva = false;
+
                 const btnClase = estaActiva ? 'btn-green' : 'btn-red';
                 const btnIcono = estaActiva ? '✅ ACTIVA' : '🚫 BLOQUEADA';
 
@@ -1491,30 +1532,42 @@
                         .from('programacion_categorias')
                         .update({ fecha: fecha, hora: hora, lugar: lugar, costo_inscripcion: costo, activa: activa })
                         .eq('id', existe.id);
-                    if (errUp) throw new Error("No se pudo actualizar el horario: " + errUp.message);
+                    if (errUp) throw new Error("Fallo en programacion_categorias: " + errUp.message);
                 } else {
                     const { error: errIn } = await clienteSupabase
                         .from('programacion_categorias')
                         .insert([{ torneo_id: parseInt(idTorneoActivo), categoria_id: catId, fecha: fecha, hora: hora, lugar: lugar, costo_inscripcion: costo, activa: activa }]);
-                    if (errIn) console.warn("Advertencia al insertar en programacion_categorias:", errIn.message);
+                    if (errIn) throw new Error("Fallo al insertar en programacion_categorias: " + errIn.message);
                 }
 
                 const { error: errCat } = await clienteSupabase
                     .from('categorias')
-                    .update({ costo_inscripcion: costo })
+                    .update({ costo_inscripcion: costo, activa: activa })
                     .eq('id', catId);
-                if (errCat) console.error("Error al actualizar precio en categorias base:", errCat);
+                
+                if (errCat) throw new Error("Fallo en tabla categorias: " + errCat.message);
 
                 alert("✅ Configuración de categoría guardada con éxito."); 
                 await cargarDatosIniciales();
             } catch(e) {
+                console.error(e);
                 alert("❌ Error al guardar: " + e.message);
             }
         }
 
         async function cargarInscritosEnVivo() {
             try {
-                const { data } = await clienteSupabase.from('inscripciones').select(`id, categoria_id, estatus_pago, jugadores ( id, nombre, club, puntos_ranking ), categorias ( id, nombre )`).eq('torneo_id', idTorneoActivo);
+                // MODIFICADO: Cambiado a select('*') en los inner joins para evitar que la memoria caché de Supabase bloquee la carga cuando hay nuevas columnas
+                const { data, error } = await clienteSupabase
+                    .from('inscripciones')
+                    .select(`*, jugadores(*), categorias(*)`)
+                    .eq('torneo_id', idTorneoActivo);
+                
+                if (error) {
+                    console.error("Error Supabase:", error);
+                    return;
+                }
+
                 const tbody = document.getElementById('tabla-inscritos-vivo'); 
                 const cantReg = document.getElementById('cant-registrados'); 
                 const cantPag = document.getElementById('cant-pagados');
@@ -1523,7 +1576,7 @@
                 tbody.innerHTML = '';
                 
                 if (!data || data.length === 0) { 
-                    tbody.innerHTML = '<tr><td colspan="5" class="mensaje-vacio">Aún no hay inscritos en este torneo.</td></tr>'; 
+                    tbody.innerHTML = '<tr><td colspan="6" class="mensaje-vacio">Aún no hay inscritos en este torneo.</td></tr>'; 
                     if (cantReg) cantReg.innerText = '0'; 
                     if (cantPag) cantPag.innerText = '0'; 
                     return; 
@@ -1548,14 +1601,14 @@
                     const catObj = agrupados[catName];
                     const estiloCat = obtenerEstiloCategoria(catObj.id);
                     
-                    catObj.inscripciones.sort((a, b) => b.jugadores.puntos_ranking - a.jugadores.puntos_ranking);
+                    catObj.inscripciones.sort((a, b) => (b.jugadores.puntos_ranking || 0) - (a.jugadores.puntos_ranking || 0));
 
                     const pagados = catObj.inscripciones.filter(i => i.estatus_pago === 'Pagado').length;
                     const total = catObj.inscripciones.length;
 
                     tbody.innerHTML += `
                         <tr class="tr-header" style="background: ${estiloCat.bg}; border-left: 4px solid ${estiloCat.text};">
-                            <td colspan="5" style="padding: 10px 15px; border-radius: 0;">
+                            <td colspan="6" style="padding: 10px 15px; border-radius: 0;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <strong style="color: ${estiloCat.text}; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">🏆 ${catName}</strong>
                                     <span style="color: ${estiloCat.text}; font-size: 10px; font-weight: 800; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px;">${pagados} Pagados / ${total} Inscritos</span>
@@ -1570,13 +1623,27 @@
                         todasLasCategoriasAdmin.forEach(c => { selectCatHtml += `<option value="${c.id}" ${c.id === ins.categoria_id ? 'selected' : ''}>${c.nombre}</option>`; });
                         selectCatHtml += `</select>`;
 
+                        let div = ins.jugadores.division || 1;
+                        let handicap = ins.jugadores.handicap !== undefined && ins.jugadores.handicap !== null ? ins.jugadores.handicap : 5;
+
                         tbody.innerHTML += `
                             <tr>
                                 <td><strong style="color:#ffffff; font-size:12px;">${ins.jugadores.nombre}</strong></td>
                                 <td style="color:#94a3b8; font-size:11px;">${ins.jugadores.club || 'Sin Club'}</td>
                                 <td style="color:${estiloCat.text}; font-weight:800; font-size:11px;">${ins.categorias.nombre}</td>
+                                <td>
+                                    <div style="display:inline-flex; gap:8px; align-items:center;">
+                                        <label style="display:flex; align-items:center; gap:2px; font-size:10px; color:#fff; cursor:pointer;">
+                                            <input type="radio" name="div_ins_${ins.jugadores.id}" value="1" ${div == 1 ? 'checked' : ''} style="accent-color:#f43f5e;" onchange="actualizarDivHandicap(${ins.jugadores.id}, 'ins')"> Div 1
+                                        </label>
+                                        <label style="display:flex; align-items:center; gap:2px; font-size:10px; color:#fff; cursor:pointer;">
+                                            <input type="radio" name="div_ins_${ins.jugadores.id}" value="2" ${div == 2 ? 'checked' : ''} style="accent-color:#eab308;" onchange="actualizarDivHandicap(${ins.jugadores.id}, 'ins')"> Div 2
+                                        </label>
+                                        <input type="number" id="ventaja_ins_${ins.jugadores.id}" value="${handicap}" class="input-tabla" style="width: 45px; padding: 2px; font-size: 10px; display: ${div == 2 ? 'block' : 'none'};" onchange="actualizarDivHandicap(${ins.jugadores.id}, 'ins')">
+                                    </div>
+                                </td>
                                 <td><span class="badge-pago ${esPagado ? 'pago-ok' : 'pago-pend'}">${ins.estatus_pago}</span></td>
-                                <td><div style="display:flex; align-items:center;">${selectCatHtml}<button class="btn-console btn-gold" style="padding: 4px 8px; font-size: 9px;" onclick="cambiarCategoriaInscripcion(${ins.id})">💾</button><button class="btn-console btn-red" style="padding: 4px 8px; font-size: 9px; margin-left: 4px;" onclick="eliminarInscripcion(${ins.id}, '${ins.jugadores.nombre.replace(/'/g, "\\'")}')">🗑️</button></div></td>
+                                <td><div style="display:flex; align-items:center;">${selectCatHtml}<button class="btn-console btn-gold" style="padding: 4px 8px; font-size: 9px;" onclick="cambiarCategoriaInscripcion(${ins.id})">💾</button><button class="btn-console btn-red" style="padding: 4px 8px; font-size: 9px; margin-left: 4px;" onclick="eliminarInscripcion(${ins.id}, '${String(ins.jugadores.nombre).replace(/'/g, "\\'")}')">🗑️</button></div></td>
                             </tr>
                         `;
                     });
