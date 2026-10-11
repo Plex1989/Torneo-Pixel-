@@ -200,11 +200,12 @@
                 <div style="display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
                     <span style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">División:</span>
                     <label style="display:flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#fff; cursor:pointer;">
-                        <input type="radio" name="flash_new_div" value="1" checked style="accent-color:#f43f5e;"> Div 1
+                        <input type="radio" name="flash_new_div" value="1" checked style="accent-color:#f43f5e;" onclick="document.getElementById('flash-new-handicap').style.display='none'"> Div 1
                     </label>
                     <label style="display:flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#fff; cursor:pointer;">
-                        <input type="radio" name="flash_new_div" value="2" style="accent-color:#eab308;"> Div 2
+                        <input type="radio" name="flash_new_div" value="2" style="accent-color:#eab308;" onclick="document.getElementById('flash-new-handicap').style.display='inline-block'"> Div 2
                     </label>
+                    <input type="number" id="flash-new-handicap" value="5" class="input-tabla" style="width:50px; text-align:center; padding:4px !important; display:none;" title="Puntos de ventaja">
                 </div>
             </div>
             
@@ -314,7 +315,7 @@
                 <div>Confirmados: <strong id="cant-pagados" style="color:#34d399; font-size: 14px; margin-left: 6px;">0</strong></div>
             </div>
             <table>
-                <thead><tr><th>Jugador</th><th>Club / Cat.</th><th>División</th><th>Estatus</th><th style="width: 180px;">Acción</th></tr></thead>
+                <thead><tr><th>Jugador</th><th>Club / Cat.</th><th>División / Hándicap</th><th>Estatus</th><th style="width: 180px;">Acción</th></tr></thead>
                 <tbody id="tabla-inscritos-vivo"><tr><td colspan="5" class="mensaje-vacio">Cargando inscritos...</td></tr></tbody>
             </table>
         </div>
@@ -332,7 +333,7 @@
                     <button class="btn-console btn-gold" onclick="inscribirSeleccionadosFlash()">🚀 Inscribir Seleccionados</button>
                 </div>
             </div>
-            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px;">Selecciona los jugadores presenciales y asígnales su división. Se inscribirán automáticamente como "Pagados" en la categoría que elijas y su división quedará guardada para el Sorteo Flash.</p>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px;">Selecciona los jugadores presenciales y asígnales su división. Se inscribirán automáticamente como "Pagados" en la categoría que elijas y su división quedará guardada en la base de datos oficial.</p>
             
             <div style="max-height: 400px; overflow-y: auto; padding-right: 10px; border: 1px solid rgba(255,255,255,0.05); border-radius: 12px;">
                 <table style="margin-top: 0; border-spacing: 0;">
@@ -479,15 +480,6 @@
                     </div>
                 </div>
             </div>
-
-            <div style="margin-top: 25px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px;">
-                <h3 style="color: #ffffff; font-size: 11px;">⚖️ Hándicap (Ventaja para División 2)</h3>
-                <div class="form-row" style="align-items: center; background: rgba(15,23,42,0.5); padding: 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-wrap: wrap;">
-                    <span style="color:#94a3b8; font-size: 11px; font-weight: 700; text-transform: uppercase;">Puntos de ventaja iniciales:</span>
-                    <input type="number" id="input-handicap" style="width:60px; text-align:center; padding: 6px;" class="input-tabla" placeholder="Pts" value="5">
-                    <button class="btn-console btn-gold" onclick="guardarHandicap()">Guardar Hándicap</button>
-                </div>
-            </div>
         </div>
 
         <!-- MEMORIA TÉCNICA -->
@@ -586,8 +578,6 @@
         };
 
         async function cargarDatosIniciales() {
-            document.getElementById('input-handicap').value = localStorage.getItem(`handicap_div2_${ORG_ID}`) || 5;
-
             try {
                 const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
                 if (torneoData) {
@@ -604,7 +594,7 @@
 
             try {
                 const [resJug, resCat, resClubs, resProg, resReglas] = await Promise.allSettled([
-                    clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID).order('puntos_ranking', { ascending: false }),
+                    clienteSupabase.from('jugadores').select('id, nombre, club, puntos_ranking, puntos_ranking_ant, nip_seguridad, division, handicap').eq('organizador_id', ORG_ID).order('puntos_ranking', { ascending: false }),
                     clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: false }),
                     clienteSupabase.from('clubes').select('*').eq('organizador_id', ORG_ID).order('nombre', { ascending: true }),
                     clienteSupabase.from('programacion_categorias').select('*').eq('torneo_id', idTorneoActivo),
@@ -617,7 +607,7 @@
                 programacionCategoriasNube = resProg.status === 'fulfilled' ? (resProg.value.data || []) : [];
                 reglasRankingList = resReglas.status === 'fulfilled' ? (resReglas.value.data || []) : [];
                 
-                cargarInscripcionFlashView(); // <-- LLAMADA PARA EL MÓDULO FLASH
+                cargarInscripcionFlashView();
 
             } catch(e) { console.error("Error en peticiones principales:", e); }
 
@@ -637,12 +627,6 @@
             try { activarSuscripcionRealtime(); } catch(e) { console.error(e); }
         }
 
-        function guardarHandicap() {
-            let pts = parseInt(document.getElementById('input-handicap').value) || 0;
-            localStorage.setItem(`handicap_div2_${ORG_ID}`, pts);
-            alert("✅ Puntos de Hándicap guardados correctamente.");
-        }
-
         // ================= MÓDULO INSCRIPCIÓN EXPRÉS FLASH CON BUSCADOR =================
         function cargarInscripcionFlashView() {
             const selectCat = document.getElementById('select-cat-flash');
@@ -657,11 +641,10 @@
             if(!tbody) return;
             tbody.innerHTML = '';
             
-            // Ordenar alfabéticamente para que sea más fácil de buscar visualmente
             let jugadoresOrdenados = [...todosLosJugadoresAdmin].sort((a,b) => a.nombre.localeCompare(b.nombre));
 
             jugadoresOrdenados.forEach(j => {
-                let divGuardada = localStorage.getItem(`flash_div_${ORG_ID}_${j.id}`) || '1'; // Default 1
+                let divGuardada = j.division || 1;
                 
                 tbody.innerHTML += `
                     <tr class="tr-jugador-flash" style="border-bottom:1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
@@ -678,11 +661,12 @@
                         <td style="text-align:center;">
                             <div style="display:inline-flex; gap:10px; background:rgba(0,0,0,0.4); padding:4px 10px; border-radius:8px; border:1px solid rgba(255,255,255,0.1);">
                                 <label style="display:flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:#fff; cursor:pointer; margin:0; text-transform:none;">
-                                    <input type="radio" name="div_${j.id}" value="1" ${divGuardada === '1' ? 'checked' : ''} style="accent-color:#f43f5e;"> Div 1
+                                    <input type="radio" name="div_${j.id}" value="1" ${divGuardada === 1 ? 'checked' : ''} style="accent-color:#f43f5e;" onclick="document.getElementById('handicap-flash-${j.id}').style.display='none'"> Div 1
                                 </label>
                                 <label style="display:flex; align-items:center; gap:4px; font-size:10px; font-weight:700; color:#fff; cursor:pointer; margin:0; text-transform:none;">
-                                    <input type="radio" name="div_${j.id}" value="2" ${divGuardada === '2' ? 'checked' : ''} style="accent-color:#eab308;"> Div 2
+                                    <input type="radio" name="div_${j.id}" value="2" ${divGuardada === 2 ? 'checked' : ''} style="accent-color:#eab308;" onclick="document.getElementById('handicap-flash-${j.id}').style.display='inline-block'"> Div 2
                                 </label>
+                                <input type="number" id="handicap-flash-${j.id}" value="${j.handicap || 5}" class="input-tabla" style="width:40px; text-align:center; padding:4px !important; display:${divGuardada === 2 ? 'inline-block' : 'none'};" title="Ventaja">
                             </div>
                         </td>
                     </tr>
@@ -690,7 +674,6 @@
             });
         }
 
-        // Función del buscador en tiempo real
         function filtrarJugadoresFlash() {
             const inputVal = document.getElementById('buscador-flash').value.toLowerCase();
             const inputClean = quitarAcentos(inputVal);
@@ -699,12 +682,8 @@
             filas.forEach(fila => {
                 const nombre = fila.querySelector('strong').innerText.toLowerCase();
                 const nombreClean = quitarAcentos(nombre);
-                
-                if (nombreClean.includes(inputClean)) {
-                    fila.style.display = '';
-                } else {
-                    fila.style.display = 'none';
-                }
+                if (nombreClean.includes(inputClean)) fila.style.display = '';
+                else fila.style.display = 'none';
             });
         }
 
@@ -721,23 +700,23 @@
 
             let inscripcionesNuevas = [];
 
-            checkboxes.forEach(chk => {
-                let jId = chk.value;
-                let divSel = document.querySelector(`input[name="div_${jId}"]:checked`).value;
-                
-                // Guardar division en LocalStorage para que el sorteo flash sepa el handicap
-                localStorage.setItem(`flash_div_${ORG_ID}_${jId}`, divSel);
-
-                inscripcionesNuevas.push({
-                    torneo_id: parseInt(idTorneoActivo),
-                    jugador_id: parseInt(jId),
-                    categoria_id: parseInt(catId),
-                    estatus_pago: 'Pagado',
-                    organizador_id: ORG_ID
-                });
-            });
-
             try {
+                for (let i=0; i<checkboxes.length; i++) {
+                    let jId = checkboxes[i].value;
+                    let divSel = document.querySelector(`input[name="div_${jId}"]:checked`).value;
+                    let handSel = document.getElementById(`handicap-flash-${jId}`).value;
+                    
+                    await clienteSupabase.from('jugadores').update({ division: parseInt(divSel), handicap: parseInt(handSel) }).eq('id', jId);
+
+                    inscripcionesNuevas.push({
+                        torneo_id: parseInt(idTorneoActivo),
+                        jugador_id: parseInt(jId),
+                        categoria_id: parseInt(catId),
+                        estatus_pago: 'Pagado',
+                        organizador_id: ORG_ID
+                    });
+                }
+
                 const { error } = await clienteSupabase.from('inscripciones').insert(inscripcionesNuevas);
                 if (error) {
                     if(error.code === '23505') throw new Error("Algunos jugadores ya estaban inscritos en esta categoría.");
@@ -746,13 +725,10 @@
                 
                 alert(`✅ ¡ÉXITO! Se inscribieron ${inscripcionesNuevas.length} jugadores y se guardó su división.`);
                 
-                // Desmarcar checkboxes y resetear buscador
                 checkboxes.forEach(chk => chk.checked = false);
                 document.getElementById('buscador-flash').value = '';
-                filtrarJugadoresFlash(); // Vuelve a mostrar todo
-                
-                // Recargar datos vitales
-                await cargarInscritosEnVivo();
+                filtrarJugadoresFlash();
+                await cargarDatosIniciales();
             } catch (e) {
                 alert("Error al inscribir: " + e.message);
             } finally {
@@ -761,12 +737,12 @@
             }
         }
 
-        // ================= CREACIÓN DE JUGADOR DIRECTO DESDE FLASH =================
         async function guardarNuevoJugadorFlash() {
             const nombre = document.getElementById('flash-new-name').value.toUpperCase().trim();
             const club = document.getElementById('flash-new-club').value;
             const puntos = parseInt(document.getElementById('flash-new-rank').value) || 0;
             const div = document.querySelector('input[name="flash_new_div"]:checked').value;
+            const hand = parseInt(document.getElementById('flash-new-handicap').value) || 5;
             
             if (!nombre || puntos === 0) {
                 alert("Por favor ingresa un nombre y sus puntos de ranking.");
@@ -785,6 +761,8 @@
                         puntos_ranking_ant: puntos, 
                         puntos_ranking: puntos, 
                         nip_seguridad: '1234', 
+                        division: parseInt(div),
+                        handicap: hand,
                         organizador_id: ORG_ID 
                     }])
                     .select();
@@ -793,18 +771,12 @@
 
                 const newPlayerId = data[0].id;
                 
-                // Guardar la división elegida para este jugador
-                localStorage.setItem(`flash_div_${ORG_ID}_${newPlayerId}`, div);
-
-                // Cerrar y limpiar modal
                 document.getElementById('modal-nuevo-flash').style.display = 'none';
                 document.getElementById('flash-new-name').value = '';
                 document.getElementById('flash-new-rank').value = '';
 
-                // Recargar toda la página para asegurar que el DOM de la tabla Flash se reconstruya
                 await cargarDatosIniciales();
                 
-                // Buscar el nuevo checkbox y marcarlo automáticamente
                 setTimeout(() => {
                     const checkbox = document.querySelector(`.check-flash-ins[value="${newPlayerId}"]`);
                     if (checkbox) {
@@ -919,7 +891,7 @@
             const porCategoria = {};
 
             partidosMonitoreo.forEach(m => {
-                if (!m.grupo_nombre || m.grupo_nombre === 'Flash') return; // Ignoramos flash
+                if (!m.grupo_nombre || m.grupo_nombre === 'Flash') return;
 
                 const catNombre = m.categorias?.nombre || 'General';
                 if (!porCategoria[catNombre]) porCategoria[catNombre] = { id: m.categorias?.id || 0, grupos: {} };
@@ -1049,7 +1021,7 @@
                     else if (ganoPlayer) estadoBadge = `<span style="font-size:9px; background:rgba(16,185,129,0.2); color:#34d399; padding:3px 8px; border-radius:99px; font-weight:800;">🏆 VICTORIA (+${deltaPartido} pts)</span>`;
                     else if (perdioPlayer) estadoBadge = `<span style="font-size:9px; background:rgba(239,68,68,0.2); color:#f87171; padding:3px 8px; border-radius:99px; font-weight:800;">❌ DERROTA (${deltaPartido} pts)</span>`;
 
-                    let marcadorText = esFin ? (esJ1 ? `${p.sets_j1} - ${p.sets_j2}` : `${p.sets_j2} - ${p.sets_j1}`) + ' Sets' : (esVivo ? (esJ1 ? `${p.puntos_j1} - ${p.puntos_j2}` : `${p.puntos_j2} - ${p.puntos_j1}`) + ' Pts' : 'VS');
+                    let marcadorText = esFin ? (esJ1 ? `${p.sets_j1} -${p.sets_j2}` : `${p.sets_j2} -${p.sets_j1}`) + ' Sets' : (esVivo ? (esJ1 ? `${p.puntos_j1} -${p.puntos_j2}` : `${p.puntos_j2} -${p.puntos_j1}`) + ' Pts' : 'VS');
 
                     let historialText = '';
                     if (p.historial_sets && Array.isArray(p.historial_sets) && p.historial_sets.length > 0) {
@@ -1063,9 +1035,7 @@
                         <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); padding:12px 16px; border-radius:12px;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
                                 <span style="font-size:10px; color:#38bdf8; font-weight:800; text-transform:uppercase;">
-                                    ${etiqGpo} • Mesa ${p.mesa || 1}
-                                </span>
-                                ${estadoBadge}
+                                    ${etiqGpo} • Mesa ${p.mesa \vert{}\vert{} 1}                                 </span>${estadoBadge}
                             </div>
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <div>
@@ -1302,6 +1272,7 @@
                                         <div style="background:rgba(245,158,11,0.1); padding:16px; border-radius:14px; border:1px solid rgba(245,158,11,0.3); width:100%; max-width:450px; text-align:left;">
                                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                                                 <span style="font-size:12px; color:#fbbf24; font-weight:900; text-transform:uppercase;">🏆 Gran Final</span>
+                                                <span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partidoFinal?.mesa || 1}</span>
                                             </div>
                                             <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
                                                 <strong style="font-size:14px; color:#fff;">🥇 ${nomFinal_j1}</strong>
@@ -1390,23 +1361,21 @@
                             <span style="font-size:9px; font-weight:800; color:${estadoColor}; border:1px solid ${estadoColor}; padding:2px 8px; border-radius:999px;">${estadoTexto}</span>
                         </div>
                         
-                        <div style="font-size:10px; color:${estiloCat.text}; background:${estiloCat.bg}; border:1px solid ${estiloCat.border}; display:inline-block; padding:3px 8px; border-radius:6px; font-weight:800; text-transform:uppercase; margin-bottom:12px;">
-                            🏆 ${catObj.nombre || 'Categoría'} • ${subtituloFase}
+                        <div style="font-size:10px; color:${estiloCat.text}; background:${estiloCat.bg}; border:1px solid${estiloCat.border}; display:inline-block; padding:3px 8px; border-radius:6px; font-weight:800; text-transform:uppercase; margin-bottom:12px;">
+                            🏆 ${catObj.nombre \vert{}\vert{} 'Categoría'} • ${subtituloFase}
                         </div>
 
                         <div style="background:rgba(0,0,0,0.4); border-radius:10px; padding:10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; border:1px solid rgba(255,255,255,0.02);">
                             <span style="font-weight:700; font-size:12px; color:${colorJ1};">${iconJ1}${nombreJ1}</span>
                             <div style="display:flex; gap:10px; align-items:center;">
-                                <span style="font-family:'Orbitron', sans-serif; font-weight:800; font-size:18px; color:#06b6d4;">${mainScore1}</span>
-                                ${subScore1}
+                                <span style="font-family:'Orbitron', sans-serif; font-weight:800; font-size:18px; color:#06b6d4;">${mainScore1}</span>${subScore1}
                             </div>
                         </div>
 
                         <div style="background:rgba(0,0,0,0.4); border-radius:10px; padding:10px; display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(255,255,255,0.02);">
                             <span style="font-weight:700; font-size:12px; color:${colorJ2};">${iconJ2}${nombreJ2}</span>
                             <div style="display:flex; gap:10px; align-items:center;">
-                                <span style="font-family:'Orbitron', sans-serif; font-weight:800; font-size:18px; color:#d946ef;">${mainScore2}</span>
-                                ${subScore2}
+                                <span style="font-family:'Orbitron', sans-serif; font-weight:800; font-size:18px; color:#d946ef;">${mainScore2}</span>${subScore2}
                             </div>
                         </div>
                         
@@ -1448,7 +1417,6 @@
                     costoVal = cat.costo_inscripcion;
                 }
 
-                // LÓGICA DE CATEGORÍA ACTIVA / BLOQUEADA
                 const estaActiva = prog.activa !== false; // Si es nulo, asume true por defecto
                 const btnClase = estaActiva ? 'btn-green' : 'btn-red';
                 const btnIcono = estaActiva ? '✅ ACTIVA' : '🚫 BLOQUEADA';
@@ -1471,20 +1439,36 @@
             });
         }
 
-        function toggleEstadoCat(catId) {
+        async function toggleEstadoCat(catId) {
             const btn = document.getElementById(`btn-estado-cat-${catId}`);
             const isActive = btn.getAttribute('data-activa') === 'true';
             const newState = !isActive;
-            btn.setAttribute('data-activa', newState);
             
-            if (newState) {
-                btn.classList.remove('btn-red');
-                btn.classList.add('btn-green');
-                btn.innerHTML = '✅ ACTIVA';
-            } else {
-                btn.classList.remove('btn-green');
-                btn.classList.add('btn-red');
-                btn.innerHTML = '🚫 BLOQUEADA';
+            btn.disabled = true;
+            btn.innerHTML = '⏳...';
+
+            try {
+                const { data: existe } = await clienteSupabase.from('programacion_categorias').select('id').eq('torneo_id', idTorneoActivo).eq('categoria_id', catId).maybeSingle();
+
+                if (existe) {
+                    await clienteSupabase.from('programacion_categorias').update({ activa: newState }).eq('id', existe.id);
+                } else {
+                    await clienteSupabase.from('programacion_categorias').insert([{ torneo_id: idTorneoActivo, categoria_id: catId, activa: newState }]);
+                }
+
+                btn.setAttribute('data-activa', newState);
+                if (newState) {
+                    btn.className = 'btn-console btn-green';
+                    btn.innerHTML = '✅ ACTIVA';
+                } else {
+                    btn.className = 'btn-console btn-red';
+                    btn.innerHTML = '🚫 BLOQUEADA';
+                }
+            } catch (err) {
+                alert("Error al cambiar estado: " + err.message);
+                btn.innerHTML = isActive ? '✅ ACTIVA' : '🚫 BLOQUEADA';
+            } finally {
+                btn.disabled = false;
             }
         }
 
@@ -1533,7 +1517,7 @@
 
         async function cargarInscritosEnVivo() {
             try {
-                const { data } = await clienteSupabase.from('inscripciones').select(`id, categoria_id, estatus_pago, jugador_id, jugadores ( id, nombre, club, puntos_ranking ), categorias ( id, nombre )`).eq('torneo_id', idTorneoActivo);
+                const { data } = await clienteSupabase.from('inscripciones').select(`id, categoria_id, estatus_pago, jugador_id, jugadores ( id, nombre, club, puntos_ranking, division, handicap ), categorias ( id, nombre )`).eq('torneo_id', idTorneoActivo);
                 const tbody = document.getElementById('tabla-inscritos-vivo'); 
                 const cantReg = document.getElementById('cant-registrados'); 
                 const cantPag = document.getElementById('cant-pagados');
@@ -1573,7 +1557,7 @@
                     const total = catObj.inscripciones.length;
 
                     tbody.innerHTML += `
-                        <tr class="tr-header" style="background: ${estiloCat.bg}; border-left: 4px solid ${estiloCat.text};">
+                        <tr class="tr-header" style="background: ${estiloCat.bg}; border-left: 4px solid${estiloCat.text};">
                             <td colspan="5" style="padding: 10px 15px; border-radius: 0;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <strong style="color: ${estiloCat.text}; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">🏆 ${catName}</strong>
@@ -1589,12 +1573,15 @@
                         todasLasCategoriasAdmin.forEach(c => { selectCatHtml += `<option value="${c.id}" ${c.id === ins.categoria_id ? 'selected' : ''}>${c.nombre}</option>`; });
                         selectCatHtml += `</select>`;
 
-                        let divGuardada = localStorage.getItem(`flash_div_${ORG_ID}_${ins.jugadores.id}`) || '1';
+                        let divGuardada = ins.jugadores.division || 1;
                         let selectDivHtml = `
-                            <select onchange="cambiarDivisionJugador(${ins.jugadores.id}, this.value)" class="input-tabla" style="padding: 6px; font-size: 10px; width: 70px; font-weight: 700;">
-                                <option value="1" ${divGuardada === '1' ? 'selected' : ''}>Div 1</option>
-                                <option value="2" ${divGuardada === '2' ? 'selected' : ''}>Div 2</option>
-                            </select>
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <select onchange="cambiarDivisionJugador(${ins.jugadores.id}, this.value)" class="input-tabla" style="padding: 6px; font-size: 10px; width: 70px; font-weight: 700;">
+                                    <option value="1" ${divGuardada === 1 ? 'selected' : ''}>Div 1</option>
+                                    <option value="2" ${divGuardada === 2 ? 'selected' : ''}>Div 2</option>
+                                </select>
+                                <input type="number" id="handicap-jug-${ins.jugadores.id}" value="${ins.jugadores.handicap || 5}" onchange="guardarHandicapJugador(${ins.jugadores.id}, this.value)" class="input-tabla" style="width:50px; padding:6px; text-align:center; display:${divGuardada === 2 ? 'inline-block' : 'none'};" title="Puntos de ventaja">
+                            </div>
                         `;
 
                         tbody.innerHTML += `
@@ -1611,9 +1598,15 @@
             } catch(e) { console.error("Error al cargar inscritos:", e); }
         }
 
-        function cambiarDivisionJugador(idJugador, nuevaDiv) {
-            localStorage.setItem(`flash_div_${ORG_ID}_${idJugador}`, nuevaDiv);
+        async function cambiarDivisionJugador(idJugador, nuevaDiv) {
+            const inputHand = document.getElementById(`handicap-jug-${idJugador}`);
+            if (inputHand) inputHand.style.display = nuevaDiv === '2' ? 'inline-block' : 'none';
+            await clienteSupabase.from('jugadores').update({ division: parseInt(nuevaDiv) }).eq('id', idJugador);
             alert("✅ División actualizada.");
+        }
+
+        async function guardarHandicapJugador(idJugador, pts) {
+            await clienteSupabase.from('jugadores').update({ handicap: parseInt(pts) }).eq('id', idJugador);
         }
 
         async function cambiarCategoriaInscripcion(idInscripcion) {
@@ -1734,11 +1727,11 @@
                 
                 if (jugadoresCat.length > 0) {
                     tbody.innerHTML += `
-                        <tr style="background: ${style.bg}; color: ${style.text}; border-bottom: 2px solid #000;">
+                        <tr style="background: ${style.bg}; color:${style.text}; border-bottom: 2px solid #000;">
                             <td colspan="5" style="padding: 6px 12px; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">
                                 <div style="display: flex; justify-content: space-between;">
                                     <span>🏆 ${cat.nombre}</span>
-                                    <span>${cat.puntos_minimos} - ${cat.puntos_maximos} PTS</span>
+                                    <span>${cat.puntos_minimos} -${cat.puntos_maximos} PTS</span>
                                 </div>
                             </td>
                         </tr>
@@ -1756,7 +1749,7 @@
                                 <td style="padding: 6px 10px; font-weight: 800; color: #e2e8f0; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${j.nombre}</td>
                                 <td style="padding: 6px 10px;"><span style="color: #94a3b8; font-size: 9px; font-weight: 700;">${j.club || 'S/C'}</span></td>
                                 <td style="padding: 6px 10px; text-align: center; color: #64748b; font-family: 'Orbitron', sans-serif; font-size: 10px;">${j.puntos_ranking_ant || 0}</td>
-                                <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #38bdf8; font-family: 'Orbitron', sans-serif; font-size: 12px; white-space: nowrap;">${j.puntos_ranking || 0} ${flecha}</td>
+                                <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #38bdf8; font-family: 'Orbitron', sans-serif; font-size: 12px; white-space: nowrap;">${j.puntos_ranking \vert{}\vert{} 0}${flecha}</td>
                             </tr>
                         `;
                         globalRank++;
@@ -1802,7 +1795,7 @@
                         <div class="print-cat-wrapper">
                             <div class="print-cat-header ${styleClass}">
                                 <h4>${cat.nombre}</h4>
-                                <span>${cat.puntos_minimos} - ${cat.puntos_maximos} PTS</span>
+                                <span>${cat.puntos_minimos} -${cat.puntos_maximos} PTS</span>
                             </div>
                             <table class="print-table">
                                 <thead>
@@ -1855,7 +1848,7 @@
             const d = new Date();
             const fechaEl = document.getElementById('fecha-impresion-doc');
             if(fechaEl) {
-                fechaEl.innerText = `${meses[d.getMonth()]} ${d.getFullYear()}`;
+                fechaEl.innerText = `${meses[d.getMonth()]}${d.getFullYear()}`;
             }
         }
 
@@ -1874,7 +1867,7 @@
             const texto = quitarAcentos(inputEl.value.toLowerCase().trim());
             select.innerHTML = '<option value="">-- Nuevo Jugador (Modo Crear) --</option>';
             const filtrados = todosLosJugadoresAdmin.filter(j => j.nombre && quitarAcentos(j.nombre.toLowerCase()).includes(texto));
-            filtrados.forEach(j => { let opt = document.createElement('option'); opt.value = j.id; opt.textContent = `${j.nombre} [${j.club || 'Sin Club'}] (${j.puntos_ranking} pts)`; select.appendChild(opt); });
+            filtrados.forEach(j => { let opt = document.createElement('option'); opt.value = j.id; opt.textContent = `${j.nombre} [${j.club \vert{}\vert{} 'Sin Club'}] (${j.puntos_ranking} pts)`; select.appendChild(opt); });
             if (texto.length > 0 && filtrados.length > 0) { select.value = filtrados[0].id; cargarDatosJugadorEditar(); }
             else if (texto.length === 0) resetFormularioJugador();
         }
@@ -1927,7 +1920,7 @@
             const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
             categoriasFuerza.forEach(cat => {
                 const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos);
-                jugadoresCat.forEach((j, idx) => { csv += `${idx + 1},"${j.nombre}","${j.club || 'Sin Club'}",${j.puntos_ranking_ant || 0},${j.puntos_ranking},"${cat.nombre}"\n`; });
+                jugadoresCat.forEach((j, idx) => { csv += `${idx + 1},"${j.nombre}","${j.club \vert{}\vert{} 'Sin Club'}",${j.puntos_ranking_ant || 0},${j.puntos_ranking},"${cat.nombre}"\n`; });
             });
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(blob)); link.setAttribute("download", `Ranking_Oficial_${new Date().toISOString().slice(0,10)}.csv`);
@@ -2006,7 +1999,7 @@
                 let escenario = regla.resultado_esperado === 'gana_favorito' ? 'Gana Favorito' : '<strong style="color:#ef4444;">Gana Retador (Upset)</strong>';
                 tbody.innerHTML += `
                     <tr>
-                        <td style="color:#94a3b8; font-size:11px; font-weight:600;">De ${regla.diferencia_min} a ${regla.diferencia_max} pts</td>
+                        <td style="color:#94a3b8; font-size:11px; font-weight:600;">De ${regla.diferencia_min} a${regla.diferencia_max} pts</td>
                         <td style="color:#ffffff; font-size:11px; font-weight:700;">${escenario}</td>
                         <td>+ <input type="number" id="regla-ganador-${regla.id}" style="width:60px;" value="${regla.puntos_ganador}" class="input-tabla text-center"></td>
                         <td> <input type="number" id="regla-perdedor-${regla.id}" style="width:60px;" value="${regla.puntos_perdedor}" class="input-tabla text-center"></td>
@@ -2106,13 +2099,13 @@
                     if(p.ganador_id === p.jugador1_id) {
                         exp1.pts_ganados += calculo.ptsGanador; exp1.ranking_final += calculo.ptsGanador;
                         exp2.pts_perdidos += calculo.ptsPerdedor; exp2.ranking_final += calculo.ptsPerdedor;
-                        desc1 = `<span class="text-green">Victoria (+${calculo.ptsGanador} pts)</span> vs ${exp2.nombre}`;
-                        desc2 = `<span class="text-red">Derrota (${calculo.ptsPerdedor} pts)</span> vs ${exp1.nombre}`;
+                        desc1 = `<span class="text-green">Victoria (+${calculo.ptsGanador} pts)</span> vs${exp2.nombre}`;
+                        desc2 = `<span class="text-red">Derrota (${calculo.ptsPerdedor} pts)</span> vs${exp1.nombre}`;
                     } else {
                         exp2.pts_ganados += calculo.ptsGanador; exp2.ranking_final += calculo.ptsGanador;
                         exp1.pts_perdidos += calculo.ptsPerdedor; exp1.ranking_final += calculo.ptsPerdedor;
-                        desc2 = `<span class="text-green">Victoria (+${calculo.ptsGanador} pts)</span> vs ${exp1.nombre}`;
-                        desc1 = `<span class="text-red">Derrota (${calculo.ptsPerdedor} pts)</span> vs ${exp2.nombre}`;
+                        desc2 = `<span class="text-green">Victoria (+${calculo.ptsGanador} pts)</span> vs${exp1.nombre}`;
+                        desc1 = `<span class="text-red">Derrota (${calculo.ptsPerdedor} pts)</span> vs${exp2.nombre}`;
                     }
 
                     let faseP = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Llave'));
@@ -2201,68 +2194,4 @@
                 htmlUI += `
                     <div class="expediente-card">
                         <div class="expediente-header">
-                            <div>${e.nombre} <span style="font-size:10px; color:#64748b; font-weight:700;">(${e.club || 'Sin Club'})</span></div>
-                            <div style="text-align:right;">
-                                <div style="color:#fbbf24; font-size:16px;">${e.ranking_final} <span style="font-size:9px; color:#94a3b8;">pts</span></div>
-                                <div style="font-size:10px;">Variación: ${difStr}</div>
-                            </div>
-                        </div>
-                        <table class="memoria-table-dark">
-                            <thead><tr><th>Fase</th><th>Resumen del Partido</th><th style="text-align:center;">Resultado</th></tr></thead>
-                            <tbody>${trs}</tbody>
-                        </table>
-                    </div>
-                `;
-            });
-            
-            preview.innerHTML = htmlUI;
-            preview.classList.remove('hidden');
-        }
-
-        function compartirMemoriaWA() {
-            let urlMemoria = `${window.location.origin}/memoria.html?torneo=${torneoActivoObj.id}`;
-            let texto = `*📊 MEMORIA TÉCNICA Y NUEVOS RANKINGS - ${torneoActivoObj.nombre}*\n\n*Top Movimientos de Ranking:*\n`;
-            let exp = Object.values(dataMemoriaGlobal.jugadoresExpediente).sort((a,b) => (b.ranking_final - b.ranking_inicial) - (a.ranking_final - a.ranking_inicial)).slice(0,10);
-            
-            exp.forEach(e => {
-                let dif = e.ranking_final - e.ranking_inicial;
-                let signo = dif >= 0 ? '+' : '';
-                texto += `👤 ${e.nombre}: ${e.ranking_inicial} ➔ *${e.ranking_final} pts* (${signo}${dif})\n`;
-            });
-            texto += `\n🔗 *Revisa el reporte interactivo completo, llaves y expedientes de todos los jugadores aquí:*\n👉 ${urlMemoria}`;
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
-        }
-
-        async function aplicarRankingPermanente() {
-            if(!dataMemoriaGlobal) { alert("Genera la Memoria Técnica primero."); return; }
-            let confirmar = prompt('⚠️ ACCIÓN IRREVERSIBLE ⚠️\nEsto sobrescribirá el ranking de todos los jugadores en la base de datos oficial.\n\nEscribe "CONFIRMAR" para proceder:');
-            if(confirmar !== 'CONFIRMAR') { alert("Operación cancelada."); return; }
-
-            const btn = document.querySelector('#caja-aplicar-ranking button');
-            btn.innerText = "Guardando en Supabase..."; btn.disabled = true;
-
-            try {
-                let expedientes = Object.values(dataMemoriaGlobal.jugadoresExpediente);
-                for(let i=0; i<expedientes.length; i++) {
-                    let e = expedientes[i];
-                    if(e.ranking_final !== e.ranking_inicial) {
-                        await clienteSupabase.from('jugadores').update({ puntos_ranking_ant: e.ranking_inicial, puntos_ranking: e.ranking_final }).eq('id', e.id).eq('organizador_id', ORG_ID);
-                    }
-                }
-                alert("✅ ¡ÉXITO! Los nuevos rankings han sido guardados en la BD de Jugadores de manera permanente.");
-                
-                document.getElementById('btn-wa-memoria').style.display = 'inline-flex'; 
-                document.getElementById('caja-aplicar-ranking').style.display = 'none';
-                cargarDatosIniciales();
-
-            } catch(e) {
-                alert("❌ Error: " + e.message);
-            } finally {
-                btn.innerText = "🔒 CERRAR TORNEO Y ACTUALIZAR RANKINGS OFICIALES"; btn.disabled = false;
-            }
-        }
-
-        window.onload = cargarDatosIniciales;
-    </script>
-</body>
-</html>
+                            <div>${e.
