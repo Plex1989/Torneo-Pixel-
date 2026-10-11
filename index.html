@@ -470,7 +470,9 @@
                 const esCerrada = categoriasCerradasSet.has(cat.id);
 
                 const progCat = programacionCategoriasNube.find(p => p.categoria_id === cat.id);
-                const estaActiva = progCat ? progCat.activa !== false : true;
+                let estaActiva = true;
+                if (progCat && (progCat.activa === false || progCat.activa === 'false' || progCat.activa === 0)) estaActiva = false;
+                if (cat.activa === false || cat.activa === 'false' || cat.activa === 0) estaActiva = false;
 
                 let permitido = false;
 
