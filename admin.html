@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control - Arbitraje Digital</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
+    <!-- CANDADO DE SEGURIDAD RELAJADO -->
     <script>
         const isAuthLocal = localStorage.getItem('admin_autenticado') === 'true';
         if (!isAuthLocal) {
@@ -27,14 +29,16 @@
 
         .navbar { background: rgba(10, 15, 26, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 100; }
         .nav-title { font-weight: 800; font-size: 15px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
+        
         .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
         .nav-btn { color: #94a3b8; text-decoration: none; padding: 8px 18px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
         .nav-btn:hover { color: #000000; background: #f5a623; border-color: #f5a623; box-shadow: 0 0 25px rgba(245, 166, 35, 0.8); transform: translateY(-2px); }
         .nav-btn.active { color: #ffffff; border-color: #8b5cf6; background: rgba(139, 92, 246, 0.3); box-shadow: 0 0 15px rgba(139, 92, 246, 0.4); }
 
         .main-content { padding: 30px; max-width: 1100px; margin: auto; position: relative; z-index: 10; }
+
         .panel-3d { background: rgba(10, 15, 26, 0.45); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.03); padding: 26px; margin-bottom: 26px; transition: all 0.3s ease; }
-        
+
         .panel-cyan { border-bottom: 5px solid #0e7490; }
         .panel-emerald { border-bottom: 5px solid #064e3b; }
         .panel-amber { border-bottom: 5px solid #451a03; }
@@ -46,7 +50,9 @@
         .panel-orange { border-bottom: 5px solid #ea580c; } 
 
         h2, h3 { color: #ffffff; margin-top: 0; padding-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 20px; }
+        
         .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+        
         select option { background-color: #0a0b10 !important; color: #ffffff !important; padding: 10px; }
         
         .btn-console { display: inline-flex; align-items: center; gap: 8px; padding: 9px 20px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 9999px; color: #f1f5f9; font-size: 11px; font-weight: 700; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; text-decoration: none; }
@@ -98,12 +104,15 @@
 
         .memoria-print-area { display: none; background: #fff !important; color: #000 !important; padding: 40px; font-family: 'Arial', sans-serif; }
         
+        /* ================= CSS EXCLUSIVO PARA IMPRESIÓN DEL RANKING ================= */
         @media print {
             body > *:not(#area-impresion-memoria) { display: none !important; }
             body { background: #ffffff !important; }
             #area-impresion-memoria { display: block !important; }
             .memoria-print-area { display: block !important; padding: 0 !important; }
+            
             .impresion-ranking { font-family: 'Arial', sans-serif !important; color: #0f172a !important; width: 100%; max-width: 850px; margin: 0 auto; }
+            
             .print-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #0f172a; padding-bottom: 15px; margin-bottom: 25px; }
             .print-header-left h2 { margin: 0; font-size: 28px; font-weight: 900; color: #0f172a !important; letter-spacing: -1px; }
             .print-header-left h3 { margin: 0; font-size: 11px; font-weight: 600; color: #475569 !important; text-transform: uppercase; letter-spacing: 1px; }
@@ -111,15 +120,19 @@
             .print-header-center span { font-weight: 700; font-size: 11px; color: #3b82f6 !important; text-transform: uppercase; letter-spacing: 1px; display: block; margin-top: 4px; }
             .print-header-right { text-align: right; font-size: 11px; color: #475569 !important; font-weight: 600; text-transform: uppercase;}
             .print-header-right strong { font-size: 16px; color: #0f172a !important; font-weight: 900; }
+
             .print-cat-wrapper { margin-bottom: 25px; page-break-inside: avoid; }
+            
             .print-table { width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1; font-size: 11px; }
             .print-table th { padding: 8px 10px; text-align: left; font-size: 9px; font-weight: 800; color: #475569 !important; text-transform: uppercase; border-bottom: 2px solid #94a3b8; background: #f8fafc !important; -webkit-print-color-adjust: exact; }
             .print-table td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; color: #0f172a !important; }
+            
             .bg-cat-0 { background-color: #fbbf24 !important; color: #000 !important; -webkit-print-color-adjust: exact; } 
             .bg-cat-1 { background-color: #94a3b8 !important; color: #000 !important; -webkit-print-color-adjust: exact; } 
             .bg-cat-2 { background-color: #d97706 !important; color: #fff !important; -webkit-print-color-adjust: exact; } 
             .bg-cat-3 { background-color: #06b6d4 !important; color: #000 !important; -webkit-print-color-adjust: exact; } 
             .bg-cat-4 { background-color: #a855f7 !important; color: #fff !important; -webkit-print-color-adjust: exact; } 
+            
             .pt-rank { font-weight: 800; color: #64748b !important; text-align: center; }
             .pt-name { font-weight: 800; font-size: 12px; }
             .pt-club { font-size: 9px; font-weight: 700; color: #64748b !important; text-transform: uppercase;}
@@ -131,7 +144,9 @@
             .diff-same { color: #94a3b8 !important; }
         }
 
-        .input-tabla { background: rgba(0, 0, 0, 0.5) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 8px !important; padding: 8px !important; color: #ffffff !important; font-size: 11px !important; outline: none !important; transition: all 0.2s !important; }
+        .input-tabla {
+            background: rgba(0, 0, 0, 0.5) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 8px !important; padding: 8px !important; color: #ffffff !important; font-size: 11px !important; outline: none !important; transition: all 0.2s !important;
+        }
         .input-tabla:focus { border-color: #06b6d4 !important; }
     </style>
 </head>
@@ -183,6 +198,7 @@
                     <label style="display:flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#fff; cursor:pointer;">
                         <input type="radio" name="flash_new_div" value="2" style="accent-color:#eab308;" onchange="toggleVentajaFlashNew()"> Div 2
                     </label>
+                    <!-- CAMPO DE VENTAJA -->
                     <input type="number" id="flash-new-ventaja" placeholder="Pts ventaja" class="input-tabla" style="width: 80px; display: none; margin-left: auto;" value="5">
                 </div>
             </div>
@@ -191,7 +207,7 @@
         </div>
     </div>
 
-    <!-- MODAL RANKING WEB -->
+    <!-- MODAL RANKING WEB (UNA FILA COMPACTA CON COLORES) -->
     <div id="modal-ranking-global" class="modal-overlay" style="display: none;">
         <div class="modal-card modal-card-ranking" style="padding: 0; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column;">
             <div style="padding: 16px 24px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 20;">
@@ -293,12 +309,13 @@
                 <div>Confirmados: <strong id="cant-pagados" style="color:#34d399; font-size: 14px; margin-left: 6px;">0</strong></div>
             </div>
             <table>
+                <!-- NUEVO: Agregada la columna de División / Hándicap -->
                 <thead><tr><th>Jugador</th><th>Club</th><th>Categoría Registrada</th><th>División / Hándicap</th><th>Estatus Pago</th><th style="width: 140px;">Acción</th></tr></thead>
                 <tbody id="tabla-inscritos-vivo"><tr><td colspan="6" class="mensaje-vacio">Cargando inscritos...</td></tr></tbody>
             </table>
         </div>
 
-        <!-- MÓDULO NUEVO: INSCRIPCIÓN EXPRÉS -->
+        <!-- MÓDULO NUEVO: INSCRIPCIÓN EXPRÉS (LIGA FLASH) -->
         <div class="panel-3d panel-orange">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; margin-bottom: 18px;">
                 <h2 style="border:none; margin:0; padding:0; color:#fbbf24;">⚡ Inscripción Exprés (Liga Flash y Presencial)</h2>
@@ -395,6 +412,7 @@
                 </div>
             </div>
 
+            <!-- CONTENEDOR RANKING OCULTO (Para generación de código de impresión) -->
             <div id="contenedor-ranking-categorias" style="display:none;"></div>
         </div>
 
@@ -488,16 +506,6 @@
     <div id="area-impresion-memoria" class="memoria-print-area"></div>
 
     <script>
-        function toggleVentajaFlashNew() {
-            const div2 = document.querySelector('input[name="flash_new_div"][value="2"]').checked;
-            document.getElementById('flash-new-ventaja').style.display = div2 ? 'block' : 'none';
-        }
-
-        function toggleVentajaRow(jugadorId) {
-            const isDiv2 = document.querySelector(`input[name="div_flash_${jugadorId}"][value="2"]`).checked;
-            document.getElementById(`ventaja_flash_${jugadorId}`).style.display = isDiv2 ? 'block' : 'none';
-        }
-
         // ================= FUNCIÓN GLOBAL PARA ACTUALIZAR DIVISIÓN Y HANDICAP =================
         async function actualizarDivHandicap(jugadorId, prefix) {
             const divNode = document.querySelector(`input[name="div_${prefix}_${jugadorId}"]:checked`);
@@ -512,28 +520,14 @@
             const ventaja = div === 2 ? (parseInt(inputVentaja ? inputVentaja.value : 0) || 0) : 0;
 
             try {
-                // Actualiza en BD - CON ALERTA DE ERROR SI FALLA POR CACHÉ
-                const { error } = await clienteSupabase.from('jugadores').update({ division: div, handicap: ventaja }).eq('id', jugadorId);
-                
-                if (error) {
-                    console.error("Error BD:", error);
-                    alert("⚠️ Error al guardar en la Base de Datos. Supabase no reconoció las columnas. Realiza el truco del Table Editor (eliminar columna prueba) para refrescar la caché.");
-                    return;
-                }
+                // Actualiza en BD
+                await clienteSupabase.from('jugadores').update({ division: div, handicap: ventaja }).eq('id', jugadorId);
                 
                 // Actualiza memoria local
                 const jIndex = todosLosJugadoresAdmin.findIndex(x => x.id === jugadorId);
                 if(jIndex > -1) {
                     todosLosJugadoresAdmin[jIndex].division = div;
                     todosLosJugadoresAdmin[jIndex].handicap = ventaja;
-                }
-
-                // Dar feedback visual sin recargar la página
-                const fila = divNode.closest('tr');
-                if(fila) {
-                    const bgOriginal = fila.style.background;
-                    fila.style.background = 'rgba(16, 185, 129, 0.4)'; // Brillo verde más fuerte
-                    setTimeout(() => { fila.style.background = bgOriginal; }, 500);
                 }
 
                 // Sincronizar la otra tabla si el jugador aparece en ambas
@@ -548,6 +542,16 @@
             } catch (err) {
                 console.error("Error al guardar división/handicap:", err);
             }
+        }
+
+        function toggleVentajaFlashNew() {
+            const div2 = document.querySelector('input[name="flash_new_div"][value="2"]').checked;
+            document.getElementById('flash-new-ventaja').style.display = div2 ? 'block' : 'none';
+        }
+
+        function toggleVentajaRow(jugadorId) {
+            const isDiv2 = document.querySelector(`input[name="div_flash_${jugadorId}"][value="2"]`).checked;
+            document.getElementById(`ventaja_flash_${jugadorId}`).style.display = isDiv2 ? 'block' : 'none';
         }
 
         // ================= FUNCIÓN GLOBAL PARA QUITAR ACENTOS =================
@@ -680,7 +684,7 @@
             if(!tbody) return;
             tbody.innerHTML = '';
             
-            let jugadoresOrdenados = [...todosLosJugadoresAdmin].sort((a,b) => a.nombre.localeCompare(b.nombre));
+            let jugadoresOrdenados = [...todosLosJugadoresAdmin].sort((a,b) => (a.nombre || "").localeCompare(b.nombre || ""));
 
             jugadoresOrdenados.forEach(j => {
                 let divGuardada = j.division || 1;
@@ -745,7 +749,7 @@
             let inscripcionesNuevas = [];
 
             try {
-                // CORREGIDO: SE GUARDAN LAS DIVISIONES DIRECTAMENTE A SUPABASE AQUÍ
+                // Guardar divisiones directamente en base de datos al inscribir
                 for (let chk of checkboxes) {
                     let jId = chk.value;
                     let divSel = parseInt(document.querySelector(`input[name="div_flash_${jId}"]:checked`).value);
@@ -1556,15 +1560,14 @@
 
         async function cargarInscritosEnVivo() {
             try {
-                // VOLVEMOS AL CÓDIGO ORIGINAL QUE TÚ ME PASASTE QUE SÍ FUNCIONABA
-                // Le pasamos la fusión manualmente en el array para evitar el bug de Supabase
+                // Recuperamos tu consulta original que SÍ funciona bien con Supabase
                 const { data, error } = await clienteSupabase
                     .from('inscripciones')
                     .select(`id, categoria_id, estatus_pago, jugadores ( id, nombre, club, puntos_ranking ), categorias ( id, nombre )`)
                     .eq('torneo_id', idTorneoActivo);
                 
                 if (error) {
-                    console.error("Error Supabase:", error);
+                    console.error("Error Supabase cargando inscritos:", error);
                     return;
                 }
 
@@ -1623,11 +1626,10 @@
                         todasLasCategoriasAdmin.forEach(c => { selectCatHtml += `<option value="${c.id}" ${c.id === ins.categoria_id ? 'selected' : ''}>${c.nombre}</option>`; });
                         selectCatHtml += `</select>`;
 
-                        // MAGIA: Sacamos la división y el hándicap de la lista global de jugadores 
-                        // que cargamos al principio (donde usamos select('*'))
-                        let jListObj = todosLosJugadoresAdmin.find(x => x.id === ins.jugadores.id);
-                        let div = jListObj ? (jListObj.division || 1) : 1;
-                        let handicap = jListObj && jListObj.handicap !== undefined && jListObj.handicap !== null ? jListObj.handicap : 5;
+                        // MAGIA INTERNA: Sacamos división y hándicap del arreglo de jugadores inicial para que nunca se cuelgue Supabase
+                        let jGlobal = todosLosJugadoresAdmin.find(j => j.id === ins.jugadores.id);
+                        let div = jGlobal ? (jGlobal.division || 1) : 1;
+                        let handicap = jGlobal && jGlobal.handicap !== undefined && jGlobal.handicap !== null ? jGlobal.handicap : 5;
 
                         tbody.innerHTML += `
                             <tr>
@@ -1911,4 +1913,121 @@
 
             const texto = quitarAcentos(inputEl.value.toLowerCase().trim());
             select.innerHTML = '<option value="">-- Nuevo Jugador (Modo Crear) --</option>';
-            const filtrados = todosLosJugadoresAdmin.filter(j => j.nombre && quitarAcentos(j.nombre
+            const filtrados = todosLosJugadoresAdmin.filter(j => j.nombre && quitarAcentos(j.nombre.toLowerCase()).includes(texto));
+            filtrados.forEach(j => { let opt = document.createElement('option'); opt.value = j.id; opt.textContent = `${j.nombre} [${j.club || 'Sin Club'}] (${j.puntos_ranking} pts)`; select.appendChild(opt); });
+            if (texto.length > 0 && filtrados.length > 0) { select.value = filtrados[0].id; cargarDatosJugadorEditar(); }
+            else if (texto.length === 0) resetFormularioJugador();
+        }
+
+        function cargarDatosJugadorEditar() {
+            const idSel = document.getElementById('select-jugador-admin').value;
+            if (!idSel) { resetFormularioJugador(); return; }
+            const j = todosLosJugadoresAdmin.find(item => item.id == idSel);
+            if (j) {
+                document.getElementById('nuevo-nombre').value = j.nombre; document.getElementById('nuevo-club').value = j.club || 'Sin Club';
+                document.getElementById('nuevo-ranking-ant').value = j.puntos_ranking_ant || 0;
+                document.getElementById('nuevo-ranking').value = j.puntos_ranking || 0; 
+                document.getElementById('nuevo-nip').value = j.nip_seguridad || '1234';
+                document.getElementById('titulo-modo-jugador').innerText = `✏️ Editando a: ${j.nombre}`;
+                const btnGuardar = document.getElementById('btn-guardar-jugador'); btnGuardar.innerText = "Actualizar Cambios"; btnGuardar.className = "btn-console btn-green";
+                document.getElementById('btn-eliminar-jugador').style.display = "inline-flex"; document.getElementById('btn-cancelar-jugador').style.display = "inline-flex";
+            }
+        }
+
+        function resetFormularioJugador() {
+            document.getElementById('select-jugador-admin').value = ""; document.getElementById('nuevo-nombre').value = ""; document.getElementById('nuevo-club').value = "Sin Club";
+            document.getElementById('nuevo-ranking-ant').value = "0"; document.getElementById('nuevo-ranking').value = ""; document.getElementById('nuevo-nip').value = "1234";
+            document.getElementById('titulo-modo-jugador').innerText = "➕ Registrando Nuevo Jugador";
+            const btnGuardar = document.getElementById('btn-guardar-jugador'); btnGuardar.innerText = "Crear Jugador"; btnGuardar.className = "btn-console btn-gold";
+            document.getElementById('btn-eliminar-jugador').style.display = "none"; document.getElementById('btn-cancelar-jugador').style.display = "none";
+        }
+
+        async function guardarJugador() {
+            const idSel = document.getElementById('select-jugador-admin').value; const nombre = document.getElementById('nuevo-nombre').value.toUpperCase().trim();
+            const club = document.getElementById('nuevo-club').value; const puntos = document.getElementById('nuevo-ranking').value;
+            const puntosAnt = document.getElementById('nuevo-ranking-ant').value || 0;
+            const nip = document.getElementById('nuevo-nip').value.trim() || '1234';
+            if (!nombre || !puntos) return;
+            if (idSel) { await clienteSupabase.from('jugadores').update({ nombre: nombre, club: club, puntos_ranking_ant: parseInt(puntosAnt), puntos_ranking: parseInt(puntos), nip_seguridad: nip }).eq('id', idSel).eq('organizador_id', ORG_ID); } 
+            else { await clienteSupabase.from('jugadores').insert([{ nombre: nombre, club: club, puntos_ranking_ant: parseInt(puntosAnt), puntos_ranking: parseInt(puntos), nip_seguridad: nip, organizador_id: ORG_ID }]); }
+            document.getElementById('buscador-jugador').value = ''; resetFormularioJugador(); cargarDatosIniciales();
+        }
+
+        async function eliminarJugador() {
+            const idSel = document.getElementById('select-jugador-admin').value; if (!idSel) return;
+            const j = todosLosJugadoresAdmin.find(item => item.id == idSel); if (!j) return;
+            if (!confirm(`⚠️ ¿Eliminar a "${j.nombre}" de la BD?`)) return;
+            await clienteSupabase.from('inscripciones').delete().eq('jugador_id', idSel).eq('organizador_id', ORG_ID);
+            await clienteSupabase.from('jugadores').delete().eq('id', idSel).eq('organizador_id', ORG_ID);
+            alert(`✅ Eliminado.`); document.getElementById('buscador-jugador').value = ''; resetFormularioJugador(); cargarDatosIniciales();
+        }
+
+        function exportarExcel() {
+            let csv = 'Posicion,Jugador,Club,Ranking_Anterior,Ranking_Actual,Categoria\n';
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
+            categoriasFuerza.forEach(cat => {
+                const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos);
+                jugadoresCat.forEach((j, idx) => { csv += `${idx + 1},"${j.nombre}","${j.club || 'Sin Club'}",${j.puntos_ranking_ant || 0},${j.puntos_ranking},"${cat.nombre}"\n`; });
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(blob)); link.setAttribute("download", `Ranking_Oficial_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        function compartirRankingWhatsApp() {
+            let textoWS = `🏓 *RANKING OFICIAL DE JUGADORES* 🏓\n\n`;
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
+            categoriasFuerza.forEach(cat => {
+                const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos);
+                if (jugadoresCat.length > 0) {
+                    textoWS += `🏆 *${cat.nombre.toUpperCase()}*\n`;
+                    jugadoresCat.forEach((j, idx) => { 
+                        let diff = j.puntos_ranking - (j.puntos_ranking_ant || 0);
+                        let flecha = diff > 0 ? ` (+${diff})` : (diff < 0 ? ` (${diff})` : '');
+                        textoWS += `${idx + 1}. *${j.nombre}* (${j.puntos_ranking} pts${flecha}) - _${j.club || 'Sin Club'}_\n`; 
+                    });
+                    textoWS += `\n`;
+                }
+            });
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWS)}`, '_blank');
+        }
+
+        async function cargarCategoriasAdminView() {
+            const tbody = document.getElementById('tabla-categorias');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            if (!todasLasCategoriasAdmin || todasLasCategoriasAdmin.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="mensaje-vacio">No hay categorías.</td></tr>';
+                return;
+            }
+            todasLasCategoriasAdmin.forEach(cat => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong style="color:#ffffff; font-size:12px;">${cat.nombre}</strong></td>
+                        <td>
+                            <input type="number" id="cat-min-${cat.id}" class="input-tabla w-20 text-center" value="${cat.puntos_minimos}"> pts
+                        </td>
+                        <td>
+                            <input type="number" id="cat-max-${cat.id}" class="input-tabla w-20 text-center" value="${cat.puntos_maximos}"> pts
+                        </td>
+                        <td>
+                            $<input type="number" id="cat-precio-${cat.id}" class="input-tabla w-20 text-center" value="${cat.costo_inscripcion || 200}">
+                        </td>
+                        <td>
+                            <button class="btn-console btn-pink" style="padding:4px 10px; font-size:9px;" onclick="actualizarCategoria(${cat.id})">Guardar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function actualizarCategoria(id) {
+            const min = document.getElementById(`cat-min-${id}`).value; const max = document.getElementById(`cat-max-${id}`).value; const costo = document.getElementById(`cat-precio-${id}`).value;
+            let objUpdate = { puntos_minimos: parseInt(min), puntos_maximos: parseInt(max) }; if (costo) objUpdate.costo_inscripcion = parseFloat(costo);
+            await clienteSupabase.from('categorias').update(objUpdate).eq('id', id).eq('organizador_id', ORG_ID); cargarDatosIniciales();
+        }
+
+        async function crearCategoria() {
+            const nombre = document.getElementById('nueva-cat-nombre').value.trim(); const min = document.getElementById('nueva-cat-min').value; const max = document.getElementById('nueva-cat-max').value; const costo = document.getElementById('nueva-cat-precio').value;
+            if (!nombre || !min || !max) return;
+            let objInsert = { nombre: nombre, puntos_minimos: parseInt(min), puntos_maximos: parseInt(max), organizador_id: ORG_ID }; if (costo) objInsert.costo_inscripcion = parseFloat(
