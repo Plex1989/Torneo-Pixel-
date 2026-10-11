@@ -235,7 +235,8 @@
                 { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.5)', text: '#fbbf24' },
                 { bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.5)', text: '#38bdf8' },
                 { bg: 'rgba(217, 70, 239, 0.15)', border: 'rgba(217, 70, 239, 0.5)', text: '#f0abfc' },
-                { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.5)', text: '#34d399' }
+                { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.5)', text: '#34d399' },
+                { bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.5)', text: '#c084fc' }
             ];
             return paleta[(catId || 0) % paleta.length];
         };
@@ -911,7 +912,7 @@
                         }
                     }
 
-                    let etiqGpo = isFlash ? 'Liga Continua' : (p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Fase Final'));
+                    let etiqGpo = isFlash ? 'Liga Continua' : (p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Eliminatoria Directa'));
 
                     let safeNom1 = nomJ1 ? String(nomJ1).replace(/'/g, "\\'") : '';
                     let safeClub1 = p.j1 && p.j1.club ? String(p.j1.club).replace(/'/g, "\\'") : 'Sin Club';
@@ -1196,41 +1197,87 @@
 
             if (catsList.length === 0) return;
 
-            const partidosLlaveBD = todosLosPartidos.filter(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && (String(p.ronda_fase || '').toLowerCase().includes('cruce') || String(p.ronda_fase || '').toLowerCase().includes('semifinal') || String(p.ronda_fase || '').toLowerCase().includes('final')));
+            const partidosLlaveBD = todosLosPartidos.filter(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && (String(p.ronda_fase || '').toLowerCase().includes('cuarto') || String(p.ronda_fase || '').toLowerCase().includes('cruce') || String(p.ronda_fase || '').toLowerCase().includes('semifinal') || String(p.ronda_fase || '').toLowerCase().includes('final')));
 
             catsList.forEach(catNombre => {
                 const gruposCat = standings[catNombre] || {};
+                
+                // Extraer hasta 4 grupos
                 const gpoA_arr = gruposCat['A'] ? ordenarJugadoresITTF(Object.values(gruposCat['A'])) : [];
                 const gpoB_arr = gruposCat['B'] ? ordenarJugadoresITTF(Object.values(gruposCat['B'])) : [];
+                const gpoC_arr = gruposCat['C'] ? ordenarJugadoresITTF(Object.values(gruposCat['C'])) : [];
+                const gpoD_arr = gruposCat['D'] ? ordenarJugadoresITTF(Object.values(gruposCat['D'])) : [];
 
                 const primeroA = getPosNombre(gpoA_arr, 0, '1° Grupo A');
                 const segundoA = getPosNombre(gpoA_arr, 1, '2° Grupo A');
                 const primeroB = getPosNombre(gpoB_arr, 0, '1° Grupo B');
                 const segundoB = getPosNombre(gpoB_arr, 1, '2° Grupo B');
+                const primeroC = getPosNombre(gpoC_arr, 0, '1° Grupo C');
+                const segundoC = getPosNombre(gpoC_arr, 1, '2° Grupo C');
+                const primeroD = getPosNombre(gpoD_arr, 0, '1° Grupo D');
+                const segundoD = getPosNombre(gpoD_arr, 1, '2° Grupo D');
 
                 const partidosCatGpo = todosLosPartidos.filter(p => p.grupo_nombre && p.grupo_nombre !== 'Flash' && p.categorias?.nombre === catNombre);
                 const totalGpo = partidosCatGpo.length;
                 const finGpo = partidosCatGpo.filter(p => String(p.estado || '').trim().toLowerCase() === 'finalizado').length;
                 const gpoCompleto = totalGpo > 0 && totalGpo === finGpo;
 
+                // Buscar Cuartos
+                const pCuartos1 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('1'));
+                const pCuartos2 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('2'));
+                const pCuartos3 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('3'));
+                const pCuartos4 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('4'));
+
+                // Buscar Semis y Final
                 const partidoSemi1 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('1') || String(p.ronda_fase || '').toLowerCase().includes('cruce 1')));
                 const partidoSemi2 = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('2') || String(p.ronda_fase || '').toLowerCase().includes('cruce 2')));
                 const partidoFinal = partidosLlaveBD.find(p => p.categorias?.nombre === catNombre && String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi'));
 
-                if(!partidoSemi1 && !partidoSemi2 && !partidoFinal) return;
+                if(!pCuartos1 && !partidoSemi1 && !partidoSemi2 && !partidoFinal) return;
 
-                let nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : primeroA;
-                let nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : segundoB;
+                let hayCuartos = pCuartos1 || pCuartos2 || pCuartos3 || pCuartos4;
 
-                let nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : primeroB;
-                let nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : segundoA;
+                // Nombres Cuartos
+                let nomC1_j1 = pCuartos1?.j1 ? pCuartos1.j1.nombre : primeroA;
+                let nomC1_j2 = pCuartos1?.j2 ? pCuartos1.j2.nombre : segundoC;
+                let nomC2_j1 = pCuartos2?.j1 ? pCuartos2.j1.nombre : primeroB;
+                let nomC2_j2 = pCuartos2?.j2 ? pCuartos2.j2.nombre : segundoD;
+                let nomC3_j1 = pCuartos3?.j1 ? pCuartos3.j1.nombre : primeroC;
+                let nomC3_j2 = pCuartos3?.j2 ? pCuartos3.j2.nombre : segundoA;
+                let nomC4_j1 = pCuartos4?.j1 ? pCuartos4.j1.nombre : primeroD;
+                let nomC4_j2 = pCuartos4?.j2 ? pCuartos4.j2.nombre : segundoB;
 
-                let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Ganador Semi 1');
-                let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Ganador Semi 2');
+                // Nombres Semis (dinámico si hay cuartos)
+                let nomSemi1_j1, nomSemi1_j2, nomSemi2_j1, nomSemi2_j2;
+                if (hayCuartos) {
+                    nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : (pCuartos1?.ganador_id ? (pCuartos1.ganador_id === pCuartos1.jugador1_id ? nomC1_j1 : nomC1_j2) : 'Gana Cuartos 1');
+                    nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : (pCuartos2?.ganador_id ? (pCuartos2.ganador_id === pCuartos2.jugador1_id ? nomC2_j1 : nomC2_j2) : 'Gana Cuartos 2');
+                    nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : (pCuartos3?.ganador_id ? (pCuartos3.ganador_id === pCuartos3.jugador1_id ? nomC3_j1 : nomC3_j2) : 'Gana Cuartos 3');
+                    nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : (pCuartos4?.ganador_id ? (pCuartos4.ganador_id === pCuartos4.jugador1_id ? nomC4_j1 : nomC4_j2) : 'Gana Cuartos 4');
+                } else {
+                    nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : primeroA;
+                    nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : segundoB;
+                    nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : primeroB;
+                    nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : segundoA;
+                }
 
-                let cardS1 = generarTarjetaLlaveEspectador(partidoSemi1, 'Semifinal 1', '#38bdf8', 1, nomSemi1_j1, nomSemi1_j2, '1° Gpo A', '2° Gpo B', 'rgba(6,182,212,0.2); color:#38bdf8;');
-                let cardS2 = generarTarjetaLlaveEspectador(partidoSemi2, 'Semifinal 2', '#f0abfc', 2, nomSemi2_j1, nomSemi2_j2, '1° Gpo B', '2° Gpo A', 'rgba(6,182,212,0.2); color:#38bdf8;');
-                let cardFinal = generarTarjetaLlaveEspectador(partidoFinal, 'Gran Final', '#fbbf24', 1, nomFinal_j1, nomFinal_j2, 'Gana Semi 1', 'Gana Semi 2', 'rgba(217,70,239,0.2); color:#d946ef;');
+                let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Gana Semi 1');
+                let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Gana Semi 2');
+
+                // Función auxiliar para dibujar tarjetas dependiendo del archivo (mesas vs espectador)
+                const fnTarjeta = typeof generarTarjetaLlaveEspectador === 'function' ? generarTarjetaLlaveEspectador : generarTarjetaLlave;
+
+                let cardsHtml = '';
+                if (hayCuartos) {
+                    cardsHtml += fnTarjeta(pCuartos1, 'Cuartos 1', '#10b981', 1, nomC1_j1, nomC1_j2, '1° Gpo A', '2° Gpo C', 'rgba(16,185,129,0.2); color:#10b981;');
+                    cardsHtml += fnTarjeta(pCuartos2, 'Cuartos 2', '#10b981', 2, nomC2_j1, nomC2_j2, '1° Gpo B', '2° Gpo D', 'rgba(16,185,129,0.2); color:#10b981;');
+                    cardsHtml += fnTarjeta(pCuartos3, 'Cuartos 3', '#10b981', 3, nomC3_j1, nomC3_j2, '1° Gpo C', '2° Gpo A', 'rgba(16,185,129,0.2); color:#10b981;');
+                    cardsHtml += fnTarjeta(pCuartos4, 'Cuartos 4', '#10b981', 4, nomC4_j1, nomC4_j2, '1° Gpo D', '2° Gpo B', 'rgba(16,185,129,0.2); color:#10b981;');
+                }
+                
+                cardsHtml += fnTarjeta(partidoSemi1, 'Semifinal 1', '#38bdf8', 1, nomSemi1_j1, nomSemi1_j2, hayCuartos ? 'Gana C1' : '1° Gpo A', hayCuartos ? 'Gana C2' : '2° Gpo B', 'rgba(6,182,212,0.2); color:#38bdf8;');
+                cardsHtml += fnTarjeta(partidoSemi2, 'Semifinal 2', '#f0abfc', 2, nomSemi2_j1, nomSemi2_j2, hayCuartos ? 'Gana C3' : '1° Gpo B', hayCuartos ? 'Gana C4' : '2° Gpo A', 'rgba(6,182,212,0.2); color:#38bdf8;');
+                cardsHtml += fnTarjeta(partidoFinal, 'Gran Final', '#fbbf24', 1, nomFinal_j1, nomFinal_j2, 'Gana Semi 1', 'Gana Semi 2', 'rgba(217,70,239,0.2); color:#d946ef;');
 
                 container.innerHTML += `
                     <div class="seccion-llaves-footer">
@@ -1250,9 +1297,7 @@
                         `}
 
                         <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
-                            ${cardS1}
-                            ${cardS2}
-                            ${cardFinal}
+                            ${cardsHtml}
                         </div>
                     </div>
                 `;
