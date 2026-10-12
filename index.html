@@ -284,6 +284,12 @@
         let programacionCategoriasNube = [];
         let categoriasCerradasSet = new Set(); 
 
+        // ================= FUNCIÓN GLOBAL PARA QUITAR ACENTOS =================
+        function quitarAcentos(str) {
+            if (!str) return "";
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
         async function inicializar() {
             const urlParams = new URLSearchParams(window.location.search);
             const idParam = urlParams.get('torneo');
@@ -387,11 +393,17 @@
         }
 
         function filtrarJugadores() {
-            const texto = document.getElementById('buscador').value.toLowerCase();
+            const textoOriginal = document.getElementById('buscador').value;
+            const textoLimpio = quitarAcentos(textoOriginal.toLowerCase());
+            
             const selectJugador = document.getElementById('select-jugador');
             selectJugador.innerHTML = '';
             
-            const filtrados = todosLosJugadores.filter(j => j.nombre.toLowerCase().includes(texto));
+            const filtrados = todosLosJugadores.filter(j => {
+                const nombreLimpio = quitarAcentos(j.nombre.toLowerCase());
+                return nombreLimpio.includes(textoLimpio);
+            });
+            
             if (filtrados.length === 0) {
                 selectJugador.innerHTML = '<option value="" disabled>No se encontraron jugadores</option>';
             } else {
