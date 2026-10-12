@@ -34,8 +34,8 @@
         @media (max-width: 768px) { .form-row { grid-template-columns: 1fr; } }
         
         .input-group label { display: block; font-size: 9px; color: #38bdf8; font-weight: 800; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px; }
-        input[type="text"], input[type="number"], input[type="date"], input[type="password"] { width: 100%; padding: 12px 14px; border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(10, 15, 26, 0.85); color: #ffffff; border-radius: 10px; font-size: 12px; font-family: 'Sora', sans-serif; font-weight: 600; box-sizing: border-box; outline: none; transition: all 0.3s; }
-        input:focus { border-color: #38bdf8; box-shadow: 0 0 16px rgba(56, 189, 248, 0.55); }
+        input[type="text"]:not(.login-input), input[type="number"], input[type="date"], input[type="password"]:not(.login-input) { width: 100%; padding: 12px 14px; border: 1px solid rgba(255, 255, 255, 0.18); background: rgba(10, 15, 26, 0.85); color: #ffffff; border-radius: 10px; font-size: 12px; font-family: 'Sora', sans-serif; font-weight: 600; box-sizing: border-box; outline: none; transition: all 0.3s; }
+        input[type="text"]:not(.login-input):focus, input[type="number"]:focus, input[type="date"]:focus, input[type="password"]:not(.login-input):focus { border-color: #38bdf8; box-shadow: 0 0 16px rgba(56, 189, 248, 0.55); }
 
         .btn-console { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 24px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 9999px; color: #f1f5f9; font-size: 11px; font-weight: 800; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; text-decoration: none; letter-spacing: 1px; }
         .btn-gold { background: #f59e0b; color: #000; border-color: #fbbf24; }
@@ -91,32 +91,32 @@
 
     <div class="main-content">
 
-        <!-- MÓDULO DE LOGIN SÚPER PROFESIONAL REDISEÑADO CON LOGO FLOTANTE NEÓN -->
-        <div id="panel-login" class="panel-3d" style="border: 1px solid rgba(56, 189, 248, 0.4); border-top: 5px solid #38bdf8; text-align: center; max-width: 420px; margin: 90px auto; display: none; background: linear-gradient(145deg, rgba(15,23,42,0.95) 0%, rgba(4,6,10,0.98) 100%); box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 20px rgba(56, 189, 248, 0.15);">
+        <!-- MÓDULO DE LOGIN CONTRASTE FUEGO Y HIELO (Rojo/Azul) -->
+        <div id="panel-login" class="panel-3d" style="border: 1px solid rgba(239, 68, 68, 0.3); border-top: 5px solid #ef4444; text-align: center; max-width: 420px; margin: 60px auto; padding: 40px 30px; display: none; background: linear-gradient(145deg, rgba(15,23,42,0.95) 0%, rgba(4,6,10,0.98) 100%); box-shadow: 0 20px 40px rgba(0,0,0,0.8), 0 0 30px rgba(239, 68, 68, 0.15);">
             
-            <!-- EL LOGO ILUMINADO EXACTAMENTE COMO EN INDEX -->
-            <img src="logo.png" alt="Pixel Studio Logo" style="width: 150px; max-width: 80%; display: block; margin: -80px auto 20px auto; filter: drop-shadow(0 0 35px rgba(56, 189, 248, 0.85)); position: relative; z-index: 10;">
+            <!-- EL LOGO ILUMINADO (Completamente adentro y más grande) -->
+            <img src="logo.png" alt="Pixel Studio Logo" style="width: 190px; max-width: 90%; display: block; margin: 0 auto 30px auto; filter: drop-shadow(0 0 40px rgba(6, 182, 212, 0.95)); position: relative; z-index: 10;">
 
             <h2 style="border:none; margin-bottom:5px; color:#ffffff; font-size:18px; letter-spacing: 2px;">INICIAR SESIÓN</h2>
             <p style="font-size: 11px; color: #94a3b8; margin-bottom: 30px; line-height: 1.5;">Portal Administrativo de Torneos<br>Por favor, ingresa tus credenciales.</p>
             
             <div style="text-align: left; margin-bottom: 18px;">
-                <label style="display: block; font-size: 9px; color: #38bdf8; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;"><i class="fa-solid fa-at mr-1"></i> Nombre de Usuario</label>
+                <label style="display: block; font-size: 9px; color: #f87171; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;"><i class="fa-solid fa-at mr-1"></i> Nombre de Usuario</label>
                 <div style="position: relative;">
-                    <i class="fa-solid fa-user" style="position: absolute; left: 16px; top: 16px; color: #64748b;"></i>
-                    <input type="text" id="admin-user" placeholder="Ej: admin o saul66" style="width: 100%; padding: 14px 14px 14px 42px; text-align: left; font-size: 14px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; transition: all 0.3s;" onkeypress="if(event.key === 'Enter') document.getElementById('admin-pass').focus()">
+                    <i class="fa-solid fa-user" style="position: absolute; left: 16px; top: 16px; color: #ef4444;"></i>
+                    <input type="text" id="admin-user" class="login-input" placeholder="Ej: admin o saul66" style="width: 100%; padding: 14px 14px 14px 42px; text-align: left; font-size: 14px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; transition: all 0.3s; color: white; outline: none;" onfocus="this.style.borderColor='#ef4444'; this.style.boxShadow='0 0 15px rgba(239, 68, 68, 0.4)';" onblur="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.boxShadow='none';" onkeypress="if(event.key === 'Enter') document.getElementById('admin-pass').focus()">
                 </div>
             </div>
             
             <div style="text-align: left; margin-bottom: 35px;">
-                <label style="display: block; font-size: 9px; color: #38bdf8; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;"><i class="fa-solid fa-key mr-1"></i> Contraseña</label>
+                <label style="display: block; font-size: 9px; color: #f87171; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;"><i class="fa-solid fa-key mr-1"></i> Contraseña</label>
                 <div style="position: relative;">
-                    <i class="fa-solid fa-lock" style="position: absolute; left: 16px; top: 16px; color: #64748b;"></i>
-                    <input type="password" id="admin-pass" placeholder="••••••••" style="width: 100%; padding: 14px 14px 14px 42px; text-align: left; font-size: 16px; letter-spacing: 4px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; transition: all 0.3s;" onkeypress="if(event.key === 'Enter') loginAdmin()">
+                    <i class="fa-solid fa-lock" style="position: absolute; left: 16px; top: 16px; color: #ef4444;"></i>
+                    <input type="password" id="admin-pass" class="login-input" placeholder="••••••••" style="width: 100%; padding: 14px 14px 14px 42px; text-align: left; font-size: 16px; letter-spacing: 4px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; transition: all 0.3s; color: white; outline: none;" onfocus="this.style.borderColor='#ef4444'; this.style.boxShadow='0 0 15px rgba(239, 68, 68, 0.4)';" onblur="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.boxShadow='none';" onkeypress="if(event.key === 'Enter') loginAdmin()">
                 </div>
             </div>
             
-            <button class="btn-console" style="width: 100%; justify-content: center; background: #38bdf8; color: #000; border-color: #0ea5e9; font-size:13px; padding: 14px; box-shadow: 0 0 20px rgba(56, 189, 248, 0.4); text-transform: uppercase; font-weight: 900; letter-spacing: 1px;" onclick="loginAdmin()">ACCEDER AL SISTEMA <i class="fa-solid fa-arrow-right-to-bracket ml-2"></i></button>
+            <button class="btn-console" style="width: 100%; justify-content: center; background: #ef4444; color: #ffffff; border-color: #dc2626; font-size:13px; padding: 14px; box-shadow: 0 0 20px rgba(239, 68, 68, 0.5); text-transform: uppercase; font-weight: 900; letter-spacing: 1px;" onmouseover="this.style.backgroundColor='#dc2626'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#ef4444'; this.style.transform='none';" onclick="loginAdmin()">ACCEDER AL SISTEMA <i class="fa-solid fa-arrow-right-to-bracket ml-2"></i></button>
         </div>
 
         <!-- MÓDULOS DEL SISTEMA -->
