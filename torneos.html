@@ -91,12 +91,16 @@
 
     <div class="main-content">
 
-        <!-- MÓDULO DE LOGIN -->
+        <!-- MÓDULO DE LOGIN (ACTUALIZADO A 2 CAMPOS) -->
         <div id="panel-login" class="panel-3d" style="border-bottom: 5px solid #ef4444; text-align: center; max-width: 450px; margin: 40px auto; display: none;">
             <i class="fa-solid fa-shield-halved" style="font-size: 40px; color: #ef4444; margin-bottom: 15px;"></i>
             <h2 style="border:none; margin-bottom:5px;">ACCESO RESTRINGIDO</h2>
-            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 25px;">Ingrese la clave de administrador para acceder a la gestión de torneos.</p>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 25px;">Ingrese su usuario y clave de administrador para acceder a la gestión de torneos.</p>
+            
+            <input type="text" id="admin-user" placeholder="Usuario" style="width: 100%; margin-bottom: 15px; text-align: center; font-size: 14px;" onkeypress="if(event.key === 'Enter') document.getElementById('admin-pass').focus()">
+            
             <input type="password" id="admin-pass" placeholder="Clave de acceso" style="width: 100%; margin-bottom: 20px; text-align: center; font-size: 16px; letter-spacing: 3px;" onkeypress="if(event.key === 'Enter') loginAdmin()">
+            
             <button class="btn-console btn-red" style="width: 100%; justify-content: center;" onclick="loginAdmin()">ENTRAR AL SISTEMA</button>
         </div>
 
@@ -192,7 +196,6 @@
 
         // VERIFICAR SESIÓN ACTIVA AL INICIAR
         window.onload = () => {
-            // Leer la cookie o localstorage para ver si el usuario ya inició sesión
             const authCookie = document.cookie.split('; ').find(row => row.startsWith('admin_autenticado='))?.split('=')[1] === 'true';
             const orgCookie = document.cookie.split('; ').find(row => row.startsWith('organizador_id='))?.split('=')[1];
             
@@ -202,7 +205,7 @@
             if (orgLocal && authOk) {
                 ORG_ID = orgLocal;
                 
-                // Reforzar el candado por si el celular borró el localstorage pero la cookie sobrevivió
+                // Reforzar el candado
                 localStorage.setItem('organizador_id', orgLocal);
                 localStorage.setItem('admin_autenticado', 'true');
                 document.cookie = "admin_autenticado=true; max-age=2592000; path=/; SameSite=Lax";
@@ -221,22 +224,54 @@
         };
 
         async function loginAdmin() {
-            const pass = document.getElementById('admin-pass').value;
-            const { data } = await clienteSupabase.from('configuracion').select('valor').eq('clave', 'admin_password').single();
-            let validPass = data ? data.valor : '1234'; 
+            const user = document.getElementById('admin-user').value.trim();
+            const pass = document.getElementById('admin-pass').value.trim();
             
-            if (pass === validPass || pass === 'admin' || pass === '1234' || pass.toLowerCase() === 'pixel') {
-                // TRIPLE CANDADO PARA ASEGURAR QUE NO SE CIERRE LA SESIÓN EN CELULARES
-                localStorage.setItem('admin_autenticado', 'true');
-                sessionStorage.setItem('admin_autenticado', 'true');
-                document.cookie = "admin_autenticado=true; max-age=2592000; path=/; SameSite=Lax";
-                // Por compatibilidad de código heredado:
-                localStorage.setItem('organizador_id', '1');
-                document.cookie = "organizador_id=1; max-age=2592000; path=/; SameSite=Lax";
-                
-                window.location.reload();
-            } else {
-                alert('❌ Clave incorrecta. Intente de nuevo.');
+            if (!user || !pass) {
+                alert('⚠️ Por favor, ingrese usuario y clave de acceso.');
+                return;
+            }
+
+            try {
+                // Verificar en la tabla de organizadores si existe el usuario y coincide la contraseña
+                const { data, error } = await clienteSupabase
+                    .from('organizadores')
+                    .select('id, nombre, clave, password')
+                    .eq('usuario', user)
+                    .single();
+
+                // Si no lo encuentra por 'usuario', puede que la columna se llame 'nombre' (como en el INSERT que te di)
+                // Hacemos un fallback por si acaso:
+                let orgData = data;
+                if (error) {
+                    const res = await clienteSupabase.from('organizadores').select('*').eq('nombre', user).single();
+                    if (!res.error) orgData = res.data;
+                }
+
+                if (!orgData) {
+                    alert('❌ Usuario no encontrado.');
+                    return;
+                }
+
+                // Checamos contra la columna 'clave' o 'password' dependiendo de cómo esté en tu BD
+                const dbPass = orgData.password || orgData.clave;
+
+                if (pass === dbPass) {
+                    // TRIPLE CANDADO PARA ASEGURAR QUE NO SE CIERRE LA SESIÓN EN CELULARES
+                    localStorage.setItem('admin_autenticado', 'true');
+                    sessionStorage.setItem('admin_autenticado', 'true');
+                    document.cookie = "admin_autenticado=true; max-age=2592000; path=/; SameSite=Lax";
+                    
+                    localStorage.setItem('organizador_id', orgData.id);
+                    document.cookie = "organizador_id=" + orgData.id + "; max-age=2592000; path=/; SameSite=Lax";
+                    
+                    window.location.reload();
+                } else {
+                    alert('❌ Clave incorrecta. Intente de nuevo.');
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Hubo un error de conexión al verificar el acceso.");
             }
         }
 
@@ -274,6 +309,7 @@
                 const { data, error } = await clienteSupabase
                     .from('torneos')
                     .select('*')
+                    .eq('organizador_id', ORG_ID) // FILTRO CRUCIAL PARA INDEPENDENCIA DE PERFILES
                     .order('created_at', { ascending: false });
 
                 if (error) throw error;
@@ -315,7 +351,8 @@
                 const { data: inscripciones } = await clienteSupabase
                     .from('inscripciones')
                     .select('id, estatus_pago')
-                    .eq('torneo_id', activoId);
+                    .eq('torneo_id', activoId)
+                    .eq('organizador_id', ORG_ID);
 
                 const total = inscripciones ? inscripciones.length : 0;
                 const confirmados = inscripciones ? inscripciones.filter(i => i.estatus_pago === 'Pagado').length : 0;
@@ -331,6 +368,7 @@
                 const { data: jugSinRanking } = await clienteSupabase
                     .from('jugadores')
                     .select('id')
+                    .eq('organizador_id', ORG_ID)
                     .eq('puntos_ranking', 0);
 
                 const cantSinRanking = jugSinRanking ? jugSinRanking.length : 0;
@@ -403,7 +441,8 @@
                 nombre: nombre,
                 fecha_evento: fecha,
                 lugar_evento: sede,
-                numero_mesas: mesas
+                numero_mesas: mesas,
+                organizador_id: ORG_ID
             };
 
             const btn = document.getElementById('btn-guardar');
@@ -411,10 +450,10 @@
 
             try {
                 if (id) {
-                    let { error } = await clienteSupabase.from('torneos').update(payload).eq('id', id);
+                    let { error } = await clienteSupabase.from('torneos').update(payload).eq('id', id).eq('organizador_id', ORG_ID);
                     if (error && error.message.includes('numero_mesas')) {
                         delete payload.numero_mesas;
-                        let resFallback = await clienteSupabase.from('torneos').update(payload).eq('id', id);
+                        let resFallback = await clienteSupabase.from('torneos').update(payload).eq('id', id).eq('organizador_id', ORG_ID);
                         if (resFallback.error) throw resFallback.error;
                     } else if (error) {
                         throw error;
@@ -488,12 +527,12 @@
             if (!confirmacion) return;
 
             try {
-                await clienteSupabase.from('partidos').delete().eq('torneo_id', id);
-                await clienteSupabase.from('inscripciones').delete().eq('torneo_id', id);
-                await clienteSupabase.from('programacion_categorias').delete().eq('torneo_id', id);
-                await clienteSupabase.from('grupos_torneo').delete().eq('torneo_id', id);
+                await clienteSupabase.from('partidos').delete().eq('torneo_id', id).eq('organizador_id', ORG_ID);
+                await clienteSupabase.from('inscripciones').delete().eq('torneo_id', id).eq('organizador_id', ORG_ID);
+                await clienteSupabase.from('programacion_categorias').delete().eq('torneo_id', id).eq('organizador_id', ORG_ID);
+                await clienteSupabase.from('grupos_torneo').delete().eq('torneo_id', id).eq('organizador_id', ORG_ID);
 
-                const { error } = await clienteSupabase.from('torneos').delete().eq('id', id);
+                const { error } = await clienteSupabase.from('torneos').delete().eq('id', id).eq('organizador_id', ORG_ID);
                 if (error) throw error;
 
                 if (localStorage.getItem('torneo_activo_id') == id) {
