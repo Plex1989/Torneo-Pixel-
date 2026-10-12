@@ -11,10 +11,12 @@
 
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 0; background-color: #04060a; color: #f8fafc; min-height: 100vh; position: relative; overflow-x: hidden; }
         
+        /* Fondo Animado */
         body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 10s infinite alternate; }
         body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
         @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
 
+        /* Navbar */
         .navbar { background: rgba(10, 15, 26, 0.65); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 50; }
         .nav-title { font-weight: 800; font-size: 15px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
         
@@ -25,7 +27,6 @@
         .nav-btn.public { color: #34d399; border-color: rgba(16, 185, 129, 0.5); }
 
         .main-content { padding: 30px; max-width: 1100px; margin: auto; position: relative; z-index: 10; }
-
         .panel-3d { background: rgba(10, 15, 26, 0.45); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.06); box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.03); padding: 26px; margin-bottom: 26px; }
 
         h2 { color: #ffffff; margin-top: 0; padding-bottom: 12px; font-size: 13px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; border-bottom: 1px solid rgba(255, 255, 255, 0.08); margin-bottom: 20px; }
@@ -72,16 +73,130 @@
         .kpi-lbl { font-size: 9px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
         .kpi-alert { color: #f59e0b !important; animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-        
-        /* CSS del Logo Neón */
+
+        /* =========================================
+           NUEVO DISEÑO DE LOGIN GLASSMORPHISM 
+           ========================================= */
+        .glass-login-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 70vh;
+        }
+
+        .glass-login {
+            background: rgba(10, 15, 26, 0.5);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 32px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            padding: 50px 40px;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Línea superior brillante tipo eSports */
+        .glass-login::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #06b6d4, #8b5cf6, #06b6d4);
+            background-size: 200% auto;
+            animation: shineGradient 3s linear infinite;
+        }
+        @keyframes shineGradient { to { background-position: 200% center; } }
+
+        /* Logo Neón */
         .logo-iluminado {
             width: 160px;
-            max-width: 85%;
+            max-width: 80%;
             display: block;
-            margin: 0 auto 25px auto;
-            filter: drop-shadow(0 0 35px rgba(6, 182, 212, 0.95)); /* Foco de luz azul atrás */
+            margin: 0 auto 35px auto;
+            /* Efecto "Foco Azul" */
+            filter: drop-shadow(0 0 30px rgba(6, 182, 212, 0.8));
+            transition: filter 0.3s ease;
+        }
+        .logo-iluminado:hover { filter: drop-shadow(0 0 45px rgba(6, 182, 212, 1)); }
+
+        .login-title { font-size: 20px; font-weight: 800; color: #ffffff; margin: 0 0 8px 0; letter-spacing: 1px; }
+        .login-subtitle { font-size: 11px; color: #94a3b8; margin: 0 0 35px 0; line-height: 1.5; font-weight: 400; }
+
+        /* Inputs flotantes */
+        .login-input-wrap {
             position: relative;
-            z-index: 10;
+            margin-bottom: 20px;
+        }
+        
+        .login-input-wrap i {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #64748b;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .login-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 16px 16px 16px 48px;
+            color: #ffffff;
+            font-size: 13px;
+            font-family: 'Sora', sans-serif;
+            font-weight: 600;
+            outline: none;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        /* Cuando el input está seleccionado, brilla en azul y el ícono cambia de color */
+        .login-input:focus {
+            border-color: #06b6d4;
+            background: rgba(6, 182, 212, 0.05);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+        }
+        .login-input:focus + i, .login-input-wrap:focus-within i {
+            color: #06b6d4;
+        }
+
+        /* Input de contraseña para ocultar puntos grandes */
+        input[type="password"].login-input { letter-spacing: 4px; font-size: 16px; }
+        input[type="password"].login-input::placeholder { letter-spacing: normal; font-size: 13px; }
+
+        /* Botón de acceso */
+        .btn-login {
+            background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
+            border: none;
+            border-radius: 16px;
+            width: 100%;
+            padding: 16px;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px rgba(14, 165, 233, 0.4);
+            margin-top: 15px;
+            font-family: 'Sora', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(14, 165, 233, 0.6);
         }
     </style>
 </head>
@@ -102,32 +217,28 @@
 
     <div class="main-content">
 
-        <!-- MÓDULO DE LOGIN CONTRASTE FUEGO Y HIELO (Rojo/Azul) -->
-        <div id="panel-login" class="panel-3d" style="border: 1px solid rgba(239, 68, 68, 0.3); border-top: 5px solid #ef4444; text-align: center; max-width: 420px; margin: 60px auto; padding: 40px 30px; display: none; background: linear-gradient(145deg, rgba(15,23,42,0.95) 0%, rgba(4,6,10,0.98) 100%); box-shadow: 0 20px 40px rgba(0,0,0,0.8), 0 0 30px rgba(239, 68, 68, 0.15);">
-            
-            <!-- EL LOGO ILUMINADO -->
-            <img src="logo.png" alt="Pixel Studio Logo" class="logo-iluminado">
+        <!-- MÓDULO DE LOGIN REDISEÑO GLASSMORPHISM -->
+        <div id="panel-login-wrapper" class="glass-login-wrapper" style="display: none;">
+            <div class="glass-login">
+                
+                <!-- LOGO ILUMINADO -->
+                <img src="logo.png" alt="Pixel Studio Logo" class="logo-iluminado">
 
-            <h2 style="border:none; margin-bottom:5px; color:#ffffff; font-size:18px; letter-spacing: 2px;">INICIAR SESIÓN</h2>
-            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 30px; line-height: 1.5;">Portal Administrativo de Torneos<br>Por favor, ingresa tus credenciales.</p>
-            
-            <div style="text-align: left; margin-bottom: 18px;">
-                <label style="display: block; font-size: 9px; color: #f87171; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;"><i class="fa-solid fa-at mr-1"></i> Nombre de Usuario</label>
-                <div style="position: relative;">
-                    <i class="fa-solid fa-user" style="position: absolute; left: 16px; top: 16px; color: #ef4444;"></i>
-                    <input type="text" id="admin-user" class="login-input" placeholder="Ej: admin o saul66" style="width: 100%; padding: 14px 14px 14px 42px; text-align: left; font-size: 14px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; transition: all 0.3s; color: white; outline: none;" onfocus="this.style.borderColor='#ef4444'; this.style.boxShadow='0 0 15px rgba(239, 68, 68, 0.4)';" onblur="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.boxShadow='none';" onkeypress="if(event.key === 'Enter') document.getElementById('admin-pass').focus()">
+                <h2 class="login-title">INICIAR SESIÓN</h2>
+                <p class="login-subtitle">Portal Administrativo de Torneos.<br>Accede a tu espacio de trabajo.</p>
+                
+                <div class="login-input-wrap">
+                    <input type="text" id="admin-user" class="login-input" placeholder="Usuario (Ej: admin o saul66)" onkeypress="if(event.key === 'Enter') document.getElementById('admin-pass').focus()">
+                    <i class="fa-solid fa-user"></i>
                 </div>
-            </div>
-            
-            <div style="text-align: left; margin-bottom: 35px;">
-                <label style="display: block; font-size: 9px; color: #f87171; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;"><i class="fa-solid fa-key mr-1"></i> Contraseña</label>
-                <div style="position: relative;">
-                    <i class="fa-solid fa-lock" style="position: absolute; left: 16px; top: 16px; color: #ef4444;"></i>
-                    <input type="password" id="admin-pass" class="login-input" placeholder="••••••••" style="width: 100%; padding: 14px 14px 14px 42px; text-align: left; font-size: 16px; letter-spacing: 4px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; transition: all 0.3s; color: white; outline: none;" onfocus="this.style.borderColor='#ef4444'; this.style.boxShadow='0 0 15px rgba(239, 68, 68, 0.4)';" onblur="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.boxShadow='none';" onkeypress="if(event.key === 'Enter') loginAdmin()">
+                
+                <div class="login-input-wrap">
+                    <input type="password" id="admin-pass" class="login-input" placeholder="Contraseña" onkeypress="if(event.key === 'Enter') loginAdmin()">
+                    <i class="fa-solid fa-lock"></i>
                 </div>
+                
+                <button class="btn-login" onclick="loginAdmin()">ACCEDER AL SISTEMA <i class="fa-solid fa-arrow-right-to-bracket"></i></button>
             </div>
-            
-            <button class="btn-console" style="width: 100%; justify-content: center; background: #ef4444; color: #ffffff; border-color: #dc2626; font-size:13px; padding: 14px; box-shadow: 0 0 20px rgba(239, 68, 68, 0.5); text-transform: uppercase; font-weight: 900; letter-spacing: 1px;" onmouseover="this.style.backgroundColor='#dc2626'; this.style.transform='translateY(-2px)';" onmouseout="this.style.backgroundColor='#ef4444'; this.style.transform='none';" onclick="loginAdmin()">ACCEDER AL SISTEMA <i class="fa-solid fa-arrow-right-to-bracket ml-2"></i></button>
         </div>
 
         <!-- MÓDULOS DEL SISTEMA -->
@@ -237,13 +348,13 @@
                 document.cookie = "admin_autenticado=true; max-age=2592000; path=/; SameSite=Lax";
                 document.cookie = "organizador_id=" + orgLocal + "; max-age=2592000; path=/; SameSite=Lax";
 
-                document.getElementById('panel-login').style.display = 'none';
+                document.getElementById('panel-login-wrapper').style.display = 'none';
                 document.getElementById('panel-sistema').style.display = 'block';
                 document.getElementById('btn-salir').style.display = 'inline-flex';
                 
                 cargarTorneos();
             } else {
-                document.getElementById('panel-login').style.display = 'block';
+                document.getElementById('panel-login-wrapper').style.display = 'flex';
                 document.getElementById('panel-sistema').style.display = 'none';
                 document.getElementById('btn-salir').style.display = 'none';
             }
