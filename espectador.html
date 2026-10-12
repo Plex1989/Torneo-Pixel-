@@ -249,7 +249,7 @@
         async function inicializarEspectador() {
             try {
                 // 1. OBTENER TORNEO Y SU DUEÑO
-                const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre, organizador_id').eq('id', idTorneoActivo).single();
+                const { data: torneoData, error: errTorneo } = await clienteSupabase.from('torneos').select('nombre, organizador_id').eq('id', idTorneoActivo).single();
                 
                 if (torneoData) {
                     document.getElementById('torneo-nombre-header').innerText = torneoData.nombre;
@@ -258,7 +258,7 @@
                     throw new Error("Torneo no encontrado");
                 }
 
-                // 2. CARGAR DATOS BLINDADOS Y EVITANDO ERRORES DE CACHÉ DE SUPABASE
+                // 2. CARGAR DATOS BLINDADOS
                 const [resReglas, resConfig, resCat, resJugadores] = await Promise.allSettled([
                     clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }),
                     clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).single(),
@@ -295,15 +295,23 @@
         }
 
         async function cargarMarcadores() {
-            // MODIFICADO: Pedimos los campos de j1 y j2 separados sin el *, igual que en juez, para evitar que la caché colapse.
+            // RETORNAMOS A LA CONSULTA ORIGINAL SEGURA QUE IGNORA LAS COLUMNAS NUEVAS PARA EVITAR QUE LA CACHÉ CONGELE LA PANTALLA
             const { data: partidos } = await clienteSupabase
                 .from('partidos')
-                .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking, division, handicap), j2:jugador2_id(id, nombre, club, puntos_ranking, division, handicap), categorias(id, nombre)')
+                .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)')
                 .eq('torneo_id', idTorneoActivo)
                 .eq('organizador_id', ORG_ID)
                 .order('id', { ascending: true });
 
             todosLosPartidos = partidos || [];
+            
+            // SEGURO CONTRA ERRORES DE HISTORIAL (Evita cuelgues si Supabase devuelve texto en lugar de array)
+            todosLosPartidos.forEach(p => {
+                if (p.historial_sets && typeof p.historial_sets === 'string') {
+                    try { p.historial_sets = JSON.parse(p.historial_sets); } catch(e) { p.historial_sets = []; }
+                }
+            });
+
             generarBotonesCategorias();
             generarBotonesMesas();
             dibujarPantalla();
@@ -741,12 +749,10 @@
                         </div>
                 `;
 
-                // Renderizar TABLAS DE GRUPOS DETALLADAS (Memoria Técnica)
                 Object.keys(gruposCat).sort().forEach(gpoNombre => {
                     const listaJugadores = ordenarJugadoresITTF(Object.values(gruposCat[gpoNombre]));
                     
-                    // Colores por grupo para darle más vida (puedes ajustar esta función si prefieres o usar una paleta fija)
-                    let cGpoHex = '#fbbf24'; // Color base
+                    let cGpoHex = '#fbbf24'; 
                     if (gpoNombre === 'A') cGpoHex = '#06b6d4';
                     else if (gpoNombre === 'B') cGpoHex = '#a855f7';
                     else if (gpoNombre === 'C') cGpoHex = '#10b981';
