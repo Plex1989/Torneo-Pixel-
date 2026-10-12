@@ -249,7 +249,7 @@
             }
 
             try {
-                // Busca de forma precisa y blindada en tu base de datos (columna 'usuario' y password)
+                // Buscamos directamente la columna 'usuario'
                 const { data: orgData, error } = await clienteSupabase
                     .from('organizadores')
                     .select('id, usuario, password')
@@ -257,6 +257,7 @@
                     .single();
 
                 if (error || !orgData) {
+                    console.error("Error de Supabase:", error);
                     alert('❌ Usuario no encontrado. Revisa cómo está escrito.');
                     return;
                 }
@@ -270,7 +271,7 @@
                     localStorage.setItem('organizador_id', orgData.id);
                     document.cookie = "organizador_id=" + orgData.id + "; max-age=2592000; path=/; SameSite=Lax";
                     
-                    // Borramos el torneo activo anterior para que empiece en blanco si es nuevo usuario
+                    // Borramos el torneo activo anterior para que empiece en blanco
                     localStorage.removeItem('torneo_activo_id');
                     
                     window.location.reload();
