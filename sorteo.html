@@ -83,6 +83,7 @@
 
         .btn-mode-toggle { padding: 10px 20px; font-size: 11px; font-weight: 800; border-radius: 12px; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.4); color: #94a3b8; cursor: pointer; }
         .btn-mode-toggle.active { background: rgba(6, 182, 212, 0.15); border-color: #06b6d4; color: #38bdf8; box-shadow: 0 0 15px rgba(6, 182, 212, 0.3); }
+        .btn-mode-toggle.active-liga { background: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #34d399; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
         .btn-mode-toggle.active-flash { background: rgba(245, 158, 11, 0.15); border-color: #f59e0b; color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.3); }
 
         .grupos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-top: 20px; }
@@ -190,7 +191,9 @@
                     <div id="banner-torneo-info" style="font-size: 10px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">Cargando torneo activo...</div>
                 </div>
                 <div style="display: flex; gap: 10px; background: rgba(0,0,0,0.5); padding: 6px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05);">
-                    <button id="btn-toggle-rr" class="btn-mode-toggle active" onclick="cambiarModoTorneo('normal')">🎲 Modo Grupos (RR)</button>
+                    <button id="btn-toggle-rr" class="btn-mode-toggle active" onclick="cambiarModoTorneo('normal')">🎲 Modo Grupos</button>
+                    <!-- NUEVO BOTÓN PARA LIGA/ROUND ROBIN PURO -->
+                    <button id="btn-toggle-liga" class="btn-mode-toggle" onclick="cambiarModoTorneo('liga')">🏆 Modo Liga (RR Puro)</button>
                     <button id="btn-toggle-flash" class="btn-mode-toggle" onclick="cambiarModoTorneo('flash')">⚡ Modo Flash</button>
                 </div>
             </div>
@@ -206,6 +209,13 @@
                         <option value="4">Grupos de 4 jugadores</option>
                         <option value="5" selected>Grupos de 5 jugadores</option>
                         <option value="6">Grupos de 6 jugadores</option>
+                    </select>
+                    <!-- NUEVO SELECT PARA NÚMERO DE VUELTAS (Oculto por defecto) -->
+                    <select id="rr-vueltas" style="display:none; max-width: 150px;">
+                        <option value="1" selected>1 Vuelta (Ida)</option>
+                        <option value="2">2 Vueltas (Ida y Vuelta)</option>
+                        <option value="3">3 Vueltas</option>
+                        <option value="4">4 Vueltas</option>
                     </select>
                     <button class="btn-console btn-gold" id="btn-ejecutar-sorteo" onclick="prepararSorteo()">🎲 Generar Acomodo</button>
                 </div>
@@ -260,7 +270,7 @@
                 </div>
             </div>
 
-            <!-- MODO NORMAL -->
+            <!-- MODO NORMAL Y LIGA (RR PURO) -->
             <div id="panel-config-horarios" style="display: none; background: rgba(15,23,42,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 18px; border-radius: 14px; margin-top: 15px;">
                 <h3 style="margin-top:0; font-size:12px; color:#ffffff;">⚙️ Asignación de Mesas y Horarios para esta Categoría</h3>
                 
@@ -282,7 +292,8 @@
                     <div><label style="font-size:9px; color:#38bdf8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">PIN Jueces</label><input type="text" id="rr-pin-jueces" value="1234" maxlength="4" style="width:80px; text-align:center;"></div>
                 </div>
 
-                <div class="form-row" style="margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px dashed rgba(245,158,11,0.3);">
+                <!-- BLOQUE LLAVES SE OCULTARÁ EN MODO LIGA -->
+                <div id="bloque-llaves-config" class="form-row" style="margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px dashed rgba(245,158,11,0.3);">
                     <div style="width: 100%; font-size: 11px; color: #fbbf24; font-weight: 800; text-transform: uppercase; margin-bottom: 5px;"><i class="fa-solid fa-trophy mr-2"></i> Fase Final (Llaves)</div>
                     <div><label style="font-size:9px; color:#fbbf24; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">N° Mesas a Usar</label><input type="number" id="rr-mesas-finales" value="2" min="1" max="20" style="width:100px;" onchange="simularJuecesYActualizarUI()"></div>
                     <div><label style="font-size:9px; color:#fbbf24; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Min/Partido</label><input type="number" id="rr-duracion-finales" value="45" min="10" style="width:100px;" onchange="simularJuecesYActualizarUI()"></div>
@@ -365,11 +376,20 @@
 
         function cambiarModoTorneo(modo) {
             modoTorneoActual = modo;
+            
+            document.getElementById('btn-toggle-rr').classList.remove('active');
+            document.getElementById('btn-toggle-liga').classList.remove('active-liga');
+            document.getElementById('btn-toggle-flash').classList.remove('active-flash');
+
             if (modo === 'normal') {
                 document.getElementById('btn-toggle-rr').classList.add('active');
-                document.getElementById('btn-toggle-flash').classList.remove('active-flash');
+                document.getElementById('tamano-grupo').style.display = 'block';
+                document.getElementById('rr-vueltas').style.display = 'none';
+            } else if (modo === 'liga') {
+                document.getElementById('btn-toggle-liga').classList.add('active-liga');
+                document.getElementById('tamano-grupo').style.display = 'none';
+                document.getElementById('rr-vueltas').style.display = 'block';
             } else {
-                document.getElementById('btn-toggle-rr').classList.remove('active');
                 document.getElementById('btn-toggle-flash').classList.add('active-flash');
             }
             cargarEstadoCategoria();
@@ -415,6 +435,7 @@
                 const btnGuardar = document.getElementById('btn-guardar-grupos');
                 const seccionPartidos = document.getElementById('seccion-partidos-rr');
                 const panelFlash = document.getElementById('panel-modo-flash');
+                const bloqueLlaves = document.getElementById('bloque-llaves-config');
 
                 if (!idCat) { 
                     contador.innerText = '0';
@@ -453,6 +474,22 @@
                     if (partidosBD && partidosBD.length > 0) {
                         partidosCargadosGlobal = partidosBD;
                         contSorteo.style.display = 'none'; btnRehacer.style.display = 'inline-flex'; panelHorarios.style.display = 'none'; btnGuardar.style.display = 'none';
+                        
+                        // Si es modo liga, no mostrar la sección de llaves de configuración
+                        let hasLlaves = partidosBD.some(p => p.ronda_fase && (p.ronda_fase.toLowerCase().includes('semi') || p.ronda_fase.toLowerCase().includes('final') || p.ronda_fase.toLowerCase().includes('cuarto')));
+                        
+                        // Auto-detectar si lo guardado fue Liga o Grupos
+                        if (!hasLlaves && partidosBD.some(p => p.grupo_nombre === 'Único')) {
+                            modoTorneoActual = 'liga';
+                            document.getElementById('btn-toggle-rr').classList.remove('active');
+                            document.getElementById('btn-toggle-liga').classList.add('active-liga');
+                            document.getElementById('tamano-grupo').style.display = 'none';
+                            document.getElementById('rr-vueltas').style.display = 'block';
+                            bloqueLlaves.style.display = 'none';
+                        } else {
+                            bloqueLlaves.style.display = 'flex';
+                        }
+
                         reconstruirGruposDesdePartidosBD(partidosBD);
                         poblarDropdownAgenda(partidosBD);
                         seccionPartidos.style.display = 'block';
@@ -637,6 +674,90 @@
             } catch(e) { alert("Error al iniciar partido: " + e.message); } finally { btn.innerText = "Enviar a la Mesa"; }
         }
 
+        function dibujarPartidosActivosFlash() {
+            const container = document.getElementById('flash-partidos-activos'); container.innerHTML = '';
+            if (partidosFlashActivos.length === 0) { container.innerHTML = '<div class="mensaje-vacio">No hay partidos activos en este momento.</div>'; return; }
+            
+            partidosFlashActivos.forEach(p => {
+                let colorIdx = (p.mesa || 1) - 1; let colorSet = coloresMesasFlash[colorIdx % coloresMesasFlash.length];
+                let n1 = p.j1 ? p.j1.nombre : 'J1'; let n2 = p.j2 ? p.j2.nombre : 'J2';
+                
+                container.innerHTML += `
+                    <div class="flash-mesa-card" style="border-left: 4px solid ${colorSet.border};">
+                        <div style="flex:1;">
+                            <span style="font-size:10px; font-weight:900; color:${colorSet.badge}; text-transform:uppercase;">Mesa ${p.mesa}</span>
+                            <div style="margin-top:4px;"><span style="color:#fff; font-size:12px; font-weight:800;">${n1}</span><span class="vs text-fuchsia-400">VS</span><span style="color:#fff; font-size:12px; font-weight:800;">${n2}</span></div>
+                        </div>
+                        <div style="display:flex; gap:6px;">
+                            <a href="juez.html?partido=${p.id}" target="_blank" class="btn-console" style="padding:6px 12px; font-size:9px; border-color:#fbbf24; color:#fbbf24; background:rgba(245,158,11,0.1);">🏓 Juez</a>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        async function prepararSorteo() {
+            const idCategoria = document.getElementById('filtro-categoria').value;
+            if (!idCategoria) { alert("Selecciona una categoría."); return; }
+            const { data } = await clienteSupabase.from('inscripciones').select(`jugadores ( id, nombre, puntos_ranking, club )`).eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID).eq('estatus_pago', 'Pagado');
+            if (!data || data.length === 0) { alert("No hay jugadores pagados en esta categoría."); return; }
+            
+            jugadoresListos = data.map(ins => ins.jugadores).sort((a, b) => b.puntos_ranking - a.puntos_ranking);
+            
+            if (modoTorneoActual === 'liga') {
+                const vueltas = parseInt(document.getElementById('rr-vueltas').value) || 1;
+                ejecutarLiga(vueltas);
+            } else {
+                ejecutarSerpiente(parseInt(document.getElementById('tamano-grupo').value));
+            }
+            
+            document.getElementById('panel-config-horarios').style.display = 'block'; 
+            document.getElementById('bloque-llaves-config').style.display = modoTorneoActual === 'liga' ? 'none' : 'flex';
+            simularJuecesYActualizarUI();
+        }
+
+        function ejecutarSerpiente(tamanoGrupo) {
+            const numGrupos = Math.ceil(jugadoresListos.length / tamanoGrupo);
+            gruposGlobal = Array.from({ length: numGrupos }, (_, i) => ({ nombre: String.fromCharCode(65 + i), jugadores: [] }));
+            let direccion = 1, indiceGrupo = 0;
+            for (let i = 0; i < jugadoresListos.length; i++) {
+                let jugador = jugadoresListos[i]; jugador.seedOriginal = i + 1;
+                gruposGlobal[indiceGrupo].jugadores.push(jugador);
+                indiceGrupo += direccion;
+                if (indiceGrupo === numGrupos) { direccion = -1; indiceGrupo = numGrupos - 1; } else if (indiceGrupo === -1) { direccion = 1; indiceGrupo = 0; }
+            }
+            dibujarGrupos(); 
+            simularJuecesYActualizarUI();
+        }
+
+        function ejecutarLiga(vueltas) {
+            jugadoresListos.forEach((j, i) => j.seedOriginal = i + 1);
+            gruposGlobal = [{ nombre: 'Único', jugadores: jugadoresListos, vueltas: vueltas }];
+            dibujarGrupos(); 
+            simularJuecesYActualizarUI();
+        }
+
+        function dibujarGrupos() {
+            const contenedor = document.getElementById('contenedor-grupos'); contenedor.innerHTML = '';
+            gruposGlobal.forEach((grupo, idxGrupo) => {
+                let titleName = grupo.nombre === 'Único' ? 'Liga Única' : `Grupo ${grupo.nombre}`;
+                let html = `<div class="grupo-card ${clasesColoresGrupo[idxGrupo % clasesColoresGrupo.length]}"><div class="grupo-header">${titleName}</div>`;
+                grupo.jugadores.forEach((j) => {
+                    html += `<div class="jugador-item"><div class="jugador-info"><strong style="color:#ffffff;">${j.nombre}</strong><div><span class="tag-club">${j.club || 'Sin Club'}</span></div><span style="font-size:10px; color:#94a3b8;">${j.puntos_ranking} pts (Seed #${j.seedOriginal})</span><select class="select-grupo" onchange="moverJugador(${j.id}, this.value)"><option value="${grupo.nombre}" selected>Mover a...</option>${gruposGlobal.filter(g => g.nombre !== grupo.nombre).map(g => `<option value="${g.nombre}">${g.nombre === 'Único' ? 'Liga Única' : 'Gpo '+g.nombre}</option>`).join('')}</select></div></div>`;
+                });
+                contenedor.innerHTML += html + `</div>`;
+            });
+            document.getElementById('btn-guardar-grupos').style.display = 'block';
+        }
+
+        function moverJugador(jugadorId, nuevoGrupoNombre) {
+            let jugador = null;
+            gruposGlobal.forEach(g => { let idx = g.jugadores.findIndex(j => j.id === jugadorId); if(idx !== -1) { jugador = g.jugadores[idx]; g.jugadores.splice(idx, 1); } });
+            let targetGroup = gruposGlobal.find(g => g.nombre === nuevoGrupoNombre);
+            if(targetGroup && jugador) targetGroup.jugadores.push(jugador);
+            dibujarGrupos(); simularJuecesYActualizarUI();
+        }
+
         function algoritmoRoundRobin(jugadoresArr) {
             let arr = [...jugadoresArr]; if(arr.length % 2 !== 0) arr.push(null);
             let schedule = []; let fixed = arr[0]; let rotating = arr.slice(1);
@@ -656,7 +777,17 @@
             let numMesas = parseInt(document.getElementById('rr-num-mesas').value) || 2;
             let scheds = {}; let maxRounds = 0;
             
-            gruposGlobal.forEach(g => { let s = algoritmoRoundRobin(g.jugadores); scheds[g.nombre] = s; if(s.length > maxRounds) maxRounds = s.length; });
+            gruposGlobal.forEach(g => { 
+                let s = algoritmoRoundRobin(g.jugadores); 
+                let sFull = [];
+                let numVueltas = g.vueltas || 1;
+                for(let i=0; i<numVueltas; i++) {
+                    sFull.push(...JSON.parse(JSON.stringify(s)));
+                }
+                scheds[g.nombre] = sFull; 
+                if(sFull.length > maxRounds) maxRounds = sFull.length; 
+            });
+
             let pendingMatches = [];
             for(let r=0; r < maxRounds; r++) {
                 gruposGlobal.forEach(g => { if(scheds[g.nombre] && scheds[g.nombre][r]) scheds[g.nombre][r].matches.forEach(m => pendingMatches.push({ r: r, grupoNombre: g.nombre, j1: m.j1, j2: m.j2 })); });
@@ -691,54 +822,18 @@
             }
         }
 
-        async function prepararSorteo() {
-            const idCategoria = document.getElementById('filtro-categoria').value;
-            if (!idCategoria) { alert("Selecciona una categoría."); return; }
-            const { data } = await clienteSupabase.from('inscripciones').select(`jugadores ( id, nombre, puntos_ranking, club )`).eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID).eq('estatus_pago', 'Pagado');
-            if (!data || data.length === 0) { alert("No hay jugadores pagados en esta categoría."); return; }
-            jugadoresListos = data.map(ins => ins.jugadores).sort((a, b) => b.puntos_ranking - a.puntos_ranking);
-            ejecutarSerpiente(parseInt(document.getElementById('tamano-grupo').value));
-            document.getElementById('panel-config-horarios').style.display = 'block'; simularJuecesYActualizarUI();
-        }
-
-        function ejecutarSerpiente(tamanoGrupo) {
-            const numGrupos = Math.ceil(jugadoresListos.length / tamanoGrupo);
-            gruposGlobal = Array.from({ length: numGrupos }, (_, i) => ({ nombre: String.fromCharCode(65 + i), jugadores: [] }));
-            let direccion = 1, indiceGrupo = 0;
-            for (let i = 0; i < jugadoresListos.length; i++) {
-                let jugador = jugadoresListos[i]; jugador.seedOriginal = i + 1;
-                gruposGlobal[indiceGrupo].jugadores.push(jugador);
-                indiceGrupo += direccion;
-                if (indiceGrupo === numGrupos) { direccion = -1; indiceGrupo = numGrupos - 1; } else if (indiceGrupo === -1) { direccion = 1; indiceGrupo = 0; }
-            }
-            dibujarGrupos(); simularJuecesYActualizarUI();
-        }
-
-        function dibujarGrupos() {
-            const contenedor = document.getElementById('contenedor-grupos'); contenedor.innerHTML = '';
-            gruposGlobal.forEach((grupo, idxGrupo) => {
-                let html = `<div class="grupo-card ${clasesColoresGrupo[idxGrupo % clasesColoresGrupo.length]}"><div class="grupo-header">Grupo ${grupo.nombre}</div>`;
-                grupo.jugadores.forEach((j) => {
-                    html += `<div class="jugador-item"><div class="jugador-info"><strong style="color:#ffffff;">${j.nombre}</strong><div><span class="tag-club">${j.club || 'Sin Club'}</span></div><span style="font-size:10px; color:#94a3b8;">${j.puntos_ranking} pts (Seed #${j.seedOriginal})</span><select class="select-grupo" onchange="moverJugador(${j.id}, this.value)"><option value="${grupo.nombre}" selected>Mover a...</option>${gruposGlobal.filter(g => g.nombre !== grupo.nombre).map(g => `<option value="${g.nombre}">Gpo ${g.nombre}</option>`).join('')}</select></div></div>`;
-                });
-                contenedor.innerHTML += html + `</div>`;
-            });
-            document.getElementById('btn-guardar-grupos').style.display = 'block';
-        }
-
-        function moverJugador(jugadorId, nuevoGrupoNombre) {
-            let jugador = null;
-            gruposGlobal.forEach(g => { let idx = g.jugadores.findIndex(j => j.id === jugadorId); if(idx !== -1) { jugador = g.jugadores[idx]; g.jugadores.splice(idx, 1); } });
-            let targetGroup = gruposGlobal.find(g => g.nombre === nuevoGrupoNombre);
-            if(targetGroup && jugador) targetGroup.jugadores.push(jugador);
-            dibujarGrupos(); simularJuecesYActualizarUI();
-        }
-
         function recalcularRolPartidos() {
             let scheds = {}; let maxRounds = 0; let refereeDutyCount = {};
             gruposGlobal.forEach(g => {
                 g.jugadores.forEach(j => { if (j && j.id) refereeDutyCount[j.id] = 0; });
-                let s = algoritmoRoundRobin(g.jugadores); scheds[g.nombre] = s; if(s.length > maxRounds) maxRounds = s.length;
+                let s = algoritmoRoundRobin(g.jugadores); 
+                let sFull = [];
+                let numVueltas = g.vueltas || 1;
+                for(let i=0; i<numVueltas; i++) {
+                    sFull.push(...JSON.parse(JSON.stringify(s)));
+                }
+                scheds[g.nombre] = sFull; 
+                if(sFull.length > maxRounds) maxRounds = sFull.length;
             });
             
             const mesaInicio = parseInt(document.getElementById('rr-mesa-inicio').value) || 1;
@@ -794,47 +889,50 @@
             }
 
             // SISTEMA DINÁMICO DE LLAVES BASADO EN TOP 8 ABSOLUTO CON NUEVOS HORARIOS
-            let rondasLlaves = [];
-            if (gruposGlobal.length > 2) {
-                rondasLlaves.push([
-                    { rondaFase: 'Cuartos 1', j1NombreTemp: 'Mejor 1° (Seed 1)', j2NombreTemp: 'Peor 2° (Seed 8)', modoJuego, juez: 'Comité Oficial' },
-                    { rondaFase: 'Cuartos 2', j1NombreTemp: '4° Mejor (Seed 4)', j2NombreTemp: '5° Mejor (Seed 5)', modoJuego, juez: 'Comité Oficial' },
-                    { rondaFase: 'Cuartos 3', j1NombreTemp: '3° Mejor (Seed 3)', j2NombreTemp: '6° Mejor (Seed 6)', modoJuego, juez: 'Comité Oficial' },
-                    { rondaFase: 'Cuartos 4', j1NombreTemp: '2° Mejor (Seed 2)', j2NombreTemp: '7° Mejor (Seed 7)', modoJuego, juez: 'Comité Oficial' }
-                ]);
-                rondasLlaves.push([
-                    { rondaFase: 'Semifinal 1', j1NombreTemp: 'Gana Cuartos 1', j2NombreTemp: 'Gana Cuartos 2', modoJuego, juez: 'Comité Oficial' },
-                    { rondaFase: 'Semifinal 2', j1NombreTemp: 'Gana Cuartos 3', j2NombreTemp: 'Gana Cuartos 4', modoJuego, juez: 'Comité Oficial' }
-                ]);
-                rondasLlaves.push([
-                    { rondaFase: 'Gran Final', j1NombreTemp: 'Gana Semi 1', j2NombreTemp: 'Gana Semi 2', modoJuego, juez: 'Comité Oficial' }
-                ]);
-            } else {
-                rondasLlaves.push([
-                    { rondaFase: 'Semifinal 1', j1NombreTemp: 'Seed 1 (Mejor 1°)', j2NombreTemp: 'Seed 4 (Peor 2°)', modoJuego, juez: 'Comité Oficial' },
-                    { rondaFase: 'Semifinal 2', j1NombreTemp: 'Seed 2 (Peor 1°)', j2NombreTemp: 'Seed 3 (Mejor 2°)', modoJuego, juez: 'Comité Oficial' }
-                ]);
-                rondasLlaves.push([
-                    { rondaFase: 'Gran Final', j1NombreTemp: 'Ganador Semi 1', j2NombreTemp: 'Ganador Semi 2', modoJuego, juez: 'Comité Oficial' }
-                ]);
-            }
-
-            rondasLlaves.forEach(ronda => {
-                let matchesAsignadosRonda = 0;
-                while(matchesAsignadosRonda < ronda.length) {
-                    let horaStr = minutesToTimeStr(currentTimeMins);
-                    let tableCounter = 0;
-                    while (tableCounter < numMesasFinales && matchesAsignadosRonda < ronda.length) {
-                        let m = ronda[matchesAsignadosRonda];
-                        m.mesa = mesaInicio + tableCounter;
-                        m.hora = horaStr;
-                        partidosGeneradosRR.push(m);
-                        matchesAsignadosRonda++;
-                        tableCounter++;
-                    }
-                    currentTimeMins += duracionFinales;
+            // SE OMITE POR COMPLETO SI ESTÁ EN MODO LIGA (RR PURO)
+            if (modoTorneoActual !== 'liga') {
+                let rondasLlaves = [];
+                if (gruposGlobal.length > 2) {
+                    rondasLlaves.push([
+                        { rondaFase: 'Cuartos 1', j1NombreTemp: 'Mejor 1° (Seed 1)', j2NombreTemp: 'Peor 2° (Seed 8)', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Cuartos 2', j1NombreTemp: '4° Mejor (Seed 4)', j2NombreTemp: '5° Mejor (Seed 5)', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Cuartos 3', j1NombreTemp: '3° Mejor (Seed 3)', j2NombreTemp: '6° Mejor (Seed 6)', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Cuartos 4', j1NombreTemp: '2° Mejor (Seed 2)', j2NombreTemp: '7° Mejor (Seed 7)', modoJuego, juez: 'Comité Oficial' }
+                    ]);
+                    rondasLlaves.push([
+                        { rondaFase: 'Semifinal 1', j1NombreTemp: 'Gana Cuartos 1', j2NombreTemp: 'Gana Cuartos 2', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Semifinal 2', j1NombreTemp: 'Gana Cuartos 3', j2NombreTemp: 'Gana Cuartos 4', modoJuego, juez: 'Comité Oficial' }
+                    ]);
+                    rondasLlaves.push([
+                        { rondaFase: 'Gran Final', j1NombreTemp: 'Gana Semi 1', j2NombreTemp: 'Gana Semi 2', modoJuego, juez: 'Comité Oficial' }
+                    ]);
+                } else {
+                    rondasLlaves.push([
+                        { rondaFase: 'Semifinal 1', j1NombreTemp: 'Seed 1 (Mejor 1°)', j2NombreTemp: 'Seed 4 (Peor 2°)', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Semifinal 2', j1NombreTemp: 'Seed 2 (Peor 1°)', j2NombreTemp: 'Seed 3 (Mejor 2°)', modoJuego, juez: 'Comité Oficial' }
+                    ]);
+                    rondasLlaves.push([
+                        { rondaFase: 'Gran Final', j1NombreTemp: 'Ganador Semi 1', j2NombreTemp: 'Ganador Semi 2', modoJuego, juez: 'Comité Oficial' }
+                    ]);
                 }
-            });
+
+                rondasLlaves.forEach(ronda => {
+                    let matchesAsignadosRonda = 0;
+                    while(matchesAsignadosRonda < ronda.length) {
+                        let horaStr = minutesToTimeStr(currentTimeMins);
+                        let tableCounter = 0;
+                        while (tableCounter < numMesasFinales && matchesAsignadosRonda < ronda.length) {
+                            let m = ronda[matchesAsignadosRonda];
+                            m.mesa = mesaInicio + tableCounter;
+                            m.hora = horaStr;
+                            partidosGeneradosRR.push(m);
+                            matchesAsignadosRonda++;
+                            tableCounter++;
+                        }
+                        currentTimeMins += duracionFinales;
+                    }
+                });
+            }
             
             document.getElementById('seccion-partidos-rr').style.display = 'block';
             dibujarTablaPartidosGenerados(partidosGeneradosRR);
@@ -852,7 +950,9 @@
                 let nomJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
                 let nomJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
 
-                tbody.innerHTML += `<tr style="${esJuez ? 'background: rgba(239, 68, 68, 0.1);' : ''}"><td><strong>⏰ ${p.hora || '09:00 AM'}</strong></td><td><span class="badge-mesa">Mesa ${p.mesa || 1}</span></td><td><span class="badge-grupo">${p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Llave')}</span></td><td><strong style="${esJ1 ? 'color:#38bdf8; font-size:14px;' : ''}">${nomJ1}</strong></td><td style="text-align:center;">VS</td><td><strong style="${esJ2 ? 'color:#38bdf8; font-size:14px;' : ''}">${nomJ2}</strong></td><td>${juezBadge}</td><td class="no-print"><div style="display:flex; gap:6px; flex-wrap:wrap;"><a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 8px; font-size:9px; text-decoration:none;">🏓 Juez</a><a href="espectador.html?partido=${p.id}" class="btn-console btn-purple" style="padding:4px 8px; font-size:9px; text-decoration:none;">👁 Ver</a></div></td></tr>`;
+                let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Llave'));
+
+                tbody.innerHTML += `<tr style="${esJuez ? 'background: rgba(239, 68, 68, 0.1);' : ''}"><td><strong>⏰ ${p.hora || '09:00 AM'}</strong></td><td><span class="badge-mesa">Mesa ${p.mesa || 1}</span></td><td><span class="badge-grupo">${eqGrupo}</span></td><td><strong style="${esJ1 ? 'color:#38bdf8; font-size:14px;' : ''}">${nomJ1}</strong></td><td style="text-align:center;">VS</td><td><strong style="${esJ2 ? 'color:#38bdf8; font-size:14px;' : ''}">${nomJ2}</strong></td><td>${juezBadge}</td><td class="no-print"><div style="display:flex; gap:6px; flex-wrap:wrap;"><a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 8px; font-size:9px; text-decoration:none;">🏓 Juez</a><a href="espectador.html?partido=${p.id}" class="btn-console btn-purple" style="padding:4px 8px; font-size:9px; text-decoration:none;">👁 Ver</a></div></td></tr>`;
             });
         }
 
@@ -862,7 +962,8 @@
                 let juezTexto = p.juez || 'Comité / Libre';
                 let nomJ1 = p.j1 ? p.j1.nombre : (p.j1NombreTemp || 'Por definir');
                 let nomJ2 = p.j2 ? p.j2.nombre : (p.j2NombreTemp || 'Por definir');
-                tbody.innerHTML += `<tr><td><strong>⏰ ${p.hora}</strong></td><td><span class="badge-mesa">Mesa ${p.mesa}</span></td><td><span class="badge-grupo">${p.grupoNombre ? 'Gpo ' + p.grupoNombre : (p.rondaFase || 'Llave')}</span></td><td><strong>${nomJ1}</strong></td><td style="text-align:center;">VS</td><td><strong>${nomJ2}</strong></td><td><span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span></td><td class="no-print"><small style="color:#fbbf24; font-weight:700;">Guarda en BD para habilitar arbitraje</small></td></tr>`;
+                let eqGrupo = p.grupoNombre === 'Único' ? 'Liga Única' : (p.grupoNombre ? 'Gpo ' + p.grupoNombre : (p.rondaFase || 'Llave'));
+                tbody.innerHTML += `<tr><td><strong>⏰ ${p.hora}</strong></td><td><span class="badge-mesa">Mesa ${p.mesa}</span></td><td><span class="badge-grupo">${eqGrupo}</span></td><td><strong>${nomJ1}</strong></td><td style="text-align:center;">VS</td><td><strong>${nomJ2}</strong></td><td><span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span></td><td class="no-print"><small style="color:#fbbf24; font-weight:700;">Guarda en BD para habilitar arbitraje</small></td></tr>`;
             });
         }
 
@@ -904,7 +1005,8 @@
 
             lista.forEach(p => {
                 let n1 = p.j1 ? p.j1.nombre : (p.ronda_fase || '1° Gpo A'); let n2 = p.j2 ? p.j2.nombre : (p.ronda_fase || '2° Gpo B');
-                csv += `"${p.hora || '09:00 AM'}","Mesa ${p.mesa}","${p.grupo_nombre ? 'Gpo '+p.grupo_nombre : (p.ronda_fase||'Llave')}","${n1}","${n2}","${p.juez || 'Comité'}"\n`;
+                let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre ? 'Gpo '+p.grupo_nombre : (p.ronda_fase||'Llave'));
+                csv += `"${p.hora || '09:00 AM'}","Mesa ${p.mesa}","${eqGrupo}","${n1}","${n2}","${p.juez || 'Comité'}"\n`;
             });
             const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))); 
             link.setAttribute("download", `Rol_Partidos_${nombre || 'General'}.csv`);
@@ -920,10 +1022,10 @@
                     if (p.j2 && p.jugador2_id) mapaJugadores.set(p.jugador2_id, p.j2);
                 });
                 
-                // ORDENAR JUGADORES POR RANKING DE MAYOR A MENOR
+                let titleName = nombreGpo === 'Único' ? 'Liga Única' : `Grupo ${nombreGpo}`;
                 let jugadoresOrdenados = Array.from(mapaJugadores.values()).sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
 
-                let html = `<div class="grupo-card ${clasesColoresGrupo[idx % clasesColoresGrupo.length]}"><div class="grupo-header">Grupo ${nombreGpo}</div>`;
+                let html = `<div class="grupo-card ${clasesColoresGrupo[idx % clasesColoresGrupo.length]}"><div class="grupo-header">${titleName}</div>`;
                 jugadoresOrdenados.forEach((jObj, i) => { 
                     html += `<div class="jugador-item"><div class="jugador-info"><strong style="color:#ffffff;">${jObj.nombre || 'Desconocido'}</strong><div><span class="tag-club">${jObj.club || 'Sin Club'}</span></div><span style="font-size:10px; color:#94a3b8;">${jObj.puntos_ranking || 0} pts (Seed #${i + 1})</span></div></div>`; 
                 });
