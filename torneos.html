@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ETIQUETAS ANTI-CACHÉ PARA ACTUALIZACIÓN EN VERCEL -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -11,14 +12,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Orbitron:wght@500;700;900&display=swap');
 
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 0; background-color: #04060a; color: #f8fafc; min-height: 100vh; position: relative; overflow-x: hidden; }
         
+        /* Fondo Cyber-Gamer Animado */
         body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 10s infinite alternate; }
         body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
         @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
 
+        /* Navbar */
         .navbar { background: rgba(10, 15, 26, 0.65); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 50; }
         .nav-title { font-weight: 800; font-size: 15px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
         
@@ -77,75 +80,101 @@
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
         /* =========================================
-           DISEÑO DE LOGIN GLASSMORPHISM (SIN CAJA RÍGIDA)
+           NUEVO DISEÑO CYBER-CHAMPIONSHIP (Gamer/Futurista)
            ========================================= */
-        .glass-login-wrapper {
+        .cyber-login-wrapper {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 75vh;
+            min-height: 80vh;
+            perspective: 1000px; /* Brinda sensación 3D */
         }
 
-        .glass-login {
-            background: rgba(10, 15, 26, 0.4);
-            backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 32px;
-            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            padding: 50px 40px 40px;
+        .cyber-panel {
+            background: linear-gradient(135deg, rgba(6,11,25,0.7) 0%, rgba(13,24,49,0.7) 100%);
+            border: 2px solid #06b6d4;
+            border-image: linear-gradient(135deg, #06b6d4, #8b5cf6) 1;
+            box-shadow: 0 0 35px rgba(6, 182, 212, 0.2), inset 0 0 20px rgba(6, 182, 212, 0.1);
+            border-radius: 1px; /* Súper angular, sin curvas */
+            padding: 50px 45px 40px;
             width: 100%;
-            max-width: 420px;
+            max-width: 440px;
             text-align: center;
             position: relative;
+            clip-path: polygon(0 0, 92% 0, 100% 8%, 100% 100%, 8% 100%, 0 92%); /* Cortes angulares en las esquinas */
         }
 
-        .glass-login::before {
-            content: '';
+        /* Marcadores tecnológios de esquina */
+        .cyber-panel::after {
+            content: "SECURE_AUTH_v2.06";
             position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 3px;
-            background: linear-gradient(90deg, transparent, #06b6d4, #8b5cf6, transparent);
-            opacity: 0.8;
+            bottom: 6px; right: 15px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 7px;
+            color: #8b5cf6;
+            letter-spacing: 1px;
+            opacity: 0.6;
         }
 
-        .logo-iluminado {
-            width: 160px;
-            max-width: 80%;
+        /* Logo Neón Principal (Sin caja, totalmente flotante) */
+        .logo-gamers {
+            width: 170px;
+            max-width: 85%;
             display: block;
-            margin: -90px auto 30px auto;
-            filter: drop-shadow(0 0 30px rgba(6, 182, 212, 0.85));
-            transition: filter 0.3s ease, transform 0.3s ease;
+            margin: -95px auto 25px auto;
+            /* Increíble brillo neón y de profundidad */
+            filter: drop-shadow(0 0 30px rgba(6, 182, 212, 0.95)) drop-shadow(0 0 50px rgba(139, 92, 246, 0.4));
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .logo-iluminado:hover { 
-            filter: drop-shadow(0 0 45px rgba(6, 182, 212, 1));
-            transform: scale(1.05);
+        .logo-gamers:hover {
+            transform: scale(1.06) rotate(-2deg);
         }
 
-        .login-title { font-size: 20px; font-weight: 800; color: #ffffff; margin: 0 0 8px 0; letter-spacing: 1.5px; }
-        .login-subtitle { font-size: 11px; color: #94a3b8; margin: 0 0 35px 0; line-height: 1.5; font-weight: 400; }
+        /* Textos */
+        .cyber-title { font-family: 'Orbitron', sans-serif; font-size: 21px; font-weight: 900; color: #ffffff; margin: 0 0 6px 0; letter-spacing: 3px; text-shadow: 0 0 10px rgba(6, 182, 212, 0.6); text-transform: uppercase; }
+        .cyber-subtitle { font-size: 10px; color: #94a3b8; margin: 0 0 35px 0; line-height: 1.6; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
 
-        .login-input-wrap {
+        /* Contenedor de Celdas de Energía */
+        .cyber-input-group {
             position: relative;
-            margin-bottom: 20px;
+            margin-bottom: 22px;
+            text-align: left;
         }
-        
-        .login-input-wrap i {
+
+        .cyber-label {
+            display: block;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 8px;
+            color: #06b6d4;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+            letter-spacing: 1.5px;
+            text-shadow: 0 0 5px rgba(6, 182, 212, 0.4);
+        }
+
+        .cyber-input-wrap {
+            position: relative;
+        }
+
+        .cyber-input-wrap i {
             position: absolute;
             left: 18px;
             top: 50%;
             transform: translateY(-50%);
-            color: #475569;
-            font-size: 14px;
+            color: #06b6d4;
+            font-size: 13px;
             transition: color 0.3s ease;
+            filter: drop-shadow(0 0 4px rgba(6, 182, 212, 0.5));
         }
 
-        .login-input {
+        .cyber-input {
             width: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 16px;
-            padding: 16px 16px 16px 48px;
+            background: rgba(4, 6, 10, 0.9);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-left: 4px solid #06b6d4; /* Detalle de carga */
+            border-radius: 0px; /* Sin curvas para un toque gamer militar */
+            padding: 15px 15px 15px 48px;
             color: #ffffff;
             font-size: 13px;
             font-family: 'Sora', sans-serif;
@@ -153,46 +182,69 @@
             outline: none;
             transition: all 0.3s ease;
             box-sizing: border-box;
+            clip-path: polygon(0 0, 100% 0, 100% 85%, 96% 100%, 0 100%); /* Esquina inferior recortada */
         }
 
-        .login-input:focus {
-            border-color: #06b6d4;
-            background: rgba(6, 182, 212, 0.05);
-            box-shadow: inset 0 0 10px rgba(6, 182, 212, 0.1), 0 0 20px rgba(6, 182, 212, 0.2);
+        /* Foco interactivo gamer al seleccionar campo */
+        .cyber-input:focus {
+            border-color: #8b5cf6;
+            border-left-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.05);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
         }
-        .login-input:focus + i, .login-input-wrap:focus-within i {
-            color: #06b6d4;
+        .cyber-input:focus + i {
+            color: #8b5cf6;
+            filter: drop-shadow(0 0 4px rgba(139, 92, 246, 0.5));
         }
 
-        input[type="password"].login-input { letter-spacing: 4px; font-size: 16px; }
-        input[type="password"].login-input::placeholder { letter-spacing: normal; font-size: 13px; }
+        /* Ocultar clave de forma angular */
+        input[type="password"].cyber-input { letter-spacing: 5px; font-size: 16px; }
+        input[type="password"].cyber-input::placeholder { letter-spacing: normal; font-size: 12px; }
 
-        .btn-login {
-            background: linear-gradient(135deg, #0ea5e9 0%, #4f46e5 100%);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            width: 100%;
-            padding: 16px;
+        /* Botón de Energía Cyber */
+        .btn-cyber {
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(135deg, #06b6d4 0%, #7c3aed 100%);
+            border: none;
             color: #ffffff;
-            font-size: 12px;
-            font-weight: 800;
+            font-size: 11px;
+            font-weight: 900;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 2.5px;
             cursor: pointer;
+            width: 100%;
+            padding: 18px;
             transition: all 0.3s ease;
-            box-shadow: 0 10px 25px rgba(14, 165, 233, 0.3);
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.4);
             margin-top: 15px;
-            font-family: 'Sora', sans-serif;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
+            clip-path: polygon(0 0, 94% 0, 100% 30%, 100% 100%, 6% 100%, 0 70%); /* Cortes de eSports en los extremos */
+            position: relative;
+            overflow: hidden;
         }
 
-        .btn-login:hover {
+        /* Animación de escaneo en el botón */
+        .btn-cyber::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -50%;
+            width: 30%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transform: skewX(-30deg);
+            animation: scan 4s infinite linear;
+        }
+        @keyframes scan {
+            0% { left: -50%; }
+            50% { left: 150%; }
+            100% { left: 150%; }
+        }
+
+        .btn-cyber:hover {
             transform: translateY(-2px);
-            box-shadow: 0 15px 35px rgba(14, 165, 233, 0.5);
-            border-color: rgba(255,255,255,0.3);
+            box-shadow: 0 0 35px rgba(6, 182, 212, 0.7), 0 0 15px rgba(139, 92, 246, 0.4);
         }
     </style>
 </head>
@@ -213,27 +265,33 @@
 
     <div class="main-content">
 
-        <!-- MÓDULO DE LOGIN REDISEÑO GLASSMORPHISM -->
-        <div id="panel-login-wrapper" class="glass-login-wrapper" style="display: none;">
-            <div class="glass-login">
+        <!-- MÓDULO DE LOGIN REDISEÑO CYBER-CHAMPIONSHIP -->
+        <div id="panel-login-wrapper" class="cyber-login-wrapper" style="display: none;">
+            <div class="cyber-panel">
                 
-                <!-- LOGO ILUMINADO -->
-                <img src="logo.png" alt="Pixel Studio Logo" class="logo-iluminado">
+                <!-- LOGO ULTRA-ILUMINADO -->
+                <img src="logo.png" alt="Pixel Studio Logo" class="logo-gamers">
 
-                <h2 class="login-title">INICIAR SESIÓN</h2>
-                <p class="login-subtitle">Portal Administrativo de Torneos.<br>Accede a tu espacio de trabajo.</p>
+                <h2 class="cyber-title">INICIAR SESIÓN</h2>
+                <p class="cyber-subtitle">Portal Administrativo de Torneos.<br>INGRESA AL SISTEMA CENTRAL.</p>
                 
-                <div class="login-input-wrap">
-                    <input type="text" id="admin-user" class="login-input" placeholder="Usuario (Ej: admin o saul66)" onkeypress="if(event.key === 'Enter') document.getElementById('admin-pass').focus()">
-                    <i class="fa-solid fa-user"></i>
+                <div class="cyber-input-group">
+                    <span class="cyber-label">// ID DE OPERADOR</span>
+                    <div class="cyber-input-wrap">
+                        <input type="text" id="admin-user" class="cyber-input" placeholder="USUARIO (Ej: admin o saul66)" onkeypress="if(event.key === 'Enter') document.getElementById('admin-pass').focus()">
+                        <i class="fa-solid fa-id-card"></i>
+                    </div>
                 </div>
                 
-                <div class="login-input-wrap">
-                    <input type="password" id="admin-pass" class="login-input" placeholder="Contraseña" onkeypress="if(event.key === 'Enter') loginAdmin()">
-                    <i class="fa-solid fa-lock"></i>
+                <div class="cyber-input-group">
+                    <span class="cyber-label">// CLAVE DE ACCESO</span>
+                    <div class="cyber-input-wrap">
+                        <input type="password" id="admin-pass" class="cyber-input" placeholder="••••••••" onkeypress="if(event.key === 'Enter') loginAdmin()">
+                        <i class="fa-solid fa-lock"></i>
+                    </div>
                 </div>
                 
-                <button class="btn-login" onclick="loginAdmin()">INGRESAR AL SISTEMA <i class="fa-solid fa-chevron-right ml-1"></i></button>
+                <button class="btn-cyber" onclick="loginAdmin()">INGRESAR AL SISTEMA <i class="fa-solid fa-shield-halved"></i></button>
             </div>
         </div>
 
