@@ -192,7 +192,7 @@
                 </div>
                 <div style="display: flex; gap: 10px; background: rgba(0,0,0,0.5); padding: 6px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05);">
                     <button type="button" id="btn-toggle-rr" class="btn-mode-toggle active" onclick="cambiarModoTorneo('normal')">🎲 Modo Grupos</button>
-                    <!-- BOTÓN PARA LIGA/ROUND ROBIN PURO -->
+                    <!-- BOTÓN PARA MODO LIGA -->
                     <button type="button" id="btn-toggle-liga" class="btn-mode-toggle" onclick="cambiarModoTorneo('liga')">🏆 Modo Liga (RR Puro)</button>
                     <button type="button" id="btn-toggle-flash" class="btn-mode-toggle" onclick="cambiarModoTorneo('flash')">⚡ Modo Flash</button>
                 </div>
@@ -210,7 +210,7 @@
                         <option value="5" selected>Grupos de 5 jugadores</option>
                         <option value="6">Grupos de 6 jugadores</option>
                     </select>
-                    <!-- SELECT PARA NÚMERO DE VUELTAS -->
+                    <!-- SELECT DE VUELTAS (Para modo Liga) -->
                     <select id="rr-vueltas" style="display:none; max-width: 150px;">
                         <option value="1" selected>1 Vuelta (Ida)</option>
                         <option value="2">2 Vueltas (Ida y Vuelta)</option>
@@ -277,10 +277,8 @@
                 <div class="form-row" style="margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap;">
                     <div><label style="font-size:9px; color:#38bdf8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Mesa Inicial</label><input type="number" id="rr-mesa-inicio" value="1" min="1" max="50" style="width:80px;" onchange="simularJuecesYActualizarUI()"></div>
                     <div><label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">N° Mesas a Usar</label><input type="number" id="rr-num-mesas" value="2" min="1" max="20" style="width:80px;" onchange="simularJuecesYActualizarUI()"></div>
-                    <!-- CAMBIO: INPUT DE HORA -->
                     <div><label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Hora Inicio</label><input type="time" id="rr-hora-inicio" value="09:00" onchange="simularJuecesYActualizarUI()"></div>
                     <div><label style="font-size:9px; color:#94a3b8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Min/Partido</label><input type="number" id="rr-duracion-partido" value="30" min="10" style="width:70px;" onchange="simularJuecesYActualizarUI()"></div>
-                    <!-- CAMBIO: INPUT DE HORA -->
                     <div><label style="font-size:9px; color:#f87171; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Hora Break (Opcional)</label><input type="time" id="rr-hora-break" onchange="simularJuecesYActualizarUI()"></div>
                     <div><label style="font-size:9px; color:#f87171; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">Min. Break</label><input type="number" id="rr-duracion-break" value="30" min="0" style="width:70px;" onchange="simularJuecesYActualizarUI()"></div>
                 </div>
@@ -294,7 +292,7 @@
                     <div><label style="font-size:9px; color:#38bdf8; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">PIN Jueces</label><input type="text" id="rr-pin-jueces" value="1234" maxlength="4" style="width:80px; text-align:center;"></div>
                 </div>
 
-                <!-- BLOQUE LLAVES SE OCULTARÁ EN MODO LIGA -->
+                <!-- BLOQUE LLAVES SE OCULTARÁ AUTOMÁTICAMENTE EN MODO LIGA -->
                 <div id="bloque-llaves-config" class="form-row" style="margin-bottom:15px; display:flex; gap:15px; flex-wrap:wrap; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px dashed rgba(245,158,11,0.3);">
                     <div style="width: 100%; font-size: 11px; color: #fbbf24; font-weight: 800; text-transform: uppercase; margin-bottom: 5px;"><i class="fa-solid fa-trophy mr-2"></i> Fase Final (Llaves)</div>
                     <div><label style="font-size:9px; color:#fbbf24; display:block; margin-bottom:4px; font-weight:800; text-transform:uppercase;">N° Mesas a Usar</label><input type="number" id="rr-mesas-finales" value="2" min="1" max="20" style="width:100px;" onchange="simularJuecesYActualizarUI()"></div>
@@ -355,8 +353,6 @@
         let partidosCargadosGlobal = [];
         let maxJuecesFaltantesSistema = 0; 
         
-        let isGuardando = false; 
-
         let modoTorneoActual = 'normal'; 
         let seleccionFlash = []; 
         let partidosFlashActivos = []; 
@@ -375,6 +371,33 @@
             { border: '#f97316', bg: 'rgba(249, 115, 22, 0.1)', text: '#fff', badge: '#f97316' }, 
             { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)', text: '#000', badge: '#06b6d4' }   
         ];
+
+        // ==============================================================
+        // PARSER DE TIEMPOS BLINDADO (SOLUCIONA EL BUG DE LAS 12:00 AM)
+        // ==============================================================
+        function timeToMinutes(timeStr) { 
+            if (!timeStr) return 540; 
+            let cleanStr = String(timeStr).trim().toLowerCase();
+            let match = cleanStr.match(/^(\d+):(\d+)/);
+            if (!match) return 540;
+            
+            let hrs = parseInt(match[1], 10);
+            let mins = parseInt(match[2], 10);
+            
+            if (cleanStr.includes('p') && hrs < 12) hrs += 12;
+            if (cleanStr.includes('a') && hrs === 12) hrs = 0;
+            
+            return hrs * 60 + mins; 
+        }
+
+        function minutesToTimeStr(m) { 
+            let hrs = Math.floor(m / 60) % 24; 
+            let mins = m % 60; 
+            let ampm = hrs >= 12 ? 'PM' : 'AM'; 
+            let displayHrs = hrs % 12 || 12; 
+            let hrsStr = displayHrs < 10 ? '0' + displayHrs : displayHrs; 
+            return `${hrsStr}:${mins < 10 ? '0' + mins : mins} ${ampm}`; 
+        }
 
         function quitarAcentos(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : ""; }
 
@@ -401,17 +424,12 @@
 
         async function inicializarSorteo() {
             try {
-                const { data: torneoData, error } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).eq('organizador_id', ORG_ID).maybeSingle();
-                
-                if (error) throw error;
-                
+                const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).eq('organizador_id', ORG_ID).maybeSingle();
                 if (torneoData) {
                     torneoActivoObj = torneoData;
                     let infoLugar = torneoData.lugar_evento ? ` | 📍 ${torneoData.lugar_evento}` : '';
                     document.getElementById('banner-torneo-info').innerText = `📌 Torneo Activo: ${torneoData.nombre}${infoLugar}`;
                     if(torneoData.pin_jueces) document.getElementById('rr-pin-jueces').value = torneoData.pin_jueces;
-                } else {
-                    document.getElementById('banner-torneo-info').innerText = "📌 No se encontró torneo activo";
                 }
 
                 const { data } = await clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: true });
@@ -427,16 +445,10 @@
                 }
 
                 clienteSupabase.channel('sorteo-partidos-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => {
-                    // BLINDAJE: Solo recarga si no se está generando o guardando un sorteo activo
-                    if (!isGuardando && document.getElementById('filtro-categoria').value && gruposGlobal.length === 0) {
-                        cargarEstadoCategoria();
-                    }
+                    if (document.getElementById('filtro-categoria').value) cargarEstadoCategoria();
                 }).subscribe();
 
-            } catch(e) { 
-                console.error("Error al iniciar:", e); 
-                document.getElementById('banner-torneo-info').innerText = "❌ Error conectando con el servidor";
-            }
+            } catch(e) { console.error("Error al iniciar:", e); }
         }
 
         async function cargarEstadoCategoria() {
@@ -762,8 +774,7 @@
                 htmlTotal += html + `</div>`;
             });
             contenedor.innerHTML = htmlTotal;
-            // BLINDAJE: El botón guardar desaparece aquí. Solo se muestra tras calcular partidos.
-            document.getElementById('btn-guardar-grupos').style.display = 'none';
+            document.getElementById('btn-guardar-grupos').style.display = 'block';
         }
 
         function moverJugador(jugadorId, nuevoGrupoNombre) {
@@ -787,35 +798,6 @@
                 schedule.push({ matches: roundMatches, resting: resting }); rotating.unshift(rotating.pop());
             }
             return schedule;
-        }
-
-        // ==========================================
-        // PARSER DE HORA BLINDADO PARA CUALQUIER NAVEGADOR
-        // ==========================================
-        function timeToMinutes(timeStr) { 
-            if (!timeStr) return 540; // Por defecto a 09:00 AM si está vacío
-            
-            let cleanStr = String(timeStr).trim().toLowerCase().replace(/\s+/g, '');
-            let match = cleanStr.match(/^(\d+):(\d+)(am|pm|a\.m\.|p\.m\.)?/);
-            if (!match) return 540;
-            
-            let hrs = parseInt(match[1], 10);
-            let mins = parseInt(match[2], 10);
-            let ampm = match[3] ? match[3].replace(/\./g, '') : null;
-            
-            if (ampm === 'pm' && hrs < 12) hrs += 12;
-            if (ampm === 'am' && hrs === 12) hrs = 0;
-            
-            return hrs * 60 + mins; 
-        }
-
-        function minutesToTimeStr(m) { 
-            let hrs = Math.floor(m / 60) % 24; 
-            let mins = m % 60; 
-            let ampm = hrs >= 12 ? 'PM' : 'AM'; 
-            let displayHrs = hrs % 12 || 12; 
-            let hrsStr = displayHrs < 10 ? '0' + displayHrs : displayHrs; 
-            return `${hrsStr}:${mins < 10 ? '0' + mins : mins} ${ampm}`; 
         }
 
         function simularJuecesYActualizarUI() {
@@ -891,7 +873,10 @@
             const numMesasFinales = parseInt(document.getElementById('rr-mesas-finales').value) || 2;
             
             let externalNames = [];
-            for(let i=0; i<maxJuecesFaltantesSistema; i++) externalNames.push(document.getElementById(`juez-ext-${i}`)?.value.trim() || `Juez Externo ${i+1}`);
+            for(let i=0; i<maxJuecesFaltantesSistema; i++) {
+                let jExtElement = document.getElementById(`juez-ext-${i}`);
+                externalNames.push(jExtElement ? jExtElement.value.trim() : `Juez Externo ${i+1}`);
+            }
             
             let pendingMatches = [];
             for(let r=0; r < maxRounds; r++) {
@@ -935,7 +920,6 @@
                 currentTimeMins += duracionPartido;
             }
 
-            // SE OMITE POR COMPLETO SI ESTÁ EN MODO LIGA (RR PURO)
             if (modoTorneoActual !== 'liga') {
                 let rondasLlaves = [];
                 if (gruposGlobal.length > 2) {
@@ -982,16 +966,11 @@
             
             document.getElementById('seccion-partidos-rr').style.display = 'block';
             dibujarTablaPartidosGenerados(partidosGeneradosRR);
-            
-            // BLINDAJE: Solo permite guardar hasta que el usuario haya calculado los tiempos
-            document.getElementById('btn-guardar-grupos').style.display = 'flex';
         }
 
         function dibujarTablaPartidosBD(partidosBD) {
             const tbody = document.getElementById('tabla-partidos-rr'); if (!tbody) return; 
             const filtroActual = document.getElementById('filtro-jugador-agenda') ? document.getElementById('filtro-jugador-agenda').value : '';
-            
-            // SE SOLUCIONA LA CONGELACIÓN ARMANDO TODA LA TABLA DE UNA VEZ
             let htmlTabla = '';
 
             partidosBD.forEach(p => {
@@ -1102,9 +1081,6 @@
                 await cargarEstadoCategoria();
             } catch(e) { alert("Error al borrar: " + e.message); }
         }
-
-        // ====== SOLUCIÓN 2: CANDADO ANTI-CONGELAMIENTO ======
-        let isGuardando = false; 
 
         async function guardarGruposBD() {
             const idCategoria = document.getElementById('filtro-categoria').value;
