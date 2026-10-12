@@ -249,8 +249,17 @@
         async function inicializarEspectador() {
             try {
                 // 1. OBTENER TORNEO Y SU DUEÑO
-                const { data: torneoData, error: errTorneo } = await clienteSupabase.from('torneos').select('nombre, organizador_id').eq('id', idTorneoActivo).single();
+                const { data: torneoData, error: errTorneo } = await clienteSupabase
+                    .from('torneos')
+                    .select('id, nombre, organizador_id')
+                    .eq('id', idTorneoActivo)
+                    .single();
                 
+                if (errTorneo) {
+                    console.error("Error cargando torneo:", errTorneo);
+                    throw new Error("No se pudo cargar el torneo: " + errTorneo.message);
+                }
+
                 if (torneoData) {
                     document.getElementById('torneo-nombre-header').innerText = torneoData.nombre;
                     ORG_ID = torneoData.organizador_id;
@@ -258,12 +267,20 @@
                     throw new Error("Torneo no encontrado");
                 }
 
-                // 2. CARGAR DATOS BLINDADOS
+                // 2. CARGAR DATOS BLINDADOS EXIGIENDO COLUMNAS EXACTAS (Evita bugs de caché con *)
                 const [resReglas, resConfig, resCat, resJugadores] = await Promise.allSettled([
-                    clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }),
-                    clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).single(),
-                    clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: false }),
-                    clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID).order('puntos_ranking', { ascending: false })
+                    clienteSupabase.from('reglas_ranking')
+                        .select('id, diferencia_min, diferencia_max, puntos_ganador, puntos_perdedor, resultado_esperado')
+                        .eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }),
+                    clienteSupabase.from('configuracion')
+                        .select('id, clave, valor, activo')
+                        .eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).single(),
+                    clienteSupabase.from('categorias')
+                        .select('id, nombre, puntos_minimos, puntos_maximos, costo_inscripcion')
+                        .eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: false }),
+                    clienteSupabase.from('jugadores')
+                        .select('id, nombre, club, puntos_ranking, puntos_ranking_ant, division, handicap')
+                        .eq('organizador_id', ORG_ID).order('puntos_ranking', { ascending: false })
                 ]);
 
                 reglasRankingList = resReglas.status === 'fulfilled' ? (resReglas.value.data || []) : [];
@@ -290,22 +307,26 @@
             } catch (err) {
                 console.error("Error inicializando espectador:", err);
                 const cont = document.getElementById('contenedor-espectador');
-                if(cont) cont.innerHTML = `<div class="mensaje-vacio text-rose-500">Error conectando con el torneo.</div>`;
+                if(cont) cont.innerHTML = `<div class="mensaje-vacio text-rose-500">Error conectando con el torneo: ${err.message}</div>`;
             }
         }
 
         async function cargarMarcadores() {
-            // RETORNAMOS A LA CONSULTA ORIGINAL SEGURA QUE IGNORA LAS COLUMNAS NUEVAS PARA EVITAR QUE LA CACHÉ CONGELE LA PANTALLA
-            const { data: partidos } = await clienteSupabase
+            // EXIGIMOS COLUMNAS EXACTAS PARA QUE EL MODO PÚBLICO (ANÓNIMO) NO FALLE POR LA CACHÉ
+            const { data: partidos, error } = await clienteSupabase
                 .from('partidos')
-                .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)')
+                .select('id, torneo_id, categoria_id, organizador_id, grupo_nombre, ronda_fase, mesa, hora, modo_juego, jugador1_id, jugador2_id, ganador_id, puntos_j1, puntos_j2, sets_j1, sets_j2, historial_sets, estado, juez, mostrar_ranking, j1:jugador1_id(id, nombre, club, puntos_ranking, division, handicap), j2:jugador2_id(id, nombre, club, puntos_ranking, division, handicap), categorias(id, nombre)')
                 .eq('torneo_id', idTorneoActivo)
                 .eq('organizador_id', ORG_ID)
                 .order('id', { ascending: true });
 
+            if (error) {
+                console.error("Error al cargar marcadores:", error);
+                return;
+            }
+
             todosLosPartidos = partidos || [];
             
-            // SEGURO CONTRA ERRORES DE HISTORIAL (Evita cuelgues si Supabase devuelve texto en lugar de array)
             todosLosPartidos.forEach(p => {
                 if (p.historial_sets && typeof p.historial_sets === 'string') {
                     try { p.historial_sets = JSON.parse(p.historial_sets); } catch(e) { p.historial_sets = []; }
@@ -927,12 +948,12 @@
                     nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : (pCuartos4?.ganador_id ? (pCuartos4.ganador_id === pCuartos4.jugador1_id ? nomC4_j1 : nomC4_j2) : 'Gana Cuartos 4');
                     tS2_1 = 'Gana C3'; tS2_2 = 'Gana C4';
                 } else {
-                    nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : s1.nombre;
-                    nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : s4.nombre;
+                    nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : primeroA;
+                    nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : segundoB;
                     tS1_1 = `Seed 1 (${s1.gpo})`; tS1_2 = `Seed 4 (${s4.gpo})`;
                     
-                    nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : s2.nombre;
-                    nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : s3.nombre;
+                    nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : primeroB;
+                    nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : segundoA;
                     tS2_1 = `Seed 2 (${s2.gpo})`; tS2_2 = `Seed 3 (${s3.gpo})`;
                 }
 
