@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- Etiquetas anti-caché para forzar Vercel a mostrar el nuevo código -->
+    <!-- ETIQUETAS ULTRA AGRESIVAS PARA MATAR LA CACHÉ -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -14,6 +14,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        const isAuthLocal = localStorage.getItem('admin_autenticado') === 'true';
+
+        if (!isAuthLocal) {
+            alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
+            window.location.href = "torneos.html";
+        }
+    </script>
+
     <style>
         body { background-color: #04060a; color: white; font-family: 'Sora', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
         .font-digital { font-family: 'Orbitron', sans-serif; }
@@ -64,8 +74,9 @@
             <div id="badge-espectadores" class="hidden items-center bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all gap-1" title="Espectadores conectados">
                 <i class="fa-solid fa-eye animate-pulse"></i> <span id="contador-espectadores">0</span>
             </div>
+            <!-- BOTÓN ACTUALIZADO PARA COMPROBAR CAMBIOS -->
             <button id="btn-toggle-ranking" onclick="toggleMostrarRanking()" class="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all">
-                📊 Ranking: OFF
+                <i class="fa-regular fa-star"></i> MODO RANKING: OFF
             </button>
             <button id="btn-audio" onclick="toggleAudio()" class="bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 w-8 h-8 rounded-full flex items-center justify-center text-xs">
                 <i class="fa-solid fa-volume-high"></i>
@@ -177,7 +188,6 @@
                 targetPlayer = 2;
             }
             
-            // Lógica de "rebote": si el de Div 2 gana sets, su ventaja se va reduciendo
             if (targetPlayer === 1) {
                 historialSets.forEach(set => {
                     if (set.s1 > set.s2) hP1 = Math.max(0, hP1 - 1); 
@@ -189,7 +199,6 @@
                     else hP2 += 1; 
                 });
             }
-            
             return { hP1, hP2 };
         }
 
@@ -203,12 +212,12 @@
                 
                 await cargarYResolverPartido();
 
-                // AQUÍ ESTABA EL ERROR: Le quitamos el .eq('organizador_id', ORG_ID)
-                // para que busque las reglas correctamente en tu tabla general.
-                const { data: reglas } = await clienteSupabase.from('reglas_ranking')
+                // AQUÍ ELIMINAMOS CUALQUIER BARRERA. Traemos las reglas globales directamente.
+                const { data: reglas, error: errReglas } = await clienteSupabase.from('reglas_ranking')
                     .select('*')
                     .order('diferencia_min', { ascending: true });
-                    
+                
+                if (errReglas) console.error("Error al cargar reglas:", errReglas);
                 reglasRanking = reglas || [];
                 
                 await calcularRankingEnVivoAcumulado();
@@ -252,12 +261,10 @@
                 historialSets = Array.isArray(hs) ? hs : [];
                 numSetActual = historialSets.length + 1;
 
-                // DETECCIÓN Y CÁLCULO DE HÁNDICAP ACTUALIZADO
                 let hActual = calcularHandicapActual();
                 handicapP1 = hActual.hP1;
                 handicapP2 = hActual.hP2;
 
-                // APLICAR HÁNDICAP INICIAL (Si no han empezado el set)
                 if (historialSets.length === 0 && p1.score === 0 && p2.score === 0 && p1.sets === 0 && p2.sets === 0 && (handicapP1 > 0 || handicapP2 > 0)) {
                     p1.score = handicapP1;
                     p2.score = handicapP2;
@@ -321,30 +328,32 @@
             } catch(e) { p1.ptsLive = p1.ptsBase; p2.ptsLive = p2.ptsBase; }
         }
 
-        // ======================= CORRECCIÓN DEL MOTOR DE PUNTOS =======================
+        // ======================= CORRECCIÓN DEL MOTOR DE PUNTOS ULTRA-SEGURO =======================
         function calcularImpactoPuntos(ptsA, ptsB) {
             let diff = Math.abs(ptsA - ptsB);
-            
             let favoritoEsJ1 = ptsA >= ptsB;
 
-            // Búsqueda inteligente a prueba de errores tipográficos en Supabase
             let reglaGanaJ1 = reglasRanking.find(r => {
                 let isRangeOk = diff >= r.diferencia_min && diff <= r.diferencia_max;
-                let isReglaFavorito = String(r.resultado_esperado).toLowerCase().includes('favorito');
-                let isReglaRetador = !isReglaFavorito;
                 if (!isRangeOk) return false;
-                if (favoritoEsJ1 && isReglaFavorito) return true;
-                if (!favoritoEsJ1 && isReglaRetador) return true;
+                let valDb = String(r.resultado_esperado).toLowerCase();
+                let isReglaFav = valDb.includes('favorito');
+                let isReglaRet = valDb.includes('retador') || valDb.includes('upset');
+                
+                if (favoritoEsJ1 && isReglaFav) return true;
+                if (!favoritoEsJ1 && isReglaRet) return true;
                 return false;
             });
 
             let reglaGanaJ2 = reglasRanking.find(r => {
                 let isRangeOk = diff >= r.diferencia_min && diff <= r.diferencia_max;
-                let isReglaFavorito = String(r.resultado_esperado).toLowerCase().includes('favorito');
-                let isReglaRetador = !isReglaFavorito;
                 if (!isRangeOk) return false;
-                if (!favoritoEsJ1 && isReglaFavorito) return true;
-                if (favoritoEsJ1 && isReglaRetador) return true;
+                let valDb = String(r.resultado_esperado).toLowerCase();
+                let isReglaFav = valDb.includes('favorito');
+                let isReglaRet = valDb.includes('retador') || valDb.includes('upset');
+
+                if (!favoritoEsJ1 && isReglaFav) return true;
+                if (favoritoEsJ1 && isReglaRet) return true;
                 return false;
             });
 
@@ -406,10 +415,15 @@
 
         function actualizarBotonRankingUI() {
             const btn = document.getElementById('btn-toggle-ranking');
-            btn.innerText = `📊 Ranking: ${mostrarRankingImpacto ? 'ON' : 'OFF'}`;
+            
+            // EL CAMBIO VISUAL DEFINITIVO PARA SABER QUE SE ACTUALIZÓ EL CÓDIGO
+            btn.innerHTML = mostrarRankingImpacto 
+                ? `<i class="fa-solid fa-star"></i> MODO RANKING: ACTIVADO` 
+                : `<i class="fa-regular fa-star"></i> MODO RANKING: APAGADO`;
+                
             btn.className = mostrarRankingImpacto 
-                ? "bg-amber-500 text-black border border-amber-400 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-[0_0_12px_rgba(245,158,11,0.5)]" 
-                : "bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest";
+                ? "bg-amber-500 text-black border border-amber-400 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(245,158,11,0.6)]" 
+                : "bg-amber-500/10 text-amber-500 border border-amber-500/40 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest";
         }
 
         async function toggleMostrarRanking() {
@@ -425,7 +439,6 @@
             let handL = isSwapped ? handicapP2 : handicapP1;
             let handR = isSwapped ? handicapP1 : handicapP2;
             
-            // Añadir indicativo visual dinámico de Hándicap
             let n1 = p1.nombre + (handicapP1 > 0 ? ` <span class="text-amber-400 text-xs md:text-sm tracking-normal block md:inline"><br class="md:hidden">(+${handicapP1} Pts Div)</span>` : '');
             let n2 = p2.nombre + (handicapP2 > 0 ? ` <span class="text-amber-400 text-xs md:text-sm tracking-normal block md:inline"><br class="md:hidden">(+${handicapP2} Pts Div)</span>` : '');
             
@@ -447,8 +460,14 @@
                 else if (partidoData.ganador_id === p2.id) { ptsShowP1 += impactoLive.j1Pierde; ptsShowP2 += impactoLive.j2Gana; }
             }
 
-            let textRankP1 = mostrarRankingImpacto ? `<strong>${ptsShowP1} pts ${isFin ? '(Final)' : '(En Vivo)'}</strong> | <span class="text-emerald-400">🏆 +${impactoLive.j1Gana}</span> <span class="text-rose-400">❌ ${impactoLive.j1Pierde}</span>` : `${ptsShowP1} pts ${isFin ? '(Final)' : '(En Vivo)'}`;
-            let textRankP2 = mostrarRankingImpacto ? `<strong>${ptsShowP2} pts ${isFin ? '(Final)' : '(En Vivo)'}</strong> | <span class="text-emerald-400">🏆 +${impactoLive.j2Gana}</span> <span class="text-rose-400">❌ ${impactoLive.j2Pierde}</span>` : `${ptsShowP2} pts ${isFin ? '(Final)' : '(En Vivo)'}`;
+            // NUEVO FORMATO DE PUNTOS MUY VISIBLE
+            let textRankP1 = mostrarRankingImpacto 
+                ? `<strong>${ptsShowP1} pts ${isFin ? '(Final)' : '(En Vivo)'}</strong> | <span class="text-emerald-400 font-bold">🟢 GANA: +${impactoLive.j1Gana}</span> <span class="text-rose-400 font-bold ml-2">🔴 PIERDE: ${impactoLive.j1Pierde}</span>` 
+                : `${ptsShowP1} pts ${isFin ? '(Final)' : '(En Vivo)'}`;
+                
+            let textRankP2 = mostrarRankingImpacto 
+                ? `<strong>${ptsShowP2} pts ${isFin ? '(Final)' : '(En Vivo)'}</strong> | <span class="text-emerald-400 font-bold">🟢 GANA: +${impactoLive.j2Gana}</span> <span class="text-rose-400 font-bold ml-2">🔴 PIERDE: ${impactoLive.j2Pierde}</span>` 
+                : `${ptsShowP2} pts ${isFin ? '(Final)' : '(En Vivo)'}`;
 
             document.getElementById('ranking-info-left').innerHTML = isSwapped ? textRankP2 : textRankP1; 
             document.getElementById('ranking-info-right').innerHTML = isSwapped ? textRankP1 : textRankP2;
