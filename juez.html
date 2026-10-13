@@ -203,12 +203,16 @@
                 
                 await cargarYResolverPartido();
 
-                if (ORG_ID) {
-                    const { data: reglas } = await clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true });
-                    reglasRanking = reglas || [];
-                    await calcularRankingEnVivoAcumulado();
-                    actualizarUI();
-                }
+                // AQUÍ ESTABA EL ERROR: Le quitamos el .eq('organizador_id', ORG_ID)
+                // para que busque las reglas correctamente en tu tabla general.
+                const { data: reglas } = await clienteSupabase.from('reglas_ranking')
+                    .select('*')
+                    .order('diferencia_min', { ascending: true });
+                    
+                reglasRanking = reglas || [];
+                
+                await calcularRankingEnVivoAcumulado();
+                actualizarUI();
 
             } catch (err) { console.error("Error inicializando:", err); }
         }
@@ -318,7 +322,6 @@
         }
 
         // ======================= CORRECCIÓN DEL MOTOR DE PUNTOS =======================
-        // Esta función ahora es idéntica a la del archivo admin.html
         function calcularImpactoPuntos(ptsA, ptsB) {
             let diff = Math.abs(ptsA - ptsB);
             
@@ -330,8 +333,6 @@
                 let isReglaFavorito = String(r.resultado_esperado).toLowerCase().includes('favorito');
                 let isReglaRetador = !isReglaFavorito;
                 if (!isRangeOk) return false;
-                // J1 gana: Si J1 es el favorito, entonces debe ganar el favorito.
-                // J1 gana: Si J1 NO es el favorito (es retador), entonces debe ganar el retador.
                 if (favoritoEsJ1 && isReglaFavorito) return true;
                 if (!favoritoEsJ1 && isReglaRetador) return true;
                 return false;
@@ -342,8 +343,6 @@
                 let isReglaFavorito = String(r.resultado_esperado).toLowerCase().includes('favorito');
                 let isReglaRetador = !isReglaFavorito;
                 if (!isRangeOk) return false;
-                // J2 gana: Si J2 es el favorito (!favoritoEsJ1), debe ganar el favorito.
-                // J2 gana: Si J2 NO es el favorito (favoritoEsJ1), debe ganar el retador.
                 if (!favoritoEsJ1 && isReglaFavorito) return true;
                 if (favoritoEsJ1 && isReglaRetador) return true;
                 return false;
