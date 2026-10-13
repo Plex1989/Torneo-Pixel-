@@ -74,7 +74,6 @@
             <div id="badge-espectadores" class="hidden items-center bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all gap-1" title="Espectadores conectados">
                 <i class="fa-solid fa-eye animate-pulse"></i> <span id="contador-espectadores">0</span>
             </div>
-            <!-- BOTÓN ACTUALIZADO PARA COMPROBAR CAMBIOS -->
             <button id="btn-toggle-ranking" onclick="toggleMostrarRanking()" class="bg-amber-500/20 text-amber-400 border border-amber-500/40 px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all">
                 <i class="fa-regular fa-star"></i> MODO RANKING: OFF
             </button>
@@ -212,7 +211,6 @@
                 
                 await cargarYResolverPartido();
 
-                // AQUÍ ELIMINAMOS CUALQUIER BARRERA. Traemos las reglas globales directamente.
                 const { data: reglas, error: errReglas } = await clienteSupabase.from('reglas_ranking')
                     .select('*')
                     .order('diferencia_min', { ascending: true });
@@ -328,29 +326,31 @@
             } catch(e) { p1.ptsLive = p1.ptsBase; p2.ptsLive = p2.ptsBase; }
         }
 
-        // ======================= CORRECCIÓN DEL MOTOR DE PUNTOS ULTRA-SEGURO =======================
+        // ======================= CORRECCIÓN EXACTA A PRUEBA DE FALLOS =======================
         function calcularImpactoPuntos(ptsA, ptsB) {
             let diff = Math.abs(ptsA - ptsB);
             let favoritoEsJ1 = ptsA >= ptsB;
 
+            // Busca la regla correspondiente al GANE del JUGADOR 1
             let reglaGanaJ1 = reglasRanking.find(r => {
                 let isRangeOk = diff >= r.diferencia_min && diff <= r.diferencia_max;
                 if (!isRangeOk) return false;
-                let valDb = String(r.resultado_esperado).toLowerCase();
-                let isReglaFav = valDb.includes('favorito');
-                let isReglaRet = valDb.includes('retador') || valDb.includes('upset');
+                
+                let isReglaFav = r.resultado_esperado === 'gana_favorito';
+                let isReglaRet = !isReglaFav; // Si no es exactamente 'gana_favorito', asumimos que es la otra (upset).
                 
                 if (favoritoEsJ1 && isReglaFav) return true;
                 if (!favoritoEsJ1 && isReglaRet) return true;
                 return false;
             });
 
+            // Busca la regla correspondiente al GANE del JUGADOR 2
             let reglaGanaJ2 = reglasRanking.find(r => {
                 let isRangeOk = diff >= r.diferencia_min && diff <= r.diferencia_max;
                 if (!isRangeOk) return false;
-                let valDb = String(r.resultado_esperado).toLowerCase();
-                let isReglaFav = valDb.includes('favorito');
-                let isReglaRet = valDb.includes('retador') || valDb.includes('upset');
+                
+                let isReglaFav = r.resultado_esperado === 'gana_favorito';
+                let isReglaRet = !isReglaFav;
 
                 if (!favoritoEsJ1 && isReglaFav) return true;
                 if (favoritoEsJ1 && isReglaRet) return true;
@@ -416,7 +416,6 @@
         function actualizarBotonRankingUI() {
             const btn = document.getElementById('btn-toggle-ranking');
             
-            // EL CAMBIO VISUAL DEFINITIVO PARA SABER QUE SE ACTUALIZÓ EL CÓDIGO
             btn.innerHTML = mostrarRankingImpacto 
                 ? `<i class="fa-solid fa-star"></i> MODO RANKING: ACTIVADO` 
                 : `<i class="fa-regular fa-star"></i> MODO RANKING: APAGADO`;
@@ -460,7 +459,6 @@
                 else if (partidoData.ganador_id === p2.id) { ptsShowP1 += impactoLive.j1Pierde; ptsShowP2 += impactoLive.j2Gana; }
             }
 
-            // NUEVO FORMATO DE PUNTOS MUY VISIBLE
             let textRankP1 = mostrarRankingImpacto 
                 ? `<strong>${ptsShowP1} pts ${isFin ? '(Final)' : '(En Vivo)'}</strong> | <span class="text-emerald-400 font-bold">🟢 GANA: +${impactoLive.j1Gana}</span> <span class="text-rose-400 font-bold ml-2">🔴 PIERDE: ${impactoLive.j1Pierde}</span>` 
                 : `${ptsShowP1} pts ${isFin ? '(Final)' : '(En Vivo)'}`;
