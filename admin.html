@@ -13,17 +13,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- ESCÁNER DE ERRORES GLOBAL (Para evitar que se congele en silencio) -->
+    <!-- ESCÁNER DE ERRORES GLOBAL -->
     <script>
-        window.addEventListener('error', function(e) {
-            console.error("Error Global JS:", e);
-            alert("⚠️ Error detectado en el código:\n" + e.message);
-        });
-        window.addEventListener('unhandledrejection', function(e) {
-            console.error("Error Supabase/Red:", e);
-            alert("⚠️ Error de base de datos o conexión:\n" + (e.reason ? e.reason.message : 'Error desconocido'));
-        });
-
         const isAuthLocal = localStorage.getItem('admin_autenticado') === 'true';
         if (!isAuthLocal) {
             alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
@@ -113,12 +104,15 @@
 
         .memoria-print-area { display: none; background: #fff !important; color: #000 !important; padding: 40px; font-family: 'Arial', sans-serif; }
         
+        /* ================= CSS EXCLUSIVO PARA IMPRESIÓN DEL RANKING ================= */
         @media print {
             body > *:not(#area-impresion-memoria) { display: none !important; }
             body { background: #ffffff !important; }
             #area-impresion-memoria { display: block !important; }
             .memoria-print-area { display: block !important; padding: 0 !important; }
+            
             .impresion-ranking { font-family: 'Arial', sans-serif !important; color: #0f172a !important; width: 100%; max-width: 850px; margin: 0 auto; }
+            
             .print-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #0f172a; padding-bottom: 15px; margin-bottom: 25px; }
             .print-header-left h2 { margin: 0; font-size: 28px; font-weight: 900; color: #0f172a !important; letter-spacing: -1px; }
             .print-header-left h3 { margin: 0; font-size: 11px; font-weight: 600; color: #475569 !important; text-transform: uppercase; letter-spacing: 1px; }
@@ -126,15 +120,19 @@
             .print-header-center span { font-weight: 700; font-size: 11px; color: #3b82f6 !important; text-transform: uppercase; letter-spacing: 1px; display: block; margin-top: 4px; }
             .print-header-right { text-align: right; font-size: 11px; color: #475569 !important; font-weight: 600; text-transform: uppercase;}
             .print-header-right strong { font-size: 16px; color: #0f172a !important; font-weight: 900; }
+
             .print-cat-wrapper { margin-bottom: 25px; page-break-inside: avoid; }
+            
             .print-table { width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1; font-size: 11px; }
             .print-table th { padding: 8px 10px; text-align: left; font-size: 9px; font-weight: 800; color: #475569 !important; text-transform: uppercase; border-bottom: 2px solid #94a3b8; background: #f8fafc !important; -webkit-print-color-adjust: exact; }
             .print-table td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; color: #0f172a !important; }
-            .bg-cat-0 { background-color: #fbbf24 !important; color: #000 !important; -webkit-print-color-adjust: exact; }
-            .bg-cat-1 { background-color: #94a3b8 !important; color: #000 !important; -webkit-print-color-adjust: exact; }
-            .bg-cat-2 { background-color: #d97706 !important; color: #fff !important; -webkit-print-color-adjust: exact; }
-            .bg-cat-3 { background-color: #06b6d4 !important; color: #000 !important; -webkit-print-color-adjust: exact; }
-            .bg-cat-4 { background-color: #a855f7 !important; color: #fff !important; -webkit-print-color-adjust: exact; }
+            
+            .bg-cat-0 { background-color: #fbbf24 !important; color: #000 !important; -webkit-print-color-adjust: exact; } 
+            .bg-cat-1 { background-color: #94a3b8 !important; color: #000 !important; -webkit-print-color-adjust: exact; } 
+            .bg-cat-2 { background-color: #d97706 !important; color: #fff !important; -webkit-print-color-adjust: exact; } 
+            .bg-cat-3 { background-color: #06b6d4 !important; color: #000 !important; -webkit-print-color-adjust: exact; } 
+            .bg-cat-4 { background-color: #a855f7 !important; color: #fff !important; -webkit-print-color-adjust: exact; } 
+            
             .pt-rank { font-weight: 800; color: #64748b !important; text-align: center; }
             .pt-name { font-weight: 800; font-size: 12px; }
             .pt-club { font-size: 9px; font-weight: 700; color: #64748b !important; text-transform: uppercase;}
@@ -312,7 +310,7 @@
             <table>
                 <thead><tr><th>Jugador</th><th>Club</th><th>Categoría Registrada</th><th>División / Hándicap</th><th>Estatus Pago</th><th style="width: 150px;">Acción</th></tr></thead>
                 <tbody id="tabla-inscritos-vivo">
-                    <tr><td colspan="6" class="mensaje-vacio" style="color:#f59e0b;">📡 Conectando con Supabase para descargar inscritos...</td></tr>
+                    <tr><td colspan="6" class="mensaje-vacio">Cargando inscritos...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -351,7 +349,7 @@
 
         <!-- PAGOS PENDIENTES -->
         <div class="panel-3d panel-amber">
-            <h2>💰 Validación de Pagos Pendientes</h2>
+            <h2>💰 Validación de Pagos Pendientes (VERSIÓN 2.0)</h2>
             <table>
                 <thead><tr><th>Jugador</th><th>Categoría</th><th>Ranking</th><th>Acción</th></tr></thead>
                 <tbody id="tabla-pendientes"><tr><td colspan="4" class="mensaje-vacio">Cargando validaciones...</td></tr></tbody>
@@ -630,18 +628,54 @@
             return partes[partes.length - 1];
         };
 
-        // ================= CÓDIGO REPARADO DE INSCRIPCIONES =================
+        // =========================================================================
+        // MÓDULOS BLINDADOS CONTRA ERRORES (PAGOS E INSCRITOS)
+        // =========================================================================
+        
+        async function cargarPendientes() {
+            const tbody = document.getElementById('tabla-pendientes');
+            if(!tbody) return;
+            try {
+                tbody.innerHTML = '<tr><td colspan="4" class="mensaje-vacio" style="color:#38bdf8;">📡 Conectando servidor de pagos...</td></tr>';
+                
+                const { data, error } = await clienteSupabase.from('inscripciones')
+                    .select(`id, estatus_pago, jugadores ( id, nombre, puntos_ranking, club ), categorias ( id, nombre )`)
+                    .eq('torneo_id', idTorneoActivo)
+                    .eq('estatus_pago', 'Pendiente de Pago');
+                
+                if (error) throw new Error(error.message);
+                
+                if (!data || data.length === 0) { 
+                    tbody.innerHTML = '<tr><td colspan="4" class="mensaje-vacio">No hay pagos pendientes.</td></tr>'; 
+                    return; 
+                }
+
+                let html = '';
+                data.forEach(ins => {
+                    let nom = (ins.jugadores && ins.jugadores.nombre) ? ins.jugadores.nombre : 'Desconocido';
+                    let club = (ins.jugadores && ins.jugadores.club) ? ins.jugadores.club : 'S/C';
+                    let cat = (ins.categorias && ins.categorias.nombre) ? ins.categorias.nombre : 'N/A';
+                    let pts = (ins.jugadores && ins.jugadores.puntos_ranking) ? ins.jugadores.puntos_ranking : 0;
+                    
+                    html += `<tr><td><strong style="color:#ffffff; font-size:12px;">${nom}</strong> <small style="color:#64748b; font-weight:700; margin-left:6px; font-size:10px;">(${club})</small></td><td style="color:#38bdf8; font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;">${cat}</td><td style="color:#fbbf24; font-weight:800; font-size:11px;">${pts} pts</td><td><button class="btn-console btn-green" style="padding:4px 10px; font-size:9px;" onclick="aprobarPago(${ins.id})">Validar Pago</button></td></tr>`;
+                });
+                tbody.innerHTML = html;
+            } catch(e) { 
+                console.error("Error en pagos pendientes:", e);
+                tbody.innerHTML = `<tr><td colspan="4" class="mensaje-vacio" style="color:#ef4444;">⚠️ Error de conexión: ${e.message}</td></tr>`;
+            }
+        }
+
         async function cargarInscritosEnVivo() {
             const tbody = document.getElementById('tabla-inscritos-vivo'); 
             if (!tbody) return;
             
             try {
-                // MENSAJE TEMPORAL PARA COMPROBAR SI ESTÁ LEYENDO LA NUEVA VERSIÓN
-                tbody.innerHTML = '<tr><td colspan="6" class="mensaje-vacio" style="color:#f59e0b;">📡 Conectando con Supabase para descargar inscritos...</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="mensaje-vacio" style="color:#38bdf8;">📡 Conectando servidor de inscritos...</td></tr>';
                 
                 const { data, error } = await clienteSupabase.from('inscripciones').select(`id, categoria_id, estatus_pago, jugadores ( id, nombre, club, puntos_ranking ), categorias ( id, nombre )`).eq('torneo_id', idTorneoActivo);
                 
-                if (error) throw error;
+                if (error) throw new Error(error.message);
                 
                 const cantReg = document.getElementById('cant-registrados'); 
                 const cantPag = document.getElementById('cant-pagados');
@@ -658,7 +692,7 @@
                 if (cantPag) cantPag.innerText = validData.filter(i => i.estatus_pago === 'Pagado').length;
 
                 if (validData.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" class="mensaje-vacio">Hay inscripciones, pero tienen errores de vinculación (jugador/categoría borrada).</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="6" class="mensaje-vacio">Las inscripciones actuales tienen datos borrados o corruptos.</td></tr>';
                     return;
                 }
 
@@ -672,7 +706,6 @@
                 });
 
                 const categoriasOrdenadas = Object.keys(agrupados).sort();
-                
                 let html = '';
 
                 categoriasOrdenadas.forEach(catName => {
@@ -701,7 +734,7 @@
                         todasLasCategoriasAdmin.forEach(c => { selectCatHtml += `<option value="${c.id}" ${c.id === ins.categoria_id ? 'selected' : ''}>${c.nombre}</option>`; });
                         selectCatHtml += `</select>`;
 
-                        let jListObj = todosLosJugadoresAdmin.find(x => x.id === ins.jugadores.id);
+                        let jListObj = (todosLosJugadoresAdmin || []).find(x => x.id === ins.jugadores.id);
                         let div = jListObj ? (jListObj.division || 1) : 1;
                         let handicap = jListObj && jListObj.handicap !== undefined && jListObj.handicap !== null ? jListObj.handicap : 5;
 
@@ -748,7 +781,14 @@
             alert("✅ Inscripción eliminada."); cargarDatosIniciales();
         }
 
-        // ================= RESTO DEL CÓDIGO (SIN MODIFICAR) =================
+        async function aprobarPago(id) {
+            if (!confirm(`¿Confirmas el pago?`)) return;
+            await clienteSupabase.from('inscripciones').update({ estatus_pago: 'Pagado' }).eq('id', id);
+            cargarDatosIniciales();
+        }
+
+        // ================= DEMÁS FUNCIONES ADMINISTRATIVAS =================
+
         async function cargarDatosIniciales() {
             try {
                 const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
@@ -789,7 +829,7 @@
             try { generarRankingPorCategoriasHTMLPDF(); } catch(e) { console.error(e); }
             try { await cargarInscritosEnVivo(); } catch(e) { console.error(e); }
             try { dibujarTablaProgramacionCategorias(); } catch(e) { console.error(e); }
-            try { cargarPendientes(); } catch(e) { console.error(e); }
+            try { await cargarPendientes(); } catch(e) { console.error(e); }
             try { cargarPendientesRanking(); } catch(e) { console.error(e); }
             try { cargarCategoriasAdminView(); } catch(e) { console.error(e); }
             try { cargarReglasAdminView(); } catch(e) { console.error(e); }
@@ -1095,263 +1135,319 @@
 
         function cerrarModalJugadorAdmin() { document.getElementById('modal-jugador-admin').style.display = 'none'; }
 
-        function dibujarPartidosMonitor() {
-            const grid = document.getElementById('grid-mesas-vivo'); if (!grid) return; grid.innerHTML = '';
-            if (filtroEstadoMonitor === 'resumen') {
-                grid.style.display = 'block';
-                const resumenData = calcularResumenCategoriasAdmin(); const listaCategoriasNombres = Object.keys(resumenData);
-                if (listaCategoriasNombres.length === 0) { grid.innerHTML = `<div class="mensaje-vacio">No hay datos de grupos para generar resumen en este torneo.</div>`; return; }
-                let catNombreActual = categoriaResumenSelAdmin || (listaCategoriasNombres[0] || null);
-                const partidosCat = partidosMonitoreo.filter(m => m.grupo_nombre && m.grupo_nombre !== 'Flash' && (m.categorias?.nombre || 'General') === catNombreActual);
-                const totalPartidosGpo = partidosCat.length; const finalizadosGpo = partidosCat.filter(m => (m.estado || '').trim().toLowerCase() === 'finalizado').length;
-                const gpoCompleto = totalPartidosGpo > 0 && totalPartidosGpo === finalizadosGpo;
-
-                let htmlContent = `<div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:10px; margin-bottom:20px; justify-content:center;">${listaCategoriasNombres.map(cat => `<button onclick="categoriaResumenSelAdmin='${cat}'; dibujarPartidosMonitor();" style="padding:8px 16px; border-radius:12px; font-weight:800; font-size:10px; text-transform:uppercase; border:1px solid ${catNombreActual === cat ? '#f59e0b' : 'rgba(255,255,255,0.1)'}; background:${catNombreActual === cat ? 'rgba(245,158,11,0.2)' : 'rgba(15,23,42,0.8)'}; color:${catNombreActual === cat ? '#fbbf24' : '#94a3b8'}; cursor:pointer;">🏆 ${cat}</button>`).join('')}</div>`;
-
-                if (catNombreActual && resumenData[catNombreActual]) {
-                    Object.keys(resumenData[catNombreActual].grupos).sort().forEach(gpoNombre => {
-                        const jugadoresMap = resumenData[catNombreActual].grupos[gpoNombre]; const listaJugadores = ordenarJugadoresITTF(Object.values(jugadoresMap));
-                        htmlContent += `
-                            <div style="background:rgba(15,23,42,0.8); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:18px; margin-bottom:20px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px; margin-bottom:12px;"><span style="font-weight:800; font-size:13px; color:#38bdf8; text-transform:uppercase;"><i class="fa-solid fa-users mr-2"></i> Grupo ${gpoNombre}</span><span style="font-size:9px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Click en un jugador para ver expediente</span></div>
-                                <div style="overflow-x:auto;">
-                                    <table style="width:100%; border-collapse:collapse; font-size:12px;">
-                                        <thead><tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:8px;">Pos</th><th style="padding:8px;">Jugador</th><th style="padding:8px; text-align:center;">PJ</th><th style="padding:8px; text-align:center;">PG</th><th style="padding:8px; text-align:center;">PP</th><th style="padding:8px; text-align:center;">Sets (G - P)</th><th style="padding:8px; text-align:center;">Dif</th><th style="padding:8px; text-align:center; color:#fbbf24;">Pts</th><th style="padding:8px;">Ganó a:</th></tr></thead>
-                                        <tbody>
-                                            ${listaJugadores.map((j, idx) => {
-                                                let dif = j.setsGanados - j.setsPerdidos; let difStr = dif >= 0 ? '+' + dif : dif; let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
-                                                return `<tr class="tr-header" onclick="abrirModalJugadorAdmin(${j.id}, '${j.nombre.replace(/'/g, "\\'")}', '${(j.club || 'Sin Club').replace(/'/g, "\\'")}')" style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer;"><td style="padding:10px 8px; font-weight:800; color:#64748b;">#${idx + 1}</td><td style="padding:10px 8px;"><strong style="color:#ffffff; font-size:12px; display:block;">${j.nombre}</strong><span style="font-size:9px; color:#64748b; font-weight:700;">${j.club || 'Sin Club'}</span></td><td style="padding:10px 8px; text-align:center; font-weight:700; color:#94a3b8;">${j.pj}</td><td style="padding:10px 8px; text-align:center; font-weight:700; color:#34d399;">${j.pg}</td><td style="padding:10px 8px; text-align:center; font-weight:700; color:#f87171;">${j.pp}</td><td style="padding:10px 8px; text-align:center;"><span style="color:#34d399; font-weight:800;">${j.setsGanados}</span><span style="color:#64748b; margin:0 2px;">:</span><span style="color:#f87171; font-weight:800;">${j.setsPerdidos}</span></td><td style="padding:10px 8px; text-align:center; font-weight:800; color:${colorDif};">${difStr}</td><td style="padding:10px 8px; text-align:center; font-weight:800; color:#fbbf24; font-size:14px;">${j.pts}</td><td style="padding:10px 8px; font-size:10px;">${j.ganoA.length > 0 ? `<span style="background:rgba(16,185,129,0.2); color:#34d399; padding:2px 8px; border-radius:4px; font-weight:800; border:1px solid rgba(16,185,129,0.4);">${j.ganoA.join(', ')}</span>` : '<span style="color:#475569; font-style:italic;">-</span>'}</td></tr>`;
-                                            }).join('')}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        `;
-                    });
-
-                    const gpoA_arr = resumenData[catNombreActual]?.grupos['A'] ? ordenarJugadoresITTF(Object.values(resumenData[catNombreActual].grupos['A'])) : [];
-                    const gpoB_arr = resumenData[catNombreActual]?.grupos['B'] ? ordenarJugadoresITTF(Object.values(resumenData[catNombreActual].grupos['B'])) : [];
-                    const gpoC_arr = resumenData[catNombreActual]?.grupos['C'] ? ordenarJugadoresITTF(Object.values(resumenData[catNombreActual].grupos['C'])) : [];
-                    const gpoD_arr = resumenData[catNombreActual]?.grupos['D'] ? ordenarJugadoresITTF(Object.values(resumenData[catNombreActual].grupos['D'])) : [];
-
-                    const primeroA = getPosicionGrupoNombreAdmin(gpoA_arr, 0, '1° Grupo A'); const segundoA = getPosicionGrupoNombreAdmin(gpoA_arr, 1, '2° Grupo A');
-                    const primeroB = getPosicionGrupoNombreAdmin(gpoB_arr, 0, '1° Grupo B'); const segundoB = getPosicionGrupoNombreAdmin(gpoB_arr, 1, '2° Grupo B');
-                    const primeroC = getPosicionGrupoNombreAdmin(gpoC_arr, 0, '1° Grupo C'); const segundoC = getPosicionGrupoNombreAdmin(gpoC_arr, 1, '2° Grupo C');
-                    const primeroD = getPosicionGrupoNombreAdmin(gpoD_arr, 0, '1° Grupo D'); const segundoD = getPosicionGrupoNombreAdmin(gpoD_arr, 1, '2° Grupo D');
-
-                    const partidosLlaveBD = partidosMonitoreo.filter(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.categorias?.nombre === catNombreActual && (String(p.ronda_fase || '').toLowerCase().includes('cuarto') || String(p.ronda_fase || '').toLowerCase().includes('cruce') || String(p.ronda_fase || '').toLowerCase().includes('semifinal') || String(p.ronda_fase || '').toLowerCase().includes('final')));
-
-                    const pCuartos1 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('1'));
-                    const pCuartos2 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('2'));
-                    const pCuartos3 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('3'));
-                    const pCuartos4 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('4'));
-
-                    const partidoSemi1 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('1') || String(p.ronda_fase || '').toLowerCase().includes('cruce 1')));
-                    const partidoSemi2 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('2') || String(p.ronda_fase || '').toLowerCase().includes('cruce 2')));
-                    const partidoFinal = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi'));
-
-                    if (pCuartos1 || partidoSemi1 || partidoSemi2 || partidoFinal) {
-                        let hayCuartos = pCuartos1 || pCuartos2 || pCuartos3 || pCuartos4;
-                        let nomC1_j1 = pCuartos1?.j1 ? pCuartos1.j1.nombre : primeroA; let nomC1_j2 = pCuartos1?.j2 ? pCuartos1.j2.nombre : segundoC;
-                        let nomC2_j1 = pCuartos2?.j1 ? pCuartos2.j1.nombre : primeroB; let nomC2_j2 = pCuartos2?.j2 ? pCuartos2.j2.nombre : segundoD;
-                        let nomC3_j1 = pCuartos3?.j1 ? pCuartos3.j1.nombre : primeroC; let nomC3_j2 = pCuartos3?.j2 ? pCuartos3.j2.nombre : segundoA;
-                        let nomC4_j1 = pCuartos4?.j1 ? pCuartos4.j1.nombre : primeroD; let nomC4_j2 = pCuartos4?.j2 ? pCuartos4.j2.nombre : segundoB;
-
-                        let nomSemi1_j1, nomSemi1_j2, nomSemi2_j1, nomSemi2_j2;
-
-                        if (hayCuartos) {
-                            nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : (pCuartos1?.ganador_id ? (pCuartos1.ganador_id === pCuartos1.jugador1_id ? nomC1_j1 : nomC1_j2) : 'Gana C1');
-                            nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : (pCuartos2?.ganador_id ? (pCuartos2.ganador_id === pCuartos2.jugador1_id ? nomC2_j1 : nomC2_j2) : 'Gana C2');
-                            nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : (pCuartos3?.ganador_id ? (pCuartos3.ganador_id === pCuartos3.jugador1_id ? nomC3_j1 : nomC3_j2) : 'Gana C3');
-                            nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : (pCuartos4?.ganador_id ? (pCuartos4.ganador_id === pCuartos4.jugador1_id ? nomC4_j1 : nomC4_j2) : 'Gana C4');
-                        } else {
-                            nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : primeroA; nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : segundoB;
-                            nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : primeroB; nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : segundoA;
-                        }
-
-                        let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Ganador Semi 1');
-                        let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Ganador Semi 2');
-
-                        const renderCard = (pObj, titulo, color, tag1, tag2, cBadge) => {
-                            if(!pObj) return '';
-                            let nom1 = pObj.j1 ? pObj.j1.nombre : tag1; let nom2 = pObj.j2 ? pObj.j2.nombre : tag2;
-                            return `<div style="background:rgba(0,0,0,0.4); padding:16px; border-radius:12px; border:1px solid rgba(255,255,255,0.08);"><span style="font-size:9px; color:${color}; font-weight:800; text-transform:uppercase; display:block; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:6px; margin-bottom:10px;">${titulo}</span><div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:8px;"><strong style="font-size:12px; color:#fff;">🥇 ${nom1}</strong><span style="font-size:9px; background:${cBadge}; padding:2px 6px; border-radius:4px; font-weight:800;">${tag1}</span></div><div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div><div style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.04); padding:10px; border-radius:8px;"><strong style="font-size:12px; color:#fff;">🥈 ${nom2}</strong><span style="font-size:9px; background:${cBadge}; padding:2px 6px; border-radius:4px; font-weight:800;">${tag2}</span></div></div>`;
-                        };
-
-                        htmlContent += `
-                            <div style="background:rgba(15,23,42,0.9); border:1px solid rgba(245,158,11,0.3); border-radius:18px; padding:22px; margin-top:25px;">
-                                <div style="text-align:center; margin-bottom:16px;">
-                                    <span style="color:#fbbf24; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:4px;">Fase Final de Eliminatoria Directa</span>
-                                    <h3 style="margin:0; border:none; padding:0; font-size:16px; color:#ffffff;">🏆 Cuadro de Llaves Oficiales</h3>
-                                </div>
-                                ${gpoCompleto ? `<div style="background:rgba(16,185,129,0.2); border:1px solid rgba(16,185,129,0.5); color:#34d399; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:11px; text-transform:uppercase; margin-bottom:20px;">✅ ¡LLAVE DEFINITIVA CONFIRMADA! (Fase de grupos 100% completada)</div>` : `<div style="background:rgba(245,158,11,0.2); border:1px solid rgba(245,158,11,0.5); color:#fbbf24; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase; margin-bottom:20px;">⏳ PROYECCIÓN PRELIMINAR EN TIEMPO REAL (Resultados preliminares)</div>`}
-                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
-                        `;
-
-                        if (hayCuartos) {
-                            htmlContent += renderCard(pCuartos1, 'Cuartos 1', '#10b981', '1° Gpo A', '2° Gpo C', 'rgba(16,185,129,0.2); color:#10b981;');
-                            htmlContent += renderCard(pCuartos2, 'Cuartos 2', '#10b981', '1° Gpo B', '2° Gpo D', 'rgba(16,185,129,0.2); color:#10b981;');
-                            htmlContent += renderCard(pCuartos3, 'Cuartos 3', '#10b981', '1° Gpo C', '2° Gpo A', 'rgba(16,185,129,0.2); color:#10b981;');
-                            htmlContent += renderCard(pCuartos4, 'Cuartos 4', '#10b981', '1° Gpo D', '2° Gpo B', 'rgba(16,185,129,0.2); color:#10b981;');
-                        }
-
-                        htmlContent += renderCard(partidoSemi1, 'Semifinal 1', '#38bdf8', hayCuartos ? 'Gana C1' : '1° Gpo A', hayCuartos ? 'Gana C2' : '2° Gpo B', 'rgba(6,182,212,0.2); color:#38bdf8;');
-                        htmlContent += renderCard(partidoSemi2, 'Semifinal 2', '#f0abfc', hayCuartos ? 'Gana C3' : '1° Gpo B', hayCuartos ? 'Gana C4' : '2° Gpo A', 'rgba(217,70,239,0.2); color:#d946ef;');
-
-                        htmlContent += `
-                                    <div style="grid-column: 1 / -1; display:flex; justify-content:center; margin-top:10px;">
-                                        <div style="background:rgba(245,158,11,0.1); padding:16px; border-radius:14px; border:1px solid rgba(245,158,11,0.3); width:100%; max-width:450px; text-align:left;">
-                                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;"><span style="font-size:12px; color:#fbbf24; font-weight:900; text-transform:uppercase;">🏆 Gran Final</span><span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partidoFinal?.mesa || 1}</span></div>
-                                            <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;"><strong style="font-size:14px; color:#fff;">🥇 ${nomFinal_j1}</strong><span style="font-size:9px; background:rgba(6,182,212,0.2); color:#38bdf8; padding:2px 6px; border-radius:4px; font-weight:800;">Gana Semi 1</span></div>
-                                            <div style="text-align:center; font-size:10px; color:#64748b; font-weight:800; margin:4px 0;">VS</div>
-                                            <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;"><strong style="font-size:14px; color:#fff;">🥈 ${nomFinal_j2}</strong><span style="font-size:9px; background:rgba(217,70,239,0.2); color:#d946ef; padding:2px 6px; border-radius:4px; font-weight:800;">Gana Semi 2</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    }
-                }
-                grid.innerHTML = htmlContent; return;
-            }
-
-            // GRID TARJETAS PESTAÑAS
-            grid.style.display = 'grid';
-            let filtrados = partidosMonitoreo;
-            if (filtroEstadoMonitor !== 'todos') { filtrados = filtrados.filter(p => (p.estado || '').trim().toLowerCase() === filtroEstadoMonitor); }
-            if (categoriaFiltroAdmin !== 'todas') { filtrados = filtrados.filter(p => p.categorias && p.categorias.nombre === categoriaFiltroAdmin); }
-            if (filtrados.length === 0) { grid.innerHTML = `<div class="mensaje-vacio">No hay partidos registrados bajo este filtro.</div>`; return; }
-
-            filtrados.sort((a, b) => timeStringToMinutes(a.hora) - timeStringToMinutes(b.hora));
-
-            filtrados.forEach(p => {
-                let estLimpio = (p.estado || '').trim().toLowerCase();
-                let estadoColor = estLimpio === 'en_curso' ? '#34d399' : (estLimpio === 'finalizado' ? '#94a3b8' : '#fbbf24');
-                let estadoTexto = estLimpio === 'en_curso' ? '🔴 EN VIVO' : (estLimpio === 'finalizado' ? '🏁 FINALIZADO' : '⏳ PENDIENTE');
-                let isFin = estLimpio === 'finalizado'; let isJ1Win = p.ganador_id === p.jugador1_id; let isJ2Win = p.ganador_id === p.jugador2_id;
-                let mainScore1 = isFin ? p.sets_j1 : p.puntos_j1; let mainScore2 = isFin ? p.sets_j2 : p.puntos_j2;
-                let subScore1 = isFin ? '' : `<span style="font-weight:800; font-size:11px; color:#94a3b8;">(${p.sets_j1})</span>`;
-                let subScore2 = isFin ? '' : `<span style="font-weight:800; font-size:11px; color:#94a3b8;">(${p.sets_j2})</span>`;
-                let colorJ1 = (isFin && !isJ1Win) ? '#64748b' : '#ffffff'; let colorJ2 = (isFin && !isJ2Win) ? '#64748b' : '#ffffff';
-                let iconJ1 = (isFin && isJ1Win) ? '🏆 ' : ''; let iconJ2 = (isFin && isJ2Win) ? '🏆 ' : '';
-
-                const catObj = p.categorias || {}; const estiloCat = obtenerEstiloCategoria(catObj.id || 0);
-                let nombreJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
-                let nombreJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
-                let subtituloFase = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Eliminatoria Directa'));
-
-                let historialHtml = '';
-                if (isFin && p.historial_sets && p.historial_sets.length > 0) {
-                    historialHtml = `<div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; justify-content:center; padding-top:10px; border-top:1px dashed rgba(255,255,255,0.1);"><span style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; margin-right:2px; display:flex; align-items:center;">Sets:</span>`;
-                    p.historial_sets.forEach(s => {
-                        let col1 = s.s1 > s.s2 ? '#22d3ee' : '#64748b'; let col2 = s.s2 > s.s1 ? '#e879f9' : '#64748b'; 
-                        historialHtml += `<span style="font-size:10px; background:rgba(0,0,0,0.5); padding:3px 8px; border-radius:6px; font-weight:800;"><span style="color:${col1}">${s.s1}</span><span style="color:#475569; margin:0 3px;">-</span><span style="color:${col2}">${s.s2}</span></span>`;
-                    });
-                    historialHtml += `</div>`;
-                }
-
-                grid.innerHTML += `
-                    <div class="panel-3d ${isFin ? '' : 'panel-cyan'}" style="padding:16px; margin-bottom:0;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;"><span style="font-weight:800; font-size:12px; color:#38bdf8;">MESA ${p.mesa || 1} <span style="color:#64748b; font-weight:400; margin-left:4px; font-size:10px;">⏰ ${p.hora}</span></span><span style="font-size:9px; font-weight:800; color:${estadoColor}; border:1px solid ${estadoColor}; padding:2px 8px; border-radius:999px;">${estadoTexto}</span></div>
-                        <div style="font-size:10px; color:${estiloCat.text}; background:${estiloCat.bg}; border:1px solid ${estiloCat.border}; display:inline-block; padding:3px 8px; border-radius:6px; font-weight:800; text-transform:uppercase; margin-bottom:12px;">🏆 ${catObj.nombre || 'Categoría'} • ${subtituloFase}</div>
-                        <div style="background:rgba(0,0,0,0.4); border-radius:10px; padding:10px; display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; border:1px solid rgba(255,255,255,0.02);"><span style="font-weight:700; font-size:12px; color:${colorJ1};">${iconJ1}${nombreJ1}</span><div style="display:flex; gap:10px; align-items:center;"><span style="font-family:'Orbitron', sans-serif; font-weight:800; font-size:18px; color:#06b6d4;">${mainScore1}</span>${subScore1}</div></div>
-                        <div style="background:rgba(0,0,0,0.4); border-radius:10px; padding:10px; display:flex; justify-content:space-between; align-items:center; border:1px solid rgba(255,255,255,0.02);"><span style="font-weight:700; font-size:12px; color:${colorJ2};">${iconJ2}${nombreJ2}</span><div style="display:flex; gap:10px; align-items:center;"><span style="font-family:'Orbitron', sans-serif; font-weight:800; font-size:18px; color:#d946ef;">${mainScore2}</span>${subScore2}</div></div>
-                        ${historialHtml}
-                        <div style="display:flex; gap:6px; margin-top:12px;"><a href="juez.html?partido=${p.id}" class="btn-console btn-gold" style="flex:1; justify-content:center; font-size:9px; padding:6px; text-decoration:none;">🏓 Juez</a><a href="espectador.html?partido=${p.id}" class="btn-console btn-purple" style="flex:1; justify-content:center; font-size:9px; padding:6px; text-decoration:none;">👁️ Ver</a></div>
-                    </div>
-                `;
+        function poblarDropdownClubs() {
+            const select = document.getElementById('nuevo-club'); 
+            const selectFlash = document.getElementById('flash-new-club');
+            
+            if(!select || !selectFlash) return;
+            select.innerHTML = '<option value="Sin Club">Sin Club</option>';
+            selectFlash.innerHTML = '<option value="Sin Club">Sin Club</option>';
+            
+            (todosLosClubsAdmin || []).forEach(club => { 
+                let opt = document.createElement('option'); opt.value = club.nombre; opt.textContent = club.nombre; 
+                select.appendChild(opt); 
+                
+                let optF = document.createElement('option'); optF.value = club.nombre; optF.textContent = club.nombre; 
+                selectFlash.appendChild(optF); 
             });
         }
 
-        function dibujarTablaProgramacionCategorias() {
-            const tbody = document.getElementById('tabla-programacion-categorias'); 
-            if (!tbody) return;
+        function dibujarTablaClubs() {
+            const tbody = document.getElementById('tabla-clubs');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            if (todosLosClubsAdmin.length === 0) { tbody.innerHTML = '<tr><td colspan="3" class="mensaje-vacio">No hay clubs.</td></tr>'; return; }
+            todosLosClubsAdmin.forEach(c => {
+                const esDefault = c.nombre === 'Sin Club';
+                tbody.innerHTML += `<tr><td>#${c.id}</td><td><input type="text" id="club-nombre-${c.id}" value="${c.nombre}" ${esDefault ? 'disabled' : ''} class="input-tabla w-full"></td><td>${!esDefault ? `<button class="btn-console btn-purple" style="padding: 5px 10px; font-size: 9px; margin-right: 4px;" onclick="actualizarClub(${c.id}, '${c.nombre}')">Guardar</button><button class="btn-console btn-red" style="padding: 5px 10px; font-size: 9px;" onclick="eliminarClub(${c.id}, '${c.nombre}')">Eliminar</button>` : '<small>Sistema</small>'}</td></tr>`;
+            });
+        }
+
+        async function crearClub() {
+            const nombre = document.getElementById('nuevo-nombre-club').value.toUpperCase().trim(); if (!nombre) return;
+            await clienteSupabase.from('clubes').insert([{ nombre: nombre, organizador_id: ORG_ID }]);
+            document.getElementById('nuevo-nombre-club').value = ''; cargarDatosIniciales();
+        }
+
+        async function actualizarClub(id, nombreAntiguo) {
+            const nuevoNombre = document.getElementById(`club-nombre-${id}`).value.toUpperCase().trim(); if (!nuevoNombre || nuevoNombre === nombreAntiguo) return;
+            await clienteSupabase.from('clubes').update({ nombre: nuevoNombre }).eq('id', id).eq('organizador_id', ORG_ID);
+            await clienteSupabase.from('jugadores').update({ club: nuevoNombre }).eq('club', nombreAntiguo).eq('organizador_id', ORG_ID);
+            cargarDatosIniciales();
+        }
+
+        async function eliminarClub(id, nombreClub) {
+            if (nombreClub === 'Sin Club' || !confirm(`¿Eliminar el club "${nombreClub}"?`)) return;
+            await clienteSupabase.from('jugadores').update({ club: 'Sin Club' }).eq('club', nombreClub).eq('organizador_id', ORG_ID);
+            await clienteSupabase.from('clubes').delete().eq('id', id).eq('organizador_id', ORG_ID); cargarDatosIniciales();
+        }
+
+        function mostrarRankingModal() {
+            const tbody = document.getElementById('body-tabla-ranking-modal');
             tbody.innerHTML = '';
 
-            if (!todasLasCategoriasAdmin || todasLasCategoriasAdmin.length === 0) { 
-                tbody.innerHTML = '<tr><td colspan="6" class="mensaje-vacio">No hay categorías configuradas en la base de datos.</td></tr>'; 
-                return; 
-            }
-
-            const progList = Array.isArray(programacionCategoriasNube) ? programacionCategoriasNube : [];
-
-            todasLasCategoriasAdmin.forEach(cat => {
-                if (!cat || !cat.id) return;
-                const prog = progList.find(p => p && p.categoria_id === cat.id) || {};
-                
-                const fechaVal = prog.fecha || (torneoActivoObj ? torneoActivoObj.fecha_evento || '' : '');
-                const horaVal = prog.hora || '09:00';
-                const lugarVal = prog.lugar || (torneoActivoObj ? torneoActivoObj.lugar_evento || 'LOBBY UV' : 'LOBBY UV');
-                
-                let costoVal = 200;
-                if (prog.costo_inscripcion !== undefined && prog.costo_inscripcion !== null && prog.costo_inscripcion !== '') {
-                    costoVal = prog.costo_inscripcion;
-                } else if (cat.costo_inscripcion !== undefined && cat.costo_inscripcion !== null && cat.costo_inscripcion !== '') {
-                    costoVal = cat.costo_inscripcion;
-                }
-
-                let estaActiva = true;
-                if (prog.activa === false || prog.activa === 'false' || prog.activa === 0) estaActiva = false;
-                if (cat.activa === false || cat.activa === 'false' || cat.activa === 0) estaActiva = false;
-
-                const btnClase = estaActiva ? 'btn-green' : 'btn-red';
-                const btnIcono = estaActiva ? '✅ ACTIVA' : '🚫 BLOQUEADA';
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td><strong style="color:#ffffff; font-size:12px;">${cat.nombre || 'Sin Nombre'}</strong></td>
-                        <td><input type="date" id="cat-fecha-${cat.id}" value="${fechaVal}" class="input-tabla"></td>
-                        <td><input type="time" id="cat-hora-${cat.id}" value="${horaVal}" class="input-tabla"></td>
-                        <td><input type="text" id="cat-lugar-${cat.id}" value="${lugarVal}" placeholder="Lugar / Mesas" class="input-tabla w-full"></td>
-                        <td><input type="number" id="cat-inscripcion-${cat.id}" value="${costoVal}" style="width:80px;" placeholder="$" class="input-tabla text-center"></td>
-                        <td>
-                            <div style="display:flex; gap:6px;">
-                                <button id="btn-estado-cat-${cat.id}" class="btn-console ${btnClase}" style="padding: 4px 10px; font-size: 9px; min-width: 100px;" onclick="toggleEstadoCat(${cat.id})" data-activa="${estaActiva}">${btnIcono}</button>
-                                <button class="btn-console btn-gold" style="padding: 4px 10px; font-size: 9px;" onclick="guardarHorarioCat(${cat.id})">💾</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        function toggleEstadoCat(catId) {
-            const btn = document.getElementById(`btn-estado-cat-${catId}`);
-            const isActive = btn.getAttribute('data-activa') === 'true';
-            const newState = !isActive;
-            btn.setAttribute('data-activa', newState);
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
             
-            if (newState) { btn.className = 'btn-console btn-green'; btn.innerHTML = '✅ ACTIVA'; } 
-            else { btn.className = 'btn-console btn-red'; btn.innerHTML = '🚫 BLOQUEADA'; }
+            let globalRank = 1;
+            
+            const styles = [
+                { bg: '#fbbf24', text: '#000000' }, // Oro / Primera
+                { bg: '#94a3b8', text: '#000000' }, // Plata / Segunda
+                { bg: '#d97706', text: '#ffffff' }, // Bronce / Tercera
+                { bg: '#06b6d4', text: '#000000' }, // Cyan / Cuarta
+                { bg: '#a855f7', text: '#ffffff' }  // Púrpura / Quinta
+            ];
+
+            categoriasFuerza.forEach((cat, index) => {
+                const style = styles[index % styles.length];
+                const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos).sort((a,b) => b.puntos_ranking - a.puntos_ranking);
+                
+                if (jugadoresCat.length > 0) {
+                    tbody.innerHTML += `
+                        <tr style="background: ${style.bg}; color: ${style.text}; border-bottom: 2px solid #000;">
+                            <td colspan="5" style="padding: 6px 12px; font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">
+                                <div style="display: flex; justify-content: space-between;">
+                                    <span>🏆 ${cat.nombre}</span>
+                                    <span>${cat.puntos_minimos} - ${cat.puntos_maximos} PTS</span>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+
+                    jugadoresCat.forEach(j => {
+                        let diff = (j.puntos_ranking || 0) - (j.puntos_ranking_ant || 0);
+                        let flecha = diff > 0 ? `<span style="color:#10b981; margin-left:4px;"><i class="fa-solid fa-arrow-up"></i> ${diff}</span>` : 
+                                     (diff < 0 ? `<span style="color:#ef4444; margin-left:4px;"><i class="fa-solid fa-arrow-down"></i> ${Math.abs(diff)}</span>` : 
+                                     `<span style="color:#475569; margin-left:4px;"><i class="fa-solid fa-minus"></i></span>`);
+
+                        tbody.innerHTML += `
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(0,0,0,0.2)'">
+                                <td style="padding: 6px 10px; font-weight: 800; color: #64748b; text-align:center; width:50px; font-size: 11px;">#${globalRank}</td>
+                                <td style="padding: 6px 10px; font-weight: 800; color: #e2e8f0; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${j.nombre}</td>
+                                <td style="padding: 6px 10px;"><span style="color: #94a3b8; font-size: 9px; font-weight: 700;">${j.club || 'S/C'}</span></td>
+                                <td style="padding: 6px 10px; text-align: center; color: #64748b; font-family: 'Orbitron', sans-serif; font-size: 10px;">${j.puntos_ranking_ant || 0}</td>
+                                <td style="padding: 6px 10px; text-align: center; font-weight: 900; color: #38bdf8; font-family: 'Orbitron', sans-serif; font-size: 12px; white-space: nowrap;">${j.puntos_ranking || 0} ${flecha}</td>
+                            </tr>
+                        `;
+                        globalRank++;
+                    });
+                }
+            });
+
+            document.getElementById('modal-ranking-global').style.display = 'flex';
         }
 
-        async function guardarHorarioCat(catId) {
-            try {
-                const fecha = document.getElementById(`cat-fecha-${catId}`).value; const hora = document.getElementById(`cat-hora-${catId}`).value;
-                const lugar = document.getElementById(`cat-lugar-${catId}`).value.trim(); const costo = parseFloat(document.getElementById(`cat-inscripcion-${catId}`).value) || 200;
-                const activa = document.getElementById(`btn-estado-cat-${catId}`).getAttribute('data-activa') === 'true';
+        function generarRankingPorCategoriasHTMLPDF() {
+            const contenedor = document.getElementById('contenedor-ranking-categorias'); 
+            if(!contenedor) return;
+            
+            let html = `
+                <div class="impresion-ranking">
+                    <div class="print-header">
+                        <div class="print-header-left">
+                            <h2>VETEME</h2>
+                            <h3>Asociación Veracruzana de<br>Tenis de Mesa A.C.</h3>
+                        </div>
+                        <div class="print-header-center">
+                            <h1>RANKING ESTATAL</h1>
+                            <span id="fecha-impresion-doc"></span>
+                        </div>
+                        <div class="print-header-right">
+                            <strong>${todosLosJugadoresAdmin.length} ATLETAS</strong><br>ACTIVOS
+                        </div>
+                    </div>
+            `;
 
-                const { data: existe, error: errSearch } = await clienteSupabase.from('programacion_categorias').select('id').eq('torneo_id', parseInt(idTorneoActivo)).eq('categoria_id', catId).maybeSingle();
-                if (existe && existe.id) {
-                    const { error: errUp } = await clienteSupabase.from('programacion_categorias').update({ fecha: fecha, hora: hora, lugar: lugar, costo_inscripcion: costo, activa: activa }).eq('id', existe.id);
-                    if (errUp) throw new Error("Fallo en programacion_categorias: " + errUp.message);
-                } else {
-                    const { error: errIn } = await clienteSupabase.from('programacion_categorias').insert([{ torneo_id: parseInt(idTorneoActivo), categoria_id: catId, fecha: fecha, hora: hora, lugar: lugar, costo_inscripcion: costo, activa: activa }]);
-                    if (errIn) throw new Error("Fallo al insertar en programacion_categorias: " + errIn.message);
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
+            let globalRank = 1;
+            
+            const styles = ['bg-cat-0', 'bg-cat-1', 'bg-cat-2', 'bg-cat-3', 'bg-cat-4'];
+
+            categoriasFuerza.forEach((cat, index) => {
+                const styleClass = styles[index % styles.length];
+                const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos).sort((a,b) => b.puntos_ranking - a.puntos_ranking);
+                
+                if (jugadoresCat.length > 0) {
+                    html += `
+                        <div class="print-cat-wrapper">
+                            <div class="print-cat-header ${styleClass}">
+                                <h4>${cat.nombre}</h4>
+                                <span>${cat.puntos_minimos} - ${cat.puntos_maximos} PTS</span>
+                            </div>
+                            <table class="print-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px; text-align: center;">RKN</th>
+                                        <th>NOMBRE COMPLETO</th>
+                                        <th style="width: 80px; text-align: center;">CLUB</th>
+                                        <th style="width: 60px; text-align: center;">ANT</th>
+                                        <th style="width: 60px; text-align: center;">ACT</th>
+                                        <th style="width: 50px; text-align: center;">+/-</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    
+                    jugadoresCat.forEach(j => {
+                        let diff = (j.puntos_ranking || 0) - (j.puntos_ranking_ant || 0);
+                        let arrow = '';
+                        let arrowClass = 'diff-same';
+                        
+                        if (diff > 0) { arrow = `▲ +${diff}`; arrowClass = 'diff-up'; }
+                        else if (diff < 0) { arrow = `▼ ${diff}`; arrowClass = 'diff-down'; }
+                        else { arrow = '-'; }
+
+                        html += `
+                                    <tr>
+                                        <td class="pt-rank">${globalRank}</td>
+                                        <td class="pt-name">${j.nombre}</td>
+                                        <td style="text-align: center;"><span class="pt-club">${j.club || ''}</span></td>
+                                        <td class="pt-score-ant">${j.puntos_ranking_ant || 0}</td>
+                                        <td class="pt-score-act">${j.puntos_ranking || 0}</td>
+                                        <td class="pt-diff ${arrowClass}">${arrow}</td>
+                                    </tr>
+                        `;
+                        globalRank++;
+                    });
+
+                    html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
                 }
+            });
 
-                const { error: errCat } = await clienteSupabase.from('categorias').update({ costo_inscripcion: costo, activa: activa }).eq('id', catId);
-                if (errCat) throw new Error("Fallo en tabla categorias: " + errCat.message);
+            html += `</div>`;
+            contenedor.innerHTML = html;
 
-                alert("✅ Configuración de categoría guardada con éxito."); await cargarDatosIniciales();
-            } catch(e) { console.error(e); alert("❌ Error al guardar: " + e.message); }
+            const meses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+            const d = new Date();
+            const fechaEl = document.getElementById('fecha-impresion-doc');
+            if(fechaEl) {
+                fechaEl.innerText = `${meses[d.getMonth()]} ${d.getFullYear()}`;
+            }
+        }
+
+        function imprimirRanking() { 
+            const printArea = document.getElementById('area-impresion-memoria');
+            const rankingContent = document.getElementById('contenedor-ranking-categorias').innerHTML;
+            printArea.innerHTML = rankingContent;
+            window.print(); 
+        }
+
+        function filtrarYAutoSeleccionarAdmin() {
+            const inputEl = document.getElementById('buscador-jugador');
+            const select = document.getElementById('select-jugador-admin');
+            if(!inputEl || !select) return;
+
+            const texto = quitarAcentos(inputEl.value.toLowerCase().trim());
+            select.innerHTML = '<option value="">-- Nuevo Jugador (Modo Crear) --</option>';
+            const filtrados = todosLosJugadoresAdmin.filter(j => j.nombre && quitarAcentos(j.nombre.toLowerCase()).includes(texto));
+            filtrados.forEach(j => { let opt = document.createElement('option'); opt.value = j.id; opt.textContent = `${j.nombre} [${j.club || 'Sin Club'}] (${j.puntos_ranking} pts)`; select.appendChild(opt); });
+            if (texto.length > 0 && filtrados.length > 0) { select.value = filtrados[0].id; cargarDatosJugadorEditar(); }
+            else if (texto.length === 0) resetFormularioJugador();
+        }
+
+        function cargarDatosJugadorEditar() {
+            const idSel = document.getElementById('select-jugador-admin').value;
+            if (!idSel) { resetFormularioJugador(); return; }
+            const j = todosLosJugadoresAdmin.find(item => item.id == idSel);
+            if (j) {
+                document.getElementById('nuevo-nombre').value = j.nombre; document.getElementById('nuevo-club').value = j.club || 'Sin Club';
+                document.getElementById('nuevo-ranking-ant').value = j.puntos_ranking_ant || 0;
+                document.getElementById('nuevo-ranking').value = j.puntos_ranking || 0; 
+                document.getElementById('nuevo-nip').value = j.nip_seguridad || '1234';
+                document.getElementById('titulo-modo-jugador').innerText = `✏️ Editando a: ${j.nombre}`;
+                const btnGuardar = document.getElementById('btn-guardar-jugador'); btnGuardar.innerText = "Actualizar Cambios"; btnGuardar.className = "btn-console btn-green";
+                document.getElementById('btn-eliminar-jugador').style.display = "inline-flex"; document.getElementById('btn-cancelar-jugador').style.display = "inline-flex";
+            }
+        }
+
+        function resetFormularioJugador() {
+            document.getElementById('select-jugador-admin').value = ""; document.getElementById('nuevo-nombre').value = ""; document.getElementById('nuevo-club').value = "Sin Club";
+            document.getElementById('nuevo-ranking-ant').value = "0"; document.getElementById('nuevo-ranking').value = ""; document.getElementById('nuevo-nip').value = "1234";
+            document.getElementById('titulo-modo-jugador').innerText = "➕ Registrando Nuevo Jugador";
+            const btnGuardar = document.getElementById('btn-guardar-jugador'); btnGuardar.innerText = "Crear Jugador"; btnGuardar.className = "btn-console btn-gold";
+            document.getElementById('btn-eliminar-jugador').style.display = "none"; document.getElementById('btn-cancelar-jugador').style.display = "none";
+        }
+
+        async function guardarJugador() {
+            const idSel = document.getElementById('select-jugador-admin').value; const nombre = document.getElementById('nuevo-nombre').value.toUpperCase().trim();
+            const club = document.getElementById('nuevo-club').value; const puntos = document.getElementById('nuevo-ranking').value;
+            const puntosAnt = document.getElementById('nuevo-ranking-ant').value || 0;
+            const nip = document.getElementById('nuevo-nip').value.trim() || '1234';
+            if (!nombre || !puntos) return;
+            if (idSel) { await clienteSupabase.from('jugadores').update({ nombre: nombre, club: club, puntos_ranking_ant: parseInt(puntosAnt), puntos_ranking: parseInt(puntos), nip_seguridad: nip }).eq('id', idSel).eq('organizador_id', ORG_ID); } 
+            else { await clienteSupabase.from('jugadores').insert([{ nombre: nombre, club: club, puntos_ranking_ant: parseInt(puntosAnt), puntos_ranking: parseInt(puntos), nip_seguridad: nip, organizador_id: ORG_ID }]); }
+            document.getElementById('buscador-jugador').value = ''; resetFormularioJugador(); cargarDatosIniciales();
+        }
+
+        async function eliminarJugador() {
+            const idSel = document.getElementById('select-jugador-admin').value; if (!idSel) return;
+            const j = todosLosJugadoresAdmin.find(item => item.id == idSel); if (!j) return;
+            if (!confirm(`⚠️ ¿Eliminar a "${j.nombre}" de la BD?`)) return;
+            await clienteSupabase.from('inscripciones').delete().eq('jugador_id', idSel).eq('organizador_id', ORG_ID);
+            await clienteSupabase.from('jugadores').delete().eq('id', idSel).eq('organizador_id', ORG_ID);
+            alert(`✅ Eliminado.`); document.getElementById('buscador-jugador').value = ''; resetFormularioJugador(); cargarDatosIniciales();
+        }
+
+        function exportarExcel() {
+            let csv = 'Posicion,Jugador,Club,Ranking_Anterior,Ranking_Actual,Categoria\n';
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
+            categoriasFuerza.forEach(cat => {
+                const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos);
+                jugadoresCat.forEach((j, idx) => { csv += `${idx + 1},"${j.nombre}","${j.club || 'Sin Club'}",${j.puntos_ranking_ant || 0},${j.puntos_ranking},"${cat.nombre}"\n`; });
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(blob)); link.setAttribute("download", `Ranking_Oficial_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        function compartirRankingWhatsApp() {
+            let textoWS = `🏓 *RANKING OFICIAL DE JUGADORES* 🏓\n\n`;
+            const categoriasFuerza = todasLasCategoriasAdmin.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
+            categoriasFuerza.forEach(cat => {
+                const jugadoresCat = todosLosJugadoresAdmin.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos);
+                if (jugadoresCat.length > 0) {
+                    textoWS += `🏆 *${cat.nombre.toUpperCase()}*\n`;
+                    jugadoresCat.forEach((j, idx) => { 
+                        let diff = j.puntos_ranking - (j.puntos_ranking_ant || 0);
+                        let flecha = diff > 0 ? ` (+${diff})` : (diff < 0 ? ` (${diff})` : '');
+                        textoWS += `${idx + 1}. *${j.nombre}* (${j.puntos_ranking} pts${flecha}) - _${j.club || 'Sin Club'}_\n`; 
+                    });
+                    textoWS += `\n`;
+                }
+            });
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(textoWS)}`, '_blank');
         }
 
         async function cargarCategoriasAdminView() {
-            const tbody = document.getElementById('tabla-categorias'); if(!tbody) return; tbody.innerHTML = '';
-            if (!todasLasCategoriasAdmin || todasLasCategoriasAdmin.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="mensaje-vacio">No hay categorías.</td></tr>'; return; }
+            const tbody = document.getElementById('tabla-categorias');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            if (!todasLasCategoriasAdmin || todasLasCategoriasAdmin.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="mensaje-vacio">No hay categorías.</td></tr>';
+                return;
+            }
             todasLasCategoriasAdmin.forEach(cat => {
-                tbody.innerHTML += `<tr><td><strong style="color:#ffffff; font-size:12px;">${cat.nombre}</strong></td><td><input type="number" id="cat-min-${cat.id}" class="input-tabla w-20 text-center" value="${cat.puntos_minimos}"> pts</td><td><input type="number" id="cat-max-${cat.id}" class="input-tabla w-20 text-center" value="${cat.puntos_maximos}"> pts</td><td>$<input type="number" id="cat-precio-${cat.id}" class="input-tabla w-20 text-center" value="${cat.costo_inscripcion || 200}"></td><td><button class="btn-console btn-pink" style="padding:4px 10px; font-size:9px;" onclick="actualizarCategoria(${cat.id})">Guardar</button></td></tr>`;
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong style="color:#ffffff; font-size:12px;">${cat.nombre}</strong></td>
+                        <td>
+                            <input type="number" id="cat-min-${cat.id}" class="input-tabla w-20 text-center" value="${cat.puntos_minimos}"> pts
+                        </td>
+                        <td>
+                            <input type="number" id="cat-max-${cat.id}" class="input-tabla w-20 text-center" value="${cat.puntos_maximos}"> pts
+                        </td>
+                        <td>
+                            $<input type="number" id="cat-precio-${cat.id}" class="input-tabla w-20 text-center" value="${cat.costo_inscripcion || 200}">
+                        </td>
+                        <td>
+                            <button class="btn-console btn-pink" style="padding:4px 10px; font-size:9px;" onclick="actualizarCategoria(${cat.id})">Guardar</button>
+                        </td>
+                    </tr>
+                `;
             });
         }
 
@@ -1369,25 +1465,44 @@
         }
 
         async function cargarReglasAdminView() {
-            const tbody = document.getElementById('tabla-reglas'); if(!tbody) return; tbody.innerHTML = '';
-            if (!reglasRankingList || reglasRankingList.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="mensaje-vacio">Sin reglas configuradas.</td></tr>'; return; }
+            const tbody = document.getElementById('tabla-reglas');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            if (!reglasRankingList || reglasRankingList.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="mensaje-vacio">Sin reglas configuradas.</td></tr>';
+                return;
+            }
             reglasRankingList.forEach(regla => {
-                let isFav = String(regla.resultado_esperado).toLowerCase().includes('favorito'); let escenario = isFav ? 'Gana Favorito' : '<strong style="color:#ef4444;">Gana Retador (Upset)</strong>';
-                tbody.innerHTML += `<tr><td style="color:#94a3b8; font-size:11px; font-weight:600;">De ${regla.diferencia_min} a ${regla.diferencia_max} pts</td><td style="color:#ffffff; font-size:11px; font-weight:700;">${escenario}</td><td>+ <input type="number" id="regla-ganador-${regla.id}" style="width:60px;" value="${regla.puntos_ganador}" class="input-tabla text-center"></td><td> <input type="number" id="regla-perdedor-${regla.id}" style="width:60px;" value="${regla.puntos_perdedor}" class="input-tabla text-center"></td><td><button class="btn-console btn-red" style="padding:4px 10px; font-size:9px;" onclick="actualizarRegla(${regla.id})">Guardar</button></td></tr>`;
+                let isFav = String(regla.resultado_esperado).toLowerCase().includes('favorito');
+                let escenario = isFav ? 'Gana Favorito' : '<strong style="color:#ef4444;">Gana Retador (Upset)</strong>';
+                tbody.innerHTML += `
+                    <tr>
+                        <td style="color:#94a3b8; font-size:11px; font-weight:600;">De ${regla.diferencia_min} a ${regla.diferencia_max} pts</td>
+                        <td style="color:#ffffff; font-size:11px; font-weight:700;">${escenario}</td>
+                        <td>+ <input type="number" id="regla-ganador-${regla.id}" style="width:60px;" value="${regla.puntos_ganador}" class="input-tabla text-center"></td>
+                        <td> <input type="number" id="regla-perdedor-${regla.id}" style="width:60px;" value="${regla.puntos_perdedor}" class="input-tabla text-center"></td>
+                        <td><button class="btn-console btn-red" style="padding:4px 10px; font-size:9px;" onclick="actualizarRegla(${regla.id})">Guardar</button></td>
+                    </tr>
+                `;
             });
         }
 
         async function actualizarRegla(id) {
             const ptsGanador = document.getElementById(`regla-ganador-${id}`).value, ptsPerdedor = document.getElementById(`regla-perdedor-${id}`).value;
-            await clienteSupabase.from('reglas_ranking').update({ puntos_ganador: parseInt(ptsGanador), puntos_perdedor: parseInt(ptsPerdedor) }).eq('id', id); alert("✅ Regla actualizada.");
+            await clienteSupabase.from('reglas_ranking').update({ puntos_ganador: parseInt(ptsGanador), puntos_perdedor: parseInt(ptsPerdedor) }).eq('id', id);
+            alert("✅ Regla actualizada.");
         }
 
         async function cargarBono() {
             const { data } = await clienteSupabase.from('configuracion').select('*').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).maybeSingle();
             if (data) { 
-                const chk = document.getElementById('bono-activo'); const inp = document.getElementById('bono-puntos');
-                if(chk) chk.checked = data.activo; if(inp) inp.value = data.valor;
-                bonoPaseActivo = data.activo; bonoPaseValor = data.valor;
+                const chk = document.getElementById('bono-activo');
+                const inp = document.getElementById('bono-puntos');
+                if(chk) chk.checked = data.activo; 
+                if(inp) inp.value = data.valor;
+                
+                bonoPaseActivo = data.activo;
+                bonoPaseValor = data.valor;
             }
         }
 
@@ -1395,18 +1510,33 @@
             const activo = document.getElementById('bono-activo').checked, valor = parseInt(document.getElementById('bono-puntos').value) || 0;
             const { data: existe } = await clienteSupabase.from('configuracion').select('id').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).maybeSingle();
             
-            if(existe) { await clienteSupabase.from('configuracion').update({ activo: activo, valor: valor }).eq('id', existe.id); } 
-            else { await clienteSupabase.from('configuracion').insert([{ clave: 'bono_pase_grupos', activo: activo, valor: valor, organizador_id: ORG_ID }]); }
-            bonoPaseActivo = activo; bonoPaseValor = valor; alert('✅ Bono guardado.');
+            if(existe) {
+                await clienteSupabase.from('configuracion').update({ activo: activo, valor: valor }).eq('id', existe.id); 
+            } else {
+                await clienteSupabase.from('configuracion').insert([{ clave: 'bono_pase_grupos', activo: activo, valor: valor, organizador_id: ORG_ID }]); 
+            }
+            
+            bonoPaseActivo = activo;
+            bonoPaseValor = valor;
+            alert('✅ Bono guardado.');
         }
 
         function generarMemoriaTecnica() {
             if(partidosMonitoreo.length === 0) { alert("No hay partidos en el torneo."); return; }
-            let reporteData = { categorias: {}, jugadoresExpediente: {} };
+
+            let reporteData = {
+                categorias: {},
+                jugadoresExpediente: {}
+            };
+
             partidosMonitoreo.forEach(p => {
                 [p.j1, p.j2].forEach(j => {
                     if (j && !reporteData.jugadoresExpediente[j.id]) {
-                        reporteData.jugadoresExpediente[j.id] = { id: j.id, nombre: j.nombre, club: j.club, ranking_inicial: j.puntos_ranking || 0, pts_ganados: 0, pts_perdidos: 0, partidos: [], ranking_final: j.puntos_ranking || 0, grupo_pertenencia: null, categoria_pertenencia: null };
+                        reporteData.jugadoresExpediente[j.id] = {
+                            id: j.id, nombre: j.nombre, club: j.club, ranking_inicial: j.puntos_ranking || 0,
+                            pts_ganados: 0, pts_perdidos: 0, partidos: [], ranking_final: j.puntos_ranking || 0,
+                            grupo_pertenencia: null, categoria_pertenencia: null
+                        };
                     }
                 });
             });
@@ -1415,7 +1545,8 @@
                 let catNombre = p.categorias?.nombre || 'General';
                 if (!reporteData.categorias[catNombre]) reporteData.categorias[catNombre] = { grupos: {} };
                 
-                let exp1 = reporteData.jugadoresExpediente[p.jugador1_id]; let exp2 = reporteData.jugadoresExpediente[p.jugador2_id];
+                let exp1 = reporteData.jugadoresExpediente[p.jugador1_id];
+                let exp2 = reporteData.jugadoresExpediente[p.jugador2_id];
 
                 if (p.grupo_nombre && p.grupo_nombre !== 'Flash') {
                     if(exp1) { exp1.grupo_pertenencia = p.grupo_nombre; exp1.categoria_pertenencia = catNombre; }
@@ -1423,77 +1554,136 @@
                 }
 
                 if (exp1 && exp2) {
-                    let diff = Math.abs(exp1.ranking_inicial - exp2.ranking_inicial); let favId = exp1.ranking_inicial >= exp2.ranking_inicial ? exp1.id : exp2.id;
-                    let esUpset = p.ganador_id !== favId;
-                    
-                    let rGana = reglasRankingList.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((esUpset && !String(r.resultado_esperado).toLowerCase().includes('favorito')) || (!esUpset && String(r.resultado_esperado).toLowerCase().includes('favorito'))));
-                    let rPierde = reglasRankingList.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((!esUpset && !String(r.resultado_esperado).toLowerCase().includes('favorito')) || (esUpset && String(r.resultado_esperado).toLowerCase().includes('favorito'))));
-                    
-                    let calc = { ptsGanador: rGana ? rGana.puntos_ganador : 10, ptsPerdedor: rPierde ? -Math.abs(rPierde.puntos_perdedor) : -5 };
-
-                    let desc1="", desc2=""; let resSets = `${p.sets_j1}-${p.sets_j2}`;
+                    let calculo = calcularPuntosMatch(exp1.ranking_inicial, exp2.ranking_inicial, p.ganador_id, p.jugador1_id, p.jugador2_id);
+                    let desc1="", desc2="";
+                    let resSets = `${p.sets_j1}-${p.sets_j2}`;
 
                     if(p.ganador_id === p.jugador1_id) {
-                        exp1.pts_ganados += calc.ptsGanador; exp1.ranking_final += calc.ptsGanador; exp2.pts_perdidos += calc.ptsPerdedor; exp2.ranking_final += calc.ptsPerdedor;
-                        desc1 = `<span class="text-green">Victoria (+${calc.ptsGanador} pts)</span> vs ${exp2.nombre}`; desc2 = `<span class="text-red">Derrota (${calc.ptsPerdedor} pts)</span> vs ${exp1.nombre}`;
+                        exp1.pts_ganados += calculo.ptsGanador; exp1.ranking_final += calculo.ptsGanador;
+                        exp2.pts_perdidos += calculo.ptsPerdedor; exp2.ranking_final += calculo.ptsPerdedor;
+                        desc1 = `<span class="text-green">Victoria (+${calculo.ptsGanador} pts)</span> vs ${exp2.nombre}`;
+                        desc2 = `<span class="text-red">Derrota (${calculo.ptsPerdedor} pts)</span> vs ${exp1.nombre}`;
                     } else {
-                        exp2.pts_ganados += calc.ptsGanador; exp2.ranking_final += calc.ptsGanador; exp1.pts_perdidos += calc.ptsPerdedor; exp1.ranking_final += calc.ptsPerdedor;
-                        desc2 = `<span class="text-green">Victoria (+${calc.ptsGanador} pts)</span> vs ${exp1.nombre}`; desc1 = `<span class="text-red">Derrota (${calc.ptsPerdedor} pts)</span> vs ${exp2.nombre}`;
+                        exp2.pts_ganados += calculo.ptsGanador; exp2.ranking_final += calculo.ptsGanador;
+                        exp1.pts_perdidos += calculo.ptsPerdedor; exp1.ranking_final += calculo.ptsPerdedor;
+                        desc2 = `<span class="text-green">Victoria (+${calculo.ptsGanador} pts)</span> vs ${exp1.nombre}`;
+                        desc1 = `<span class="text-red">Derrota (${calculo.ptsPerdedor} pts)</span> vs ${exp2.nombre}`;
                     }
 
                     let faseP = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Llave'));
-                    exp1.partidos.push({ fase: faseP, res: resSets, desc: desc1 }); exp2.partidos.push({ fase: faseP, res: `${p.sets_j2}-${p.sets_j1}`, desc: desc2 });
+                    exp1.partidos.push({ fase: faseP, res: resSets, desc: desc1 });
+                    exp2.partidos.push({ fase: faseP, res: `${p.sets_j2}-${p.sets_j1}`, desc: desc2 });
                 }
 
                 if(p.grupo_nombre && p.grupo_nombre !== 'Flash') {
-                    let gpoObj = reporteData.categorias[catNombre].grupos; if(!gpoObj[p.grupo_nombre]) gpoObj[p.grupo_nombre] = {};
-                    [p.j1, p.j2].forEach(j => { if(j && !gpoObj[p.grupo_nombre][j.id]) { gpoObj[p.grupo_nombre][j.id] = {id:j.id, nombre:j.nombre, pts_ranking_ini: j.puntos_ranking || 0, pj:0, pg:0, pts:0, setsGanados:0, setsPerdidos:0, puntosGanados:0, puntosPerdidos:0}; } });
+                    let gpoObj = reporteData.categorias[catNombre].grupos;
+                    if(!gpoObj[p.grupo_nombre]) gpoObj[p.grupo_nombre] = {};
+                    
+                    [p.j1, p.j2].forEach(j => { 
+                        if(j && !gpoObj[p.grupo_nombre][j.id]) {
+                            gpoObj[p.grupo_nombre][j.id] = {id:j.id, nombre:j.nombre, pts_ranking_ini: j.puntos_ranking || 0, pj:0, pg:0, pts:0, setsGanados:0, setsPerdidos:0, puntosGanados:0, puntosPerdidos:0};
+                        }
+                    });
+
                     if(p.j1 && p.j2) {
-                        let obj1 = gpoObj[p.grupo_nombre][p.j1.id]; let obj2 = gpoObj[p.grupo_nombre][p.j2.id];
-                        obj1.pj++; obj2.pj++; obj1.setsGanados += (p.sets_j1||0); obj1.setsPerdidos += (p.sets_j2||0); obj2.setsGanados += (p.sets_j2||0); obj2.setsPerdidos += (p.sets_j1||0);
-                        if(p.ganador_id === p.jugador1_id) { obj1.pg++; obj1.pts+=2; obj2.pp++; obj2.pts+=1; } else { obj2.pg++; obj2.pts+=2; obj1.pp++; obj1.pts+=1; }
+                        let obj1 = gpoObj[p.grupo_nombre][p.j1.id];
+                        let obj2 = gpoObj[p.grupo_nombre][p.j2.id];
+                        obj1.pj++; obj2.pj++;
+                        obj1.setsGanados += (p.sets_j1||0); obj1.setsPerdidos += (p.sets_j2||0);
+                        obj2.setsGanados += (p.sets_j2||0); obj2.setsPerdidos += (p.sets_j1||0);
+
+                        if(p.ganador_id === p.jugador1_id) { obj1.pg++; obj1.pts+=2; obj2.pp++; obj2.pts+=1; }
+                        else { obj2.pg++; obj2.pts+=2; obj1.pp++; obj1.pts+=1; }
                     }
                 }
             });
 
             if (bonoPaseActivo && bonoPaseValor > 0) {
                 let idsEnLlaves = new Set();
-                partidosMonitoreo.filter(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase && !p.grupo_nombre).forEach(p => { if (p.jugador1_id) idsEnLlaves.add(p.jugador1_id); if (p.jugador2_id) idsEnLlaves.add(p.jugador2_id); });
+                partidosMonitoreo.filter(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase && !p.grupo_nombre).forEach(p => {
+                    if (p.jugador1_id) idsEnLlaves.add(p.jugador1_id);
+                    if (p.jugador2_id) idsEnLlaves.add(p.jugador2_id);
+                });
+
                 idsEnLlaves.forEach(id => {
                     let exp = reporteData.jugadoresExpediente[id];
                     if (exp && exp.grupo_pertenencia && exp.categoria_pertenencia) {
+                        
                         let grupoData = reporteData.categorias[exp.categoria_pertenencia].grupos[exp.grupo_pertenencia];
                         if(grupoData) {
-                            let jugadoresGrupo = Object.values(grupoData); let sembrado1 = jugadoresGrupo.reduce((prev, current) => (prev.pts_ranking_ini > current.pts_ranking_ini) ? prev : current);
-                            if (id !== sembrado1.id) { exp.pts_ganados += bonoPaseValor; exp.ranking_final += bonoPaseValor; exp.partidos.unshift({ fase: '🏆 Clasificación', res: '-', desc: `<span class="text-gold">Bono Pase a Llaves (+${bonoPaseValor} pts)</span>` }); } 
-                            else { exp.partidos.unshift({ fase: '🏆 Clasificación', res: '-', desc: `<span style="color:#64748b; font-style:italic;">Avanza como Sembrado 1 (Sin bono)</span>` }); }
+                            let jugadoresGrupo = Object.values(grupoData);
+                            let sembrado1 = jugadoresGrupo.reduce((prev, current) => (prev.pts_ranking_ini > current.pts_ranking_ini) ? prev : current);
+
+                            if (id !== sembrado1.id) {
+                                exp.pts_ganados += bonoPaseValor;
+                                exp.ranking_final += bonoPaseValor;
+                                exp.partidos.unshift({
+                                    fase: '🏆 Clasificación',
+                                    res: '-',
+                                    desc: `<span class="text-gold">Bono Pase a Llaves (+${bonoPaseValor} pts)</span>`
+                                });
+                            } else {
+                                exp.partidos.unshift({
+                                    fase: '🏆 Clasificación',
+                                    res: '-',
+                                    desc: `<span style="color:#64748b; font-style:italic;">Avanza como Sembrado 1 (Sin bono)</span>`
+                                });
+                            }
                         }
                     }
                 });
             }
 
-            dataMemoriaGlobal = reporteData; dibujarMemoriaHTML();
-            document.getElementById('btn-wa-memoria').style.display = 'inline-flex'; document.getElementById('caja-aplicar-ranking').style.display = 'block';
+            dataMemoriaGlobal = reporteData;
+            dibujarMemoriaHTML();
+            
+            document.getElementById('btn-wa-memoria').style.display = 'inline-flex'; 
+            document.getElementById('caja-aplicar-ranking').style.display = 'block';
         }
 
         function dibujarMemoriaHTML() {
             const preview = document.getElementById('preview-memoria');
             let expedientesOrdenados = Object.values(dataMemoriaGlobal.jugadoresExpediente).sort((a,b) => b.ranking_final - a.ranking_inicial);
+            
             let htmlUI = `<div style="text-align:center; margin-bottom:20px; color:#34d399; font-weight:800; font-size:13px;">✅ Memoria Calculada. Lista para revisar y confirmar.</div>`;
             expedientesOrdenados.forEach(e => {
-                let dif = e.ranking_final - e.ranking_inicial; let difStr = dif >= 0 ? `<span class="text-green">+${dif}</span>` : `<span class="text-red">${dif}</span>`;
+                let dif = e.ranking_final - e.ranking_inicial;
+                let difStr = dif >= 0 ? `<span class="text-green">+${dif}</span>` : `<span class="text-red">${dif}</span>`;
+                
                 let trs = e.partidos.map(p => `<tr><td>${p.fase}</td><td>${p.desc}</td><td style="text-align:center; font-family:'Orbitron',sans-serif;">${p.res}</td></tr>`).join('');
                 if(e.partidos.length === 0) trs = `<tr><td colspan="3" style="text-align:center; color:#64748b; font-style:italic;">No jugó partidos en este torneo.</td></tr>`;
-                htmlUI += `<div class="expediente-card"><div class="expediente-header"><div>${e.nombre} <span style="font-size:10px; color:#64748b; font-weight:700;">(${e.club || 'Sin Club'})</span></div><div style="text-align:right;"><div style="color:#fbbf24; font-size:16px;">${e.ranking_final} <span style="font-size:9px; color:#94a3b8;">pts</span></div><div style="font-size:10px;">Variación: ${difStr}</div></div></div><table class="memoria-table-dark"><thead><tr><th>Fase</th><th>Resumen del Partido</th><th style="text-align:center;">Resultado</th></tr></thead><tbody>${trs}</tbody></table></div>`;
+
+                htmlUI += `
+                    <div class="expediente-card">
+                        <div class="expediente-header">
+                            <div>${e.nombre} <span style="font-size:10px; color:#64748b; font-weight:700;">(${e.club || 'Sin Club'})</span></div>
+                            <div style="text-align:right;">
+                                <div style="color:#fbbf24; font-size:16px;">${e.ranking_final} <span style="font-size:9px; color:#94a3b8;">pts</span></div>
+                                <div style="font-size:10px;">Variación: ${difStr}</div>
+                            </div>
+                        </div>
+                        <table class="memoria-table-dark">
+                            <thead><tr><th>Fase</th><th>Resumen del Partido</th><th style="text-align:center;">Resultado</th></tr></thead>
+                            <tbody>${trs}</tbody>
+                        </table>
+                    </div>
+                `;
             });
-            preview.innerHTML = htmlUI; preview.classList.remove('hidden');
+            
+            preview.innerHTML = htmlUI;
+            preview.classList.remove('hidden');
         }
 
         function compartirMemoriaWA() {
             let urlMemoria = `${window.location.origin}/memoria.html?torneo=${torneoActivoObj.id}`;
             let texto = `*📊 MEMORIA TÉCNICA Y NUEVOS RANKINGS - ${torneoActivoObj.nombre}*\n\n*Top Movimientos de Ranking:*\n`;
             let exp = Object.values(dataMemoriaGlobal.jugadoresExpediente).sort((a,b) => (b.ranking_final - b.ranking_inicial) - (a.ranking_final - a.ranking_inicial)).slice(0,10);
-            exp.forEach(e => { let dif = e.ranking_final - e.ranking_inicial; let signo = dif >= 0 ? '+' : ''; texto += `👤 ${e.nombre}: ${e.ranking_inicial} ➔ *${e.ranking_final} pts* (${signo}${dif})\n`; });
+            
+            exp.forEach(e => {
+                let dif = e.ranking_final - e.ranking_inicial;
+                let signo = dif >= 0 ? '+' : '';
+                texto += `👤 ${e.nombre}: ${e.ranking_inicial} ➔ *${e.ranking_final} pts* (${signo}${dif})\n`;
+            });
             texto += `\n🔗 *Revisa el reporte interactivo completo, llaves y expedientes de todos los jugadores aquí:*\n👉 ${urlMemoria}`;
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
         }
@@ -1503,7 +1693,8 @@
             let confirmar = prompt('⚠️ ACCIÓN IRREVERSIBLE ⚠️\nEsto sobrescribirá el ranking de todos los jugadores en la base de datos oficial.\n\nEscribe "CONFIRMAR" para proceder:');
             if(confirmar !== 'CONFIRMAR') { alert("Operación cancelada."); return; }
 
-            const btn = document.querySelector('#caja-aplicar-ranking button'); btn.innerText = "Guardando en Supabase..."; btn.disabled = true;
+            const btn = document.querySelector('#caja-aplicar-ranking button');
+            btn.innerText = "Guardando en Supabase..."; btn.disabled = true;
 
             try {
                 let expedientes = Object.values(dataMemoriaGlobal.jugadoresExpediente);
@@ -1514,8 +1705,16 @@
                     }
                 }
                 alert("✅ ¡ÉXITO! Los nuevos rankings han sido guardados en la BD de Jugadores de manera permanente.");
-                document.getElementById('btn-wa-memoria').style.display = 'inline-flex'; document.getElementById('caja-aplicar-ranking').style.display = 'none'; cargarDatosIniciales();
-            } catch(e) { alert("❌ Error: " + e.message); } finally { btn.innerText = "🔒 CERRAR TORNEO Y ACTUALIZAR RANKINGS OFICIALES"; btn.disabled = false; }
+                
+                document.getElementById('btn-wa-memoria').style.display = 'inline-flex'; 
+                document.getElementById('caja-aplicar-ranking').style.display = 'none';
+                cargarDatosIniciales();
+
+            } catch(e) {
+                alert("❌ Error: " + e.message);
+            } finally {
+                btn.innerText = "🔒 CERRAR TORNEO Y ACTUALIZAR RANKINGS OFICIALES"; btn.disabled = false;
+            }
         }
 
         window.onload = cargarDatosIniciales;
