@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- ETIQUETAS ANTI-CACHÉ EXTREMAS -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
@@ -13,7 +12,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- ESCÁNER DE ERRORES GLOBAL -->
     <script>
         const isAuthLocal = localStorage.getItem('admin_autenticado') === 'true';
         if (!isAuthLocal) {
@@ -834,6 +832,47 @@
                 html += `<tr><td><strong style="color:#ffffff; font-size:12px;">${nom}</strong> <small style="color:#64748b; font-weight:700; margin-left:6px; font-size:10px;">(${club})</small></td><td style="color:#38bdf8; font-weight:800; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;">${cat}</td><td style="color:#fbbf24; font-weight:800; font-size:11px;">${pts} pts</td><td><button class="btn-console btn-green" style="padding:4px 10px; font-size:9px;" onclick="aprobarPago(${ins.id})">Validar Pago</button></td></tr>`;
             });
             tbody.innerHTML = html;
+        }
+
+        async function cargarPendientesRanking() {
+            const tbody = document.getElementById('tabla-pendientes-ranking');
+            if(!tbody) return;
+            
+            try {
+                const { data, error } = await clienteSupabase.from('jugadores')
+                    .select('*')
+                    .eq('puntos_ranking', 0)
+                    .eq('organizador_id', ORG_ID)
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw new Error(error.message);
+                
+                if (!data || data.length === 0) { 
+                    document.getElementById('modulo-pendientes-ranking').style.display = 'none'; 
+                    return; 
+                }
+                
+                document.getElementById('modulo-pendientes-ranking').style.display = 'block'; 
+                tbody.innerHTML = '';
+                
+                let html = '';
+                data.forEach(j => {
+                    html += `<tr><td><strong style="color:#ffffff; font-size:12px;">${j.nombre}</strong></td><td>${j.club || 'Sin Club'}</td><td><input type="number" id="input-ranking-${j.id}" placeholder="Puntos" style="width:90px;" class="input-tabla text-center"></td><td><button class="btn-console btn-gold" style="padding:6px 12px; font-size:9px;" onclick="asignarRankingInicial(${j.id}, '${j.nombre.replace(/'/g, "\\'")}')">Guardar</button></td></tr>`;
+                });
+                tbody.innerHTML = html;
+                
+            } catch(e) { 
+                console.error("Error pendientes ranking:", e); 
+                tbody.innerHTML = `<tr><td colspan="4" class="mensaje-vacio" style="color:#ef4444;">⚠️ Error: ${e.message}</td></tr>`;
+            }
+        }
+
+        async function asignarRankingInicial(idJugador, nombreJugador) {
+            const pts = parseInt(document.getElementById(`input-ranking-${idJugador}`).value);
+            if (!pts || pts <= 0) return;
+            await clienteSupabase.from('jugadores').update({ puntos_ranking: pts }).eq('id', idJugador);
+            alert(`✅ Ranking asignado.`); 
+            safelyRunAsync(cargarPendientesRanking, 'tabla-pendientes-ranking');
         }
 
         async function cargarInscritosEnVivo() {
