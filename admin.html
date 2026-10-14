@@ -3,13 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- ETIQUETAS ANTI-CACHÉ PARA ACTUALIZACIÓN EN VERCEL -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
     <title>Panel de Control - Arbitraje Digital</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- CANDADO DE SEGURIDAD RELAJADO (Solución para móviles) -->
+    <!-- CANDADO DE SEGURIDAD RELAJADO -->
     <script>
         const isAuthLocal = localStorage.getItem('admin_autenticado') === 'true';
 
@@ -115,7 +120,6 @@
             
             .impresion-ranking { font-family: 'Arial', sans-serif !important; color: #0f172a !important; width: 100%; max-width: 850px; margin: 0 auto; }
             
-            /* Encabezado Principal */
             .print-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #0f172a; padding-bottom: 15px; margin-bottom: 25px; }
             .print-header-left h2 { margin: 0; font-size: 28px; font-weight: 900; color: #0f172a !important; letter-spacing: -1px; }
             .print-header-left h3 { margin: 0; font-size: 11px; font-weight: 600; color: #475569 !important; text-transform: uppercase; letter-spacing: 1px; }
@@ -124,22 +128,18 @@
             .print-header-right { text-align: right; font-size: 11px; color: #475569 !important; font-weight: 600; text-transform: uppercase;}
             .print-header-right strong { font-size: 16px; color: #0f172a !important; font-weight: 900; }
 
-            /* Contenedor de la categoría para evitar saltos raros */
             .print-cat-wrapper { margin-bottom: 25px; page-break-inside: avoid; }
             
-            /* Tablas de PDF */
             .print-table { width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1; font-size: 11px; }
             .print-table th { padding: 8px 10px; text-align: left; font-size: 9px; font-weight: 800; color: #475569 !important; text-transform: uppercase; border-bottom: 2px solid #94a3b8; background: #f8fafc !important; -webkit-print-color-adjust: exact; }
             .print-table td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; color: #0f172a !important; }
             
-            /* Colores específicos de la cabecera en el PDF */
-            .bg-cat-0 { background-color: #fbbf24 !important; color: #000 !important; -webkit-print-color-adjust: exact; } /* Oro */
-            .bg-cat-1 { background-color: #94a3b8 !important; color: #000 !important; -webkit-print-color-adjust: exact; } /* Plata */
-            .bg-cat-2 { background-color: #d97706 !important; color: #fff !important; -webkit-print-color-adjust: exact; } /* Bronce */
-            .bg-cat-3 { background-color: #06b6d4 !important; color: #000 !important; -webkit-print-color-adjust: exact; } /* Cyan */
-            .bg-cat-4 { background-color: #a855f7 !important; color: #fff !important; -webkit-print-color-adjust: exact; } /* Purpura */
+            .bg-cat-0 { background-color: #fbbf24 !important; color: #000 !important; -webkit-print-color-adjust: exact; }
+            .bg-cat-1 { background-color: #94a3b8 !important; color: #000 !important; -webkit-print-color-adjust: exact; }
+            .bg-cat-2 { background-color: #d97706 !important; color: #fff !important; -webkit-print-color-adjust: exact; }
+            .bg-cat-3 { background-color: #06b6d4 !important; color: #000 !important; -webkit-print-color-adjust: exact; }
+            .bg-cat-4 { background-color: #a855f7 !important; color: #fff !important; -webkit-print-color-adjust: exact; }
             
-            /* Elementos de la tabla */
             .pt-rank { font-weight: 800; color: #64748b !important; text-align: center; }
             .pt-name { font-weight: 800; font-size: 12px; }
             .pt-club { font-size: 9px; font-weight: 700; color: #64748b !important; text-transform: uppercase;}
@@ -213,7 +213,7 @@
         </div>
     </div>
 
-    <!-- MODAL RANKING WEB (UNA FILA COMPACTA CON COLORES) -->
+    <!-- MODAL RANKING WEB -->
     <div id="modal-ranking-global" class="modal-overlay" style="display: none;">
         <div class="modal-card modal-card-ranking" style="padding: 0; overflow: hidden; max-height: 90vh; display: flex; flex-direction: column;">
             <div style="padding: 16px 24px; background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; z-index: 20;">
@@ -633,6 +633,112 @@
             return partes[partes.length - 1];
         };
 
+        // Carga de Inscripciones con detector visual de errores de Supabase
+        async function cargarInscritosEnVivo() {
+            const tbody = document.getElementById('tabla-inscritos-vivo'); 
+            if (!tbody) return;
+            
+            try {
+                tbody.innerHTML = '<tr><td colspan="6" class="mensaje-vacio">Sincronizando con base de datos...</td></tr>';
+                
+                const { data, error } = await clienteSupabase.from('inscripciones').select(`id, categoria_id, estatus_pago, jugadores ( id, nombre, club, puntos_ranking ), categorias ( id, nombre )`).eq('torneo_id', idTorneoActivo);
+                
+                if (error) throw error;
+                
+                const cantReg = document.getElementById('cant-registrados'); 
+                const cantPag = document.getElementById('cant-pagados');
+                
+                if (!data || data.length === 0) { 
+                    tbody.innerHTML = '<tr><td colspan="6" class="mensaje-vacio">Aún no hay inscritos en este torneo.</td></tr>'; 
+                    if (cantReg) cantReg.innerText = '0'; 
+                    if (cantPag) cantPag.innerText = '0'; 
+                    return; 
+                }
+
+                let validData = data.filter(ins => ins && ins.categorias && ins.jugadores);
+                if (cantReg) cantReg.innerText = validData.length; 
+                if (cantPag) cantPag.innerText = validData.filter(i => i.estatus_pago === 'Pagado').length;
+
+                if (validData.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="mensaje-vacio">Hay inscripciones, pero tienen errores de vinculación (jugador/categoría borrada).</td></tr>';
+                    return;
+                }
+
+                const agrupados = {};
+                validData.forEach(ins => {
+                    let catName = ins.categorias.nombre || 'Sin Categoría';
+                    if (!agrupados[catName]) {
+                        agrupados[catName] = { id: ins.categorias.id, inscripciones: [] };
+                    }
+                    agrupados[catName].inscripciones.push(ins);
+                });
+
+                const categoriasOrdenadas = Object.keys(agrupados).sort();
+                
+                let html = '';
+
+                categoriasOrdenadas.forEach(catName => {
+                    const catObj = agrupados[catName];
+                    const estiloCat = obtenerEstiloCategoria(catObj.id);
+                    
+                    catObj.inscripciones.sort((a, b) => (b.jugadores.puntos_ranking || 0) - (a.jugadores.puntos_ranking || 0));
+
+                    const pagados = catObj.inscripciones.filter(i => i.estatus_pago === 'Pagado').length;
+                    const total = catObj.inscripciones.length;
+
+                    html += `
+                        <tr class="tr-header" style="background: ${estiloCat.bg}; border-left: 4px solid ${estiloCat.text};">
+                            <td colspan="6" style="padding: 10px 15px; border-radius: 0;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <strong style="color: ${estiloCat.text}; font-size: 13px; text-transform: uppercase; letter-spacing: 1px;">🏆 ${catName}</strong>
+                                    <span style="color: ${estiloCat.text}; font-size: 10px; font-weight: 800; background: rgba(0,0,0,0.3); padding: 4px 8px; border-radius: 4px;">${pagados} Pagados / ${total} Inscritos</span>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+
+                    catObj.inscripciones.forEach(ins => {
+                        const esPagado = ins.estatus_pago === 'Pagado';
+                        let selectCatHtml = `<select id="select-cambiar-cat-${ins.id}" class="input-tabla" style="padding: 6px; font-size: 10px; margin-right: 6px; width: 110px; font-weight: 700;">`;
+                        todasLasCategoriasAdmin.forEach(c => { selectCatHtml += `<option value="${c.id}" ${c.id === ins.categoria_id ? 'selected' : ''}>${c.nombre}</option>`; });
+                        selectCatHtml += `</select>`;
+
+                        // MAGIA: Sacamos la división y el hándicap de la lista global de jugadores
+                        let jListObj = todosLosJugadoresAdmin.find(x => x.id === ins.jugadores.id);
+                        let div = jListObj ? (jListObj.division || 1) : 1;
+                        let handicap = jListObj && jListObj.handicap !== undefined && jListObj.handicap !== null ? jListObj.handicap : 5;
+
+                        html += `
+                            <tr>
+                                <td><strong style="color:#ffffff; font-size:12px;">${ins.jugadores.nombre}</strong></td>
+                                <td style="color:#94a3b8; font-size:11px;">${ins.jugadores.club || 'Sin Club'}</td>
+                                <td style="color:${estiloCat.text}; font-weight:800; font-size:11px;">${ins.categorias.nombre}</td>
+                                <td>
+                                    <div style="display:inline-flex; gap:8px; align-items:center;">
+                                        <label style="display:flex; align-items:center; gap:2px; font-size:10px; color:#fff; cursor:pointer;">
+                                            <input type="radio" name="div_ins_${ins.jugadores.id}" value="1" ${div == 1 ? 'checked' : ''} style="accent-color:#f43f5e;" onchange="actualizarDivHandicap(${ins.jugadores.id}, 'ins')"> Div 1
+                                        </label>
+                                        <label style="display:flex; align-items:center; gap:2px; font-size:10px; color:#fff; cursor:pointer;">
+                                            <input type="radio" name="div_ins_${ins.jugadores.id}" value="2" ${div == 2 ? 'checked' : ''} style="accent-color:#eab308;" onchange="actualizarDivHandicap(${ins.jugadores.id}, 'ins')"> Div 2
+                                        </label>
+                                        <input type="number" id="ventaja_ins_${ins.jugadores.id}" value="${handicap}" class="input-tabla" style="width: 45px; padding: 2px; font-size: 10px; display: ${div == 2 ? 'block' : 'none'};" onchange="actualizarDivHandicap(${ins.jugadores.id}, 'ins')">
+                                    </div>
+                                </td>
+                                <td><span class="badge-pago ${esPagado ? 'pago-ok' : 'pago-pend'}">${ins.estatus_pago}</span></td>
+                                <td><div style="display:flex; align-items:center;">${selectCatHtml}<button class="btn-console btn-gold" style="padding: 4px 8px; font-size: 9px;" onclick="cambiarCategoriaInscripcion(${ins.id})">💾</button><button class="btn-console btn-red" style="padding: 4px 8px; font-size: 9px; margin-left: 4px;" onclick="eliminarInscripcion(${ins.id}, '${String(ins.jugadores.nombre).replace(/'/g, "\\'")}')">🗑️</button></div></td>
+                            </tr>
+                        `;
+                    });
+                });
+                
+                tbody.innerHTML = html;
+
+            } catch(e) { 
+                console.error("Error al cargar inscritos:", e); 
+                tbody.innerHTML = `<tr><td colspan="6" class="mensaje-vacio" style="color:#ef4444; font-weight:bold;">⚠️ Error Supabase: ${e.message}</td></tr>`;
+            }
+        }
+
         async function cargarDatosIniciales() {
             try {
                 const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
@@ -1022,28 +1128,15 @@
             return fallbackText;
         }
 
-        // ======================= CORRECCIÓN DEL MOTOR DE PUNTOS =======================
-        function calcularPuntosMatch(j1Pts, j2Pts, ganadorId, j1Id, j2Id) {
-            let diff = Math.abs(j1Pts - j2Pts);
-            // Si j1Pts es igual o mayor, j1 es el favorito. De lo contrario, j2 es el favorito.
-            let favoritoId = j1Pts >= j2Pts ? j1Id : j2Id;
+        function calcularPuntosMatch(p1Pts, p2Pts, ganadorId, j1Id, j2Id) {
+            let diff = Math.abs(p1Pts - p2Pts);
+            let favoritoId = p1Pts >= p2Pts ? j1Id : j2Id;
             let esUpset = ganadorId !== favoritoId; 
 
-            // Búsqueda inteligente (A prueba de errores tipográficos en la BD)
-            let reglaExacta = reglasRankingList.find(r => {
-                let isRangeOk = diff >= r.diferencia_min && diff <= r.diferencia_max;
-                
-                // Leemos si el string de la BD contiene la palabra clave 'favorito'
-                let isReglaFavorito = String(r.resultado_esperado).toLowerCase().includes('favorito');
-                let isReglaRetador = !isReglaFavorito;
-                
-                if (!isRangeOk) return false;
-                
-                if (esUpset && isReglaRetador) return true;
-                if (!esUpset && isReglaFavorito) return true;
-                
-                return false;
-            });
+            let reglaExacta = reglasRankingList.find(r => 
+                diff >= r.diferencia_min && diff <= r.diferencia_max && 
+                ((esUpset && r.resultado_esperado === 'gana_retador') || (!esUpset && r.resultado_esperado === 'gana_favorito'))
+            );
 
             return { 
                 ptsGanador: reglaExacta ? reglaExacta.puntos_ganador : 10, 
@@ -1097,10 +1190,7 @@
 
                     let deltaPartido = 0;
                     if (esFin) {
-                        // CORRECCIÓN: Mandamos los puntos respetando exactamente quién es j1 y quién es j2
-                        let j1PtsModal = esJ1 ? rInicial : rivalPts;
-                        let j2PtsModal = esJ1 ? rivalPts : rInicial;
-                        let calc = calcularPuntosMatch(j1PtsModal, j2PtsModal, p.ganador_id, p.jugador1_id, p.jugador2_id);
+                        let calc = calcularPuntosMatch(rInicial, rivalPts, p.ganador_id, p.jugador1_id, p.jugador2_id);
                         deltaPartido = ganoPlayer ? calc.ptsGanador : calc.ptsPerdedor;
                         deltaTotal += deltaPartido;
                     }
