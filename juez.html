@@ -65,9 +65,8 @@
 
         <div class="text-center">
             <span id="info-mesa-fase" class="text-[10px] font-black text-cyan-400 uppercase tracking-widest block">MESA -- • FASE</span>
-            <!-- EL NOMBRE DEL JUEZ APARECERÁ AQUÍ -->
-            <span id="info-juez" class="text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest block mt-1 mb-1">⚖️ Juez: Cargando...</span>
-            <select id="select-formato" onchange="cambiarFormato()" class="bg-transparent border border-zinc-600 text-zinc-400 hover:border-cyan-400 hover:text-cyan-400 text-[9px] font-bold uppercase rounded mt-1 outline-none text-center cursor-pointer transition-colors py-0.5 px-1 appearance-none text-center">
+            <span id="info-juez" class="text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest block mt-1">⚖️ JUEZ: CARGANDO...</span>
+            <select id="select-formato" onchange="cambiarFormato()" class="bg-transparent border border-zinc-600 text-zinc-400 hover:border-cyan-400 hover:text-cyan-400 text-[9px] font-bold uppercase rounded mt-2 outline-none text-center cursor-pointer transition-colors py-0.5 px-1 appearance-none text-center">
                 <option value="2-3">Formato: 2 de 3 Sets</option>
                 <option value="3-5" selected>Formato: 3 de 5 Sets</option>
                 <option value="4-7">Formato: 4 de 7 Sets</option>
@@ -278,6 +277,9 @@
                 partidoData = data;
                 ORG_ID = data.organizador_id; 
 
+                // INYECCIÓN DEL NOMBRE DEL JUEZ
+                document.getElementById('info-juez').innerText = '⚖️ JUEZ: ' + (data.juez || 'COMITÉ');
+
                 p1.id = data.jugador1_id; 
                 p1.nombre = data.j1 ? data.j1.nombre : 'Jugador 1'; 
                 p1.ptsBase = data.j1 ? data.j1.puntos_ranking || 0 : 0;
@@ -388,39 +390,28 @@
             } catch(e) { p1.ptsLive = p1.ptsBase; p2.ptsLive = p2.ptsBase; }
         }
 
+        // ======================= CORRECCIÓN MATEMÁTICA DEFINITIVA DE RANKING =======================
         function calcularImpactoPuntos(ptsA, ptsB) {
             let diff = Math.abs(ptsA - ptsB);
             let favoritoEsJ1 = ptsA >= ptsB;
 
-            let reglaGanaJ1 = reglasRanking.find(r => {
-                let isRangeOk = diff >= r.diferencia_min && diff <= r.diferencia_max;
-                if (!isRangeOk) return false;
-                let valDb = String(r.resultado_esperado).toLowerCase();
-                let isReglaFav = valDb.includes('favorito');
-                let isReglaRet = !isReglaFav; 
-                
-                if (favoritoEsJ1 && isReglaFav) return true;
-                if (!favoritoEsJ1 && isReglaRet) return true;
-                return false;
-            });
+            // Busca y separa limpiamente la regla de cuando GANA el Favorito y cuando GANA el Retador
+            let reglaGanaFav = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && String(r.resultado_esperado).toLowerCase().includes('favorito'));
+            let reglaGanaRet = reglasRanking.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && !String(r.resultado_esperado).toLowerCase().includes('favorito'));
 
-            let reglaGanaJ2 = reglasRanking.find(r => {
-                let isRangeOk = diff >= r.diferencia_min && diff <= r.diferencia_max;
-                if (!isRangeOk) return false;
-                let valDb = String(r.resultado_esperado).toLowerCase();
-                let isReglaFav = valDb.includes('favorito');
-                let isReglaRet = !isReglaFav;
+            // Asigna los puntos correspondientes a cada escenario (usando valores absolutos para evitar signos dobles)
+            let ptsGanaFav = reglaGanaFav ? reglaGanaFav.puntos_ganador : 10;
+            let ptsPierdeFav = reglaGanaRet ? -Math.abs(reglaGanaRet.puntos_perdedor) : -5;
+            
+            let ptsGanaRet = reglaGanaRet ? reglaGanaRet.puntos_ganador : 10;
+            let ptsPierdeRet = reglaGanaFav ? -Math.abs(reglaGanaFav.puntos_perdedor) : -5;
 
-                if (!favoritoEsJ1 && isReglaFav) return true;
-                if (favoritoEsJ1 && isReglaRet) return true;
-                return false;
-            });
-
+            // Se entregan los puntos cruzados dependiendo de quién era el Jugador 1
             return { 
-                j1Gana: reglaGanaJ1 ? reglaGanaJ1.puntos_ganador : 10, 
-                j1Pierde: reglaGanaJ2 ? -Math.abs(reglaGanaJ2.puntos_perdedor) : -5, 
-                j2Gana: reglaGanaJ2 ? reglaGanaJ2.puntos_ganador : 10, 
-                j2Pierde: reglaGanaJ1 ? -Math.abs(reglaGanaJ1.puntos_perdedor) : -5 
+                j1Gana: favoritoEsJ1 ? ptsGanaFav : ptsGanaRet, 
+                j1Pierde: favoritoEsJ1 ? ptsPierdeFav : ptsPierdeRet, 
+                j2Gana: favoritoEsJ1 ? ptsGanaRet : ptsGanaFav, 
+                j2Pierde: favoritoEsJ1 ? ptsPierdeRet : ptsPierdeFav 
             };
         }
 
@@ -482,9 +473,11 @@
 
         function actualizarBotonRankingUI() {
             const btn = document.getElementById('btn-toggle-ranking');
+            
             btn.innerHTML = mostrarRankingImpacto 
                 ? `<i class="fa-solid fa-star"></i> MODO RANKING: ACTIVADO` 
                 : `<i class="fa-regular fa-star"></i> MODO RANKING: APAGADO`;
+                
             btn.className = mostrarRankingImpacto 
                 ? "bg-amber-500 text-black border border-amber-400 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(245,158,11,0.6)]" 
                 : "bg-amber-500/10 text-amber-500 border border-amber-500/40 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest";
@@ -514,9 +507,6 @@
             
             let txtFase = partidoData?.grupo_nombre === 'Flash' ? 'LIGA CONTINUA' : (partidoData?.grupo_nombre ? 'GRUPO ' + partidoData.grupo_nombre : (partidoData?.ronda_fase || 'FASE FINAL'));
             document.getElementById('info-mesa-fase').innerText = `MESA ${partidoData?.mesa || 1} • ${txtFase}`;
-            
-            // INCORPORACIÓN DEL NOMBRE DEL JUEZ EN PANTALLA
-            document.getElementById('info-juez').innerText = `⚖️ Juez: ${partidoData?.juez || 'Comité'}`;
 
             let isFin = (partidoData?.estado || '').toLowerCase() === 'finalizado';
             let impactoLive = calcularImpactoPuntos(p1.ptsLive, p2.ptsLive);
