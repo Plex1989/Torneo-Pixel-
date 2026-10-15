@@ -15,7 +15,7 @@
         .font-digital { font-family: 'Orbitron', sans-serif; }
         
         body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
-        body::after { content: ""; fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
+        body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
 
         .header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; }
         .header h1 { font-size: 20px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #fff; margin: 0; }
@@ -26,6 +26,7 @@
         .btn-filter-pill { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 8px 16px; border-radius: 9999px; font-size: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; transition: all 0.2s ease; }
         .btn-filter-pill.active { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 15px rgba(6, 182, 212, 0.5); }
         .btn-filter-pill.active-flash { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
+        .btn-filter-pill.active-resumen { background: #a855f7; color: #ffffff; border-color: #c084fc; box-shadow: 0 0 15px rgba(168, 85, 247, 0.5); }
         
         .btn-cat-pill { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; }
         .btn-cat-pill.active { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.6); }
@@ -179,10 +180,10 @@
 
     <div class="scrolling-bar no-print">
         <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Todos</button>
-        <button class="btn-filter-pill" id="tab-flash" onclick="filtrarEstado('flash')" style="color: #fbbf24; border-color: rgba(245,158,11,0.5);">⚡ Estadísticas Flash</button>
+        <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')">📊 Posiciones y Estadísticas</button>
         <button class="btn-filter-pill" id="tab-ranking" onclick="filtrarEstado('ranking')" style="border-color:#a855f7; color:#c084fc;">🏆 Ranking Global</button>
+        <button class="btn-filter-pill" id="tab-flash" onclick="filtrarEstado('flash')" style="color: #fbbf24; border-color: rgba(245,158,11,0.5);">⚡ Liga Flash</button>
         <button class="btn-filter-pill" id="tab-vivo" onclick="filtrarEstado('en_curso')">🔴 En Vivo</button>
-        <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')">📊 Resumen y Llaves</button>
         <button class="btn-filter-pill" id="tab-pendientes" onclick="filtrarEstado('pendiente')">⏳ Pendientes</button>
         <button class="btn-filter-pill" id="tab-finalizados" onclick="filtrarEstado('finalizado')">🏁 Finalizados</button>
     </div>
@@ -391,13 +392,14 @@
             document.querySelectorAll('.scrolling-bar .btn-filter-pill:not(.btn-cat-pill)').forEach(b => {
                 b.classList.remove('active');
                 b.classList.remove('active-flash');
+                b.classList.remove('active-resumen');
             });
 
             if (est === 'todos') document.getElementById('tab-todos')?.classList.add('active');
             else if (est === 'en_curso') document.getElementById('tab-vivo')?.classList.add('active');
             else if (est === 'pendiente') document.getElementById('tab-pendientes')?.classList.add('active');
             else if (est === 'finalizado') document.getElementById('tab-finalizados')?.classList.add('active');
-            else if (est === 'resumen') document.getElementById('tab-resumen')?.classList.add('active');
+            else if (est === 'resumen') document.getElementById('tab-resumen')?.classList.add('active-resumen');
             else if (est === 'ranking') document.getElementById('tab-ranking')?.classList.add('active');
             else if (est === 'flash') document.getElementById('tab-flash')?.classList.add('active-flash');
 
@@ -425,37 +427,58 @@
                 if (m.id == partidoActualId) return;
                 let p1Base = m.j1 ? m.j1.puntos_ranking : 0;
                 let p2Base = m.j2 ? m.j2.puntos_ranking : 0;
-                let diff = Math.abs(p1Base - p2Base);
-                let favJ1 = p1Base >= p2Base;
-
-                let rJ1 = reglasRankingList.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((favJ1 && r.resultado_esperado === 'gana_favorito') || (!favJ1 && r.resultado_esperado === 'gana_retador')));
-                let rJ2 = reglasRankingList.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((!favJ1 && r.resultado_esperado === 'gana_favorito') || (favJ1 && r.resultado_esperado === 'gana_retador')));
-
-                let j1Gana = rJ1 ? rJ1.puntos_ganador : 10;
-                let j1Pierde = rJ2 ? -Math.abs(rJ2.puntos_perdedor) : -5;
-                let j2Gana = rJ2 ? rJ2.puntos_ganador : 10;
-                let j2Pierde = rJ1 ? -Math.abs(rJ1.puntos_perdedor) : -5;
+                
+                let impacto = calcularImpacto(p1Base, p2Base);
 
                 if (m.jugador1_id === jugadorId) {
-                    delta += (m.ganador_id === jugadorId) ? j1Gana : j1Pierde;
+                    delta += (m.ganador_id === jugadorId) ? impacto.j1G : impacto.j1P;
                 } else if (m.jugador2_id === jugadorId) {
-                    delta += (m.ganador_id === jugadorId) ? j2Gana : j2Pierde;
+                    delta += (m.ganador_id === jugadorId) ? impacto.j2G : impacto.j2P;
                 }
             });
 
             return basePts + delta;
         }
 
+        // ======================= CORRECCIÓN MATEMÁTICA DEFINITIVA DE RANKING =======================
         function calcularImpacto(ptsA, ptsB) {
             let diff = Math.abs(ptsA - ptsB);
-            let favJ1 = ptsA >= ptsB;
+            let favoritoEsJ1 = ptsA >= ptsB;
 
-            let rJ1 = reglasRankingList.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((favJ1 && r.resultado_esperado === 'gana_favorito') || (!favJ1 && r.resultado_esperado === 'gana_retador')));
-            let rJ2 = reglasRankingList.find(r => diff >= r.diferencia_min && diff <= r.diferencia_max && ((!favJ1 && r.resultado_esperado === 'gana_favorito') || (favJ1 && r.resultado_esperado === 'gana_retador')));
+            let reglasRango = reglasRankingList.filter(r => diff >= Number(r.diferencia_min) && diff <= Number(r.diferencia_max));
+            
+            let reglaGanaFav = null;
+            let reglaGanaRet = null;
 
-            return {
-                j1G: rJ1 ? rJ1.puntos_ganador : 10, j1P: rJ2 ? -Math.abs(rJ2.puntos_perdedor) : -5,
-                j2G: rJ2 ? rJ2.puntos_ganador : 10, j2P: rJ1 ? -Math.abs(rJ1.puntos_perdedor) : -5
+            if (reglasRango.length >= 2) {
+                if (Number(reglasRango[0].puntos_ganador) < Number(reglasRango[1].puntos_ganador)) {
+                    reglaGanaFav = reglasRango[0];
+                    reglaGanaRet = reglasRango[1];
+                } else if (Number(reglasRango[0].puntos_ganador) > Number(reglasRango[1].puntos_ganador)) {
+                    reglaGanaFav = reglasRango[1];
+                    reglaGanaRet = reglasRango[0];
+                } else {
+                    let str = String(reglasRango[0].resultado_esperado).toLowerCase();
+                    if (str.includes('retador') || str.includes('upset')) { reglaGanaRet = reglasRango[0]; reglaGanaFav = reglasRango[1]; }
+                    else { reglaGanaFav = reglasRango[0]; reglaGanaRet = reglasRango[1]; }
+                }
+            } else if (reglasRango.length === 1) {
+                let str = String(reglasRango[0].resultado_esperado).toLowerCase();
+                if (str.includes('retador') || str.includes('upset')) reglaGanaRet = reglasRango[0];
+                else reglaGanaFav = reglasRango[0];
+            }
+
+            let ptsGanaFav = reglaGanaFav ? Number(reglaGanaFav.puntos_ganador) : 10;
+            let ptsPierdeFav = reglaGanaRet ? -Math.abs(Number(reglaGanaRet.puntos_perdedor)) : -5;
+            
+            let ptsGanaRet = reglaGanaRet ? Number(reglaGanaRet.puntos_ganador) : 10;
+            let ptsPierdeRet = reglaGanaFav ? -Math.abs(Number(reglaGanaFav.puntos_perdedor)) : -5;
+
+            return { 
+                j1G: favoritoEsJ1 ? ptsGanaFav : ptsGanaRet, 
+                j1P: favoritoEsJ1 ? ptsPierdeFav : ptsPierdeRet, 
+                j2G: favoritoEsJ1 ? ptsGanaRet : ptsGanaFav, 
+                j2P: favoritoEsJ1 ? ptsPierdeRet : ptsPierdeFav 
             };
         }
 
@@ -590,16 +613,8 @@
 
                     let deltaPartido = 0;
                     if (esFin) {
-                        let diff = Math.abs(rInicial - rivalPts); 
-                        let favoritoEsJ1 = rInicial >= rivalPts;
-                        let esUpset = p.ganador_id !== (favoritoEsJ1 ? jugadorId : (esJ1 ? p.jugador2_id : p.jugador1_id)); 
-
-                        let reglaFin = reglasRankingList.find(r => 
-                            diff >= r.diferencia_min && diff <= r.diferencia_max && 
-                            ((esUpset && r.resultado_esperado === 'gana_retador') || (!esUpset && r.resultado_esperado === 'gana_favorito'))
-                        );
-
-                        deltaPartido = ganoPlayer ? (reglaFin ? reglaFin.puntos_ganador : 10) : (reglaFin ? -Math.abs(reglaFin.puntos_perdedor) : -5);
+                        let impacto = calcularImpacto(rInicial, rivalPts);
+                        deltaPartido = ganoPlayer ? (esJ1 ? impacto.j1G : impacto.j2G) : (esJ1 ? impacto.j1P : impacto.j2P);
                         deltaTotal += deltaPartido;
                     }
 
@@ -681,7 +696,6 @@
             let icon1 = win1 ? '🏆 ' : '';
             let icon2 = win2 ? '🏆 ' : '';
 
-            // ASEGURAR QUE LAS LLAVES SE PUEDAN ABRIR
             let clickAction = partido ? `onclick="abrirPartidoFullScreen(${partido.id})"` : '';
             let hoverFX = partido ? 'hover:-translate-y-1 hover:border-white/20 transition-all cursor-pointer' : '';
 
@@ -705,7 +719,10 @@
                             <span style="font-size:${titulo==='Gran Final' ? '12px' : '10px'}; color:${colorTitulo}; font-weight:900; text-transform:uppercase;">${titulo==='Gran Final' ? '🏆 ' : ''}${titulo}</span>
                             ${partido ? badgeEst : ''}
                         </div>
-                        <span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partido?.mesa || mesaDefault}</span>
+                        <div style="text-align:right;">
+                            <span style="font-size:9px; color:#94a3b8; font-weight:700;">Mesa ${partido?.mesa || mesaDefault}</span>
+                            ${partido?.juez ? `<span style="font-size:9px; color:#a855f7; font-weight:700; display:block; margin-top:2px;">⚖️ ${partido.juez}</span>` : ''}
+                        </div>
                     </div>
 
                     <div style="background:rgba(255,255,255,0.04); padding:10px; border-radius:8px; margin-bottom:6px; display:flex; justify-content:space-between; align-items:center;">
@@ -1006,11 +1023,13 @@
                     let safeNom2 = nomJ2 ? String(nomJ2).replace(/'/g, "\\'") : '';
                     let safeClub2 = p.j2 && p.j2.club ? String(p.j2.club).replace(/'/g, "\\'") : 'Sin Club';
 
-                    // ASEGURAR EL ONCLICK DE ABRIR PARTIDO FULLSCREEN Y EL CURSOR
                     htmlContent += `
                         <div class="card-mesa ${cardClass} hover:-translate-y-1 hover:border-white/20 cursor-pointer" style="${customStyle}" onclick="abrirPartidoFullScreen(${p.id})">
                             <div class="top-bar">
-                                <span class="mesa-title" style="${mesaColor}">MESA ${p.mesa || 1}</span>
+                                <div>
+                                    <span class="mesa-title" style="${mesaColor}">MESA ${p.mesa || 1}</span>
+                                    <span style="font-size:9px; color:#a855f7; font-weight:700; margin-left:8px; text-transform:uppercase;">⚖️ Juez: ${p.juez || 'Comité'}</span>
+                                </div>
                                 ${badgeEst}
                             </div>
 
@@ -1050,260 +1069,6 @@
             }
         }
 
-        function dibujarLlavesInferiores(container) {
-            const standings = calcularStandingsGrupos();
-            const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
-            let catsList = [...categoriasSet];
-
-            if (categoriaFiltro !== 'todas') {
-                catsList = catsList.filter(c => c === categoriaFiltro);
-            }
-
-            if (catsList.length === 0) return;
-
-            const partidosLlaveBD = todosLosPartidos.filter(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && (String(p.ronda_fase || '').toLowerCase().includes('cuarto') || String(p.ronda_fase || '').toLowerCase().includes('cruce') || String(p.ronda_fase || '').toLowerCase().includes('semifinal') || String(p.ronda_fase || '').toLowerCase().includes('final')));
-
-            let footerHtml = '';
-
-            catsList.forEach(catNombre => {
-                const gruposCat = standings[catNombre] || {};
-                const numGrupos = Object.keys(gruposCat).length;
-                
-                if (gruposCat['Único'] || (numGrupos === 0 && partidosLlaveBD.filter(p => p.categorias?.nombre === catNombre).length === 0)) return;
-
-                let clasificados = [];
-                Object.keys(gruposCat).forEach(gpoNombre => {
-                    let jugArr = ordenarJugadoresITTF(Object.values(gruposCat[gpoNombre]));
-                    if(jugArr[0]) clasificados.push({ ...jugArr[0], seedType: 1, gpo: gpoNombre });
-                    if(jugArr[1]) clasificados.push({ ...jugArr[1], seedType: 2, gpo: gpoNombre });
-                });
-                
-                clasificados.sort((a,b) => {
-                    if(a.seedType !== b.seedType) return a.seedType - b.seedType;
-                    if(b.pts !== a.pts) return b.pts - a.pts;
-                    let diffA = (a.setsG||0) - (a.setsP||0);
-                    let diffB = (b.setsG||0) - (b.setsP||0);
-                    return diffB - diffA;
-                });
-
-                let s1 = clasificados[0] || { nombre: 'Seed 1', gpo: '-' };
-                let s2 = clasificados[1] || { nombre: 'Seed 2', gpo: '-' };
-                let s3 = clasificados[2] || { nombre: 'Seed 3', gpo: '-' };
-                let s4 = clasificados[3] || { nombre: 'Seed 4', gpo: '-' };
-                let s5 = clasificados[4] || { nombre: 'Seed 5', gpo: '-' };
-                let s6 = clasificados[5] || { nombre: 'Seed 6', gpo: '-' };
-                let s7 = clasificados[6] || { nombre: 'Seed 7', gpo: '-' };
-                let s8 = clasificados[7] || { nombre: 'Seed 8', gpo: '-' };
-
-                const partidosCatGpo = todosLosPartidos.filter(p => p.grupo_nombre && p.grupo_nombre !== 'Flash' && p.categorias?.nombre === catNombre);
-                const totalGpo = partidosCatGpo.length;
-                const finGpo = partidosCatGpo.filter(p => String(p.estado || '').trim().toLowerCase() === 'finalizado').length;
-                const gpoCompleto = totalGpo > 0 && totalGpo === finGpo;
-
-                const llavesCat = partidosLlaveBD.filter(p => p.categorias?.nombre === catNombre);
-                const pCuartos1 = llavesCat.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('1'));
-                const pCuartos2 = llavesCat.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('2'));
-                const pCuartos3 = llavesCat.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('3'));
-                const pCuartos4 = llavesCat.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('4'));
-
-                const partidoSemi1 = llavesCat.find(p => String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('1') || String(p.ronda_fase || '').toLowerCase().includes('cruce 1')));
-                const partidoSemi2 = llavesCat.find(p => String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('2') || String(p.ronda_fase || '').toLowerCase().includes('cruce 2')));
-                const partidoFinal = llavesCat.find(p => String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi'));
-
-                let hayCuartos = pCuartos1 || pCuartos2 || pCuartos3 || pCuartos4 || numGrupos > 2;
-                if(!hayCuartos && !partidoSemi1 && !partidoSemi2 && !partidoFinal && numGrupos === 0) return;
-
-                let nomC1_j1 = pCuartos1?.j1 ? pCuartos1.j1.nombre : s1.nombre;
-                let nomC1_j2 = pCuartos1?.j2 ? pCuartos1.j2.nombre : s8.nombre;
-                let nomC2_j1 = pCuartos2?.j1 ? pCuartos2.j1.nombre : s4.nombre;
-                let nomC2_j2 = pCuartos2?.j2 ? pCuartos2.j2.nombre : s5.nombre;
-                let nomC3_j1 = pCuartos3?.j1 ? pCuartos3.j1.nombre : s3.nombre;
-                let nomC3_j2 = pCuartos3?.j2 ? pCuartos3.j2.nombre : s6.nombre;
-                let nomC4_j1 = pCuartos4?.j1 ? pCuartos4.j1.nombre : s2.nombre;
-                let nomC4_j2 = pCuartos4?.j2 ? pCuartos4.j2.nombre : s7.nombre;
-
-                let nomSemi1_j1, nomSemi1_j2, nomSemi2_j1, nomSemi2_j2;
-                let tS1_1, tS1_2, tS2_1, tS2_2;
-                
-                if (hayCuartos) {
-                    nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : (pCuartos1?.ganador_id ? (pCuartos1.ganador_id === pCuartos1.jugador1_id ? nomC1_j1 : nomC1_j2) : 'Gana C1');
-                    nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : (pCuartos2?.ganador_id ? (pCuartos2.ganador_id === pCuartos2.jugador1_id ? nomC2_j1 : nomC2_j2) : 'Gana C2');
-                    tS1_1 = 'Gana C1'; tS1_2 = 'Gana C2';
-                    
-                    nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : (pCuartos3?.ganador_id ? (pCuartos3.ganador_id === pCuartos3.jugador1_id ? nomC3_j1 : nomC3_j2) : 'Gana C3');
-                    nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : (pCuartos4?.ganador_id ? (pCuartos4.ganador_id === pCuartos4.jugador1_id ? nomC4_j1 : nomC4_j2) : 'Gana C4');
-                    tS2_1 = 'Gana C3'; tS2_2 = 'Gana C4';
-                } else {
-                    nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : s1.nombre;
-                    nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : s4.nombre;
-                    tS1_1 = `Seed 1 (${s1.gpo})`; tS1_2 = `Seed 4 (${s4.gpo})`;
-                    
-                    nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : s2.nombre;
-                    nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : s3.nombre;
-                    tS2_1 = `Seed 2 (${s2.gpo})`; tS2_2 = `Seed 3 (${s3.gpo})`;
-                }
-
-                let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Ganador Semi 1');
-                let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Ganador Semi 2');
-
-                let cardsHtml = '';
-                if (hayCuartos) {
-                    cardsHtml += generarTarjetaLlaveEspectador(pCuartos1, 'Cuartos 1', '#10b981', 1, nomC1_j1, nomC1_j2, tC1_1, tC1_2, 'rgba(16,185,129,0.2); color:#10b981;');
-                    cardsHtml += generarTarjetaLlaveEspectador(pCuartos2, 'Cuartos 2', '#10b981', 2, nomC2_j1, nomC2_j2, tC2_1, tC2_2, 'rgba(16,185,129,0.2); color:#10b981;');
-                    cardsHtml += generarTarjetaLlaveEspectador(pCuartos3, 'Cuartos 3', '#10b981', 3, nomC3_j1, nomC3_j2, tC3_1, tC3_2, 'rgba(16,185,129,0.2); color:#10b981;');
-                    cardsHtml += generarTarjetaLlaveEspectador(pCuartos4, 'Cuartos 4', '#10b981', 4, nomC4_j1, nomC4_j2, tC4_1, tC4_2, 'rgba(16,185,129,0.2); color:#10b981;');
-                }
-                
-                cardsHtml += generarTarjetaLlaveEspectador(partidoSemi1, 'Semifinal 1', '#38bdf8', 1, nomSemi1_j1, nomSemi1_j2, tS1_1, tS1_2, 'rgba(6,182,212,0.2); color:#38bdf8;');
-                cardsHtml += generarTarjetaLlaveEspectador(partidoSemi2, 'Semifinal 2', '#f0abfc', 2, nomSemi2_j1, nomSemi2_j2, tS2_1, tS2_2, 'rgba(217,70,239,0.2); color:#d946ef;');
-                cardsHtml += generarTarjetaLlaveEspectador(partidoFinal, 'Gran Final', '#fbbf24', 1, nomFinal_j1, nomFinal_j2, 'Gana Semi 1', 'Gana Semi 2', 'rgba(217,70,239,0.2); color:#d946ef;');
-
-                footerHtml += `
-                    <div class="seccion-llaves-footer">
-                        <div style="text-align:center; margin-bottom:15px;">
-                            <span style="font-size:10px; color:#fbbf24; font-weight:800; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:4px;">Fase Final de Eliminatoria Directa</span>
-                            <h3 style="margin:0; border:none; padding:0; font-size:16px; color:#ffffff;">🏆 LLAVES ELIMINATORIAS - ${catNombre}</h3>
-                        </div>
-
-                        ${gpoCompleto ? `
-                            <div style="background:rgba(16,185,129,0.2); border:1px solid rgba(16,185,129,0.5); color:#34d399; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:11px; text-transform:uppercase; margin-bottom:18px;">
-                                ✅ ¡LLAVE DEFINITIVA CONFIRMADA! (Fase de grupos 100% completada)
-                            </div>
-                        ` : `
-                            <div style="background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.4); color:#fbbf24; padding:10px; border-radius:10px; text-align:center; font-weight:800; font-size:10px; text-transform:uppercase; margin-bottom:18px;">
-                                ⏳ PROYECCIÓN PRELIMINAR EN TIEMPO REAL (En espera de finalizar grupos)
-                            </div>
-                        `}
-
-                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:16px;">
-                            ${cardsHtml}
-                        </div>
-                    </div>
-                `;
-            });
-            
-            if (footerHtml !== '') container.innerHTML += footerHtml;
-        }
-
-        function abrirPartidoFullScreen(partidoId) {
-            if (!partidoId || partidoId === 0) return;
-            activePartidoFullScreenId = partidoId;
-            const modal = document.getElementById('modal-fullscreen-partido');
-            modal.style.display = 'flex';
-            actualizarModalFullScreen();
-        }
-
-        function cerrarPartidoFullScreen() {
-            activePartidoFullScreenId = null;
-            const modal = document.getElementById('modal-fullscreen-partido');
-            modal.style.display = 'none';
-            
-            if(partidoUrlId) {
-                const url = new URL(window.location);
-                url.searchParams.delete('partido');
-                window.history.pushState({}, '', url);
-                partidoUrlId = null;
-            }
-        }
-
-        function actualizarModalFullScreen() {
-            if (!activePartidoFullScreenId) return;
-
-            const p = todosLosPartidos.find(item => item.id == activePartidoFullScreenId);
-            if (!p) return;
-
-            let est = String(p.estado || '').toLowerCase();
-            let isFin = est === 'finalizado';
-
-            document.getElementById('fs-mesa-fase').innerText = `MESA ${p.mesa || 1} • ${p.grupo_nombre === 'Flash' ? 'LIGA CONTINUA' : (p.grupo_nombre === 'Único' ? 'LIGA ÚNICA' : (p.grupo_nombre ? 'GRUPO ' + p.grupo_nombre : (p.ronda_fase || 'FASE FINAL')))}`;
-            document.getElementById('fs-cat-nombre').innerText = p.categorias?.nombre || 'CATEGORÍA GENERAL';
-
-            let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
-            let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
-
-            document.getElementById('fs-name-j1').innerText = nomJ1;
-            document.getElementById('fs-name-j2').innerText = nomJ2;
-            document.getElementById('fs-club-j1').innerText = p.j1?.club || 'Sin Club';
-            document.getElementById('fs-club-j2').innerText = p.j2?.club || 'Sin Club';
-
-            let safeNom1 = p.j1?.nombre ? String(p.j1.nombre).replace(/'/g, "\\'") : '';
-            let safeClub1 = p.j1?.club ? String(p.j1.club).replace(/'/g, "\\'") : 'Sin Club';
-            let safeNom2 = p.j2?.nombre ? String(p.j2.nombre).replace(/'/g, "\\'") : '';
-            let safeClub2 = p.j2?.club ? String(p.j2.club).replace(/'/g, "\\'") : 'Sin Club';
-            
-            if (p.jugador1_id) document.getElementById('fs-name-j1').setAttribute('onclick', `abrirModalJugadorAdmin(${p.jugador1_id}, '${safeNom1}', '${safeClub1}')`);
-            if (p.jugador2_id) document.getElementById('fs-name-j2').setAttribute('onclick', `abrirModalJugadorAdmin(${p.jugador2_id}, '${safeNom2}', '${safeClub2}')`);
-
-            const finMatches = todosLosPartidos.filter(m => String(m.estado || '').toLowerCase() === 'finalizado');
-            let rDetails = calcularDetallesRankingPartido(p, finMatches);
-
-            if (p.mostrar_ranking) {
-                let rankBase1 = isFin ? rDetails.ptsFinalJ1 : rDetails.ptsPrevJ1;
-                let rankBase2 = isFin ? rDetails.ptsFinalJ2 : rDetails.ptsPrevJ2;
-                
-                document.getElementById('fs-ranking-j1').innerHTML = `
-                    ${rankBase1} pts
-                    <span class="text-emerald-400 font-bold ml-2 hidden md:inline">🏆 +${rDetails.impacto.j1G}</span> 
-                    <span class="text-rose-400 font-bold ml-1 hidden md:inline">❌ ${rDetails.impacto.j1P}</span>
-                `;
-                document.getElementById('fs-ranking-j2').innerHTML = `
-                    ${rankBase2} pts
-                    <span class="text-emerald-400 font-bold ml-2 hidden md:inline">🏆 +${rDetails.impacto.j2G}</span> 
-                    <span class="text-rose-400 font-bold ml-1 hidden md:inline">❌ ${rDetails.impacto.j2P}</span>
-                `;
-
-                const boxProy = document.getElementById('fs-proyeccion-box');
-                boxProy.classList.remove('hidden');
-                
-                let winDesc1 = p.j1?.nombre ? getApellido(p.j1.nombre) : 'J1';
-                let winDesc2 = p.j2?.nombre ? getApellido(p.j2.nombre) : 'J2';
-                
-                if (isFin) {
-                    boxProy.innerHTML = `🏁 Impacto Final: ${p.ganador_id === p.jugador1_id ? 
-                        `${winDesc1} (+${rDetails.impacto.j1G}) | ${winDesc2} (${rDetails.impacto.j2P})` : 
-                        `${winDesc2} (+${rDetails.impacto.j2G}) | ${winDesc1} (${rDetails.impacto.j1P})`}`;
-                } else {
-                    boxProy.innerHTML = `📊 Si gana ${winDesc1}: (+${rDetails.impacto.j1G} / ${rDetails.impacto.j2P}) &nbsp;|&nbsp; Si gana ${winDesc2}: (+${rDetails.impacto.j2G} / ${rDetails.impacto.j1P})`;
-                }
-            } else {
-                document.getElementById('fs-ranking-j1').innerHTML = '-- pts';
-                document.getElementById('fs-ranking-j2').innerHTML = '-- pts';
-                document.getElementById('fs-proyeccion-box').classList.add('hidden');
-            }
-
-            document.getElementById('fs-score-j1').innerText = isFin ? p.sets_j1 : (p.puntos_j1 || 0);
-            document.getElementById('fs-score-j2').innerText = isFin ? p.sets_j2 : (p.puntos_j2 || 0);
-            document.getElementById('fs-sets-j1').innerText = p.sets_j1 || 0;
-            document.getElementById('fs-sets-j2').innerText = p.sets_j2 || 0;
-
-            const listSets = document.getElementById('fs-list-sets');
-            listSets.innerHTML = '';
-            
-            if (p.historial_sets && Array.isArray(p.historial_sets)) {
-                p.historial_sets.forEach(s => {
-                    let col1 = s.s1 > s.s2 ? 'text-cyan-400' : 'text-zinc-500';
-                    let col2 = s.s2 > s.s1 ? 'text-fuchsia-400' : 'text-zinc-500';
-                    listSets.innerHTML += `<span class="set-chip">Set ${s.numSet}: <span class="${col1}">${s.s1}</span> - <span class="${col2}">${s.s2}</span></span>`;
-                });
-            }
-
-            let iconWin1 = document.getElementById('fs-winner-icon1');
-            let iconWin2 = document.getElementById('fs-winner-icon2');
-            
-            if (isFin && p.ganador_id === p.jugador1_id) { iconWin1.classList.remove('hidden'); iconWin2.classList.add('hidden'); }
-            else if (isFin && p.ganador_id === p.jugador2_id) { iconWin2.classList.remove('hidden'); iconWin1.classList.add('hidden'); }
-            else { iconWin1.classList.add('hidden'); iconWin2.classList.add('hidden'); }
-
-            let scoreText = `${p.puntos_j1 || 0} a ${p.puntos_j2 || 0}`;
-            if (!isFin && scoreText !== lastAnnouncedScore) {
-                lastAnnouncedScore = scoreText;
-                anunciarScoreAudio(nomJ1, p.puntos_j1 || 0, nomJ2, p.puntos_j2 || 0);
-            }
-        }
-
-        // =================================================================================
-        // ======================= MÓDULO ESTADÍSTICAS FLASH ===============================
-        // =================================================================================
         function dibujarEstadisticasFlash(container) {
             let partidosFlash = todosLosPartidos.filter(p => p.grupo_nombre === 'Flash');
             
@@ -1453,6 +1218,73 @@
             return html;
         }
 
+        function dibujarRankingGlobal(container, finMatches) {
+            let jugadoresActivos = [...todosLosJugadores];
+
+            if (categoriaFiltro !== 'todas') {
+                const catObj = todasLasCategorias.find(c => c.nombre === categoriaFiltro);
+                if (catObj) {
+                    jugadoresActivos = jugadoresActivos.filter(j => j.puntos_ranking >= catObj.puntos_minimos && j.puntos_ranking <= catObj.puntos_maximos);
+                }
+            }
+
+            if (jugadoresActivos.length === 0) {
+                container.innerHTML = `<div class="mensaje-vacio">No hay jugadores registrados en el ranking global bajo este filtro.</div>`;
+                return;
+            }
+
+            jugadoresActivos.forEach(j => {
+                j.puntosEnVivo = calcularRankingEnVivo(j.id, j.puntos_ranking, finMatches, null);
+                j.difPuntos = j.puntosEnVivo - (j.puntos_ranking_ant || j.puntos_ranking);
+            });
+
+            jugadoresActivos.sort((a, b) => b.puntosEnVivo - a.puntosEnVivo);
+
+            let html = `
+                <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(168,85,247,0.3); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">
+                    <div style="text-align:center; margin-bottom:20px;">
+                        <span style="font-size:14px; color:#c084fc; font-weight:900; text-transform:uppercase; letter-spacing:2px; display:block;">🏆 Ranking Global Oficial en Vivo</span>
+                        <span style="font-size:10px; color:#94a3b8; display:block; margin-top:6px;">Esta tabla se actualiza en tiempo real con cada partido finalizado.</span>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+                            <thead>
+                                <tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);">
+                                    <th style="padding:6px; text-align:center; width:50px;">Pos</th>
+                                    <th style="padding:6px;">Jugador</th>
+                                    <th style="padding:6px;">Club</th>
+                                    <th style="padding:6px; text-align:center;">Pts Iniciales</th>
+                                    <th style="padding:6px; text-align:center;">+/-</th>
+                                    <th style="padding:6px; text-align:center; color:#c084fc;">Pts Actuales</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            jugadoresActivos.forEach((j, idx) => {
+                let safeName = j.nombre ? String(j.nombre).replace(/'/g, "\\'") : '';
+                let safeClub = j.club ? String(j.club).replace(/'/g, "\\'") : 'Sin Club';
+                let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${safeName}', '${safeClub}')"` : '';
+
+                let difStr = j.difPuntos > 0 ? `<span style="color:#10b981;">▲ +${j.difPuntos}</span>` : 
+                            (j.difPuntos < 0 ? `<span style="color:#ef4444;">▼ ${j.difPuntos}</span>` : `<span style="color:#64748b;">-</span>`);
+
+                html += `
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(168,85,247,0.1)'" onmouseout="this.style.backgroundColor='transparent'" ${jClic}>
+                        <td style="padding:10px 6px; font-weight:800; color:#64748b; text-align:center;">#${idx + 1}</td>
+                        <td style="padding:10px 6px;"><strong style="color:#ffffff;">${j.nombre}</strong></td>
+                        <td style="padding:10px 6px;"><span style="color:#94a3b8; font-size:10px;">${j.club || 'S/C'}</span></td>
+                        <td style="padding:10px 6px; text-align:center; color:#94a3b8; font-family:'Orbitron', sans-serif; font-size:10px;">${j.puntos_ranking_ant || j.puntos_ranking}</td>
+                        <td style="padding:10px 6px; text-align:center; font-weight:800; font-size:10px;">${difStr}</td>
+                        <td style="padding:10px 6px; text-align:center; font-weight:900; color:#c084fc; font-family:'Orbitron', sans-serif; font-size:14px;">${j.puntosEnVivo}</td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table></div></div>`;
+            container.innerHTML = html;
+        }
+
         function toggleAudioEspectador() {
             audioMuted = !audioMuted;
             document.getElementById('fs-btn-audio').innerHTML = audioMuted ? '<i class="fa-solid fa-volume-xmark text-rose-400"></i>' : '<i class="fa-solid fa-volume-high text-cyan-400"></i>';
@@ -1479,6 +1311,122 @@
 
             let texto = `🏓 *¡Sigue este partido en Vivo!*\n\n*${nom1}* vs *${nom2}*\nMarcador: ${scoreText}\nMesa: ${p.mesa || 1}\n\n👉 Míralo aquí en tiempo real:\n${url}`;
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+
+        function abrirPartidoFullScreen(partidoId) {
+            if (!partidoId || partidoId === 0) return;
+            activePartidoFullScreenId = partidoId;
+            const modal = document.getElementById('modal-fullscreen-partido');
+            modal.style.display = 'flex';
+            actualizarModalFullScreen();
+        }
+
+        function cerrarPartidoFullScreen() {
+            activePartidoFullScreenId = null;
+            const modal = document.getElementById('modal-fullscreen-partido');
+            modal.style.display = 'none';
+            
+            if(partidoUrlId) {
+                const url = new URL(window.location);
+                url.searchParams.delete('partido');
+                window.history.pushState({}, '', url);
+                partidoUrlId = null;
+            }
+        }
+
+        function actualizarModalFullScreen() {
+            if (!activePartidoFullScreenId) return;
+
+            const p = todosLosPartidos.find(item => item.id == activePartidoFullScreenId);
+            if (!p) return;
+
+            let est = String(p.estado || '').toLowerCase();
+            let isFin = est === 'finalizado';
+
+            document.getElementById('fs-mesa-fase').innerText = `MESA ${p.mesa || 1} • ${p.grupo_nombre === 'Flash' ? 'LIGA CONTINUA' : (p.grupo_nombre === 'Único' ? 'LIGA ÚNICA' : (p.grupo_nombre ? 'GRUPO ' + p.grupo_nombre : (p.ronda_fase || 'FASE FINAL')))}`;
+            document.getElementById('fs-cat-nombre').innerText = p.categorias?.nombre || 'CATEGORÍA GENERAL';
+
+            let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
+            let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
+
+            document.getElementById('fs-name-j1').innerText = nomJ1;
+            document.getElementById('fs-name-j2').innerText = nomJ2;
+            document.getElementById('fs-club-j1').innerText = p.j1?.club || 'Sin Club';
+            document.getElementById('fs-club-j2').innerText = p.j2?.club || 'Sin Club';
+
+            let safeNom1 = p.j1?.nombre ? String(p.j1.nombre).replace(/'/g, "\\'") : '';
+            let safeClub1 = p.j1?.club ? String(p.j1.club).replace(/'/g, "\\'") : 'Sin Club';
+            let safeNom2 = p.j2?.nombre ? String(p.j2.nombre).replace(/'/g, "\\'") : '';
+            let safeClub2 = p.j2?.club ? String(p.j2.club).replace(/'/g, "\\'") : 'Sin Club';
+            
+            if (p.jugador1_id) document.getElementById('fs-name-j1').setAttribute('onclick', `abrirModalJugadorAdmin(${p.jugador1_id}, '${safeNom1}', '${safeClub1}')`);
+            if (p.jugador2_id) document.getElementById('fs-name-j2').setAttribute('onclick', `abrirModalJugadorAdmin(${p.jugador2_id}, '${safeNom2}', '${safeClub2}')`);
+
+            const finMatches = todosLosPartidos.filter(m => String(m.estado || '').toLowerCase() === 'finalizado');
+            let rDetails = calcularDetallesRankingPartido(p, finMatches);
+
+            if (p.mostrar_ranking) {
+                let rankBase1 = isFin ? rDetails.ptsFinalJ1 : rDetails.ptsPrevJ1;
+                let rankBase2 = isFin ? rDetails.ptsFinalJ2 : rDetails.ptsPrevJ2;
+                
+                document.getElementById('fs-ranking-j1').innerHTML = `
+                    ${rankBase1} pts
+                    <span class="text-emerald-400 font-bold ml-2 hidden md:inline">🏆 +${rDetails.impacto.j1G}</span> 
+                    <span class="text-rose-400 font-bold ml-1 hidden md:inline">❌ ${rDetails.impacto.j1P}</span>
+                `;
+                document.getElementById('fs-ranking-j2').innerHTML = `
+                    ${rankBase2} pts
+                    <span class="text-emerald-400 font-bold ml-2 hidden md:inline">🏆 +${rDetails.impacto.j2G}</span> 
+                    <span class="text-rose-400 font-bold ml-1 hidden md:inline">❌ ${rDetails.impacto.j2P}</span>
+                `;
+
+                const boxProy = document.getElementById('fs-proyeccion-box');
+                boxProy.classList.remove('hidden');
+                
+                let winDesc1 = p.j1?.nombre ? getApellido(p.j1.nombre) : 'J1';
+                let winDesc2 = p.j2?.nombre ? getApellido(p.j2.nombre) : 'J2';
+                
+                if (isFin) {
+                    boxProy.innerHTML = `🏁 Impacto Final: ${p.ganador_id === p.jugador1_id ? 
+                        `${winDesc1} (+${rDetails.impacto.j1G}) | ${winDesc2} (${rDetails.impacto.j2P})` : 
+                        `${winDesc2} (+${rDetails.impacto.j2G}) | ${winDesc1} (${rDetails.impacto.j1P})`}`;
+                } else {
+                    boxProy.innerHTML = `📊 Si gana ${winDesc1}: (+${rDetails.impacto.j1G} / ${rDetails.impacto.j2P}) &nbsp;|&nbsp; Si gana ${winDesc2}: (+${rDetails.impacto.j2G} / ${rDetails.impacto.j1P})`;
+                }
+            } else {
+                document.getElementById('fs-ranking-j1').innerHTML = '-- pts';
+                document.getElementById('fs-ranking-j2').innerHTML = '-- pts';
+                document.getElementById('fs-proyeccion-box').classList.add('hidden');
+            }
+
+            document.getElementById('fs-score-j1').innerText = isFin ? p.sets_j1 : (p.puntos_j1 || 0);
+            document.getElementById('fs-score-j2').innerText = isFin ? p.sets_j2 : (p.puntos_j2 || 0);
+            document.getElementById('fs-sets-j1').innerText = p.sets_j1 || 0;
+            document.getElementById('fs-sets-j2').innerText = p.sets_j2 || 0;
+
+            const listSets = document.getElementById('fs-list-sets');
+            listSets.innerHTML = '';
+            
+            if (p.historial_sets && Array.isArray(p.historial_sets)) {
+                p.historial_sets.forEach(s => {
+                    let col1 = s.s1 > s.s2 ? 'text-cyan-400' : 'text-zinc-500';
+                    let col2 = s.s2 > s.s1 ? 'text-fuchsia-400' : 'text-zinc-500';
+                    listSets.innerHTML += `<span class="set-chip">Set ${s.numSet}: <span class="${col1}">${s.s1}</span> - <span class="${col2}">${s.s2}</span></span>`;
+                });
+            }
+
+            let iconWin1 = document.getElementById('fs-winner-icon1');
+            let iconWin2 = document.getElementById('fs-winner-icon2');
+            
+            if (isFin && p.ganador_id === p.jugador1_id) { iconWin1.classList.remove('hidden'); iconWin2.classList.add('hidden'); }
+            else if (isFin && p.ganador_id === p.jugador2_id) { iconWin2.classList.remove('hidden'); iconWin1.classList.add('hidden'); }
+            else { iconWin1.classList.add('hidden'); iconWin2.classList.add('hidden'); }
+
+            let scoreText = `${p.puntos_j1 || 0} a ${p.puntos_j2 || 0}`;
+            if (!isFin && scoreText !== lastAnnouncedScore) {
+                lastAnnouncedScore = scoreText;
+                anunciarScoreAudio(nomJ1, p.puntos_j1 || 0, nomJ2, p.puntos_j2 || 0);
+            }
         }
 
         inicializarEspectador();
