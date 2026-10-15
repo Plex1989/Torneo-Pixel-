@@ -35,6 +35,7 @@
         .btn-filter-pill { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 8px 16px; border-radius: 9999px; font-size: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; transition: all 0.2s ease; }
         .btn-filter-pill.active { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 15px rgba(6, 182, 212, 0.5); }
         .btn-filter-pill.active-flash { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
+        .btn-filter-pill.active-resumen { background: #a855f7; color: #ffffff; border-color: #c084fc; box-shadow: 0 0 15px rgba(168, 85, 247, 0.5); }
         
         .btn-cat-pill { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; }
         .btn-cat-pill.active { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.6); }
@@ -58,7 +59,6 @@
         .jugador-box { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
         .jugador-nombre { font-size: 13px; font-weight: 800; color: #ffffff; cursor: pointer; transition: color 0.2s; }
         .jugador-nombre:hover { color: #38bdf8; }
-        .jugador-club { font-size: 10px; color: #64748b; font-weight: 600; display: block; }
         .score-big { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 900; color: #06b6d4; }
         .score-big.p2 { color: #d946ef; }
         .sets-badge { font-size: 10px; font-weight: 800; color: #94a3b8; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 6px; margin-left: 6px; }
@@ -74,7 +74,6 @@
         .input-tabla { background: rgba(0, 0, 0, 0.5) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 8px !important; color: #ffffff !important; outline: none !important; transition: all 0.2s !important; }
         .input-tabla:focus { border-color: #a855f7 !important; box-shadow: 0 0 10px rgba(168, 85, 247, 0.3); }
         
-        /* Ocultar flechas del input numérico */
         input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
         .header-hora { grid-column: 1 / -1; font-size: 12px; color: #38bdf8; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid rgba(56, 189, 248, 0.3); padding-bottom: 6px; margin-top: 15px; margin-bottom: 5px; letter-spacing: 1.5px; }
@@ -150,11 +149,12 @@
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">📌 Estado de Juego / Vista:</div>
     <div class="scrolling-bar">
         <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Todos</button>
-        <button class="btn-filter-pill" id="tab-flash" onclick="filtrarEstado('flash')" style="color: #fbbf24; border-color: rgba(245,158,11,0.5);">⚡ Estadísticas Flash</button>
+        <!-- BOTÓN MOVIDO AL LADO DE TODOS -->
+        <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')">📊 Posiciones y Estadísticas</button>
         <button class="btn-filter-pill" id="tab-vivo" onclick="filtrarEstado('en_curso')">🔴 En Vivo</button>
         <button class="btn-filter-pill" id="tab-pendientes" onclick="filtrarEstado('pendiente')">⏳ Pendientes</button>
         <button class="btn-filter-pill" id="tab-finalizados" onclick="filtrarEstado('finalizado')">🏁 Finalizados</button>
-        <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')">📊 Resumen Grupos/Llaves</button>
+        <button class="btn-filter-pill" id="tab-flash" onclick="filtrarEstado('flash')" style="color: #fbbf24; border-color: rgba(245,158,11,0.5);">⚡ Liga Flash</button>
     </div>
 
     <div class="scrolling-bar" id="bar-mesas">
@@ -229,6 +229,7 @@
                 const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).eq('organizador_id', orgId).single();
                 if (torneoData) document.getElementById('nombre-torneo').innerText = torneoData.nombre;
 
+                // REGLAS BLINDADAS
                 const { data: reglasData } = await clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', orgId).order('diferencia_min', { ascending: true });
                 if (reglasData) reglasRankingList = reglasData;
 
@@ -328,20 +329,20 @@
             document.querySelectorAll('.scrolling-bar .btn-filter-pill:not(.btn-cat-pill)').forEach(b => {
                 b.classList.remove('active');
                 b.classList.remove('active-flash');
+                b.classList.remove('active-resumen');
             });
 
             if (est === 'todos') document.getElementById('tab-todos')?.classList.add('active');
             else if (est === 'en_curso') document.getElementById('tab-vivo')?.classList.add('active');
             else if (est === 'pendiente') document.getElementById('tab-pendientes')?.classList.add('active');
             else if (est === 'finalizado') document.getElementById('tab-finalizados')?.classList.add('active');
-            else if (est === 'resumen') document.getElementById('tab-resumen')?.classList.add('active');
+            else if (est === 'resumen') document.getElementById('tab-resumen')?.classList.add('active-resumen');
             else if (est === 'flash') document.getElementById('tab-flash')?.classList.add('active-flash');
 
             dibujarPantalla();
         }
 
         // ======================= CORRECCIÓN MATEMÁTICA DEFINITIVA DE RANKING =======================
-        // Ignora palabras clave en base de datos. Se basa puramente en la tabla de números para saber quién es Fav y quién es Ret.
         function calcularImpactoPuntos(ptsA, ptsB) {
             let diff = Math.abs(ptsA - ptsB);
             let favoritoEsJ1 = ptsA >= ptsB;
@@ -352,7 +353,6 @@
             let reglaGanaRet = null;
 
             if (reglasRango.length >= 2) {
-                // El Retador siempre gana MÁS puntos por dar la sorpresa
                 if (Number(reglasRango[0].puntos_ganador) < Number(reglasRango[1].puntos_ganador)) {
                     reglaGanaFav = reglasRango[0];
                     reglaGanaRet = reglasRango[1];
@@ -371,11 +371,9 @@
             }
 
             let ptsGanaFav = reglaGanaFav ? Number(reglaGanaFav.puntos_ganador) : 10;
-            // Si el favorito pierde, se le aplica el castigo configurado en la regla de "Gana Retador"
             let ptsPierdeFav = reglaGanaRet ? -Math.abs(Number(reglaGanaRet.puntos_perdedor)) : -5;
             
             let ptsGanaRet = reglaGanaRet ? Number(reglaGanaRet.puntos_ganador) : 10;
-            // Si el retador pierde, se le aplica el castigo configurado en la regla de "Gana Favorito"
             let ptsPierdeRet = reglaGanaFav ? -Math.abs(Number(reglaGanaFav.puntos_perdedor)) : -5;
 
             return { 
@@ -522,13 +520,13 @@
                 let nomC4_j1 = pCuartos4?.j1 ? pCuartos4.j1.nombre : s2.nombre;
                 let nomC4_j2 = pCuartos4?.j2 ? pCuartos4.j2.nombre : s7.nombre;
 
-                let nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : (pCuartos1?.ganador_id ? (pCuartos1.ganador_id === pCuartos1.jugador1_id ? nomC1_j1 : nomC1_j2) : 'Gana C1');
+                let nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomC1_j1 : nomC1_j2) : 'Gana C1');
                 let nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : (pCuartos2?.ganador_id ? (pCuartos2.ganador_id === pCuartos2.jugador1_id ? nomC2_j1 : nomC2_j2) : 'Gana C2');
                 let nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : (pCuartos3?.ganador_id ? (pCuartos3.ganador_id === pCuartos3.jugador1_id ? nomC3_j1 : nomC3_j2) : 'Gana C3');
                 let nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : (pCuartos4?.ganador_id ? (pCuartos4.ganador_id === pCuartos4.jugador1_id ? nomC4_j1 : nomC4_j2) : 'Gana C4');
 
-                let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Gana Semi 1');
-                let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Gana Semi 2');
+                let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Ganador Semi 1');
+                let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Ganador Semi 2');
 
                 if(pCuartos1) proyecciones[pCuartos1.id] = { n1: nomC1_j1, n2: nomC1_j2 };
                 if(pCuartos2) proyecciones[pCuartos2.id] = { n1: nomC2_j1, n2: nomC2_j2 };
@@ -587,7 +585,7 @@
                 const { error } = await clienteSupabase.from('partidos').update({
                     sets_j1: setsJ1,
                     sets_j2: setsJ2,
-                    puntos_j1: setsJ1,
+                    puntos_j1: setsJ1, 
                     puntos_j2: setsJ2,
                     estado: 'finalizado',
                     ganador_id: ganador_id
