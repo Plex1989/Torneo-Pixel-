@@ -179,58 +179,41 @@
         };
 
         // =======================================================
-        // SISTEMA DE SEGURIDAD NIP DE JUEZ
+        // SISTEMA DE SEGURIDAD NIP DE JUEZ (CORREGIDO)
         // =======================================================
         
-        window.nipJuezOficial = 'admin'; // Fallback por defecto
+        window.pinJuezOficial = '1234'; // Fallback por defecto
 
         async function cargarInfoRapidaParaPIN() {
             try {
-                // Buscamos el organizador_id y el torneo_id del partido
-                const { data: partData } = await clienteSupabase.from('partidos').select('torneo_id, organizador_id').eq('id', partidoId).single();
-                if (partData) {
-                    // Intento 1: Buscamos en la tabla configuracion por si lo guardaste como clave-valor
-                    const { data: confData } = await clienteSupabase.from('configuracion').select('valor').eq('clave', 'nip_juez').eq('organizador_id', partData.organizador_id).maybeSingle();
-                    if (confData && confData.valor) {
-                        window.nipJuezOficial = String(confData.valor);
-                        document.getElementById('texto-estado-pin').innerText = "Ingresa el NIP de Juez para comenzar a arbitrar.";
-                        return;
+                // Primero obtenemos el torneo_id del partido
+                const { data: partData } = await clienteSupabase.from('partidos').select('torneo_id').eq('id', partidoId).single();
+                
+                if (partData && partData.torneo_id) {
+                    // Buscamos la columna correcta: pin_jueces en la tabla torneos
+                    const { data: torData } = await clienteSupabase.from('torneos').select('pin_jueces').eq('id', partData.torneo_id).single();
+                    
+                    if (torData && torData.pin_jueces) {
+                        window.pinJuezOficial = String(torData.pin_jueces);
                     }
-
-                    // Intento 2: Buscamos en la tabla torneos por si agregaste la columna nip_juez
-                    const { data: torData } = await clienteSupabase.from('torneos').select('*').eq('id', partData.torneo_id).single();
-                    if (torData && torData.nip_juez) {
-                        window.nipJuezOficial = String(torData.nip_juez);
-                        document.getElementById('texto-estado-pin').innerText = "Ingresa el NIP de Juez para comenzar a arbitrar.";
-                        return;
-                    }
-
-                    // Intento 3: Buscamos en la tabla organizadores
-                    const { data: orgData } = await clienteSupabase.from('organizadores').select('*').eq('id', partData.organizador_id).single();
-                    if (orgData && orgData.nip_juez) {
-                        window.nipJuezOficial = String(orgData.nip_juez);
-                        document.getElementById('texto-estado-pin').innerText = "Ingresa el NIP de Juez para comenzar a arbitrar.";
-                        return;
-                    }
-
-                    document.getElementById('texto-estado-pin').innerText = "Ingresa el NIP de Juez para comenzar a arbitrar.";
                 }
+                document.getElementById('texto-estado-pin').innerText = "Ingresa el PIN de Jueces asignado en el Sorteo.";
             } catch(e) { 
-                console.warn("Buscando NIP Juez:", e); 
-                document.getElementById('texto-estado-pin').innerText = "Ingresa el NIP de Juez para comenzar a arbitrar.";
+                console.warn("Buscando PIN Juez:", e); 
+                document.getElementById('texto-estado-pin').innerText = "Ingresa el PIN de Jueces para arbitrar.";
             }
         }
 
         function verificarPin() {
             const inputVal = document.getElementById('input-pin').value;
-            // Si coincide con el de la base de datos o el maestro ('admin') lo deja pasar
-            if (inputVal === window.nipJuezOficial || inputVal === 'admin') {
+            // Se acepta el PIN extraído de la base de datos o la clave maestra
+            if (inputVal === window.pinJuezOficial || inputVal === 'admin') {
                 localStorage.setItem('juez_autorizado_' + partidoId, 'true');
                 document.getElementById('modal-pin').classList.add('hidden');
                 document.getElementById('modal-pin').classList.remove('flex');
                 inicializarJuez();
             } else {
-                alert('❌ NIP Incorrecto. Ingresa un NIP de Juez válido para esta mesa.');
+                alert('❌ PIN Incorrecto. Ingresa el PIN de Jueces válido para este torneo.');
                 document.getElementById('input-pin').value = '';
             }
         }
@@ -416,6 +399,7 @@
                 let valDb = String(r.resultado_esperado).toLowerCase();
                 let isReglaFav = valDb.includes('favorito');
                 let isReglaRet = !isReglaFav; 
+                
                 if (favoritoEsJ1 && isReglaFav) return true;
                 if (!favoritoEsJ1 && isReglaRet) return true;
                 return false;
@@ -427,6 +411,7 @@
                 let valDb = String(r.resultado_esperado).toLowerCase();
                 let isReglaFav = valDb.includes('favorito');
                 let isReglaRet = !isReglaFav;
+
                 if (!favoritoEsJ1 && isReglaFav) return true;
                 if (favoritoEsJ1 && isReglaRet) return true;
                 return false;
@@ -610,6 +595,7 @@
                     p2.score = handicapP2;
                     isSwapped = !isSwapped; 
                     
+                    // Al cambiar de set, asigna automáticamente el saque correcto
                     let prevFirst = firstServersBySet[firstServersBySet.length - 1];
                     firstServersBySet.push(prevFirst === 1 ? 2 : 1);
                 }
