@@ -65,6 +65,8 @@
 
         <div class="text-center">
             <span id="info-mesa-fase" class="text-[10px] font-black text-cyan-400 uppercase tracking-widest block">MESA -- • FASE</span>
+            <!-- EL NOMBRE DEL JUEZ APARECERÁ AQUÍ -->
+            <span id="info-juez" class="text-[9px] font-bold text-fuchsia-400 uppercase tracking-widest block mt-1 mb-1">⚖️ Juez: Cargando...</span>
             <select id="select-formato" onchange="cambiarFormato()" class="bg-transparent border border-zinc-600 text-zinc-400 hover:border-cyan-400 hover:text-cyan-400 text-[9px] font-bold uppercase rounded mt-1 outline-none text-center cursor-pointer transition-colors py-0.5 px-1 appearance-none text-center">
                 <option value="2-3">Formato: 2 de 3 Sets</option>
                 <option value="3-5" selected>Formato: 3 de 5 Sets</option>
@@ -177,10 +179,6 @@
             return partes[partes.length - 1];
         };
 
-        // =======================================================
-        // SISTEMA DE SEGURIDAD NIP DE JUEZ CON AUTO-FOCUS
-        // =======================================================
-        
         window.pinJuezOficial = '1234'; 
 
         async function cargarInfoRapidaParaPIN() {
@@ -213,7 +211,6 @@
             }
         }
 
-        // Detectar "Enter" en el input del PIN
         document.getElementById('input-pin').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') { verificarPin(); }
         });
@@ -226,15 +223,11 @@
             } else {
                 document.getElementById('modal-pin').classList.remove('hidden');
                 document.getElementById('modal-pin').classList.add('flex');
-                // AUTO-FOCUS: Hacemos un pequeñísimo delay para asegurar que la pantalla ya es visible antes de enfocar
                 setTimeout(() => { document.getElementById('input-pin').focus(); }, 300);
                 cargarInfoRapidaParaPIN();
             }
         }
 
-        // ==========================================
-        // CÁLCULO DINÁMICO DE HÁNDICAP
-        // ==========================================
         function calcularHandicapActual() {
             let hP1 = 0; let hP2 = 0;
             let targetPlayer = 0; 
@@ -311,27 +304,20 @@
                 handicapP1 = hActual.hP1;
                 handicapP2 = hActual.hP2;
 
-                // ================= RECONSTRUCCIÓN INTELIGENTE DEL HISTORIAL DE SAQUES =================
-                // Esto asegura que la regla de "el que otorga la ventaja saca primero" se aplique en TODOS los sets, 
-                // incluso si recargas la página a la mitad del partido.
                 firstServersBySet = [];
                 let tempHP1 = p1.div === 2 && p2.div === 1 ? p1.handBase : 0;
                 let tempHP2 = p2.div === 2 && p1.div === 1 ? p2.handBase : 0;
                 
                 for (let i = 0; i < numSetActual; i++) {
-                    // Si en este set en específico uno de los dos sigue teniendo hándicap...
                     if (tempHP1 > 0 || tempHP2 > 0) {
-                        // ...El que Otorga el Hándicap (el que tiene 0) saca primero
                         if (tempHP1 > 0 && tempHP2 === 0) firstServersBySet.push(2); 
                         else if (tempHP2 > 0 && tempHP1 === 0) firstServersBySet.push(1); 
                         else firstServersBySet.push(1);
                     } else {
-                        // Si ya no hay hándicap (ya se redujo a 0), alternar normalmente
                         if (i === 0) firstServersBySet.push(1);
                         else firstServersBySet.push(firstServersBySet[i-1] === 1 ? 2 : 1);
                     }
                     
-                    // Simular cómo se redujo el hándicap para el SIGUIENTE set
                     if (i < historialSets.length) {
                         let s = historialSets[i];
                         if (p1.div === 2 && p2.div === 1) {
@@ -342,7 +328,6 @@
                     }
                 }
 
-                // Inyección del handicap al marcador si el partido apenas va a iniciar
                 if (historialSets.length === 0 && p1.score === 0 && p2.score === 0 && p1.sets === 0 && p2.sets === 0) {
                     if (handicapP1 > 0 || handicapP2 > 0) {
                         p1.score = handicapP1;
@@ -439,7 +424,6 @@
             };
         }
 
-        // ================= MOTOR MATEMÁTICO DEL SAQUE =================
         function getCurrentServer() {
             let currentSetIdx = numSetActual - 1; 
             if(currentSetIdx >= firstServersBySet.length) { 
@@ -447,11 +431,9 @@
             }
             let firstSrv = firstServersBySet[currentSetIdx]; 
             
-            // LA CLAVE: Usamos la SUMA TOTAL REAL (incluyendo la ventaja).
             let total = p1.score + p2.score; 
             let deuceThreshold = pointsToWin - 1;
             
-            // El Deuce siempre requiere medir los puntos ganados a sudor (sin hándicap)
             let s1Base = Math.max(0, p1.score - handicapP1);
             let s2Base = Math.max(0, p2.score - handicapP2); 
             
@@ -500,11 +482,9 @@
 
         function actualizarBotonRankingUI() {
             const btn = document.getElementById('btn-toggle-ranking');
-            
             btn.innerHTML = mostrarRankingImpacto 
                 ? `<i class="fa-solid fa-star"></i> MODO RANKING: ACTIVADO` 
                 : `<i class="fa-regular fa-star"></i> MODO RANKING: APAGADO`;
-                
             btn.className = mostrarRankingImpacto 
                 ? "bg-amber-500 text-black border border-amber-400 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-[0_0_15px_rgba(245,158,11,0.6)]" 
                 : "bg-amber-500/10 text-amber-500 border border-amber-500/40 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest";
@@ -534,6 +514,9 @@
             
             let txtFase = partidoData?.grupo_nombre === 'Flash' ? 'LIGA CONTINUA' : (partidoData?.grupo_nombre ? 'GRUPO ' + partidoData.grupo_nombre : (partidoData?.ronda_fase || 'FASE FINAL'));
             document.getElementById('info-mesa-fase').innerText = `MESA ${partidoData?.mesa || 1} • ${txtFase}`;
+            
+            // INCORPORACIÓN DEL NOMBRE DEL JUEZ EN PANTALLA
+            document.getElementById('info-juez').innerText = `⚖️ Juez: ${partidoData?.juez || 'Comité'}`;
 
             let isFin = (partidoData?.estado || '').toLowerCase() === 'finalizado';
             let impactoLive = calcularImpactoPuntos(p1.ptsLive, p2.ptsLive);
@@ -606,7 +589,6 @@
                     p2.score = handicapP2;
                     isSwapped = !isSwapped; 
                     
-                    // Al cambiar de set, asigna automáticamente el saque correcto
                     if (handicapP1 > 0 || handicapP2 > 0) {
                         if (handicapP1 > 0 && handicapP2 === 0) firstServersBySet.push(2);
                         else if (handicapP2 > 0 && handicapP1 === 0) firstServersBySet.push(1);
