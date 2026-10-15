@@ -3,27 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- ETIQUETAS ULTRA AGRESIVAS PARA MATAR LA CACHÉ -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     <title>Mesa de Arbitraje - Pixel Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    
-    <script>
-        const isAuthLocal = localStorage.getItem('admin_autenticado') === 'true';
-
-        if (!isAuthLocal) {
-            alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
-            window.location.href = "torneos.html";
-        }
-    </script>
-
     <style>
         body { background-color: #04060a; color: white; font-family: 'Sora', sans-serif; -webkit-tap-highlight-color: transparent; user-select: none; }
         .font-digital { font-family: 'Orbitron', sans-serif; }
@@ -36,6 +23,22 @@
     </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between p-3 md:p-6 bg-[#04060a]">
+
+    <!-- PANTALLA DE BLOQUEO (NIP DE JUEZ) -->
+    <div id="modal-pin" class="fixed inset-0 z-[200] bg-[#04060a]/95 backdrop-blur-md flex flex-col items-center justify-center hidden">
+        <div class="bg-slate-900/80 p-8 rounded-3xl border border-cyan-500/30 flex flex-col items-center text-center shadow-[0_0_40px_rgba(6,182,212,0.2)] max-w-sm w-full mx-4">
+            <i class="fa-solid fa-lock text-5xl text-cyan-500 mb-4 drop-shadow-[0_0_15px_rgba(6,182,212,0.8)]"></i>
+            <h2 class="text-2xl font-black text-white uppercase tracking-widest mb-2">Mesa de Juez</h2>
+            <p id="texto-estado-pin" class="text-xs text-zinc-400 mb-6 uppercase tracking-widest leading-relaxed">Conectando con base de datos para validar credenciales...</p>
+            
+            <input type="password" id="input-pin" class="bg-black/50 border-2 border-cyan-500/50 text-cyan-400 text-center text-3xl font-black rounded-xl p-4 w-full outline-none focus:border-cyan-400 focus:shadow-[0_0_20px_rgba(6,182,212,0.4)] transition-all mb-6 tracking-[0.5em]" placeholder="****" maxlength="4" inputmode="numeric">
+            
+            <button onclick="verificarPin()" class="w-full bg-cyan-600 hover:bg-cyan-500 text-black py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(6,182,212,0.4)]">
+                Desbloquear Mesa
+            </button>
+            <button onclick="window.location.href='mesas.html'" class="mt-4 text-xs text-zinc-500 uppercase tracking-widest hover:text-white transition-colors">Volver al lobby</button>
+        </div>
+    </div>
 
     <!-- PANTALLA MODAL DE GANADOR -->
     <div id="modal-ganador" class="hidden fixed inset-0 z-[100] bg-black/95 flex-col items-center justify-center">
@@ -88,7 +91,7 @@
         
         <div class="flex-1 flex flex-col min-h-0 relative">
             <div class="bg-cyan-600/30 border border-cyan-500/40 p-3 rounded-2xl mb-2 text-center relative">
-                <div id="badge-saque-left" onclick="forzarCambioSaqueInicial()" class="hidden absolute -top-3 left-1/2 transform -translate-x-1/2 bg-amber-500 text-black px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest cursor-pointer shadow-[0_0_10px_rgba(245,158,11,0.6)] transition-all animate-pulse">
+                <div id="badge-saque-left" class="hidden absolute -top-3 left-1/2 transform -translate-x-1/2 bg-amber-500 text-black px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(245,158,11,0.6)] transition-all animate-pulse">
                     🎾 Saque
                 </div>
                 <h2 id="name-left" class="text-lg md:text-2xl font-black uppercase tracking-wider text-white truncate mt-1">JUGADOR 1</h2>
@@ -107,6 +110,10 @@
             <button onclick="manualSwapSides()" class="bg-slate-800 hover:bg-slate-700 text-zinc-300 p-3 rounded-xl border border-white/10 text-xs font-bold uppercase tracking-wider btn-action w-full" title="Cambiar lados manualmente">
                 <i class="fa-solid fa-arrows-rotate md:mr-1"></i> <span class="hidden md:inline">Lados</span>
             </button>
+            <!-- BOTÓN DE SAQUE MANUAL VISIBLE PARA EL JUEZ -->
+            <button onclick="forzarCambioSaqueInicial()" class="bg-indigo-600/20 hover:bg-indigo-500 text-indigo-400 hover:text-white p-3 rounded-xl border border-indigo-500/50 text-[10px] md:text-xs font-black uppercase tracking-wider btn-action mt-2 w-full transition-colors shadow-[0_0_10px_rgba(99,102,241,0.2)]" title="Cambiar posesión de saque manualmente">
+                <i class="fa-solid fa-table-tennis-paddle-ball md:mr-1"></i> <span class="hidden md:inline">Saque</span>
+            </button>
             <button onclick="forzarFinalizacion()" class="bg-amber-600/20 hover:bg-amber-500 text-amber-400 hover:text-black p-3 rounded-xl border border-amber-500/50 text-[10px] md:text-xs font-black uppercase tracking-wider btn-action mt-2 w-full transition-colors shadow-[0_0_10px_rgba(245,158,11,0.2)]" title="Finalizar partido manualmente">
                 <i class="fa-solid fa-flag-checkered md:mr-1"></i> <span class="hidden md:inline">Finalizar</span>
             </button>
@@ -114,7 +121,7 @@
 
         <div class="flex-1 flex flex-col min-h-0 relative">
             <div class="bg-fuchsia-600/30 border border-fuchsia-500/40 p-3 rounded-2xl mb-2 text-center relative">
-                <div id="badge-saque-right" onclick="forzarCambioSaqueInicial()" class="hidden absolute -top-3 left-1/2 transform -translate-x-1/2 bg-amber-500 text-black px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest cursor-pointer shadow-[0_0_10px_rgba(245,158,11,0.6)] transition-all animate-pulse">
+                <div id="badge-saque-right" class="hidden absolute -top-3 left-1/2 transform -translate-x-1/2 bg-amber-500 text-black px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest shadow-[0_0_10px_rgba(245,158,11,0.6)] transition-all animate-pulse">
                     🎾 Saque
                 </div>
                 <h2 id="name-right" class="text-lg md:text-2xl font-black uppercase tracking-wider text-white truncate mt-1">JUGADOR 2</h2>
@@ -171,6 +178,75 @@
             return partes[partes.length - 1];
         };
 
+        // =======================================================
+        // SISTEMA DE SEGURIDAD NIP DE JUEZ
+        // =======================================================
+        
+        window.nipJuezOficial = 'admin'; // Fallback por defecto
+
+        async function cargarInfoRapidaParaPIN() {
+            try {
+                // Buscamos el organizador_id y el torneo_id del partido
+                const { data: partData } = await clienteSupabase.from('partidos').select('torneo_id, organizador_id').eq('id', partidoId).single();
+                if (partData) {
+                    // Intento 1: Buscamos en la tabla configuracion por si lo guardaste como clave-valor
+                    const { data: confData } = await clienteSupabase.from('configuracion').select('valor').eq('clave', 'nip_juez').eq('organizador_id', partData.organizador_id).maybeSingle();
+                    if (confData && confData.valor) {
+                        window.nipJuezOficial = String(confData.valor);
+                        document.getElementById('texto-estado-pin').innerText = "Ingresa el NIP de Juez para comenzar a arbitrar.";
+                        return;
+                    }
+
+                    // Intento 2: Buscamos en la tabla torneos por si agregaste la columna nip_juez
+                    const { data: torData } = await clienteSupabase.from('torneos').select('*').eq('id', partData.torneo_id).single();
+                    if (torData && torData.nip_juez) {
+                        window.nipJuezOficial = String(torData.nip_juez);
+                        document.getElementById('texto-estado-pin').innerText = "Ingresa el NIP de Juez para comenzar a arbitrar.";
+                        return;
+                    }
+
+                    // Intento 3: Buscamos en la tabla organizadores
+                    const { data: orgData } = await clienteSupabase.from('organizadores').select('*').eq('id', partData.organizador_id).single();
+                    if (orgData && orgData.nip_juez) {
+                        window.nipJuezOficial = String(orgData.nip_juez);
+                        document.getElementById('texto-estado-pin').innerText = "Ingresa el NIP de Juez para comenzar a arbitrar.";
+                        return;
+                    }
+
+                    document.getElementById('texto-estado-pin').innerText = "Ingresa el NIP de Juez para comenzar a arbitrar.";
+                }
+            } catch(e) { 
+                console.warn("Buscando NIP Juez:", e); 
+                document.getElementById('texto-estado-pin').innerText = "Ingresa el NIP de Juez para comenzar a arbitrar.";
+            }
+        }
+
+        function verificarPin() {
+            const inputVal = document.getElementById('input-pin').value;
+            // Si coincide con el de la base de datos o el maestro ('admin') lo deja pasar
+            if (inputVal === window.nipJuezOficial || inputVal === 'admin') {
+                localStorage.setItem('juez_autorizado_' + partidoId, 'true');
+                document.getElementById('modal-pin').classList.add('hidden');
+                document.getElementById('modal-pin').classList.remove('flex');
+                inicializarJuez();
+            } else {
+                alert('❌ NIP Incorrecto. Ingresa un NIP de Juez válido para esta mesa.');
+                document.getElementById('input-pin').value = '';
+            }
+        }
+
+        function checarAcceso() {
+            if (!partidoId) { alert("Error: ID de partido no especificado."); window.location.href = 'mesas.html'; return; }
+            
+            if (localStorage.getItem('juez_autorizado_' + partidoId) === 'true') {
+                inicializarJuez();
+            } else {
+                document.getElementById('modal-pin').classList.remove('hidden');
+                document.getElementById('modal-pin').classList.add('flex');
+                cargarInfoRapidaParaPIN();
+            }
+        }
+
         // ==========================================
         // CÁLCULO DINÁMICO DE HÁNDICAP
         // ==========================================
@@ -178,49 +254,36 @@
             let hP1 = 0; let hP2 = 0;
             let targetPlayer = 0; 
             
-            if (p1.div === 2 && p2.div === 1) {
-                hP1 = p1.handBase;
-                targetPlayer = 1;
-            } 
-            else if (p2.div === 2 && p1.div === 1) {
-                hP2 = p2.handBase;
-                targetPlayer = 2;
-            }
+            if (p1.div === 2 && p2.div === 1) { hP1 = p1.handBase; targetPlayer = 1; } 
+            else if (p2.div === 2 && p1.div === 1) { hP2 = p2.handBase; targetPlayer = 2; }
             
             if (targetPlayer === 1) {
                 historialSets.forEach(set => {
-                    if (set.s1 > set.s2) hP1 = Math.max(0, hP1 - 1); 
-                    else hP1 += 1; 
+                    if (set.s1 > set.s2) hP1 = Math.max(0, hP1 - 1); else hP1 += 1; 
                 });
             } else if (targetPlayer === 2) {
                 historialSets.forEach(set => {
-                    if (set.s2 > set.s1) hP2 = Math.max(0, hP2 - 1); 
-                    else hP2 += 1; 
+                    if (set.s2 > set.s1) hP2 = Math.max(0, hP2 - 1); else hP2 += 1; 
                 });
             }
             return { hP1, hP2 };
         }
 
         async function inicializarJuez() {
-            if (!partidoId) { alert("ID de partido no especificado."); return; }
             try {
                 const cacheHistory = localStorage.getItem(`historial_undo_${partidoId}`);
-                if (cacheHistory) {
-                    historyStack = JSON.parse(cacheHistory);
-                }
+                if (cacheHistory) historyStack = JSON.parse(cacheHistory);
                 
                 await cargarYResolverPartido();
 
                 const { data: reglas, error: errReglas } = await clienteSupabase.from('reglas_ranking')
                     .select('*')
                     .order('diferencia_min', { ascending: true });
-                
                 if (errReglas) console.error("Error al cargar reglas:", errReglas);
                 reglasRanking = reglas || [];
                 
                 await calcularRankingEnVivoAcumulado();
                 actualizarUI();
-
             } catch (err) { console.error("Error inicializando:", err); }
         }
 
@@ -263,10 +326,32 @@
                 handicapP1 = hActual.hP1;
                 handicapP2 = hActual.hP2;
 
-                if (historialSets.length === 0 && p1.score === 0 && p2.score === 0 && p1.sets === 0 && p2.sets === 0 && (handicapP1 > 0 || handicapP2 > 0)) {
-                    p1.score = handicapP1;
-                    p2.score = handicapP2;
-                    clienteSupabase.from('partidos').update({ puntos_j1: p1.score, puntos_j2: p2.score }).eq('id', partidoId);
+                // ================= REGLA DE ORO DEL SAQUE CON HÁNDICAP =================
+                // Si el partido va empezando (nadie ha sumado puntos extra)
+                if (historialSets.length === 0 && p1.score === 0 && p2.score === 0 && p1.sets === 0 && p2.sets === 0) {
+                    
+                    if (handicapP1 > 0 || handicapP2 > 0) {
+                        p1.score = handicapP1;
+                        p2.score = handicapP2;
+                        
+                        // El que Otorga el Hándicap (el Favorito de Div 1, que tiene 0 puntos base) saca primero SIEMPRE
+                        if (handicapP1 > 0 && handicapP2 === 0) {
+                            firstServersBySet = [2]; // P1 recibe ventaja, P2 otorga ventaja -> Saca P2
+                        } else if (handicapP2 > 0 && handicapP1 === 0) {
+                            firstServersBySet = [1]; // P2 recibe ventaja, P1 otorga ventaja -> Saca P1
+                        } else {
+                            firstServersBySet = [1];
+                        }
+                        clienteSupabase.from('partidos').update({ puntos_j1: p1.score, puntos_j2: p2.score }).eq('id', partidoId);
+                    } else {
+                        firstServersBySet = [1]; 
+                    }
+                } else {
+                    // Si recargas la página a la mitad del partido, respeta los saques que ya llevaban
+                    firstServersBySet = [firstServersBySet[0] || 1];
+                    for (let i = 1; i < numSetActual; i++) {
+                        firstServersBySet.push(firstServersBySet[i-1] === 1 ? 2 : 1);
+                    }
                 }
 
                 modoJuego = data.modo_juego || '3-5';
@@ -280,11 +365,6 @@
                     mostrarRankingImpacto = data.mostrar_ranking;
                 } else {
                     mostrarRankingImpacto = (memoriaLocalRanking === 'true');
-                }
-
-                firstServersBySet = [1];
-                for (let i = 1; i < numSetActual; i++) {
-                    firstServersBySet.push(firstServersBySet[i-1] === 1 ? 2 : 1);
                 }
 
                 isSwapped = (numSetActual % 2 === 0);
@@ -326,32 +406,27 @@
             } catch(e) { p1.ptsLive = p1.ptsBase; p2.ptsLive = p2.ptsBase; }
         }
 
-        // ======================= CORRECCIÓN EXACTA A PRUEBA DE FALLOS =======================
         function calcularImpactoPuntos(ptsA, ptsB) {
             let diff = Math.abs(ptsA - ptsB);
             let favoritoEsJ1 = ptsA >= ptsB;
 
-            // Busca la regla correspondiente al GANE del JUGADOR 1
             let reglaGanaJ1 = reglasRanking.find(r => {
                 let isRangeOk = diff >= r.diferencia_min && diff <= r.diferencia_max;
                 if (!isRangeOk) return false;
-                
-                let isReglaFav = r.resultado_esperado === 'gana_favorito';
-                let isReglaRet = !isReglaFav; // Si no es exactamente 'gana_favorito', asumimos que es la otra (upset).
-                
+                let valDb = String(r.resultado_esperado).toLowerCase();
+                let isReglaFav = valDb.includes('favorito');
+                let isReglaRet = !isReglaFav; 
                 if (favoritoEsJ1 && isReglaFav) return true;
                 if (!favoritoEsJ1 && isReglaRet) return true;
                 return false;
             });
 
-            // Busca la regla correspondiente al GANE del JUGADOR 2
             let reglaGanaJ2 = reglasRanking.find(r => {
                 let isRangeOk = diff >= r.diferencia_min && diff <= r.diferencia_max;
                 if (!isRangeOk) return false;
-                
-                let isReglaFav = r.resultado_esperado === 'gana_favorito';
+                let valDb = String(r.resultado_esperado).toLowerCase();
+                let isReglaFav = valDb.includes('favorito');
                 let isReglaRet = !isReglaFav;
-
                 if (!favoritoEsJ1 && isReglaFav) return true;
                 if (favoritoEsJ1 && isReglaRet) return true;
                 return false;
@@ -365,17 +440,27 @@
             };
         }
 
+        // ================= MOTOR MATEMÁTICO DEL SAQUE =================
         function getCurrentServer() {
-            let currentSetIdx = numSetActual - 1; if(currentSetIdx >= firstServersBySet.length) { firstServersBySet[currentSetIdx] = firstServersBySet[currentSetIdx-1] === 1 ? 2 : 1; }
+            let currentSetIdx = numSetActual - 1; 
+            if(currentSetIdx >= firstServersBySet.length) { 
+                firstServersBySet[currentSetIdx] = firstServersBySet[currentSetIdx-1] === 1 ? 2 : 1; 
+            }
             let firstSrv = firstServersBySet[currentSetIdx]; 
             
-            let s1 = Math.max(0, p1.score - handicapP1);
-            let s2 = Math.max(0, p2.score - handicapP2); 
-            let total = s1 + s2;
+            // LA CLAVE: Usamos la SUMA TOTAL REAL (incluyendo la ventaja).
+            // Si van 5-0, la suma es 5. Al sacar la mitad (Math.floor(5/2)), es 2 (número par).
+            // El siguiente punto será 6. Al sacar la mitad (Math.floor(6/2)), es 3 (número impar), y cambiará el saque automáticamente.
+            let total = p1.score + p2.score; 
             
             let deuceThreshold = pointsToWin - 1;
-            if(s1 >= deuceThreshold && s2 >= deuceThreshold && modoJuego !== '1-15') { 
-                let extra = total - (deuceThreshold * 2); 
+            
+            // El Deuce siempre requiere medir los puntos ganados a sudor (sin hándicap)
+            let s1Base = Math.max(0, p1.score - handicapP1);
+            let s2Base = Math.max(0, p2.score - handicapP2); 
+            
+            if(s1Base >= deuceThreshold && s2Base >= deuceThreshold && modoJuego !== '1-15') { 
+                let extra = (s1Base + s2Base) - (deuceThreshold * 2); 
                 return extra % 2 === 0 ? firstSrv : (firstSrv === 1 ? 2 : 1); 
             } else { 
                 let blocks = Math.floor(total / 2); 
@@ -383,7 +468,11 @@
             }
         }
 
-        function forzarCambioSaqueInicial() { let currentSetIdx = numSetActual - 1; firstServersBySet[currentSetIdx] = firstServersBySet[currentSetIdx] === 1 ? 2 : 1; actualizarUI(); }
+        function forzarCambioSaqueInicial() { 
+            let currentSetIdx = numSetActual - 1; 
+            firstServersBySet[currentSetIdx] = firstServersBySet[currentSetIdx] === 1 ? 2 : 1; 
+            actualizarUI(); 
+        }
 
         async function cambiarFormato() {
             const nuevoFormato = document.getElementById('select-formato').value;
@@ -520,6 +609,7 @@
                     p1.score = handicapP1; 
                     p2.score = handicapP2;
                     isSwapped = !isSwapped; 
+                    
                     let prevFirst = firstServersBySet[firstServersBySet.length - 1];
                     firstServersBySet.push(prevFirst === 1 ? 2 : 1);
                 }
@@ -675,7 +765,7 @@
         function toggleAudio() { audioMuted = !audioMuted; document.getElementById('btn-audio').innerHTML = audioMuted ? '<i class="fa-solid fa-volume-xmark text-rose-400"></i>' : '<i class="fa-solid fa-volume-high text-cyan-400"></i>'; }
         function anunciarMarcador(n1, s1, n2, s2, fin) { if (audioMuted || !window.speechSynthesis) return; window.speechSynthesis.cancel(); let u = new SpeechSynthesisUtterance(fin ? `¡Juego finalizado!` : `${getApellido(n1)} ${s1}, ${getApellido(n2)} ${s2}`); u.lang = 'es-MX'; window.speechSynthesis.speak(u); }
 
-        inicializarJuez();
+        window.onload = checarAcceso;
     </script>
 </body>
 </html>
