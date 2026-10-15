@@ -110,7 +110,6 @@
             <button onclick="manualSwapSides()" class="bg-slate-800 hover:bg-slate-700 text-zinc-300 p-3 rounded-xl border border-white/10 text-xs font-bold uppercase tracking-wider btn-action w-full" title="Cambiar lados manualmente">
                 <i class="fa-solid fa-arrows-rotate md:mr-1"></i> <span class="hidden md:inline">Lados</span>
             </button>
-            <!-- BOTÓN DE SAQUE MANUAL VISIBLE PARA EL JUEZ -->
             <button onclick="forzarCambioSaqueInicial()" class="bg-indigo-600/20 hover:bg-indigo-500 text-indigo-400 hover:text-white p-3 rounded-xl border border-indigo-500/50 text-[10px] md:text-xs font-black uppercase tracking-wider btn-action mt-2 w-full transition-colors shadow-[0_0_10px_rgba(99,102,241,0.2)]" title="Cambiar posesión de saque manualmente">
                 <i class="fa-solid fa-table-tennis-paddle-ball md:mr-1"></i> <span class="hidden md:inline">Saque</span>
             </button>
@@ -179,20 +178,16 @@
         };
 
         // =======================================================
-        // SISTEMA DE SEGURIDAD NIP DE JUEZ (CORREGIDO)
+        // SISTEMA DE SEGURIDAD NIP DE JUEZ CON AUTO-FOCUS
         // =======================================================
         
-        window.pinJuezOficial = '1234'; // Fallback por defecto
+        window.pinJuezOficial = '1234'; 
 
         async function cargarInfoRapidaParaPIN() {
             try {
-                // Primero obtenemos el torneo_id del partido
                 const { data: partData } = await clienteSupabase.from('partidos').select('torneo_id').eq('id', partidoId).single();
-                
                 if (partData && partData.torneo_id) {
-                    // Buscamos la columna correcta: pin_jueces en la tabla torneos
                     const { data: torData } = await clienteSupabase.from('torneos').select('pin_jueces').eq('id', partData.torneo_id).single();
-                    
                     if (torData && torData.pin_jueces) {
                         window.pinJuezOficial = String(torData.pin_jueces);
                     }
@@ -206,7 +201,6 @@
 
         function verificarPin() {
             const inputVal = document.getElementById('input-pin').value;
-            // Se acepta el PIN extraído de la base de datos o la clave maestra
             if (inputVal === window.pinJuezOficial || inputVal === 'admin') {
                 localStorage.setItem('juez_autorizado_' + partidoId, 'true');
                 document.getElementById('modal-pin').classList.add('hidden');
@@ -215,8 +209,14 @@
             } else {
                 alert('❌ PIN Incorrecto. Ingresa el PIN de Jueces válido para este torneo.');
                 document.getElementById('input-pin').value = '';
+                document.getElementById('input-pin').focus();
             }
         }
+
+        // Detectar "Enter" en el input del PIN
+        document.getElementById('input-pin').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') { verificarPin(); }
+        });
 
         function checarAcceso() {
             if (!partidoId) { alert("Error: ID de partido no especificado."); window.location.href = 'mesas.html'; return; }
@@ -226,6 +226,8 @@
             } else {
                 document.getElementById('modal-pin').classList.remove('hidden');
                 document.getElementById('modal-pin').classList.add('flex');
+                // AUTO-FOCUS: Hacemos un pequeñísimo delay para asegurar que la pantalla ya es visible antes de enfocar
+                setTimeout(() => { document.getElementById('input-pin').focus(); }, 300);
                 cargarInfoRapidaParaPIN();
             }
         }
@@ -309,31 +311,43 @@
                 handicapP1 = hActual.hP1;
                 handicapP2 = hActual.hP2;
 
-                // ================= REGLA DE ORO DEL SAQUE CON HÁNDICAP =================
-                // Si el partido va empezando (nadie ha sumado puntos extra)
-                if (historialSets.length === 0 && p1.score === 0 && p2.score === 0 && p1.sets === 0 && p2.sets === 0) {
+                // ================= RECONSTRUCCIÓN INTELIGENTE DEL HISTORIAL DE SAQUES =================
+                // Esto asegura que la regla de "el que otorga la ventaja saca primero" se aplique en TODOS los sets, 
+                // incluso si recargas la página a la mitad del partido.
+                firstServersBySet = [];
+                let tempHP1 = p1.div === 2 && p2.div === 1 ? p1.handBase : 0;
+                let tempHP2 = p2.div === 2 && p1.div === 1 ? p2.handBase : 0;
+                
+                for (let i = 0; i < numSetActual; i++) {
+                    // Si en este set en específico uno de los dos sigue teniendo hándicap...
+                    if (tempHP1 > 0 || tempHP2 > 0) {
+                        // ...El que Otorga el Hándicap (el que tiene 0) saca primero
+                        if (tempHP1 > 0 && tempHP2 === 0) firstServersBySet.push(2); 
+                        else if (tempHP2 > 0 && tempHP1 === 0) firstServersBySet.push(1); 
+                        else firstServersBySet.push(1);
+                    } else {
+                        // Si ya no hay hándicap (ya se redujo a 0), alternar normalmente
+                        if (i === 0) firstServersBySet.push(1);
+                        else firstServersBySet.push(firstServersBySet[i-1] === 1 ? 2 : 1);
+                    }
                     
+                    // Simular cómo se redujo el hándicap para el SIGUIENTE set
+                    if (i < historialSets.length) {
+                        let s = historialSets[i];
+                        if (p1.div === 2 && p2.div === 1) {
+                            if (s.s1 > s.s2) tempHP1 = Math.max(0, tempHP1 - 1); else tempHP1 += 1;
+                        } else if (p2.div === 2 && p1.div === 1) {
+                            if (s.s2 > s.s1) tempHP2 = Math.max(0, tempHP2 - 1); else tempHP2 += 1;
+                        }
+                    }
+                }
+
+                // Inyección del handicap al marcador si el partido apenas va a iniciar
+                if (historialSets.length === 0 && p1.score === 0 && p2.score === 0 && p1.sets === 0 && p2.sets === 0) {
                     if (handicapP1 > 0 || handicapP2 > 0) {
                         p1.score = handicapP1;
                         p2.score = handicapP2;
-                        
-                        // El que Otorga el Hándicap (el Favorito de Div 1, que tiene 0 puntos base) saca primero SIEMPRE
-                        if (handicapP1 > 0 && handicapP2 === 0) {
-                            firstServersBySet = [2]; // P1 recibe ventaja, P2 otorga ventaja -> Saca P2
-                        } else if (handicapP2 > 0 && handicapP1 === 0) {
-                            firstServersBySet = [1]; // P2 recibe ventaja, P1 otorga ventaja -> Saca P1
-                        } else {
-                            firstServersBySet = [1];
-                        }
                         clienteSupabase.from('partidos').update({ puntos_j1: p1.score, puntos_j2: p2.score }).eq('id', partidoId);
-                    } else {
-                        firstServersBySet = [1]; 
-                    }
-                } else {
-                    // Si recargas la página a la mitad del partido, respeta los saques que ya llevaban
-                    firstServersBySet = [firstServersBySet[0] || 1];
-                    for (let i = 1; i < numSetActual; i++) {
-                        firstServersBySet.push(firstServersBySet[i-1] === 1 ? 2 : 1);
                     }
                 }
 
@@ -434,10 +448,7 @@
             let firstSrv = firstServersBySet[currentSetIdx]; 
             
             // LA CLAVE: Usamos la SUMA TOTAL REAL (incluyendo la ventaja).
-            // Si van 5-0, la suma es 5. Al sacar la mitad (Math.floor(5/2)), es 2 (número par).
-            // El siguiente punto será 6. Al sacar la mitad (Math.floor(6/2)), es 3 (número impar), y cambiará el saque automáticamente.
             let total = p1.score + p2.score; 
-            
             let deuceThreshold = pointsToWin - 1;
             
             // El Deuce siempre requiere medir los puntos ganados a sudor (sin hándicap)
@@ -596,8 +607,17 @@
                     isSwapped = !isSwapped; 
                     
                     // Al cambiar de set, asigna automáticamente el saque correcto
-                    let prevFirst = firstServersBySet[firstServersBySet.length - 1];
-                    firstServersBySet.push(prevFirst === 1 ? 2 : 1);
+                    if (handicapP1 > 0 || handicapP2 > 0) {
+                        if (handicapP1 > 0 && handicapP2 === 0) firstServersBySet.push(2);
+                        else if (handicapP2 > 0 && handicapP1 === 0) firstServersBySet.push(1);
+                        else {
+                            let prevFirst = firstServersBySet[firstServersBySet.length - 1];
+                            firstServersBySet.push(prevFirst === 1 ? 2 : 1);
+                        }
+                    } else {
+                        let prevFirst = firstServersBySet[firstServersBySet.length - 1];
+                        firstServersBySet.push(prevFirst === 1 ? 2 : 1);
+                    }
                 }
             }
 
