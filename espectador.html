@@ -202,7 +202,7 @@
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         const urlParams = new URLSearchParams(window.location.search);
-        let idTorneoActivo = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id') || 1;
+        let idTorneoActivo = urlParams.get('torneo') || localStorage.getItem('torneo_activo_id');
         let partidoUrlId = urlParams.get('partido');
 
         let ORG_ID = null; 
@@ -272,8 +272,19 @@
 
         async function inicializarEspectador() {
             try {
+                // AUTO-RECOVERY: Si viene partidoUrlId pero falta idTorneoActivo en la URL (como en WhatsApp)
+                if (!idTorneoActivo && partidoUrlId) {
+                    const { data: pData } = await clienteSupabase.from('partidos').select('torneo_id').eq('id', partidoUrlId).maybeSingle();
+                    if (pData && pData.torneo_id) {
+                        idTorneoActivo = pData.torneo_id;
+                    }
+                }
+                
+                // Fallback seguro
+                if (!idTorneoActivo) idTorneoActivo = 1;
+
                 const { data: torneoData, error: errTorneo } = await clienteSupabase
-                    .from('torneos').select('id, nombre, organizador_id').eq('id', idTorneoActivo).single();
+                    .from('torneos').select('id, nombre, organizador_id').eq('id', idTorneoActivo).maybeSingle();
                 
                 if (errTorneo) throw new Error("No se pudo cargar el torneo: " + errTorneo.message);
 
@@ -281,12 +292,12 @@
                     document.getElementById('torneo-nombre-header').innerText = torneoData.nombre;
                     ORG_ID = torneoData.organizador_id;
                 } else {
-                    throw new Error("Torneo no encontrado");
+                    throw new Error("El torneo no existe o el enlace está incompleto.");
                 }
 
                 const [resReglas, resConfig, resCat, resJugadores] = await Promise.allSettled([
                     clienteSupabase.from('reglas_ranking').select('id, diferencia_min, diferencia_max, puntos_ganador, puntos_perdedor, resultado_esperado').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }),
-                    clienteSupabase.from('configuracion').select('id, clave, valor, activo').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).single(),
+                    clienteSupabase.from('configuracion').select('id, clave, valor, activo').eq('clave', 'bono_pase_grupos').eq('organizador_id', ORG_ID).maybeSingle(),
                     clienteSupabase.from('categorias').select('id, nombre, puntos_minimos, puntos_maximos, costo_inscripcion').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: false }),
                     clienteSupabase.from('jugadores').select('id, nombre, club, puntos_ranking, puntos_ranking_ant, division, handicap').eq('organizador_id', ORG_ID).order('puntos_ranking', { ascending: false })
                 ]);
@@ -556,7 +567,8 @@
                 if (b.pts !== a.pts) return b.pts - a.pts;
                 const rSetA = a.setsG / (a.setsP || 0.0001);
                 const rSetB = b.setsG / (b.setsP || 0.0001);
-                return rSetB - rSetA;
+                if (Math.abs(rSetB - rSetA) > 0.0001) return rSetB - rSetA;
+                return b.pg - a.pg; 
             });
         }
 
@@ -1150,6 +1162,155 @@
             }
         }
 
+        function dibujarEstadisticasFlash(container) {
+            let partidosFlash = todosLosPartidos.filter(p => p.grupo_nombre === 'Flash');
+            
+            if (categoriaFiltro !== 'todas') {
+                partidosFlash = partidosFlash.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
+            }
+
+            if (partidosFlash.length === 0) {
+                container.innerHTML = `<div class="mensaje-vacio">No hay datos registrados en la Modalidad Flash bajo este filtro.</div>`;
+                return;
+            }
+
+            let stats = {};
+
+            const getDiv = (jId) => {
+                let jGlobal = todosLosJugadores.find(x => x.id === jId);
+                if (jGlobal && jGlobal.division) return jGlobal.division;
+                return '?';
+            };
+
+            partidosFlash.forEach(m => {
+                let estLimpio = String(m.estado || '').trim().toLowerCase();
+                if (estLimpio === 'finalizado' && m.j1 && m.j2) {
+                    
+                    [m.j1, m.j2].forEach(j => {
+                        if (j && j.id && !stats[j.id]) {
+                            stats[j.id] = { id: j.id, nombre: j.nombre, club: j.club, div: getDiv(j.id), pj: 0, pg: 0, pp: 0, setsG: 0, setsP: 0 };
+                        }
+                    });
+
+                    if (stats[m.j1.id] && stats[m.j2.id]) {
+                        let j1 = stats[m.j1.id];
+                        let j2 = stats[m.j2.id];
+
+                        j1.pj++; j2.pj++;
+                        j1.setsG += (m.sets_j1 || 0); j1.setsP += (m.sets_j2 || 0);
+                        j2.setsG += (m.sets_j2 || 0); j2.setsP += (m.sets_j1 || 0);
+
+                        if (m.ganador_id === m.jugador1_id) { j1.pg++; j2.pp++; }
+                        else if (m.ganador_id === m.jugador2_id) { j2.pg++; j1.pp++; }
+                    }
+                }
+            });
+
+            let jugadoresArr = Object.values(stats);
+            
+            if (jugadoresArr.length === 0) {
+                container.innerHTML = `<div class="mensaje-vacio">Aún no hay partidos finalizados en la Liga Flash.</div>`;
+                return;
+            }
+
+            jugadoresArr.forEach(j => {
+                j.efectividad = j.pj > 0 ? ((j.pg / j.pj) * 100).toFixed(1) : 0;
+                j.difSets = j.setsG - j.setsP;
+            });
+
+            jugadoresArr.sort((a, b) => {
+                let aQualifies = a.pj >= 5 ? 1 : 0;
+                let bQualifies = b.pj >= 5 ? 1 : 0;
+                if (aQualifies !== bQualifies) return bQualifies - aQualifies;
+                if (parseFloat(b.efectividad) !== parseFloat(a.efectividad)) return parseFloat(b.efectividad) - parseFloat(a.efectividad);
+                return b.difSets - a.difSets;
+            });
+
+            let div1 = jugadoresArr.filter(j => String(j.div) === '1');
+            let div2 = jugadoresArr.filter(j => String(j.div) === '2');
+            let sinDiv = jugadoresArr.filter(j => String(j.div) !== '1' && String(j.div) !== '2');
+
+            let html = `
+                <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(245,158,11,0.3); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">
+                    <div style="text-align:center; margin-bottom:20px;">
+                        <span style="font-size:14px; color:#fbbf24; font-weight:900; text-transform:uppercase; letter-spacing:2px; display:block;">⚡ Clasificación Liga Flash (Efectividad)</span>
+                        <span style="font-size:10px; color:#94a3b8; display:block; margin-top:6px;">Ordenados por % de Efectividad (Requieren mínimo 5 partidos para clasificar)</span>
+                    </div>
+            `;
+
+            html += renderTablaFlash('1', div1, '#f43f5e', '🏆 DIVISIÓN 1');
+            html += renderTablaFlash('2', div2, '#eab308', '🏆 DIVISIÓN 2');
+            if (sinDiv.length > 0) {
+                html += renderTablaFlash('?', sinDiv, '#94a3b8', 'Jugadores sin división registrada');
+            }
+
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        function renderTablaFlash(divId, jugadores, colorHex, titulo) {
+            if (jugadores.length === 0) return '';
+            let html = `
+                <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:15px; margin-bottom:15px; border-top: 3px solid ${colorHex};">
+                    <span style="font-weight:900; font-size:13px; color:${colorHex}; text-transform:uppercase; display:block; margin-bottom:10px;">${titulo}</span>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+                            <thead>
+                                <tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);">
+                                    <th style="padding:6px;">Pos</th>
+                                    <th style="padding:6px;">Jugador</th>
+                                    <th style="padding:6px; text-align:center;">PJ</th>
+                                    <th style="padding:6px; text-align:center;">PG</th>
+                                    <th style="padding:6px; text-align:center;">PP</th>
+                                    <th style="padding:6px; text-align:center;">Dif Sets</th>
+                                    <th style="padding:6px; text-align:center; color:#34d399;">% Efectividad</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            jugadores.forEach((j, idx) => {
+                let qualifies = j.pj >= 5;
+                let opacity = qualifies ? '1' : '0.5';
+                let qualBadge = qualifies ? '' : '<span style="font-size:8px; background:rgba(239,68,68,0.2); color:#f87171; padding:2px 4px; border-radius:4px; margin-left:6px;">Faltan PJ</span>';
+                
+                let difStr = j.difSets >= 0 ? '+' + j.difSets : j.difSets;
+                let colorDif = j.difSets >= 0 ? '#38bdf8' : '#f87171';
+                
+                let rankTrophy = '';
+                if (qualifies) {
+                    if(idx === 0) rankTrophy = '🥇';
+                    else if (idx === 1) rankTrophy = '🥈';
+                    else if (idx === 2) rankTrophy = '🥉';
+                    else rankTrophy = `#${idx + 1}`;
+                } else {
+                    rankTrophy = '-';
+                }
+
+                let safeName = j.nombre ? String(j.nombre).replace(/'/g, "\\'") : '';
+                let safeClub = j.club ? String(j.club).replace(/'/g, "\\'") : 'Sin Club';
+                let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${safeName}', '${safeClub}')"` : '';
+
+                html += `
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.04); opacity: ${opacity}; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <td style="padding:8px 6px; font-weight:800; color:#64748b; font-size:14px;">${rankTrophy}</td>
+                        <td style="padding:8px 6px; cursor:pointer;" ${jClic}>
+                            <strong style="color:#ffffff;">${j.nombre}</strong> ${qualBadge}
+                            <small style="color:#64748b; display:block; font-size:9px;">${j.club || 'Sin Club'}</small>
+                        </td>
+                        <td style="padding:8px 6px; text-align:center; color:#94a3b8; font-weight:700;">${j.pj}</td>
+                        <td style="padding:8px 6px; text-align:center; color:#34d399; font-weight:700;">${j.pg}</td>
+                        <td style="padding:8px 6px; text-align:center; color:#f87171; font-weight:700;">${j.pp}</td>
+                        <td style="padding:8px 6px; text-align:center; font-weight:800; color:${colorDif};">${difStr}</td>
+                        <td style="padding:8px 6px; text-align:center; font-weight:900; color:#34d399; font-size:14px;">${j.efectividad}%</td>
+                    </tr>
+                `;
+            });
+
+            html += `</tbody></table></div></div>`;
+            return html;
+        }
+
         function dibujarRankingGlobal(container, finMatches) {
             let jugadoresActivos = [...todosLosJugadores];
 
@@ -1232,7 +1393,7 @@
 
         function compartirPartidoWhatsAppActual() {
             if (!activePartidoFullScreenId) return;
-            const url = `${window.location.origin}/espectador.html?partido=${activePartidoFullScreenId}`;
+            const url = `${window.location.origin}/espectador.html?torneo=${idTorneoActivo}&partido=${activePartidoFullScreenId}`;
             const p = todosLosPartidos.find(x => x.id == activePartidoFullScreenId);
             const nom1 = p.j1?.nombre || 'J1';
             const nom2 = p.j2?.nombre || 'J2';
