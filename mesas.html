@@ -87,45 +87,54 @@
 </head>
 <body>
 
+    <!-- MODAL EXPEDIENTE COMPLETO CON RANKING -->
     <div id="modal-jugador-admin" class="modal-overlay no-print" style="display: none;">
-        <div class="modal-card">
+        <div class="modal-card relative">
             <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
                 <div>
                     <h3 id="modal-jugador-nombre" style="margin: 0; color: #38bdf8; font-size: 16px; font-weight: 800; text-transform: uppercase;"></h3>
                     <span id="modal-jugador-club" style="font-size: 10px; color: #94a3b8; font-weight: 700;"></span>
                 </div>
+                <div style="text-align: right; margin-right: 15px;">
+                    <div id="modal-jugador-ranking-header" style="font-size: 16px; font-weight: 900; color: #fbbf24;"></div>
+                    <span id="modal-jugador-variacion" style="font-size: 10px; font-weight: 800; color:#94a3b8;"></span>
+                </div>
                 <button onclick="cerrarModalJugadorAdmin()" style="background: rgba(255,255,255,0.1); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-weight: 800;">✕</button>
             </div>
+            
             <div id="modal-jugador-partidos-list" style="display: flex; flex-direction: column; gap: 10px;">
                 <div class="mensaje-vacio">Cargando expediente...</div>
             </div>
+            
             <button onclick="cerrarModalJugadorAdmin()" style="width: 100%; justify-content: center; margin-top: 20px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; padding: 12px; border-radius: 9999px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease;">Cerrar Detalle</button>
         </div>
     </div>
 
-    <!-- NUEVO MODAL INTELIGENTE PARA ASIGNAR MARCADOR -->
+    <!-- NUEVO MODAL INTELIGENTE DE MARCADOR ULTRARRÁPIDO -->
     <div id="modal-marcador" class="modal-overlay" style="display: none;">
         <div class="modal-card" style="max-width: 400px; padding: 30px; border: 2px solid #a855f7;">
-            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:20px;">
-                <h3 style="color: #a855f7; font-size: 16px; font-weight: 900; text-transform: uppercase; margin: 0;">📝 Asignar Marcador</h3>
+            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:15px;">
+                <h3 style="color: #a855f7; font-size: 16px; font-weight: 900; text-transform: uppercase; margin: 0;">📝 Asignar Marcador Directo</h3>
                 <button onclick="cerrarModalMarcador()" style="background:transparent; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">✕</button>
             </div>
             
+            <p style="font-size: 10px; color: #94a3b8; text-align: center; margin-bottom: 25px; text-transform: uppercase; font-weight: 700;">El marcador se guardará automáticamente al poner el segundo número.</p>
+            
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 25px;">
                 <div style="flex: 1; text-align: center;">
-                    <label id="lbl-marcador-j1" style="display: block; font-size: 11px; color: #38bdf8; font-weight: 800; margin-bottom: 8px; min-height: 28px; line-height:1.2;"></label>
-                    <input type="number" id="input-sets-j1" class="input-tabla" style="width: 100%; text-align: center; font-size: 30px !important; font-family:'Orbitron',sans-serif; font-weight: 900; padding: 15px !important; background:rgba(0,0,0,0.8)!important;" min="0" max="7" oninput="if(this.value !== '') document.getElementById('input-sets-j2').focus();">
+                    <label id="lbl-marcador-j1" style="display: block; font-size: 12px; color: #38bdf8; font-weight: 800; margin-bottom: 8px; min-height: 28px; line-height:1.2;"></label>
+                    <input type="number" id="input-sets-j1" class="input-tabla" style="width: 100%; text-align: center; font-size: 40px !important; font-family:'Orbitron',sans-serif; font-weight: 900; padding: 15px !important; background:rgba(0,0,0,0.8)!important; border: 2px solid #38bdf8 !important;" min="0" max="7" oninput="if(this.value.length > 0) document.getElementById('input-sets-j2').focus();">
                 </div>
                 <div style="font-size: 16px; font-weight: 900; color: #64748b;">VS</div>
                 <div style="flex: 1; text-align: center;">
-                    <label id="lbl-marcador-j2" style="display: block; font-size: 11px; color: #d946ef; font-weight: 800; margin-bottom: 8px; min-height: 28px; line-height:1.2;"></label>
-                    <input type="number" id="input-sets-j2" class="input-tabla" style="width: 100%; text-align: center; font-size: 30px !important; font-family:'Orbitron',sans-serif; font-weight: 900; padding: 15px !important; background:rgba(0,0,0,0.8)!important;" min="0" max="7" onkeydown="if(event.key === 'Enter') guardarMarcadorManual();">
+                    <label id="lbl-marcador-j2" style="display: block; font-size: 12px; color: #d946ef; font-weight: 800; margin-bottom: 8px; min-height: 28px; line-height:1.2;"></label>
+                    <input type="number" id="input-sets-j2" class="input-tabla" style="width: 100%; text-align: center; font-size: 40px !important; font-family:'Orbitron',sans-serif; font-weight: 900; padding: 15px !important; background:rgba(0,0,0,0.8)!important; border: 2px solid #d946ef !important;" min="0" max="7" oninput="if(this.value.length > 0) setTimeout(guardarMarcadorManual, 400);">
                 </div>
             </div>
 
             <input type="hidden" id="hidden-marcador-partidoid">
 
-            <button id="btn-guardar-marcador" onclick="guardarMarcadorManual()" class="btn-console" style="width: 100%; justify-content: center; background: #a855f7; color: white; border-color: #c084fc; padding: 14px; font-size: 13px;">💾 Guardar Resultado</button>
+            <button id="btn-guardar-marcador" onclick="guardarMarcadorManual()" class="btn-console" style="width: 100%; justify-content: center; background: #a855f7; color: white; border-color: #c084fc; padding: 14px; font-size: 13px;">💾 Guardar Manualmente</button>
         </div>
     </div>
 
@@ -172,21 +181,11 @@
 
         let todosLosPartidos = [];
         let reglasRankingList = [];
+        let todosLosJugadoresAdmin = [];
         let mesaFiltro = 'todas';
         let estadoFiltro = 'todos';
         let categoriaFiltro = 'todas';
-        let pinJuecesActual = "1234";
         let canalEspectadores = null;
-
-        const coloresMesasFlash = [
-            { border: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', text: '#10b981' }, 
-            { border: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)', text: '#3b82f6' }, 
-            { border: '#d946ef', bg: 'rgba(217, 70, 239, 0.1)', text: '#d946ef' }, 
-            { border: '#eab308', bg: 'rgba(234, 179, 8, 0.1)', text: '#eab308' },  
-            { border: '#a855f7', bg: 'rgba(168, 85, 247, 0.1)', text: '#a855f7' }, 
-            { border: '#f97316', bg: 'rgba(249, 115, 22, 0.1)', text: '#f97316' }, 
-            { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)', text: '#06b6d4' }   
-        ];
 
         const obtenerEstiloCategoria = (catId) => {
             const paleta = [
@@ -200,7 +199,6 @@
 
         const obtenerColorGrupo = (texto) => {
             if (!texto) return { color: '#94a3b8', bg: 'rgba(148,163,184,0.15)', border: 'rgba(148,163,184,0.4)' };
-            
             let str = String(texto).toUpperCase();
             let letra = '';
             
@@ -224,14 +222,14 @@
 
         async function inicializar() {
             try {
-                const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre, pin_jueces').eq('id', idTorneoActivo).eq('organizador_id', orgId).single();
-                if (torneoData) {
-                    document.getElementById('nombre-torneo').innerText = torneoData.nombre;
-                    if (torneoData.pin_jueces) pinJuecesActual = torneoData.pin_jueces;
-                }
+                const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).eq('organizador_id', orgId).single();
+                if (torneoData) document.getElementById('nombre-torneo').innerText = torneoData.nombre;
 
                 const { data: reglasData } = await clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', orgId).order('diferencia_min', { ascending: true });
                 if (reglasData) reglasRankingList = reglasData;
+
+                const { data: jugData } = await clienteSupabase.from('jugadores').select('id, nombre, club, division, puntos_ranking, puntos_ranking_ant').eq('organizador_id', orgId);
+                if (jugData) todosLosJugadoresAdmin = jugData;
 
                 await cargarPartidos();
                 iniciarPresenciaEspectadores();
@@ -342,7 +340,6 @@
             dibujarPantalla();
         }
 
-        // ======================= CORRECCIÓN MATEMÁTICA DEFINITIVA DE RANKING =======================
         function calcularImpactoPuntos(ptsA, ptsB) {
             let diff = Math.abs(ptsA - ptsB);
             let favoritoEsJ1 = ptsA >= ptsB;
@@ -400,10 +397,14 @@
 
                 [m.j1, m.j2].forEach(j => {
                     if (j && j.id && !grupoObj[j.id]) {
+                        let jData = todosLosJugadoresAdmin.find(x => x.id === j.id);
+                        let rankIni = jData ? (jData.puntos_ranking_ant || jData.puntos_ranking || 0) : (j.puntos_ranking || 0);
+                        let div = jData ? (jData.division || 1) : (j.division || 1);
+
                         grupoObj[j.id] = { 
-                            id: j.id, nombre: j.nombre, club: j.club, div: j.division || 1, 
+                            id: j.id, nombre: j.nombre, club: j.club, div: div, 
                             pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, 
-                            rankImpact: 0, rivalesStr: [] 
+                            rankIni: rankIni, rankImpact: 0 
                         };
                     }
                 });
@@ -418,37 +419,20 @@
                         j1.setsG += (m.sets_j1 || 0); j1.setsP += (m.sets_j2 || 0);
                         j2.setsG += (m.sets_j2 || 0); j2.setsP += (m.sets_j1 || 0);
 
-                        let r1 = m.j1.puntos_ranking || 0;
-                        let r2 = m.j2.puntos_ranking || 0;
-                        
+                        let r1 = j1.rankIni + j1.rankImpact;
+                        let r2 = j2.rankIni + j2.rankImpact;
                         let impacto = calcularImpactoPuntos(r1, r2);
-                        let ptsGana = 0; let ptsPierde = 0;
-
-                        let nomCorto1 = m.j1.nombre.split(' ')[0];
-                        let nomCorto2 = m.j2.nombre.split(' ')[0];
 
                         if (m.ganador_id === m.jugador1_id) {
                             j1.pg += 1; j1.pts += 2;
                             j2.pp += 1; j2.pts += 1;
-                            
-                            ptsGana = impacto.j1Gana;
-                            ptsPierde = impacto.j2Pierde;
-                            
-                            j1.rankImpact += ptsGana;
-                            j2.rankImpact += ptsPierde;
-                            j1.rivalesStr.push(`<span style="color:#34d399">✅ vs ${nomCorto2} (+${ptsGana})</span>`);
-                            j2.rivalesStr.push(`<span style="color:#f87171">❌ vs ${nomCorto1} (${ptsPierde})</span>`);
+                            j1.rankImpact += impacto.j1Gana;
+                            j2.rankImpact += impacto.j2Pierde;
                         } else if (m.ganador_id === m.jugador2_id) {
                             j2.pg += 1; j2.pts += 2;
                             j1.pp += 1; j1.pts += 1;
-                            
-                            ptsGana = impacto.j2Gana;
-                            ptsPierde = impacto.j1Pierde;
-
-                            j2.rankImpact += ptsGana;
-                            j1.rankImpact += ptsPierde;
-                            j2.rivalesStr.push(`<span style="color:#34d399">✅ vs ${nomCorto1} (+${ptsGana})</span>`);
-                            j1.rivalesStr.push(`<span style="color:#f87171">❌ vs ${nomCorto2} (${ptsPierde})</span>`);
+                            j2.rankImpact += impacto.j2Gana;
+                            j1.rankImpact += impacto.j1Pierde;
                         }
                     }
                 }
@@ -460,20 +444,27 @@
         function ordenarJugadoresITTF(lista) {
             return [...lista].sort((a, b) => {
                 if (b.pts !== a.pts) return b.pts - a.pts;
-                const rSetA = a.setsG / (a.setsP || 0.0001);
-                const rSetB = b.setsG / (b.setsP || 0.0001);
+                
+                const sG_a = a.setsGanados !== undefined ? a.setsGanados : a.setsG;
+                const sP_a = a.setsPerdidos !== undefined ? a.setsPerdidos : a.setsP;
+                const sG_b = b.setsGanados !== undefined ? b.setsGanados : b.setsG;
+                const sP_b = b.setsPerdidos !== undefined ? b.setsPerdidos : b.setsP;
+
+                const rSetA = sG_a / (sP_a || 0.0001);
+                const rSetB = sG_b / (sP_b || 0.0001);
+                
                 if (Math.abs(rSetB - rSetA) > 0.0001) return rSetB - rSetA;
                 return b.pg - a.pg; 
             });
         }
 
-        function renderTablaGrupoDiv(jugadores, colorHex, titulo) {
+        function renderTablaGeneralDiv(jugadores, colorHex, titulo, isFlash = false) {
             if (jugadores.length === 0) return '';
             let html = `
-                <div style="margin-bottom:15px; background:rgba(255,255,255,0.02); padding:10px; border-radius:10px;">
-                    <span style="font-weight:900; font-size:11px; color:${colorHex}; text-transform:uppercase; display:block; margin-bottom:10px;">${titulo}</span>
+                <div style="margin-bottom:15px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:15px; border-top: 3px solid ${colorHex};">
+                    <span style="font-weight:900; font-size:13px; color:${colorHex}; text-transform:uppercase; display:block; margin-bottom:10px;">${titulo}</span>
                     <div style="overflow-x:auto;">
-                        <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left; min-width: 800px;">
+                        <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left; min-width: 850px;">
                             <thead>
                                 <tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);">
                                     <th style="padding:6px;">Pos</th>
@@ -481,44 +472,60 @@
                                     <th style="padding:6px; text-align:center;">PJ</th>
                                     <th style="padding:6px; text-align:center;">PG</th>
                                     <th style="padding:6px; text-align:center;">PP</th>
-                                    <th style="padding:6px; text-align:center;">% Efectividad</th>
-                                    <th style="padding:6px; text-align:center;">Sets (G - P)</th>
-                                    <th style="padding:6px; text-align:center;">Dif</th>
+                                    <th style="padding:6px; text-align:center;">% Efec</th>
+                                    <th style="padding:6px; text-align:center;">Sets</th>
                                     <th style="padding:6px; text-align:center; color:#fbbf24;">Pts</th>
-                                    <th style="padding:6px;">Ganó a:</th>
+                                    <th style="padding:6px; text-align:center;">R. Ini</th>
+                                    <th style="padding:6px; text-align:center;">+/-</th>
+                                    <th style="padding:6px; text-align:center; color:#38bdf8;">R. Act</th>
                                 </tr>
                             </thead>
                             <tbody>
             `;
             
             jugadores.forEach((j, idx) => {
-                let dif = j.setsG - j.setsP; 
-                let difStr = dif >= 0 ? '+' + dif : dif; 
-                let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
                 let efectividad = j.pj > 0 ? Math.round((j.pg / j.pj) * 100) : 0;
+                let opacity = (isFlash && j.pj < 5) ? '0.5' : '1';
+                let qualBadge = (isFlash && j.pj < 5) ? '<span style="font-size:8px; background:rgba(239,68,68,0.2); color:#f87171; padding:2px 4px; border-radius:4px; margin-left:6px;">Faltan PJ</span>' : '';
+                
+                let rankTrophy = '';
+                if (!isFlash || (isFlash && j.pj >= 5)) {
+                    if(idx === 0) rankTrophy = '🥇'; else if (idx === 1) rankTrophy = '🥈'; else if (idx === 2) rankTrophy = '🥉'; else rankTrophy = `#${idx + 1}`;
+                } else {
+                    rankTrophy = '-';
+                }
+
+                let rankDifStr = j.rankImpact > 0 ? `+${j.rankImpact}` : j.rankImpact;
+                let rankDifColor = j.rankImpact > 0 ? '#10b981' : (j.rankImpact < 0 ? '#ef4444' : '#94a3b8');
+                let rankAct = j.rankIni + j.rankImpact;
+
                 let safeName = j.nombre ? String(j.nombre).replace(/'/g, "\\'") : '';
                 let safeClub = j.club ? String(j.club).replace(/'/g, "\\'") : 'Sin Club';
                 let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${safeName}', '${safeClub}')"` : '';
 
+                let gpoInfo = (!isFlash && j.gpo) ? `<span style="font-size:9px; color:#a855f7; font-weight:800; border:1px solid #a855f7; padding:2px 6px; border-radius:4px; margin-left:6px;">GPO ${j.gpo}</span>` : '';
+                
+                let setsG = j.setsG !== undefined ? j.setsG : j.setsGanados;
+                let setsP = j.setsP !== undefined ? j.setsP : j.setsPerdidos;
+
                 html += `
-                    <tr class="tr-header" ${jClic} style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'">
-                        <td style="padding:8px 6px; font-weight:800; color:#64748b;">#${idx + 1}</td>
+                    <tr class="tr-header" ${jClic} style="border-bottom:1px solid rgba(255,255,255,0.04); opacity: ${opacity}; cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <td style="padding:8px 6px; font-weight:800; color:#64748b; font-size:14px;">${rankTrophy}</td>
                         <td style="padding:8px 6px;">
-                            <strong style="color:#ffffff; font-size:12px; display:block;">${j.nombre}</strong>
-                            <span style="font-size:9px; color:#64748b; font-weight:700;">${j.club || 'Sin Club'}</span>
+                            <strong style="color:#ffffff; font-size:12px; display:inline-block;">${j.nombre}</strong> ${qualBadge} ${gpoInfo}
+                            <span style="font-size:9px; color:#64748b; font-weight:700; display:block;">${j.club || 'Sin Club'}</span>
                         </td>
                         <td style="padding:8px 6px; text-align:center; font-weight:700; color:#94a3b8;">${j.pj}</td>
                         <td style="padding:8px 6px; text-align:center; font-weight:700; color:#34d399;">${j.pg}</td>
                         <td style="padding:8px 6px; text-align:center; font-weight:700; color:#f87171;">${j.pp}</td>
-                        <td style="padding:8px 6px; text-align:center; font-weight:800; color:#fbbf24;">${efectividad}%</td>
+                        <td style="padding:8px 6px; text-align:center; font-weight:900; color:#fbbf24;">${efectividad}%</td>
                         <td style="padding:8px 6px; text-align:center;">
-                            <span style="color:#34d399; font-weight:800;">${j.setsG}</span><span style="color:#64748b; margin:0 2px;">:</span><span style="color:#f87171; font-weight:800;">${j.setsP}</span>
+                            <span style="color:#34d399; font-weight:800;">${setsG}</span><span style="color:#64748b; margin:0 2px;">:</span><span style="color:#f87171; font-weight:800;">${setsP}</span>
                         </td>
-                        <td style="padding:8px 6px; text-align:center; font-weight:800; color:${colorDif};">${difStr}</td>
-                        <td style="padding:8px 6px; text-align:center; font-weight:800; color:#fbbf24; font-size:14px;">${j.pts}</td>
-                        <td style="padding:8px 6px; font-size:10px;">
-                            ${j.ganoA.length > 0 ? `<span style="background:rgba(16,185,129,0.2); color:#34d399; padding:2px 8px; border-radius:4px; font-weight:800; border:1px solid rgba(16,185,129,0.4);">${j.ganoA.join(', ')}</span>` : '<span style="color:#475569; font-style:italic;">-</span>'}
-                        </td>
+                        <td style="padding:8px 6px; text-align:center; font-weight:900; color:#fbbf24; font-size:14px;">${j.pts}</td>
+                        <td style="padding:8px 6px; text-align:center; font-weight:700; color:#94a3b8; font-family:'Orbitron', sans-serif;">${j.rankIni}</td>
+                        <td style="padding:8px 6px; text-align:center; font-weight:800; color:${rankDifColor};">${rankDifStr}</td>
+                        <td style="padding:8px 6px; text-align:center; font-weight:900; color:#38bdf8; font-family:'Orbitron', sans-serif;">${rankAct}</td>
                     </tr>
                 `;
             });
@@ -527,324 +534,70 @@
             return html;
         }
 
-        function precalcularProyecciones() {
-            let proyecciones = {};
+        function dibujarResumenYLlaves(container) {
             const standings = calcularStandingsGrupos();
             const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
-
-            categoriasSet.forEach(catNombre => {
-                const gruposCat = standings[catNombre] || {};
-                const numGrupos = Object.keys(gruposCat).length;
-                
-                let clasificados = [];
-                Object.keys(gruposCat).forEach(gpoNombre => {
-                    let jugArr = ordenarJugadoresITTF(Object.values(gruposCat[gpoNombre]));
-                    if(jugArr[0]) clasificados.push({ ...jugArr[0], seedType: 1, gpo: gpoNombre });
-                    if(jugArr[1]) clasificados.push({ ...jugArr[1], seedType: 2, gpo: gpoNombre });
-                });
-                
-                clasificados.sort((a,b) => {
-                    if(a.seedType !== b.seedType) return a.seedType - b.seedType;
-                    if(b.pts !== a.pts) return b.pts - a.pts;
-                    let diffA = (a.setsG||0) - (a.setsP||0);
-                    let diffB = (b.setsG||0) - (b.setsP||0);
-                    return diffB - diffA;
-                });
-
-                let s1 = clasificados[0] || { nombre: 'Seed 1', gpo: '-' };
-                let s2 = clasificados[1] || { nombre: 'Seed 2', gpo: '-' };
-                let s3 = clasificados[2] || { nombre: 'Seed 3', gpo: '-' };
-                let s4 = clasificados[3] || { nombre: 'Seed 4', gpo: '-' };
-                let s5 = clasificados[4] || { nombre: 'Seed 5', gpo: '-' };
-                let s6 = clasificados[5] || { nombre: 'Seed 6', gpo: '-' };
-                let s7 = clasificados[6] || { nombre: 'Seed 7', gpo: '-' };
-                let s8 = clasificados[7] || { nombre: 'Seed 8', gpo: '-' };
-
-                const partidosLlaveBD = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase);
-                
-                const pCuartos1 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('1'));
-                const pCuartos2 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('2'));
-                const pCuartos3 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('3'));
-                const pCuartos4 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('4'));
-
-                const partidoSemi1 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('1') || String(p.ronda_fase || '').toLowerCase().includes('cruce 1')));
-                const partidoSemi2 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('2') || String(p.ronda_fase || '').toLowerCase().includes('cruce 2')));
-                const partidoFinal = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi'));
-
-                let hayCuartos = pCuartos1 || pCuartos2 || pCuartos3 || pCuartos4 || numGrupos > 2;
-
-                let nomC1_j1 = pCuartos1?.j1 ? pCuartos1.j1.nombre : s1.nombre;
-                let nomC1_j2 = pCuartos1?.j2 ? pCuartos1.j2.nombre : s8.nombre;
-                let nomC2_j1 = pCuartos2?.j1 ? pCuartos2.j1.nombre : s4.nombre;
-                let nomC2_j2 = pCuartos2?.j2 ? pCuartos2.j2.nombre : s5.nombre;
-                let nomC3_j1 = pCuartos3?.j1 ? pCuartos3.j1.nombre : s3.nombre;
-                let nomC3_j2 = pCuartos3?.j2 ? pCuartos3.j2.nombre : s6.nombre;
-                let nomC4_j1 = pCuartos4?.j1 ? pCuartos4.j1.nombre : s2.nombre;
-                let nomC4_j2 = pCuartos4?.j2 ? pCuartos4.j2.nombre : s7.nombre;
-
-                let nomSemi1_j1, nomSemi1_j2, nomSemi2_j1, nomSemi2_j2;
-                
-                if (hayCuartos) {
-                    nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : (pCuartos1?.ganador_id ? (pCuartos1.ganador_id === pCuartos1.jugador1_id ? nomC1_j1 : nomC1_j2) : 'Gana Cuartos 1');
-                    nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : (pCuartos2?.ganador_id ? (pCuartos2.ganador_id === pCuartos2.jugador1_id ? nomC2_j1 : nomC2_j2) : 'Gana Cuartos 2');
-                    
-                    nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : (pCuartos3?.ganador_id ? (pCuartos3.ganador_id === pCuartos3.jugador1_id ? nomC3_j1 : nomC3_j2) : 'Gana Cuartos 3');
-                    nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : (pCuartos4?.ganador_id ? (pCuartos4.ganador_id === pCuartos4.jugador1_id ? nomC4_j1 : nomC4_j2) : 'Gana Cuartos 4');
-                } else {
-                    nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : s1.nombre;
-                    nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : s4.nombre;
-                    
-                    nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : s2.nombre;
-                    nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : s3.nombre;
-                }
-
-                let nomFinal_j1 = partidoFinal?.j1 ? partidoFinal.j1.nombre : (partidoSemi1?.ganador_id ? (partidoSemi1.ganador_id === partidoSemi1.jugador1_id ? nomSemi1_j1 : nomSemi1_j2) : 'Gana Semi 1');
-                let nomFinal_j2 = partidoFinal?.j2 ? partidoFinal.j2.nombre : (partidoSemi2?.ganador_id ? (partidoSemi2.ganador_id === partidoSemi2.jugador1_id ? nomSemi2_j1 : nomSemi2_j2) : 'Gana Semi 2');
-
-                if(pCuartos1) proyecciones[pCuartos1.id] = { n1: nomC1_j1, n2: nomC1_j2, d1: `Seed 1 (${s1.gpo})`, d2: `Seed 8 (${s8.gpo})` };
-                if(pCuartos2) proyecciones[pCuartos2.id] = { n1: nomC2_j1, n2: nomC2_j2, d1: `Seed 4 (${s4.gpo})`, d2: `Seed 5 (${s5.gpo})` };
-                if(pCuartos3) proyecciones[pCuartos3.id] = { n1: nomC3_j1, n2: nomC3_j2, d1: `Seed 3 (${s3.gpo})`, d2: `Seed 6 (${s6.gpo})` };
-                if(pCuartos4) proyecciones[pCuartos4.id] = { n1: nomC4_j1, n2: nomC4_j2, d1: `Seed 2 (${s2.gpo})`, d2: `Seed 7 (${s7.gpo})` };
-
-                if(partidoSemi1) proyecciones[partidoSemi1.id] = { n1: nomSemi1_j1, n2: nomSemi1_j2, d1: hayCuartos ? 'Gana C1' : `Seed 1 (${s1.gpo})`, d2: hayCuartos ? 'Gana C2' : `Seed 4 (${s4.gpo})` };
-                if(partidoSemi2) proyecciones[partidoSemi2.id] = { n1: nomSemi2_j1, n2: nomSemi2_j2, d1: hayCuartos ? 'Gana C3' : `Seed 2 (${s2.gpo})`, d2: hayCuartos ? 'Gana C4' : `Seed 3 (${s3.gpo})` };
-                if(partidoFinal) proyecciones[partidoFinal.id] = { n1: nomFinal_j1, n2: nomFinal_j2, d1: 'Gana Semi 1', d2: 'Gana Semi 2' };
-            });
-            return proyecciones;
-        }
-
-        // ======================= MODAL INTELIGENTE DE ASIGNAR MARCADOR =======================
-        function abrirModalMarcador(partidoId, nombreJ1, nombreJ2) {
-            document.getElementById('hidden-marcador-partidoid').value = partidoId;
-            document.getElementById('lbl-marcador-j1').innerText = nombreJ1;
-            document.getElementById('lbl-marcador-j2').innerText = nombreJ2;
-            document.getElementById('input-sets-j1').value = '';
-            document.getElementById('input-sets-j2').value = '';
-            document.getElementById('btn-guardar-marcador').innerText = '💾 Guardar Manualmente';
-            document.getElementById('modal-marcador').style.display = 'flex';
-            setTimeout(() => document.getElementById('input-sets-j1').focus(), 100);
-        }
-
-        function cerrarModalMarcador() {
-            document.getElementById('modal-marcador').style.display = 'none';
-        }
-
-        async function guardarMarcadorManual() {
-            let partidoId = document.getElementById('hidden-marcador-partidoid').value;
-            let valJ1 = document.getElementById('input-sets-j1').value;
-            let valJ2 = document.getElementById('input-sets-j2').value;
-
-            if (valJ1 === '' || valJ2 === '') return;
-            
-            let setsJ1 = parseInt(valJ1);
-            let setsJ2 = parseInt(valJ2);
-
-            if (isNaN(setsJ1) || isNaN(setsJ2)) return;
-            
-            const btn = document.getElementById('btn-guardar-marcador');
-
-            if (setsJ1 === setsJ2) {
-                btn.innerText = "❌ Empate no válido";
-                setTimeout(() => { btn.innerText = "💾 Guardar Manualmente"; }, 2000);
-                return;
-            }
-
-            btn.disabled = true; btn.innerText = '⏳ Guardando...';
-
-            try {
-                const { data: partido } = await clienteSupabase.from('partidos').select('jugador1_id, jugador2_id').eq('id', partidoId).single();
-                let ganador_id = setsJ1 > setsJ2 ? partido.jugador1_id : partido.jugador2_id;
-
-                const { error } = await clienteSupabase.from('partidos').update({
-                    sets_j1: setsJ1,
-                    sets_j2: setsJ2,
-                    puntos_j1: setsJ1, 
-                    puntos_j2: setsJ2,
-                    estado: 'finalizado',
-                    ganador_id: ganador_id
-                }).eq('id', partidoId);
-
-                if (!error) {
-                    cerrarModalMarcador();
-                    window.location.reload();
-                } else {
-                    alert("❌ Error al guardar en base de datos: " + error.message);
-                    btn.disabled = false; btn.innerText = '💾 Guardar Manualmente';
-                }
-            } catch (e) {
-                console.error(e);
-                alert("❌ Error: " + e.message);
-                btn.disabled = false; btn.innerText = '💾 Guardar Manualmente';
-            }
-        }
-
-        function abrirModalJugadorAdmin(jugadorId, nombre, club) {
-            document.getElementById('modal-jugador-nombre').innerText = nombre;
-            document.getElementById('modal-jugador-club').innerText = club || 'Sin Club';
-
-            const modalList = document.getElementById('modal-jugador-partidos-list');
-            modalList.innerHTML = '<div class="mensaje-vacio">El detalle del ranking no está disponible en la vista de mesas. Ve al administrador para ver el expediente completo.</div>';
-            document.getElementById('modal-jugador-admin').style.display = 'flex';
-        }
-
-        function cerrarModalJugadorAdmin() {
-            document.getElementById('modal-jugador-admin').style.display = 'none';
-        }
-
-        function dibujarPantalla() {
-            const container = document.getElementById('contenedor-partidos');
-            if (!container) return;
-
-            if (estadoFiltro === 'resumen') {
-                container.style.display = 'block';
-                dibujarResumenYLlaves(container);
-                return;
-            }
-
-            if (estadoFiltro === 'flash') {
-                container.style.display = 'block';
-                dibujarEstadisticasFlash(container);
-                return;
-            }
-
-            container.style.display = 'grid';
-
-            let filtrados = todosLosPartidos.filter(p => p.grupo_nombre && p.grupo_nombre !== 'Flash');
-
-            if (mesaFiltro !== 'todas') {
-                filtrados = filtrados.filter(p => p.mesa == mesaFiltro);
-            }
+            let catsList = [...categoriasSet];
 
             if (categoriaFiltro !== 'todas') {
-                filtrados = filtrados.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
+                catsList = catsList.filter(c => c === categoriaFiltro);
             }
 
-            if (estadoFiltro === 'en_curso') {
-                filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'en_curso');
-            } else if (estadoFiltro === 'pendiente') {
-                filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'pendiente');
-            } else if (estadoFiltro === 'finalizado') {
-                filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === 'finalizado');
-            }
-
-            if (filtrados.length === 0) {
-                container.innerHTML = `<div class="mensaje-vacio">No hay partidos registrados bajo este filtro.</div>`;
+            if (catsList.length === 0) {
+                container.innerHTML = `<div class="mensaje-vacio">No hay información de grupos o llaves para mostrar en este momento.</div>`;
                 return;
             }
-
-            const mapaProy = precalcularProyecciones();
-            const gruposPorHora = {};
-            const horasOrdenadas = [];
-            
-            filtrados.forEach(p => {
-                const h = p.hora || '09:00 AM';
-                if(!gruposPorHora[h]) {
-                    gruposPorHora[h] = [];
-                    horasOrdenadas.push(h); 
-                }
-                gruposPorHora[h].push(p);
-            });
 
             let htmlContent = '';
 
-            horasOrdenadas.forEach(hora => {
-                htmlContent += `<div class="header-hora">⏰ ${hora}</div>`;
+            catsList.forEach(catNombre => {
+                const gruposCat = standings[catNombre] || {};
+                
+                if (Object.keys(gruposCat).length === 0) {
+                    const llavesFlash = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase);
+                    if(llavesFlash.length === 0) return;
+                }
 
-                gruposPorHora[hora].forEach(p => {
-                    let est = String(p.estado || '').toLowerCase();
-                    let isFin = est === 'finalizado';
-                    let isVivo = est === 'en_curso';
-
-                    let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : 
-                                  (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
-
-                    let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
-                    let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
-
-                    if (!p.grupo_nombre && p.ronda_fase && mapaProy[p.id]) {
-                        if (!p.j1) nomJ1 = mapaProy[p.id].n1;
-                        if (!p.j2) nomJ2 = mapaProy[p.id].n2;
-                    }
-
-                    let iconJ1 = (isFin && p.ganador_id === p.jugador1_id) ? '🏆 ' : '';
-                    let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '🏆 ' : '';
-
-                    let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
-                    let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Llave'));
-                    let cGpo = obtenerColorGrupo(p.grupo_nombre || p.ronda_fase);
-
-                    let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : '';
-                    let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
-                    
-                    if (isVivo) {
-                        score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`;
-                        score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`;
-                    }
-
-                    let cardClass = isVivo ? 'vivo' : (isFin ? 'finalizado' : '');
-                    
-                    let customStyle = '';
-                    let mesaColor = '';
-
-                    let safeNom1 = nomJ1 ? String(nomJ1).replace(/'/g, "\\'") : '';
-                    let safeClub1 = p.j1 && p.j1.club ? String(p.j1.club).replace(/'/g, "\\'") : 'Sin Club';
-
-                    let safeNom2 = nomJ2 ? String(nomJ2).replace(/'/g, "\\'") : '';
-                    let safeClub2 = p.j2 && p.j2.club ? String(p.j2.club).replace(/'/g, "\\'") : 'Sin Club';
-
-                    htmlContent += `
-                        <div class="card-mesa ${cardClass}">
-                            <div class="top-bar">
-                                <div>
-                                    <span class="mesa-title" style="${mesaColor}">MESA ${p.mesa || 1}</span>
-                                    <span style="font-size:9px; color:#a855f7; font-weight:700; margin-left:8px; text-transform:uppercase;">⚖️ Juez: ${p.juez || 'Comité'}</span>
-                                </div>
-                                ${badgeEst}
-                            </div>
-
-                            <div style="margin-bottom:12px; display: flex; gap: 8px; flex-wrap: wrap;">
-                                <span class="cat-badge" style="color:${catStyle.text}; background:${catStyle.bg}; border:1px solid ${catStyle.border};">
-                                    🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'}
-                                </span>
-                                <span class="cat-badge" style="color:${cGpo.color}; background:${cGpo.bg}; border:1px solid ${cGpo.border};">
-                                    📍 ${eqGrupo}
-                                </span>
-                            </div>
-
-                            <div class="score-container">
-                                <div class="jugador-box">
-                                    <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador1_id}, '${safeNom1}', '${safeClub1}')">
-                                        <span class="jugador-nombre">${iconJ1}${nomJ1}</span>
-                                    </div>
-                                    <div style="display:flex; align-items:center;">${score1}</div>
-                                </div>
-
-                                <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;">
-                                    <div style="cursor:pointer;" onclick="event.stopPropagation(); abrirModalJugadorAdmin(${p.jugador2_id}, '${safeNom2}', '${safeClub2}')">
-                                        <span class="jugador-nombre">${iconJ2}${nomJ2}</span>
-                                    </div>
-                                    <div style="display:flex; align-items:center;">${score2}</div>
-                                </div>
-                            </div>
-
-                            <div style="display:flex; gap:10px; flex-wrap: wrap;">
-                                <button class="btn-arbitrar ${isFin ? 'btn-reabrir' : ''}" style="flex:1; min-width: 120px;" onclick="window.location.href='juez.html?partido=${p.id}'">
-                                    ${isFin ? '🏁 REABRIR PARTIDO' : '🏓 Arbitrar Partido'}
-                                </button>
-                                <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(168,85,247,0.15); border-color:#a855f7; color:#c084fc;" onclick="abrirModalMarcador(${p.id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(nomJ2).replace(/'/g, "\\'")}')">
-                                    📝 Asignar Marcador
-                                </button>
-                            </div>
+                htmlContent += `
+                    <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">
+                        <div style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; margin-bottom:15px; text-align:center;">
+                            <span style="font-size:14px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:1.5px;">🏆 Categoría: ${catNombre}</span>
+                            <span style="font-size:10px; color:#94a3b8; display:block; margin-top:6px;">Tabla General por Divisiones</span>
                         </div>
-                    `;
+                `;
+
+                // Unificar todos los jugadores de todos los grupos
+                let todosJugadoresCatMap = new Map();
+                Object.keys(gruposCat).forEach(gpoNombre => {
+                    Object.values(gruposCat[gpoNombre]).forEach(j => {
+                        if(!todosJugadoresCatMap.has(j.id)) {
+                            todosJugadoresCatMap.set(j.id, {...j, gpo: gpoNombre});
+                        }
+                    });
                 });
+                
+                let todosJugadoresCat = Array.from(todosJugadoresCatMap.values());
+                todosJugadoresCat = ordenarJugadoresITTF(todosJugadoresCat);
+
+                let div1 = todosJugadoresCat.filter(j => String(j.div) === '1');
+                let div2 = todosJugadoresCat.filter(j => String(j.div) === '2');
+                let div3 = todosJugadoresCat.filter(j => String(j.div) === '3');
+                let sinDiv = todosJugadoresCat.filter(j => !['1','2','3'].includes(String(j.div)));
+
+                if (div1.length > 0 || div2.length > 0 || div3.length > 0) {
+                    htmlContent += renderTablaGeneralDiv(div1, '#f43f5e', '🏆 DIVISIÓN 1', false);
+                    htmlContent += renderTablaGeneralDiv(div2, '#eab308', '🏆 DIVISIÓN 2', false);
+                    htmlContent += renderTablaGeneralDiv(div3, '#3b82f6', '🏆 DIVISIÓN 3', false);
+                    if (sinDiv.length > 0) htmlContent += renderTablaGeneralDiv(sinDiv, '#94a3b8', 'Jugadores sin división registrada', false);
+                } else {
+                    htmlContent += renderTablaGeneralDiv(todosJugadoresCat, '#94a3b8', 'Resultados Generales', false);
+                }
+
+                htmlContent += `</div>`;
             });
 
             container.innerHTML = htmlContent;
-
-            if (mesaFiltro === 'todas') {
-                dibujarLlavesInferiores(container);
-            }
+            dibujarLlavesInferiores(container);
         }
 
         function dibujarEstadisticasFlash(container) {
@@ -863,14 +616,22 @@
 
             partidosFlash.forEach(m => {
                 let estLimpio = String(m.estado || '').trim().toLowerCase();
-                if (estLimpio === 'finalizado' && m.j1 && m.j2) {
-                    
-                    [m.j1, m.j2].forEach(j => {
-                        if (j && j.id && !stats[j.id]) {
-                            stats[j.id] = { id: j.id, nombre: j.nombre, club: j.club, div: j.division || 1, pj: 0, pg: 0, pp: 0, setsG: 0, setsP: 0 };
-                        }
-                    });
+                
+                [m.j1, m.j2].forEach(j => {
+                    if (j && j.id && !stats[j.id]) {
+                        let jData = todosLosJugadoresAdmin.find(x => x.id === j.id);
+                        let rankIni = jData ? (jData.puntos_ranking_ant || jData.puntos_ranking || 0) : (j.puntos_ranking || 0);
+                        let div = jData ? (jData.division || 1) : (j.division || 1);
 
+                        stats[j.id] = { 
+                            id: j.id, nombre: j.nombre, club: j.club, div: div, 
+                            pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0,
+                            rankIni: rankIni, rankImpact: 0 
+                        };
+                    }
+                });
+
+                if (estLimpio === 'finalizado' && m.j1 && m.j2) {
                     if (stats[m.j1.id] && stats[m.j2.id]) {
                         let j1 = stats[m.j1.id];
                         let j2 = stats[m.j2.id];
@@ -879,8 +640,22 @@
                         j1.setsG += (m.sets_j1 || 0); j1.setsP += (m.sets_j2 || 0);
                         j2.setsG += (m.sets_j2 || 0); j2.setsP += (m.sets_j1 || 0);
 
-                        if (m.ganador_id === m.jugador1_id) { j1.pg++; j2.pp++; }
-                        else if (m.ganador_id === m.jugador2_id) { j2.pg++; j1.pp++; }
+                        let r1 = j1.rankIni + j1.rankImpact;
+                        let r2 = j2.rankIni + j2.rankImpact;
+                        let impacto = calcularImpactoPuntos(r1, r2);
+
+                        if (m.ganador_id === m.jugador1_id) { 
+                            j1.pg++; j2.pp++; 
+                            j1.pts += 2; j2.pts += 1;
+                            j1.rankImpact += impacto.j1Gana;
+                            j2.rankImpact += impacto.j2Pierde;
+                        }
+                        else if (m.ganador_id === m.jugador2_id) { 
+                            j2.pg++; j1.pp++; 
+                            j2.pts += 2; j1.pts += 1;
+                            j2.rankImpact += impacto.j2Gana;
+                            j1.rankImpact += impacto.j1Pierde;
+                        }
                     }
                 }
             });
@@ -892,18 +667,7 @@
                 return;
             }
 
-            jugadoresArr.forEach(j => {
-                j.efectividad = j.pj > 0 ? ((j.pg / j.pj) * 100).toFixed(1) : 0;
-                j.difSets = j.setsG - j.setsP;
-            });
-
-            jugadoresArr.sort((a, b) => {
-                let aQualifies = a.pj >= 5 ? 1 : 0;
-                let bQualifies = b.pj >= 5 ? 1 : 0;
-                if (aQualifies !== bQualifies) return bQualifies - aQualifies;
-                if (parseFloat(b.efectividad) !== parseFloat(a.efectividad)) return parseFloat(b.efectividad) - parseFloat(a.efectividad);
-                return b.difSets - a.difSets;
-            });
+            jugadoresArr = ordenarJugadoresITTF(jugadoresArr);
 
             let div1 = jugadoresArr.filter(j => String(j.div) === '1');
             let div2 = jugadoresArr.filter(j => String(j.div) === '2');
@@ -913,83 +677,20 @@
             let html = `
                 <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(245,158,11,0.3); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">
                     <div style="text-align:center; margin-bottom:20px;">
-                        <span style="font-size:14px; color:#fbbf24; font-weight:900; text-transform:uppercase; letter-spacing:2px; display:block;">⚡ Clasificación Liga Flash (Efectividad)</span>
+                        <span style="font-size:14px; color:#fbbf24; font-weight:900; text-transform:uppercase; letter-spacing:2px; display:block;">⚡ Clasificación Liga Flash (Efectividad y Ranking)</span>
                         <span style="font-size:10px; color:#94a3b8; display:block; margin-top:6px;">Ordenados por % de Efectividad (Requieren mínimo 5 partidos para clasificar)</span>
                     </div>
             `;
 
-            html += renderTablaFlash('1', div1, '#f43f5e', '🏆 DIVISIÓN 1');
-            html += renderTablaFlash('2', div2, '#eab308', '🏆 DIVISIÓN 2');
-            html += renderTablaFlash('3', div3, '#3b82f6', '🏆 DIVISIÓN 3');
+            html += renderTablaGeneralDiv(div1, '#f43f5e', '🏆 DIVISIÓN 1', true);
+            html += renderTablaGeneralDiv(div2, '#eab308', '🏆 DIVISIÓN 2', true);
+            html += renderTablaGeneralDiv(div3, '#3b82f6', '🏆 DIVISIÓN 3', true);
             if (sinDiv.length > 0) {
-                html += renderTablaFlash('?', sinDiv, '#94a3b8', 'Jugadores sin división registrada');
+                html += renderTablaGeneralDiv(sinDiv, '#94a3b8', 'Jugadores sin división registrada', true);
             }
 
             html += `</div>`;
             container.innerHTML = html;
-        }
-
-        function renderTablaFlash(divId, jugadores, colorHex, titulo) {
-            if (jugadores.length === 0) return '';
-            let html = `
-                <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:15px; margin-bottom:15px; border-top: 3px solid ${colorHex};">
-                    <span style="font-weight:900; font-size:13px; color:${colorHex}; text-transform:uppercase; display:block; margin-bottom:10px;">${titulo}</span>
-                    <div style="overflow-x:auto;">
-                        <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
-                            <thead>
-                                <tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);">
-                                    <th style="padding:6px;">Pos</th>
-                                    <th style="padding:6px;">Jugador</th>
-                                    <th style="padding:6px; text-align:center;">PJ</th>
-                                    <th style="padding:6px; text-align:center;">PG</th>
-                                    <th style="padding:6px; text-align:center;">PP</th>
-                                    <th style="padding:6px; text-align:center;">Dif Sets</th>
-                                    <th style="padding:6px; text-align:center; color:#34d399;">% Efectividad</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-            `;
-
-            jugadores.forEach((j, idx) => {
-                let qualifies = j.pj >= 5;
-                let opacity = qualifies ? '1' : '0.5';
-                let qualBadge = qualifies ? '' : '<span style="font-size:8px; background:rgba(239,68,68,0.2); color:#f87171; padding:2px 4px; border-radius:4px; margin-left:6px;">Faltan PJ</span>';
-                
-                let difStr = j.difSets >= 0 ? '+' + j.difSets : j.difSets;
-                let colorDif = j.difSets >= 0 ? '#38bdf8' : '#f87171';
-                
-                let rankTrophy = '';
-                if (qualifies) {
-                    if(idx === 0) rankTrophy = '🥇';
-                    else if (idx === 1) rankTrophy = '🥈';
-                    else if (idx === 2) rankTrophy = '🥉';
-                    else rankTrophy = `#${idx + 1}`;
-                } else {
-                    rankTrophy = '-';
-                }
-
-                let safeName = j.nombre ? String(j.nombre).replace(/'/g, "\\'") : '';
-                let safeClub = j.club ? String(j.club).replace(/'/g, "\\'") : 'Sin Club';
-                let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${safeName}', '${safeClub}')"` : '';
-
-                html += `
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.04); opacity: ${opacity}; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'" onmouseout="this.style.backgroundColor='transparent'">
-                        <td style="padding:8px 6px; font-weight:800; color:#64748b; font-size:14px;">${rankTrophy}</td>
-                        <td style="padding:8px 6px; cursor:pointer;" ${jClic}>
-                            <strong style="color:#ffffff;">${j.nombre}</strong> ${qualBadge}
-                            <small style="color:#64748b; display:block; font-size:9px;">${j.club || 'Sin Club'}</small>
-                        </td>
-                        <td style="padding:8px 6px; text-align:center; color:#94a3b8; font-weight:700;">${j.pj}</td>
-                        <td style="padding:8px 6px; text-align:center; color:#34d399; font-weight:700;">${j.pg}</td>
-                        <td style="padding:8px 6px; text-align:center; color:#f87171; font-weight:700;">${j.pp}</td>
-                        <td style="padding:8px 6px; text-align:center; font-weight:800; color:${colorDif};">${difStr}</td>
-                        <td style="padding:8px 6px; text-align:center; font-weight:900; color:#34d399; font-size:14px;">${j.efectividad}%</td>
-                    </tr>
-                `;
-            });
-
-            html += `</tbody></table></div></div>`;
-            return html;
         }
 
         function generarTarjetaLlave(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2) {
@@ -1065,142 +766,6 @@
                 </div>
                 ${titulo === 'Gran Final' ? `</div>` : ''}
             `;
-        }
-
-        function dibujarResumenYLlaves(container) {
-            const standings = calcularStandingsGrupos();
-            const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
-            let catsList = [...categoriasSet];
-
-            if (categoriaFiltro !== 'todas') {
-                catsList = catsList.filter(c => c === categoriaFiltro);
-            }
-
-            if (catsList.length === 0) {
-                container.innerHTML = `<div class="mensaje-vacio">No hay información de grupos o llaves para mostrar en este momento.</div>`;
-                return;
-            }
-
-            let htmlContent = '';
-
-            catsList.forEach(catNombre => {
-                const gruposCat = standings[catNombre] || {};
-                
-                if (Object.keys(gruposCat).length === 0) {
-                    const llavesFlash = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase);
-                    if(llavesFlash.length === 0) return;
-                }
-
-                htmlContent += `
-                    <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">
-                        <div style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; margin-bottom:15px;">
-                            <span style="font-size:14px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:1.5px;">🏆 Categoría: ${catNombre}</span>
-                        </div>
-                `;
-
-                Object.keys(gruposCat).sort().forEach(gpoNombre => {
-                    const listaJugadores = ordenarJugadoresITTF(Object.values(gruposCat[gpoNombre]));
-                    
-                    let cGpoHex = '#fbbf24'; 
-                    if (gpoNombre === 'A') cGpoHex = '#06b6d4';
-                    else if (gpoNombre === 'B') cGpoHex = '#a855f7';
-                    else if (gpoNombre === 'C') cGpoHex = '#10b981';
-                    else if (gpoNombre === 'D') cGpoHex = '#f59e0b';
-                    else if (gpoNombre === 'E') cGpoHex = '#f43f5e';
-                    else if (gpoNombre === 'F') cGpoHex = '#3b82f6';
-
-                    let titleName = gpoNombre === 'Único' ? 'Liga Única' : `Grupo ${gpoNombre}`;
-
-                    htmlContent += `
-                        <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:15px; margin-bottom:15px; border-left: 4px solid ${cGpoHex};">
-                            <span style="font-weight:800; font-size:13px; color:${cGpoHex}; text-transform:uppercase; display:flex; align-items:center; margin-bottom:12px;">
-                                <i class="fa-solid fa-users mr-2"></i> ${titleName}
-                            </span>
-                    `;
-
-                    // ================= SUBDIVIDIR POR DIVISIONES DENTRO DEL GRUPO =================
-                    let div1 = listaJugadores.filter(j => String(j.div) === '1');
-                    let div2 = listaJugadores.filter(j => String(j.div) === '2');
-                    let div3 = listaJugadores.filter(j => String(j.div) === '3');
-                    let sinDiv = listaJugadores.filter(j => !['1','2','3'].includes(String(j.div)));
-
-                    if (div1.length > 0 || div2.length > 0 || div3.length > 0) {
-                        htmlContent += renderTablaGrupoDiv(div1, '#f43f5e', '🏆 DIVISIÓN 1');
-                        htmlContent += renderTablaGrupoDiv(div2, '#eab308', '🏆 DIVISIÓN 2');
-                        htmlContent += renderTablaGrupoDiv(div3, '#3b82f6', '🏆 DIVISIÓN 3');
-                        htmlContent += renderTablaGrupoDiv(sinDiv, '#94a3b8', 'Sin División');
-                    } else {
-                        htmlContent += renderTablaGrupoDiv(listaJugadores, '#94a3b8', 'Resultados Generales');
-                    }
-
-                    htmlContent += `</div>`;
-                });
-
-                htmlContent += `</div>`;
-            });
-
-            container.innerHTML = htmlContent;
-            dibujarLlavesInferiores(container);
-        }
-
-        function renderTablaGrupoDiv(jugadores, colorHex, titulo) {
-            if (jugadores.length === 0) return '';
-            let html = `
-                <div style="margin-bottom:15px; background:rgba(255,255,255,0.02); padding:10px; border-radius:10px;">
-                    <span style="font-weight:900; font-size:11px; color:${colorHex}; text-transform:uppercase; display:block; margin-bottom:10px;">${titulo}</span>
-                    <div style="overflow-x:auto;">
-                        <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left; min-width: 800px;">
-                            <thead>
-                                <tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);">
-                                    <th style="padding:6px;">Pos</th>
-                                    <th style="padding:6px;">Jugador</th>
-                                    <th style="padding:6px; text-align:center;">PJ</th>
-                                    <th style="padding:6px; text-align:center;">PG</th>
-                                    <th style="padding:6px; text-align:center;">PP</th>
-                                    <th style="padding:6px; text-align:center;">% Efectividad</th>
-                                    <th style="padding:6px; text-align:center;">Sets (G - P)</th>
-                                    <th style="padding:6px; text-align:center;">Dif</th>
-                                    <th style="padding:6px; text-align:center; color:#fbbf24;">Pts</th>
-                                    <th style="padding:6px;">Ganó a:</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-            `;
-            
-            jugadores.forEach((j, idx) => {
-                let dif = j.setsGanados - j.setsPerdidos; 
-                let difStr = dif >= 0 ? '+' + dif : dif; 
-                let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
-                let efectividad = j.pj > 0 ? Math.round((j.pg / j.pj) * 100) : 0;
-                let safeName = j.nombre ? String(j.nombre).replace(/'/g, "\\'") : '';
-                let safeClub = j.club ? String(j.club).replace(/'/g, "\\'") : 'Sin Club';
-                let jClic = j.id ? `onclick="abrirModalJugadorAdmin(${j.id}, '${safeName}', '${safeClub}')"` : '';
-
-                html += `
-                    <tr class="tr-header" ${jClic} style="border-bottom:1px solid rgba(255,255,255,0.04); cursor:pointer; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'">
-                        <td style="padding:8px 6px; font-weight:800; color:#64748b;">#${idx + 1}</td>
-                        <td style="padding:8px 6px;">
-                            <strong style="color:#ffffff; font-size:12px; display:block;">${j.nombre}</strong>
-                            <span style="font-size:9px; color:#64748b; font-weight:700;">${j.club || 'Sin Club'}</span>
-                        </td>
-                        <td style="padding:8px 6px; text-align:center; font-weight:700; color:#94a3b8;">${j.pj}</td>
-                        <td style="padding:8px 6px; text-align:center; font-weight:700; color:#34d399;">${j.pg}</td>
-                        <td style="padding:8px 6px; text-align:center; font-weight:700; color:#f87171;">${j.pp}</td>
-                        <td style="padding:8px 6px; text-align:center; font-weight:800; color:#fbbf24;">${efectividad}%</td>
-                        <td style="padding:8px 6px; text-align:center;">
-                            <span style="color:#34d399; font-weight:800;">${j.setsGanados}</span><span style="color:#64748b; margin:0 2px;">:</span><span style="color:#f87171; font-weight:800;">${j.setsPerdidos}</span>
-                        </td>
-                        <td style="padding:8px 6px; text-align:center; font-weight:800; color:${colorDif};">${difStr}</td>
-                        <td style="padding:8px 6px; text-align:center; font-weight:800; color:#fbbf24; font-size:14px;">${j.pts}</td>
-                        <td style="padding:8px 6px; font-size:10px;">
-                            ${j.ganoA.length > 0 ? `<span style="background:rgba(16,185,129,0.2); color:#34d399; padding:2px 8px; border-radius:4px; font-weight:800; border:1px solid rgba(16,185,129,0.4);">${j.ganoA.join(', ')}</span>` : '<span style="color:#475569; font-style:italic;">-</span>'}
-                        </td>
-                    </tr>
-                `;
-            });
-
-            html += `</tbody></table></div></div>`;
-            return html;
         }
 
         function dibujarLlavesInferiores(container) {
@@ -1329,6 +894,84 @@
             });
             
             if (footerHtml !== '') container.innerHTML += footerHtml;
+        }
+
+        // ======================= MODAL INTELIGENTE DE ASIGNAR MARCADOR =======================
+        function abrirModalMarcador(partidoId, nombreJ1, nombreJ2) {
+            document.getElementById('hidden-marcador-partidoid').value = partidoId;
+            document.getElementById('lbl-marcador-j1').innerText = nombreJ1;
+            document.getElementById('lbl-marcador-j2').innerText = nombreJ2;
+            document.getElementById('input-sets-j1').value = '';
+            document.getElementById('input-sets-j2').value = '';
+            document.getElementById('btn-guardar-marcador').innerText = '💾 Guardar Manualmente';
+            document.getElementById('modal-marcador').style.display = 'flex';
+            setTimeout(() => document.getElementById('input-sets-j1').focus(), 100);
+        }
+
+        function cerrarModalMarcador() {
+            document.getElementById('modal-marcador').style.display = 'none';
+        }
+
+        async function guardarMarcadorManual() {
+            let partidoId = document.getElementById('hidden-marcador-partidoid').value;
+            let valJ1 = document.getElementById('input-sets-j1').value;
+            let valJ2 = document.getElementById('input-sets-j2').value;
+
+            if (valJ1 === '' || valJ2 === '') return;
+            
+            let setsJ1 = parseInt(valJ1);
+            let setsJ2 = parseInt(valJ2);
+
+            if (isNaN(setsJ1) || isNaN(setsJ2)) return;
+            
+            const btn = document.getElementById('btn-guardar-marcador');
+
+            if (setsJ1 === setsJ2) {
+                btn.innerText = "❌ Empate no válido";
+                setTimeout(() => { btn.innerText = "💾 Guardar Manualmente"; }, 2000);
+                return;
+            }
+
+            btn.disabled = true; btn.innerText = '⏳ Guardando...';
+
+            try {
+                const { data: partido } = await clienteSupabase.from('partidos').select('jugador1_id, jugador2_id').eq('id', partidoId).single();
+                let ganador_id = setsJ1 > setsJ2 ? partido.jugador1_id : partido.jugador2_id;
+
+                const { error } = await clienteSupabase.from('partidos').update({
+                    sets_j1: setsJ1,
+                    sets_j2: setsJ2,
+                    puntos_j1: setsJ1, 
+                    puntos_j2: setsJ2,
+                    estado: 'finalizado',
+                    ganador_id: ganador_id
+                }).eq('id', partidoId);
+
+                if (!error) {
+                    cerrarModalMarcador();
+                    window.location.reload();
+                } else {
+                    alert("❌ Error al guardar en base de datos: " + error.message);
+                    btn.disabled = false; btn.innerText = '💾 Guardar Manualmente';
+                }
+            } catch (e) {
+                console.error(e);
+                alert("❌ Error: " + e.message);
+                btn.disabled = false; btn.innerText = '💾 Guardar Manualmente';
+            }
+        }
+
+        function abrirModalJugadorAdmin(jugadorId, nombre, club) {
+            document.getElementById('modal-jugador-nombre').innerText = nombre;
+            document.getElementById('modal-jugador-club').innerText = club || 'Sin Club';
+
+            const modalList = document.getElementById('modal-jugador-partidos-list');
+            modalList.innerHTML = '<div class="mensaje-vacio">El detalle del ranking no está disponible en la vista de mesas. Ve al administrador para ver el expediente completo.</div>';
+            document.getElementById('modal-jugador-admin').style.display = 'flex';
+        }
+
+        function cerrarModalJugadorAdmin() {
+            document.getElementById('modal-jugador-admin').style.display = 'none';
         }
 
         inicializar();
