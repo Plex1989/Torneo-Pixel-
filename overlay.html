@@ -70,7 +70,7 @@
         .mesa-badge { background: #f5a623; color: black; font-weight: 900; font-size: 12px; padding: 4px 12px; border-radius: 99px; text-transform: uppercase; letter-spacing: 2px; box-shadow: 0 0 15px rgba(245, 166, 35, 0.5); margin-bottom: 5px; }
         .fase-txt { font-size: 10px; color: #cbd5e1; font-weight: 800; text-transform: uppercase; text-shadow: 1px 1px 2px black; text-align: center; }
 
-        /* ESTILOS DE LA CLAQUETA GIGANTE (SE MUESTRA AL INICIO) */
+        /* ESTILOS DE LA CLAQUETA GIGANTE */
         #claqueta-overlay {
             position: fixed;
             inset: 0;
@@ -169,6 +169,7 @@
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         const urlParams = new URLSearchParams(window.location.search);
+        const urlPartido = urlParams.get('partido'); // Nuevo parámetro principal
         const urlTorneo = urlParams.get('torneo');
         const urlMesa = urlParams.get('mesa');
         
@@ -177,34 +178,30 @@
         let timerClaqueta = null;
 
         async function inicializarOverlay() {
-            if (!urlTorneo || !urlMesa) {
+            if (!urlPartido && (!urlTorneo || !urlMesa)) {
                 document.getElementById('pantalla-espera').innerHTML = `
                     <div class="bg-rose-900/90 border border-rose-500/50 p-6 rounded-2xl text-center">
                         <i class="fa-solid fa-triangle-exclamation text-4xl text-rose-500 mb-4"></i>
                         <h2 class="text-white font-black uppercase tracking-widest text-xl mb-2">Error de Configuración</h2>
-                        <p class="text-rose-200 font-bold text-sm">Falta el parámetro de torneo o mesa en el link.<br>Ejemplo: overlay.html?torneo=1&mesa=3</p>
+                        <p class="text-rose-200 font-bold text-sm">Falta el parámetro en el link.<br>Ejemplo recomendado: overlay.html?partido=123</p>
                     </div>`;
                 return;
             }
 
-            document.getElementById('txt-espera-mesa').innerText = `Monitoreando Mesa ${urlMesa}...`;
+            document.getElementById('txt-espera-mesa').innerText = urlPartido ? `Conectando al partido #${urlPartido}...` : `Monitoreando Mesa ${urlMesa}...`;
 
             try {
-                // 1. Obtener Organizador
-                const { data: torneoData } = await clienteSupabase.from('torneos').select('organizador_id').eq('id', urlTorneo).single();
-                if (!torneoData) throw new Error("Torneo no encontrado");
-                ORG_ID = torneoData.organizador_id;
+                // 1. Buscar si hay un partido activo
+                await buscarPartidoActual();
 
-                // 2. Buscar si hay un partido activo
-                await buscarPartidoEnMesa();
+                // 2. Suscribirse a cambios
+                let filtroRealtime = urlPartido ? `id=eq.${urlPartido}` : `torneo_id=eq.${urlTorneo}`;
 
-                // 3. Suscribirse a cambios
                 clienteSupabase
                     .channel('overlay-realtime')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'partidos', filter: `torneo_id=eq.${urlTorneo}` }, payload => {
-                        // Si el cambio afecta a nuestra mesa, actualizamos
-                        if (payload.new && payload.new.mesa == urlMesa) {
-                            buscarPartidoEnMesa();
+                    .on('postgres_changes', { event: '*', schema: 'public', table: 'partidos', filter: filtroRealtime }, payload => {
+                        if (urlPartido || (payload.new && payload.new.mesa == urlMesa)) {
+                            buscarPartidoActual();
                         }
                     })
                     .subscribe();
@@ -214,23 +211,24 @@
             }
         }
 
-        async function buscarPartidoEnMesa() {
+        async function buscarPartidoActual() {
             try {
-                // Busca el partido 'en_curso' más reciente para esta mesa
-                const { data, error } = await clienteSupabase
+                let query = clienteSupabase
                     .from('partidos')
-                    .select('*, j1:jugador1_id(nombre, club), j2:jugador2_id(nombre, club), categorias(nombre)')
-                    .eq('torneo_id', urlTorneo)
-                    .eq('organizador_id', ORG_ID)
-                    .eq('mesa', urlMesa)
-                    .eq('estado', 'en_curso')
-                    .order('updated_at', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
+                    .select('*, j1:jugador1_id(nombre, club), j2:jugador2_id(nombre, club), categorias(nombre)');
+
+                // Si hay ID de partido, buscar ese directamente. Si no, usar la lógica antigua de mesa/torneo.
+                if (urlPartido) {
+                    query = query.eq('id', urlPartido);
+                } else {
+                    query = query.eq('torneo_id', urlTorneo).eq('mesa', urlMesa).eq('estado', 'en_curso').order('updated_at', { ascending: false }).limit(1);
+                }
+
+                const { data, error } = await query.maybeSingle();
 
                 if (error) throw error;
 
-                if (data) {
+                if (data && data.estado === 'en_curso') {
                     procesarPartido(data);
                 } else {
                     // No hay partido activo, mostrar pantalla de espera
