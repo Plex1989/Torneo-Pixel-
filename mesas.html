@@ -278,7 +278,9 @@
 
         function dibujarPantalla() {
             const container = document.getElementById('contenedor-partidos');
-            let filtrados = todosLosPartidos.filter(p => p.grupo_nombre && p.grupo_nombre !== 'Flash');
+            
+            // CORRECCIÓN APLICADA: Ahora se muestran TODOS los partidos (incluidos Flash, Semis y Finales)
+            let filtrados = [...todosLosPartidos];
 
             if (mesaFiltro !== 'todas') filtrados = filtrados.filter(p => p.mesa == mesaFiltro);
             if (categoriaFiltro !== 'todas') filtrados = filtrados.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
@@ -303,8 +305,11 @@
                     let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '🏆 ' : '';
 
                     let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
-                    let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Llave'));
+                    
+                    // CORRECCIÓN: Etiqueta dinámica para Liga Flash
+                    let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre === 'Flash' ? '⚡ Liga Flash' : (p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Llave')));
                     let cGpo = obtenerColorGrupo(p.grupo_nombre || p.ronda_fase);
+                    if (p.grupo_nombre === 'Flash') cGpo = { color: '#fbbf24', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)' };
 
                     let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : '';
                     let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
