@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cámara de Grabación - Pixel Studio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { 
+            margin: 0; padding: 0; overflow: hidden; background-color: #000;
+            font-family: 'Sora', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        /* Contenedor de Video a pantalla completa */
+        #video-container {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 1;
+            background: #000;
+        }
+        #preview-camara {
+            width: 100%; height: 100%;
+            object-fit: cover; /* Llena toda la pantalla */
+        }
+
+        /* Controles Superiores */
+        .controls-overlay {
+            position: absolute;
+            top: 20px; left: 20px; right: 20px;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        /* Marcador Overlay (Estilo TV Deportivo) */
+        .scoreboard-overlay {
+            position: absolute;
+            bottom: 30px; left: 0; right: 0;
+            z-index: 50;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            gap: 15px;
+            padding: 0 20px;
+        }
+
+        .jugador-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex: 1;
+            max-width: 350px;
+        }
+
+        .panel-j1 { border-left: 5px solid #06b6d4; }
+        .panel-j2 { border-left: 5px solid #d946ef; }
+
+        .info-jugador { flex: 1; }
+        .nombre { font-size: 16px; font-weight: 900; color: white; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .sets-caja { background: rgba(0,0,0,0.5); padding: 4px 10px; border-radius: 8px; text-align: center; border: 1px solid rgba(255,255,255,0.05); }
+        .sets-num { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; color: white; }
+        .sets-lbl { font-size: 8px; color: #64748b; font-weight: 800; text-transform: uppercase; }
+
+        .puntos-num { font-family: 'Orbitron', sans-serif; font-size: 40px; font-weight: 900; line-height: 0.9; }
+        .pts-j1 { color: #06b6d4; text-shadow: 0 0 10px rgba(6, 182, 212, 0.5); }
+        .pts-j2 { color: #d946ef; text-shadow: 0 0 10px rgba(217, 70, 239, 0.5); }
+
+        .centro-info { display: flex; flex-direction: column; align-items: center; padding-bottom: 5px; }
+        .mesa-badge { background: #f5a623; color: black; font-weight: 900; font-size: 10px; padding: 4px 10px; border-radius: 99px; text-transform: uppercase; margin-bottom: 4px; }
+        
+        /* Botón de Grabación (Estilo iOS) */
+        .btn-rec {
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            border: 4px solid white;
+            background: rgba(255,255,255,0.3);
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+        }
+        .btn-rec .inner-circle {
+            width: 46px; height: 46px;
+            border-radius: 50%;
+            background: #ef4444;
+            transition: all 0.3s ease;
+        }
+        .btn-rec.recording .inner-circle {
+            border-radius: 8px; /* Se vuelve cuadrado al grabar */
+            width: 28px; height: 28px;
+            background: #ef4444;
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); } 70% { box-shadow: 0 0 0 15px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
+
+    </style>
+</head>
+<body>
+
+    <!-- VIDEO BACKGROUND -->
+    <div id="video-container">
+        <video id="preview-camara" autoplay muted playsinline></video>
+    </div>
+
+    <!-- CONTROLES SUPERIORES -->
+    <div class="controls-overlay">
+        <button onclick="window.close()" class="bg-black/50 backdrop-blur-md text-white border border-white/20 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i> Cerrar
+        </button>
+
+        <div class="flex flex-col items-end gap-3">
+            <div id="status-camara" class="bg-amber-500/20 text-amber-400 border border-amber-500/50 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest backdrop-blur-md animate-pulse">
+                Iniciando Cámara...
+            </div>
+            
+            <!-- Botón Circular de Grabación -->
+            <button id="btn-rec" class="btn-rec hidden" onclick="toggleGrabacion()">
+                <div class="inner-circle"></div>
+            </button>
+            <div id="tiempo-grabacion" class="text-white font-digital font-black text-sm drop-shadow-md hidden tracking-wider">00:00</div>
+        </div>
+    </div>
+
+    <!-- MARCADOR OVERLAY -->
+    <div class="scoreboard-overlay hidden" id="scoreboard">
+        <div class="jugador-panel panel-j1">
+            <div class="info-jugador">
+                <div id="sb-nombre-j1" class="nombre">Cargando...</div>
+            </div>
+            <div class="sets-caja">
+                <div class="sets-lbl">SETS</div>
+                <div id="sb-sets-j1" class="sets-num text-cyan-400">0</div>
+            </div>
+            <div id="sb-pts-j1" class="puntos-num pts-j1">0</div>
+        </div>
+
+        <div class="centro-info">
+            <div id="sb-mesa" class="mesa-badge">MESA --</div>
+        </div>
+
+        <div class="jugador-panel panel-j2 flex-row-reverse text-right">
+            <div class="info-jugador">
+                <div id="sb-nombre-j2" class="nombre">Cargando...</div>
+            </div>
+            <div class="sets-caja">
+                <div class="sets-lbl">SETS</div>
+                <div id="sb-sets-j2" class="sets-num text-fuchsia-400">0</div>
+            </div>
+            <div id="sb-pts-j2" class="puntos-num pts-j2">0</div>
+        </div>
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://stytjtqshyupkyihurpd.supabase.co';
+        const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
+        const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const partidoId = urlParams.get('partido');
+
+        let partidoData = null;
+        
+        // Variables Grabación
+        let mediaRecorder;
+        let recordedChunks = [];
+        let streamActivo = null;
+        let isRecording = false;
+        let startTime = 0;
+        let timerInterval;
+
+        async function inicializarCamaraYDatos() {
+            if (!partidoId) {
+                document.getElementById('status-camara').innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Error: Faltan datos';
+                document.getElementById('status-camara').className = "bg-rose-500/90 text-white px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest shadow-lg";
+                return;
+            }
+
+            // 1. Cargar Datos Iniciales de Supabase
+            await cargarPartido();
+
+            // 2. Suscribirse a cambios en tiempo real para el marcador
+            clienteSupabase
+                .channel('grabar-realtime')
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'partidos', filter: `id=eq.${partidoId}` }, payload => {
+                    procesarPartidoUI(payload.new);
+                })
+                .subscribe();
+
+            // 3. Encender Cámara
+            try {
+                // Solicitar cámara trasera por defecto a 720p 30fps
+                streamActivo = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, facingMode: "environment" },
+                    audio: true
+                });
+                
+                const videoElement = document.getElementById('preview-camara');
+                videoElement.srcObject = streamActivo;
+                
+                document.getElementById('status-camara').classList.add('hidden');
+                document.getElementById('btn-rec').classList.remove('hidden');
+                document.getElementById('scoreboard').classList.remove('hidden');
+
+            } catch (err) {
+                document.getElementById('status-camara').innerHTML = '<i class="fa-solid fa-camera-rotate"></i> Activa los permisos de cámara';
+                document.getElementById('status-camara').className = "bg-rose-500/90 text-white px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest shadow-lg";
+            }
+        }
+
+        async function cargarPartido() {
+            const { data, error } = await clienteSupabase
+                .from('partidos')
+                .select('*, j1:jugador1_id(nombre, division), j2:jugador2_id(nombre, division)')
+                .eq('id', partidoId)
+                .single();
+
+            if (data) {
+                partidoData = data;
+                procesarPartidoUI(data);
+            }
+        }
+
+        function procesarPartidoUI(p) {
+            // Preserva los nombres si el payload realtime no los trae unidos
+            let nomJ1 = p.j1?.nombre || partidoData.j1?.nombre || 'J1';
+            let nomJ2 = p.j2?.nombre || partidoData.j2?.nombre || 'J2';
+
+            document.getElementById('sb-nombre-j1').innerText = nomJ1;
+            document.getElementById('sb-pts-j1').innerText = p.puntos_j1 || 0;
+            document.getElementById('sb-sets-j1').innerText = p.sets_j1 || 0;
+
+            document.getElementById('sb-nombre-j2').innerText = nomJ2;
+            document.getElementById('sb-pts-j2').innerText = p.puntos_j2 || 0;
+            document.getElementById('sb-sets-j2').innerText = p.sets_j2 || 0;
+
+            document.getElementById('sb-mesa').innerText = `MESA ${p.mesa}`;
+        }
+
+        function toggleGrabacion() {
+            if (!streamActivo) return;
+
+            const btnRec = document.getElementById('btn-rec');
+            const timeDisplay = document.getElementById('tiempo-grabacion');
+
+            if (!isRecording) {
+                // INICIAR GRABACIÓN
+                recordedChunks = [];
+                const options = { mimeType: 'video/webm;codecs=vp8,opus', videoBitsPerSecond: 1500000 };
+                
+                try {
+                    mediaRecorder = new MediaRecorder(streamActivo, options);
+                } catch (e) {
+                    mediaRecorder = new MediaRecorder(streamActivo); // Fallback iOS
+                }
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) recordedChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    document.body.appendChild(a);
+                    a.style = 'display: none';
+                    a.href = url;
+                    
+                    // Auto-Nomenclatura (Lectura de variables del partido)
+                    let fase = (partidoData?.ronda_fase || partidoData?.grupo_nombre || 'PARTIDO').replace(/\s+/g, '').toUpperCase();
+                    let div = partidoData?.j1?.division || 1;
+                    let nombreJ1 = (partidoData?.j1?.nombre || 'J1').replace(/\s+/g, '-').toUpperCase();
+                    let nombreJ2 = (partidoData?.j2?.nombre || 'J2').replace(/\s+/g, '-').toUpperCase();
+                    
+                    a.download = `${fase}_DIV${div}_${nombreJ1}_vs_${nombreJ2}.mp4`;
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                
+                // UI Updates
+                btnRec.classList.add('recording');
+                timeDisplay.classList.remove('hidden');
+                startTime = Date.now();
+                
+                timerInterval = setInterval(() => {
+                    let diff = Math.floor((Date.now() - startTime) / 1000);
+                    let m = Math.floor(diff / 60).toString().padStart(2, '0');
+                    let s = (diff % 60).toString().padStart(2, '0');
+                    timeDisplay.innerText = `${m}:${s}`;
+                }, 1000);
+
+            } else {
+                // DETENER GRABACIÓN
+                mediaRecorder.stop();
+                isRecording = false;
+                
+                // UI Updates
+                btnRec.classList.remove('recording');
+                clearInterval(timerInterval);
+                timeDisplay.innerText = "00:00";
+                timeDisplay.classList.add('hidden');
+            }
+        }
+
+        window.onload = inicializarCamaraYDatos;
+    </script>
+</body>
+</html>
