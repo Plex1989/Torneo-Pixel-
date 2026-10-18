@@ -242,7 +242,6 @@
             let videoId = extractYouTubeID(url);
             
             if(!videoId) {
-                // Check para urls de Live (ej. youtube.com/live/ABCD)
                 let liveMatch = url.match(/live\/([a-zA-Z0-9_-]{11})/);
                 if(liveMatch) videoId = liveMatch[1];
             }
@@ -252,7 +251,6 @@
                 document.getElementById('modal-video').classList.remove('hidden');
                 document.getElementById('modal-video').classList.add('flex');
             } else {
-                // Si el link no es de youtube, lo abre en otra pestaña
                 window.open(url, '_blank');
             }
         }
@@ -445,19 +443,6 @@
             dibujarPantalla();
         }
 
-        function timeStringToMinutes(timeStr) {
-            if (!timeStr) return 0;
-            let cleanStr = String(timeStr).trim().toLowerCase().replace(/\s+/g, '');
-            let match = cleanStr.match(/^(\d+):(\d+)(am|pm|a\.m\.|p\.m\.)?/);
-            if (!match) return 0;
-            let hrs = parseInt(match[1]);
-            let mins = parseInt(match[2]);
-            let ampm = match[3] ? match[3].replace(/\./g, '') : null;
-            if (ampm === 'pm' && hrs < 12) hrs += 12;
-            if (ampm === 'am' && hrs === 12) hrs = 0;
-            return hrs * 60 + mins;
-        }
-
         function calcularImpacto(ptsA, ptsB) {
             let diff = Math.abs(ptsA - ptsB);
             let favoritoEsJ1 = ptsA >= ptsB;
@@ -532,13 +517,8 @@
             let deltaJ2 = 0;
 
             if (isFin && p.j1 && p.j2) {
-                if (p.ganador_id === p.jugador1_id) {
-                    deltaJ1 = impacto.j1G;
-                    deltaJ2 = impacto.j2P;
-                } else if (p.ganador_id === p.jugador2_id) {
-                    deltaJ1 = impacto.j1P;
-                    deltaJ2 = impacto.j2G;
-                }
+                if (p.ganador_id === p.jugador1_id) { deltaJ1 = impacto.j1G; deltaJ2 = impacto.j2P; } 
+                else if (p.ganador_id === p.jugador2_id) { deltaJ1 = impacto.j1P; deltaJ2 = impacto.j2G; }
                 ptsFinalJ1 += deltaJ1;
                 ptsFinalJ2 += deltaJ2;
             }
@@ -585,7 +565,6 @@
 
                         let r1 = j1.rankIni + j1.rankImpact;
                         let r2 = j2.rankIni + j2.rankImpact;
-                        
                         let impacto = calcularImpacto(r1, r2);
 
                         if (m.ganador_id === m.jugador1_id) {
@@ -663,12 +642,10 @@
                 let rankDifStr = j.rankImpact > 0 ? `+${j.rankImpact}` : j.rankImpact;
                 let rankDifColor = j.rankImpact > 0 ? '#10b981' : (j.rankImpact < 0 ? '#ef4444' : '#94a3b8');
                 let rankAct = j.rankIni + j.rankImpact;
-
                 let gpoInfo = (!isFlash && j.gpo) ? `<span style="font-size:9px; color:#a855f7; font-weight:800; border:1px solid #a855f7; padding:2px 6px; border-radius:4px; margin-left:6px;">GPO ${j.gpo}</span>` : '';
                 
                 let setsG = j.setsG !== undefined ? j.setsG : j.setsGanados;
                 let setsP = j.setsP !== undefined ? j.setsP : j.setsPerdidos;
-                
                 let dif = setsG - setsP;
                 let difStr = dif >= 0 ? '+' + dif : dif;
                 let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
@@ -695,7 +672,6 @@
                     </tr>
                 `;
             });
-
             html += `</tbody></table></div></div>`;
             return html;
         }
@@ -703,9 +679,7 @@
         function generarTarjetaLlaveEspectador(partido, titulo, colorTitulo, mesaDefault, nomJ1, nomJ2, descJ1, descJ2, gpoCompleto) {
             let isFin = partido && String(partido.estado || '').trim().toLowerCase() === 'finalizado';
             let isVivo = partido && String(partido.estado || '').trim().toLowerCase() === 'en_curso';
-            
             let opacidad = isFin ? 'opacity: 0.85;' : '';
-            
             let badgeEst = isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : 
                           (isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
 
@@ -732,7 +706,6 @@
             let innerStyle = `background:rgba(0,0,0,0.4); padding:16px; border-radius:14px; border:1px solid rgba(255,255,255,0.08); ${opacidad} width:100%;`;
             if(titulo === 'Gran Final') innerStyle += ' max-width:450px; text-align:left;';
 
-            // Botón de Video
             let btnVideo = (isFin && partido.video_url) ? `
                 <button onclick="abrirVideo('${partido.video_url}')" class="mt-3 w-full bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/50 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors">
                     <i class="fa-brands fa-youtube mr-1"></i> Ver Repetición
@@ -812,7 +785,6 @@
                         </div>
                 `;
 
-                // Unificar todos los jugadores de todos los grupos
                 let todosJugadoresCatMap = new Map();
                 Object.keys(gruposCat).forEach(gpoNombre => {
                     Object.values(gruposCat[gpoNombre]).forEach(j => {
@@ -929,7 +901,6 @@
                 } else {
                     nomSemi1_j1 = partidoSemi1?.j1 ? partidoSemi1.j1.nombre : s1.nombre;
                     nomSemi1_j2 = partidoSemi1?.j2 ? partidoSemi1.j2.nombre : s4.nombre;
-                    
                     nomSemi2_j1 = partidoSemi2?.j1 ? partidoSemi2.j1.nombre : s2.nombre;
                     nomSemi2_j2 = partidoSemi2?.j2 ? partidoSemi2.j2.nombre : s3.nombre;
                 }
@@ -1264,7 +1235,6 @@
             document.getElementById('fs-sets-j1').innerText = p.sets_j1 || 0;
             document.getElementById('fs-sets-j2').innerText = p.sets_j2 || 0;
 
-            // Inyectar botón de video si existe
             const btnVideoContainer = document.getElementById('fs-video-btn-container');
             if (isFin && p.video_url) {
                 btnVideoContainer.innerHTML = `
@@ -1330,7 +1300,8 @@
 
             container.style.display = 'grid';
 
-            let filtrados = todosLosPartidos.filter(p => p.grupo_nombre && p.grupo_nombre !== 'Flash');
+            // CORRECCIÓN APLICADA: Mostrar TODOS los partidos (Flash, Grupos y Llaves)
+            let filtrados = [...todosLosPartidos];
 
             if (mesaFiltro !== 'todas') {
                 filtrados = filtrados.filter(p => p.mesa == mesaFiltro);
@@ -1385,8 +1356,11 @@
                     let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '🏆 ' : '';
 
                     let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
-                    let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Llave'));
+                    
+                    // CORRECCIÓN: Etiqueta dinámica para Liga Flash
+                    let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre === 'Flash' ? '⚡ Liga Flash' : (p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Llave')));
                     let cGpo = obtenerColorGrupo(p.grupo_nombre || p.ronda_fase);
+                    if (p.grupo_nombre === 'Flash') cGpo = { color: '#fbbf24', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)' };
 
                     let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : '';
                     let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
@@ -1401,7 +1375,6 @@
                     let customStyle = '';
                     let mesaColor = '';
 
-                    // Botón VOD en la tarjeta de cartelera general
                     let btnVideo = (isFin && p.video_url) ? `
                         <button onclick="abrirVideo('${p.video_url}')" class="mt-2 w-full bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/50 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-colors flex justify-center items-center">
                             <i class="fa-brands fa-youtube mr-2 text-sm"></i> Ver Repetición
@@ -1449,8 +1422,7 @@
                             
                             ${!p.video_url ? `
                             <div style="display:flex; gap:6px; margin-top:12px;">
-                                <a href="juez.html?partido=${p.id}" class="btn-console" style="flex:1; justify-content:center; font-size:9px; padding:6px; text-decoration:none; background:rgba(245,158,11,0.1); border-color:#fbbf24; color:#fbbf24;">🏓 Juez</a>
-                                <a href="espectador.html?partido=${p.id}" class="btn-console btn-purple" style="flex:1; justify-content:center; font-size:9px; padding:6px; text-decoration:none;">👁️ Ver</a>
+                                <a href="espectador.html?partido=${p.id}" class="btn-console btn-purple" style="flex:1; justify-content:center; font-size:9px; padding:6px; text-decoration:none;">👁️ Ver en Pantalla Completa</a>
                             </div>` : ''}
                         </div>
                     `;
