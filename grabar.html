@@ -88,12 +88,12 @@
         }
 
         .side-panel {
-            background: rgba(15, 23, 42, 0.4); /* Mucho más transparente */
+            background: rgba(15, 23, 42, 0.4); 
             backdrop-filter: blur(4px);
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px;
             padding: 8px 12px;
-            width: 140px; /* Ancho muy reducido */
+            width: 140px; 
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
         }
 
@@ -125,7 +125,7 @@
             align-items: stretch;
             box-shadow: 0 10px 25px rgba(0,0,0,0.6);
             width: 100%;
-            max-width: 500px; /* Límite para que no se desborde */
+            max-width: 500px; 
         }
 
         .player-row {
@@ -337,14 +337,21 @@
                 .subscribe();
 
             try {
+                // SOLUCIÓN A FOTOGRAMAS Y COMPRESIÓN: Exigir 1080p a 60fps
                 streamActivo = await navigator.mediaDevices.getUserMedia({
-                    video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, facingMode: "environment" },
+                    video: { 
+                        width: { ideal: 1920 }, 
+                        height: { ideal: 1080 }, 
+                        frameRate: { ideal: 60, min: 30 }, // Intenta 60fps, acepta 30fps si la cámara no da para más
+                        facingMode: "environment" 
+                    },
                     audio: true
                 });
                 
                 const videoElement = document.getElementById('preview-camara');
                 videoElement.srcObject = streamActivo;
                 
+                // Ocultar loader y mostrar UI
                 document.getElementById('pantalla-espera').classList.add('hidden');
                 document.getElementById('broadcast-ui').classList.remove('hidden');
 
@@ -402,7 +409,8 @@
 
             if (!isRecording) {
                 recordedChunks = [];
-                const options = { mimeType: 'video/webm;codecs=vp8,opus', videoBitsPerSecond: 1500000 };
+                // SOLUCIÓN AL EFECTO BORROSO: Subir el bitrate a 8 Mbps (8,000,000 bps) para grabar deportes rápidos sin compresión barata.
+                const options = { mimeType: 'video/webm;codecs=vp8,opus', videoBitsPerSecond: 8000000 };
                 
                 try { mediaRecorder = new MediaRecorder(streamActivo, options); } 
                 catch (e) { mediaRecorder = new MediaRecorder(streamActivo); }
