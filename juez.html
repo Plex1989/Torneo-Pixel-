@@ -87,6 +87,23 @@
         </div>
     </div>
 
+    <!-- MÓDULO DE GRABACIÓN INTELIGENTE -->
+    <div class="bg-slate-900/80 p-3 rounded-2xl border border-white/10 mb-3 text-center">
+        <div class="flex justify-center gap-3 mb-2">
+            <button id="btn-camara" onclick="activarCamara()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-widest transition-colors shadow-[0_0_15px_rgba(79,70,229,0.4)]">
+                <i class="fa-solid fa-video mr-1"></i> Activar Cámara
+            </button>
+            <button id="btn-grabar" onclick="iniciarGrabacion()" class="bg-rose-600 hover:bg-rose-500 text-white px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-widest transition-colors hidden shadow-[0_0_15px_rgba(225,29,72,0.4)]">
+                <i class="fa-solid fa-circle mr-1"></i> Iniciar Grabación
+            </button>
+            <button id="btn-detener" onclick="detenerGrabacion()" class="bg-zinc-600 hover:bg-zinc-500 text-white px-4 py-2 rounded-lg text-[10px] md:text-xs font-black uppercase tracking-widest transition-colors hidden">
+                <i class="fa-solid fa-stop mr-1"></i> Detener y Guardar
+            </button>
+        </div>
+        <!-- Vista previa de la cámara -->
+        <video id="preview-camara" class="w-full max-w-sm mx-auto rounded-lg border border-white/10 hidden mt-3" autoplay muted playsinline></video>
+    </div>
+
     <!-- MARCADOR PRINCIPAL -->
     <div class="flex-1 flex flex-col md:flex-row gap-4 my-2 min-h-0">
         
@@ -151,7 +168,7 @@
 
         let ORG_ID = null; 
         let partidoData = null;
-        let reglasRankingList = []; // Array centralizado de reglas
+        let reglasRankingList = []; 
         let p1 = { id: null, nombre: 'JUGADOR 1', ptsBase: 0, ptsLive: 0, score: 0, sets: 0, div: 1, handBase: 0 };
         let p2 = { id: null, nombre: 'JUGADOR 2', ptsBase: 0, ptsLive: 0, score: 0, sets: 0, div: 1, handBase: 0 };
         
@@ -253,7 +270,6 @@
                 
                 await cargarYResolverPartido();
 
-                // Carga de reglas blindada por organizador
                 const { data: reglas, error: errReglas } = await clienteSupabase.from('reglas_ranking')
                     .select('*')
                     .eq('organizador_id', ORG_ID)
@@ -392,8 +408,6 @@
             } catch(e) { p1.ptsLive = p1.ptsBase; p2.ptsLive = p2.ptsBase; }
         }
 
-        // ======================= CORRECCIÓN MATEMÁTICA DEFINITIVA DE RANKING =======================
-        // Ignora las palabras clave de la base de datos y se basa en la tabla numérica de recompensas.
         function calcularImpactoPuntos(ptsA, ptsB) {
             let diff = Math.abs(ptsA - ptsB);
             let favoritoEsJ1 = ptsA >= ptsB;
@@ -404,7 +418,6 @@
             let reglaGanaRet = null;
 
             if (reglasRango.length >= 2) {
-                // Asumimos que la regla donde gana el Retador (Upset) siempre da MÁS puntos que la del Favorito
                 if (Number(reglasRango[0].puntos_ganador) < Number(reglasRango[1].puntos_ganador)) {
                     reglaGanaFav = reglasRango[0];
                     reglaGanaRet = reglasRango[1];
@@ -412,7 +425,6 @@
                     reglaGanaFav = reglasRango[1];
                     reglaGanaRet = reglasRango[0];
                 } else {
-                    // Si son idénticos, usamos las palabras como desempate final
                     let str = String(reglasRango[0].resultado_esperado).toLowerCase();
                     if (str.includes('retador') || str.includes('upset')) { reglaGanaRet = reglasRango[0]; reglaGanaFav = reglasRango[1]; }
                     else { reglaGanaFav = reglasRango[0]; reglaGanaRet = reglasRango[1]; }
@@ -764,6 +776,90 @@
 
         function toggleAudio() { audioMuted = !audioMuted; document.getElementById('btn-audio').innerHTML = audioMuted ? '<i class="fa-solid fa-volume-xmark text-rose-400"></i>' : '<i class="fa-solid fa-volume-high text-cyan-400"></i>'; }
         function anunciarMarcador(n1, s1, n2, s2, fin) { if (audioMuted || !window.speechSynthesis) return; window.speechSynthesis.cancel(); let u = new SpeechSynthesisUtterance(fin ? `¡Juego finalizado!` : `${getApellido(n1)} ${s1}, ${getApellido(n2)} ${s2}`); u.lang = 'es-MX'; window.speechSynthesis.speak(u); }
+
+        // ==========================================
+        // MÓDULO DE MEDIARECORDER API (GRABACIÓN)
+        // ==========================================
+        let mediaRecorder;
+        let recordedChunks = [];
+        let streamActivo = null;
+
+        async function activarCamara() {
+            try {
+                // Solicitud de 720p a 30fps para balancear calidad y peso en dispositivos móviles
+                streamActivo = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, facingMode: "environment" },
+                    audio: true
+                });
+                
+                const videoElement = document.getElementById('preview-camara');
+                videoElement.srcObject = streamActivo;
+                videoElement.classList.remove('hidden');
+                
+                document.getElementById('btn-camara').classList.add('hidden');
+                document.getElementById('btn-grabar').classList.remove('hidden');
+            } catch (err) {
+                alert("⚠️ Error al acceder a la cámara o micrófono. Verifica los permisos del navegador.\nDetalle: " + err.message);
+            }
+        }
+
+        function iniciarGrabacion() {
+            if (!streamActivo) return;
+            recordedChunks = [];
+            
+            // Configuración de bitrate comprimido (~1.5 Mbps) para evitar archivos gigantes
+            const options = { mimeType: 'video/webm;codecs=vp8,opus', videoBitsPerSecond: 1500000 };
+            
+            try {
+                mediaRecorder = new MediaRecorder(streamActivo, options);
+            } catch (e) {
+                mediaRecorder = new MediaRecorder(streamActivo); // Fallback para iOS/Safari
+            }
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) recordedChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                document.body.appendChild(a);
+                a.style = 'display: none';
+                a.href = url;
+                
+                // Auto-Nomenclatura dinámica
+                let faseLimpia = (partidoData?.ronda_fase || partidoData?.grupo_nombre || 'PARTIDO').replace(/\s+/g, '').toUpperCase();
+                let div = p1?.div || 1;
+                let nombreJ1 = (p1?.nombre || 'JUGADOR1').replace(/\s+/g, '-').toUpperCase();
+                let nombreJ2 = (p2?.nombre || 'JUGADOR2').replace(/\s+/g, '-').toUpperCase();
+                
+                a.download = `${faseLimpia}_DIV${div}_${nombreJ1}_vs_${nombreJ2}.mp4`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+            };
+
+            mediaRecorder.start();
+            document.getElementById('btn-grabar').classList.add('hidden');
+            
+            const btnDetener = document.getElementById('btn-detener');
+            btnDetener.classList.remove('hidden');
+            btnDetener.classList.remove('bg-zinc-600');
+            btnDetener.classList.add('bg-rose-600', 'animate-pulse');
+        }
+
+        function detenerGrabacion() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                
+                const btnDetener = document.getElementById('btn-detener');
+                btnDetener.classList.add('hidden');
+                btnDetener.classList.remove('animate-pulse', 'bg-rose-600');
+                btnDetener.classList.add('bg-zinc-600');
+                
+                document.getElementById('btn-grabar').classList.remove('hidden');
+            }
+        }
 
         window.onload = checarAcceso;
     </script>
