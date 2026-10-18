@@ -14,7 +14,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
-        // Leemos la URL antes de cargar la página para guardar los datos si venimos de un link compartido
         const urlParamsConfig = new URLSearchParams(window.location.search);
         if (urlParamsConfig.get('torneo')) localStorage.setItem('torneo_activo_id', urlParamsConfig.get('torneo'));
         if (urlParamsConfig.get('org')) localStorage.setItem('organizador_id', urlParamsConfig.get('org'));
@@ -134,7 +133,7 @@
                 <button onclick="cerrarModalYouTube()" style="background:transparent; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">✕</button>
             </div>
             
-            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 20px; text-align: left;">Sube el video grabado a YouTube (desde la app o la web) y pega el enlace aquí. Los espectadores podrán ver el partido desde el portal público.</p>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 20px; text-align: left;">Sube el video grabado a YouTube o completa tu transmisión, y pega el enlace final aquí para los espectadores.</p>
             
             <div style="text-align: left; margin-bottom: 25px;">
                 <label style="display: block; font-size: 10px; color: #f87171; font-weight: 800; margin-bottom: 8px; text-transform: uppercase;">Enlace de YouTube:</label>
@@ -210,13 +209,10 @@
             return { color: '#cbd5e1', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' }; 
         };
 
-        // ===============================================
-        // FUNCION PARA COPIAR EL LINK DE TRANSMISION
-        // ===============================================
         function copiarLinkOverlay(partidoId) {
             const url = `${window.location.origin}/overlay.html?partido=${partidoId}`;
             navigator.clipboard.writeText(url).then(() => {
-                alert(`📡 ¡Enlace de transmisión copiado!\n\nLink: ${url}\n\nAbre Prism Live Studio, agrega una capa "Web / URL" y pega el enlace para mostrar el marcador transparente del partido.`);
+                alert(`📡 ¡Enlace de transmisión copiado!\n\nAbre Prism Live Studio en tu celular, agrega una capa "Web / URL" y pega el enlace para mostrar el marcador transparente.\n\nLink:\n${url}`);
             }).catch(err => {
                 prompt("Copia manualmente este enlace para Prism Live Studio:", url);
             });
@@ -318,6 +314,16 @@
                     let safeNom1 = nomJ1 ? String(nomJ1).replace(/'/g, "\\'") : ''; let safeClub1 = p.j1 && p.j1.club ? String(p.j1.club).replace(/'/g, "\\'") : 'Sin Club';
                     let safeNom2 = nomJ2 ? String(nomJ2).replace(/'/g, "\\'") : ''; let safeClub2 = p.j2 && p.j2.club ? String(p.j2.club).replace(/'/g, "\\'") : 'Sin Club';
 
+                    let btnYoutube = isFin ? `
+                        <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(239,68,68,0.15); border-color:#ef4444; color:#f87171;" onclick="abrirModalYouTube(${p.id}, '${p.video_url || ''}')">
+                            ${p.video_url ? '<i class="fa-brands fa-youtube"></i> Editar Video' : '<i class="fa-brands fa-youtube"></i> Añadir Video'}
+                        </button>
+                    ` : `
+                        <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.1); color:#64748b; cursor:not-allowed;" onclick="alert('Debes finalizar el partido primero para poder añadir un video de repetición.')">
+                            <i class="fa-solid fa-lock"></i> Añadir Video
+                        </button>
+                    `;
+
                     htmlContent += `
                         <div class="card-mesa ${cardClass}">
                             <div class="top-bar">
@@ -335,7 +341,7 @@
                             
                             <div style="display:flex; gap:10px; flex-wrap: wrap;">
                                 <button class="btn-arbitrar ${isFin ? 'btn-reabrir' : ''}" style="flex:1; min-width: 120px;" onclick="window.location.href='juez.html?partido=${p.id}'">
-                                    ${isFin ? '🏁 REABRIR PARTIDO' : '🏓 Arbitrar Partido'}
+                                    ${isFin ? '🏁 REABRIR PARTIDO' : '🏓 Arbitrar'}
                                 </button>
                                 
                                 <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(59,130,246,0.15); border-color:#3b82f6; color:#60a5fa;" onclick="copiarLinkOverlay(${p.id})">
@@ -343,14 +349,10 @@
                                 </button>
                                 
                                 <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(168,85,247,0.15); border-color:#a855f7; color:#c084fc;" onclick="abrirModalMarcador(${p.id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(nomJ2).replace(/'/g, "\\'")}')">
-                                    📝 Asignar Marcador
+                                    📝 Marcador
                                 </button>
                                 
-                                ${isFin ? `
-                                <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(239,68,68,0.15); border-color:#ef4444; color:#f87171;" onclick="abrirModalYouTube(${p.id}, '${p.video_url || ''}')">
-                                    ${p.video_url ? '<i class="fa-brands fa-youtube"></i> Editar Video' : '<i class="fa-brands fa-youtube"></i> Añadir Video'}
-                                </button>
-                                ` : ''}
+                                ${btnYoutube}
                             </div>
                         </div>
                     `;
@@ -365,9 +367,7 @@
             document.getElementById('modal-youtube').style.display = 'flex';
         }
 
-        function cerrarModalYouTube() { 
-            document.getElementById('modal-youtube').style.display = 'none'; 
-        }
+        function cerrarModalYouTube() { document.getElementById('modal-youtube').style.display = 'none'; }
 
         async function guardarLinkYouTube() {
             let partidoId = document.getElementById('hidden-youtube-partidoid').value;
@@ -378,17 +378,9 @@
             
             try {
                 const { error } = await clienteSupabase.from('partidos').update({ video_url: link }).eq('id', partidoId);
-                if (!error) { 
-                    cerrarModalYouTube(); 
-                    window.location.reload(); 
-                } else { 
-                    alert("❌ Error al guardar el enlace: " + error.message); 
-                    btn.disabled = false; btn.innerText = '💾 Guardar Enlace'; 
-                }
-            } catch (e) { 
-                alert("❌ Error: " + e.message); 
-                btn.disabled = false; btn.innerText = '💾 Guardar Enlace'; 
-            }
+                if (!error) { cerrarModalYouTube(); window.location.reload(); } 
+                else { alert("❌ Error al guardar el enlace: " + error.message); btn.disabled = false; btn.innerText = '💾 Guardar Enlace'; }
+            } catch (e) { alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Enlace'; }
         }
 
         function abrirModalMarcador(partidoId, nombreJ1, nombreJ2) {
@@ -397,6 +389,7 @@
             document.getElementById('input-sets-j1').value = ''; document.getElementById('input-sets-j2').value = '';
             document.getElementById('modal-marcador').style.display = 'flex';
         }
+
         function cerrarModalMarcador() { document.getElementById('modal-marcador').style.display = 'none'; }
 
         async function guardarMarcadorManual() {
@@ -420,6 +413,7 @@
             document.getElementById('modal-jugador-nombre').innerText = nombre; document.getElementById('modal-jugador-club').innerText = club || 'Sin Club';
             document.getElementById('modal-jugador-admin').style.display = 'flex';
         }
+
         function cerrarModalJugadorAdmin() { document.getElementById('modal-jugador-admin').style.display = 'none'; }
 
         inicializar();
