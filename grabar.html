@@ -16,7 +16,6 @@
             user-select: none;
         }
 
-        /* Contenedor de Video de Fondo */
         #video-container {
             position: absolute;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -28,7 +27,6 @@
             object-fit: cover; 
         }
 
-        /* Capa de la Interfaz */
         .broadcast-layer {
             position: absolute;
             inset: 0;
@@ -39,7 +37,6 @@
             justify-content: space-between;
         }
 
-        /* Barra Superior */
         .top-broadcast-bar {
             padding: 15px;
             display: flex;
@@ -78,7 +75,6 @@
 
         @keyframes pulse-live { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
-        /* Paneles Laterales Más Pequeños y Transparentes */
         .side-panels-container {
             flex: 1;
             display: flex;
@@ -107,7 +103,6 @@
         .stat-value.cyan { color: #06b6d4; }
         .stat-value.purple { color: #d946ef; }
 
-        /* Marcador Inferior Compacto */
         .bottom-scoreboard {
             padding: 0 10px 20px 10px;
             display: flex;
@@ -162,7 +157,6 @@
         .m-mesa { color: #f5a623; font-weight: 900; font-size: 10px; text-transform: uppercase; margin-bottom: 2px; }
         .m-fase { color: #94a3b8; font-weight: 800; font-size: 6px; text-transform: uppercase; }
 
-        /* Controles de Grabación */
         .record-controls {
             position: absolute;
             top: 15px; right: 15px;
@@ -188,7 +182,6 @@
         .btn-rec.recording .inner-circle { border-radius: 6px; width: 16px; height: 16px; background: #ef4444; animation: pulse-red 2s infinite; }
 
         @media (orientation: portrait) {
-            /* En vertical, ocultamos los paneles laterales para que no estorben la mesa */
             .side-panels-container { display: none; }
         }
     </style>
@@ -211,7 +204,6 @@
                     <button onclick="window.close()" class="bg-black/50 text-white border border-white/20 px-3 py-1.5 rounded-full text-[8px] font-bold uppercase tracking-widest flex items-center gap-1 w-max hover:bg-white/20 transition-colors">
                         <i class="fa-solid fa-arrow-left"></i> Salir
                     </button>
-                    <!-- BOTÓN PANTALLA COMPLETA -->
                     <button onclick="toggleFullScreen()" id="btn-fullscreen" class="bg-black/50 text-white border border-white/20 px-3 py-1.5 rounded-full text-[8px] font-bold uppercase tracking-widest flex items-center gap-1 w-max hover:bg-white/20 transition-colors">
                         <i class="fa-solid fa-expand"></i>
                     </button>
@@ -233,7 +225,6 @@
             </button>
         </div>
 
-        <!-- PANELES LATERALES (Se ocultan automáticamente en vertical) -->
         <div class="side-panels-container">
             <div class="side-panel p1">
                 <div class="stat-group">
@@ -282,7 +273,6 @@
 
     </div>
 
-    <!-- PANTALLA DE ERROR/ESPERA -->
     <div id="pantalla-espera" class="fixed inset-0 flex items-center justify-center bg-black/80 backdrop-blur-md z-[100]">
         <div class="bg-slate-900 border border-white/10 p-6 rounded-3xl text-center shadow-2xl max-w-xs">
             <i class="fa-solid fa-satellite-dish text-4xl text-cyan-500 animate-pulse mb-4"></i>
@@ -307,7 +297,6 @@
         let startTime = 0;
         let timerInterval;
 
-        // PANTALLA COMPLETA
         function toggleFullScreen() {
             const btn = document.getElementById('btn-fullscreen');
             if (!document.fullscreenElement) {
@@ -337,12 +326,11 @@
                 .subscribe();
 
             try {
-                // SOLUCIÓN A FOTOGRAMAS Y COMPRESIÓN: Exigir 1080p a 60fps
                 streamActivo = await navigator.mediaDevices.getUserMedia({
                     video: { 
                         width: { ideal: 1920 }, 
                         height: { ideal: 1080 }, 
-                        frameRate: { ideal: 60, min: 30 }, // Intenta 60fps, acepta 30fps si la cámara no da para más
+                        frameRate: { ideal: 60, min: 30 }, 
                         facingMode: "environment" 
                     },
                     audio: true
@@ -351,7 +339,6 @@
                 const videoElement = document.getElementById('preview-camara');
                 videoElement.srcObject = streamActivo;
                 
-                // Ocultar loader y mostrar UI
                 document.getElementById('pantalla-espera').classList.add('hidden');
                 document.getElementById('broadcast-ui').classList.remove('hidden');
 
@@ -409,8 +396,24 @@
 
             if (!isRecording) {
                 recordedChunks = [];
-                // SOLUCIÓN AL EFECTO BORROSO: Subir el bitrate a 8 Mbps (8,000,000 bps) para grabar deportes rápidos sin compresión barata.
-                const options = { mimeType: 'video/webm;codecs=vp8,opus', videoBitsPerSecond: 8000000 };
+                
+                // Mapeo dinámico de códecs acelerados por hardware en Android
+                const mimeTypes = [
+                    'video/webm;codecs=h264,opus',
+                    'video/webm;codecs=vp9,opus',
+                    'video/webm;codecs=vp8,opus',
+                    'video/mp4;codecs=avc1',
+                    'video/webm'
+                ];
+                
+                let options = { videoBitsPerSecond: 8000000 }; // 8 Mbps para calidad televisiva
+                
+                for (let mime of mimeTypes) {
+                    if (MediaRecorder.isTypeSupported(mime)) {
+                        options.mimeType = mime;
+                        break;
+                    }
+                }
                 
                 try { mediaRecorder = new MediaRecorder(streamActivo, options); } 
                 catch (e) { mediaRecorder = new MediaRecorder(streamActivo); }
