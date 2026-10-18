@@ -9,17 +9,25 @@
     <title>Central de Mesas - Arbitraje Digital</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // Leemos la URL antes de cargar la página para guardar los datos si venimos de un link compartido
+        const urlParamsConfig = new URLSearchParams(window.location.search);
+        if (urlParamsConfig.get('torneo')) localStorage.setItem('torneo_activo_id', urlParamsConfig.get('torneo'));
+        if (urlParamsConfig.get('org')) localStorage.setItem('organizador_id', urlParamsConfig.get('org'));
+
         const orgIdCheck = localStorage.getItem('organizador_id');
         if (!orgIdCheck) {
-            alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
+            alert("🔒 Acceso Restringido: Faltan los parámetros del organizador. Pide el enlace de acceso correcto.");
             window.location.href = "torneos.html";
         }
     </script>
     <style>
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 15px; background-color: #04060a; color: #f8fafc; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
+        
         body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
         body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
 
@@ -33,10 +41,12 @@
         .btn-filter-pill.active { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 15px rgba(6, 182, 212, 0.5); }
         .btn-filter-pill.active-flash { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
         .btn-filter-pill.active-resumen { background: #a855f7; color: #ffffff; border-color: #c084fc; box-shadow: 0 0 15px rgba(168, 85, 247, 0.5); }
+        
         .btn-cat-pill { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; }
         .btn-cat-pill.active { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.6); }
 
         .grid-espectador { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; max-width: 1200px; margin: auto; }
+
         .card-mesa { background: rgba(10, 15, 26, 0.7); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); border-bottom: 4px solid #0e7490; padding: 18px; position: relative; transition: all 0.3s ease; }
         .card-mesa.vivo { border-bottom-color: #34d399 !important; box-shadow: 0 0 25px rgba(52, 211, 153, 0.15); }
         .card-mesa.finalizado { border-bottom-color: #64748b !important; opacity: 0.85; }
@@ -63,7 +73,6 @@
         .btn-reabrir { background: rgba(148, 163, 184, 0.1) !important; border: 1px solid rgba(148, 163, 184, 0.4) !important; color: #94a3b8 !important; }
         .btn-reabrir:hover { background: rgba(148, 163, 184, 0.2) !important; color: #ffffff !important; box-shadow: none !important; }
         
-        /* Estilos del nuevo botón de grabar */
         .btn-grabar { background: rgba(225, 29, 72, 0.15); border: 1px solid rgba(225, 29, 72, 0.5); color: #f43f5e; padding: 12px; border-radius: 12px; font-weight: 800; font-size: 10px; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; text-align:center; text-decoration:none; display:inline-block; }
         .btn-grabar:hover { background: #e11d48; color: #ffffff; box-shadow: 0 0 20px rgba(225, 29, 72, 0.6); }
 
@@ -121,11 +130,15 @@
 
     <div class="header">
         <p style="color:#06b6d4; font-weight:800; font-size:10px; text-transform:uppercase; margin:0 0 4px 0;">Portal de Arbitraje Oficial</p>
-        <div class="flex justify-center items-center gap-4">
+        <div class="flex justify-center items-center gap-4 flex-wrap">
             <h1 id="nombre-torneo" class="m-0">CENTRAL DE MESAS</h1>
             <div id="badge-espectadores" class="hidden bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest items-center gap-1">
                 <i class="fa-solid fa-eye animate-pulse"></i> <span id="contador-espectadores">0</span>
             </div>
+            <!-- BOTÓN PARA COMPARTIR LINK A LOS JUECES -->
+            <button onclick="compartirLinkMesas()" class="bg-green-500/20 text-green-400 border border-green-500/50 hover:bg-green-500 hover:text-black px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                <i class="fa-brands fa-whatsapp mr-1"></i> Invitar Jueces
+            </button>
         </div>
     </div>
 
@@ -179,6 +192,12 @@
             if (str.includes('D')) return { color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)' }; 
             return { color: '#cbd5e1', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' }; 
         };
+
+        function compartirLinkMesas() {
+            const urlMesas = `${window.location.origin}/mesas.html?torneo=${idTorneoActivo}&org=${orgId}`;
+            const texto = `🏓 *ACCESO A MESA DE JUECES* 🏓\n\nIngresa al siguiente enlace desde tu celular o tablet para arbitrar o grabar los partidos en tu mesa asignada:\n👉 ${urlMesas}`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+        }
 
         async function inicializar() {
             try {
@@ -288,7 +307,6 @@
                                 <button class="btn-arbitrar ${isFin ? 'btn-reabrir' : ''}" style="flex:1; min-width: 120px;" onclick="window.location.href='juez.html?partido=${p.id}'">
                                     ${isFin ? '🏁 REABRIR PARTIDO' : '🏓 Arbitrar Partido'}
                                 </button>
-                                <!-- NUEVO BOTÓN DE GRABACIÓN QUE ABRE LA VENTANA DE CÁMARA DEDICADA -->
                                 <button class="btn-grabar" style="flex:1; min-width: 120px;" onclick="window.open('grabar.html?partido=${p.id}', '_blank')">
                                     🎥 Grabar Partido
                                 </button>
@@ -303,7 +321,6 @@
             container.innerHTML = htmlContent;
         }
 
-        // Lógicas modales y guardado se mantienen intactas...
         function abrirModalMarcador(partidoId, nombreJ1, nombreJ2) {
             document.getElementById('hidden-marcador-partidoid').value = partidoId;
             document.getElementById('lbl-marcador-j1').innerText = nombreJ1; document.getElementById('lbl-marcador-j2').innerText = nombreJ2;
