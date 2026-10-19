@@ -39,7 +39,7 @@
         .btn-filter-pill { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 8px 16px; border-radius: 9999px; font-size: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; transition: all 0.2s ease; }
         .btn-filter-pill.active { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 15px rgba(6, 182, 212, 0.5); }
         .btn-filter-pill.active-flash { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
-        .btn-filter-pill.active-resumen { background: #a855f7; color: #ffffff; border-color: #c084fc; box-shadow: 0 0 15px rgba(168, 85, 247, 0.5); }
+        .btn-filter-pill.active-resumen { background: #10b981; color: #000000; border-color: #34d399; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); }
         
         .btn-cat-pill { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; }
         .btn-cat-pill.active { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.6); }
@@ -84,7 +84,6 @@
 </head>
 <body>
 
-    <!-- MODAL EXPEDIENTE COMPLETO -->
     <div id="modal-jugador-admin" class="modal-overlay" style="display: none;">
         <div class="modal-card">
             <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
@@ -101,14 +100,12 @@
         </div>
     </div>
 
-    <!-- MODAL PARA ASIGNAR MARCADOR -->
     <div id="modal-marcador" class="modal-overlay" style="display: none;">
         <div class="modal-card" style="max-width: 400px; padding: 30px; border: 2px solid #a855f7;">
             <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:20px;">
                 <h3 style="color: #a855f7; font-size: 16px; font-weight: 900; text-transform: uppercase; margin: 0;">📝 Asignar Marcador</h3>
                 <button onclick="cerrarModalMarcador()" style="background:transparent; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">✕</button>
             </div>
-            
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 25px;">
                 <div style="flex: 1; text-align: center;">
                     <label id="lbl-marcador-j1" style="display: block; font-size: 11px; color: #38bdf8; font-weight: 800; margin-bottom: 8px; min-height: 28px; line-height:1.2;"></label>
@@ -125,21 +122,17 @@
         </div>
     </div>
 
-    <!-- MODAL PARA LINK DE YOUTUBE -->
     <div id="modal-youtube" class="modal-overlay" style="display: none;">
         <div class="modal-card" style="max-width: 400px; padding: 30px; border: 2px solid #ef4444;">
             <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:20px;">
                 <h3 style="color: #ef4444; font-size: 16px; font-weight: 900; text-transform: uppercase; margin: 0;"><i class="fa-brands fa-youtube"></i> Transmisión / VOD</h3>
                 <button onclick="cerrarModalYouTube()" style="background:transparent; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">✕</button>
             </div>
-            
             <p style="font-size: 11px; color: #94a3b8; margin-bottom: 20px; text-align: left;">Pega aquí el enlace de YouTube. Si estás transmitiendo en este momento, los fans verán un botón de "VER EN VIVO". Si el partido ya acabó, verán "REPETICIÓN".</p>
-            
             <div style="text-align: left; margin-bottom: 25px;">
                 <label style="display: block; font-size: 10px; color: #f87171; font-weight: 800; margin-bottom: 8px; text-transform: uppercase;">Enlace de YouTube:</label>
                 <input type="text" id="input-youtube-link" class="input-tabla" style="width: 100%; padding: 12px !important;" placeholder="Ej. https://youtu.be/abcd123">
             </div>
-
             <input type="hidden" id="hidden-youtube-partidoid">
             <button id="btn-guardar-youtube" onclick="guardarLinkYouTube()" class="btn-console" style="width: 100%; justify-content: center; background: #ef4444; color: white; border-color: #f87171; padding: 14px; font-size: 13px;">💾 Guardar Enlace</button>
         </div>
@@ -158,11 +151,12 @@
         </div>
     </div>
 
-    <!-- NUEVOS FILTROS SEPARADOS POR MODALIDAD, CATEGORÍA Y ESTADO -->
+    <!-- NUEVO: Filtros separados por modalidad -->
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">🎯 Filtrar por Modalidad:</div>
     <div class="scrolling-bar" id="bar-modalidad">
         <button class="btn-filter-pill active" onclick="filtrarModalidad('todas', this)">Todas</button>
-        <button class="btn-filter-pill" onclick="filtrarModalidad('grupos', this)">🎲 Grupos / Liga</button>
+        <button class="btn-filter-pill" onclick="filtrarModalidad('grupos', this)">🎲 Grupos</button>
+        <button class="btn-filter-pill" onclick="filtrarModalidad('round_robin', this)">🔄 Round Robin (Liga)</button>
         <button class="btn-filter-pill" onclick="filtrarModalidad('llaves', this)">🏆 Fase Final</button>
         <button class="btn-filter-pill" style="color:#fbbf24; border-color:rgba(245,158,11,0.5);" onclick="filtrarModalidad('flash', this)">⚡ Liga Flash</button>
     </div>
@@ -172,9 +166,12 @@
         <button class="btn-filter-pill btn-cat-pill active" onclick="filtrarCategoria('todas')">Todas las Categorías</button>
     </div>
 
+    <!-- NUEVO: Botones de Estadísticas y Ranking integrados -->
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">📌 Estado de Juego / Vista:</div>
     <div class="scrolling-bar">
         <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Todos</button>
+        <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')" style="color:#10b981; border-color:rgba(16,185,129,0.5);">📊 Estadísticas</button>
+        <button class="btn-filter-pill" id="tab-ranking" onclick="filtrarEstado('ranking')" style="border-color:#a855f7; color:#c084fc;">🏆 Ranking</button>
         <button class="btn-filter-pill" id="tab-vivo" onclick="filtrarEstado('en_curso')">🔴 En Vivo</button>
         <button class="btn-filter-pill" id="tab-pendientes" onclick="filtrarEstado('pendiente')">⏳ Pendientes</button>
         <button class="btn-filter-pill" id="tab-finalizados" onclick="filtrarEstado('finalizado')">🏁 Finalizados</button>
@@ -198,7 +195,9 @@
 
         let todosLosPartidos = [];
         let reglasRankingList = [];
+        let todasLasCategorias = [];
         let todosLosJugadoresAdmin = [];
+        
         let modalidadFiltro = 'todas';
         let mesaFiltro = 'todas';
         let estadoFiltro = 'todos';
@@ -223,9 +222,7 @@
             const url = `${window.location.origin}/overlay.html?partido=${partidoId}`;
             navigator.clipboard.writeText(url).then(() => {
                 alert(`📡 ¡Enlace de transmisión copiado!\n\nAbre Prism Live Studio en tu celular, agrega una capa "Web / URL" y pega el enlace para mostrar el marcador transparente.\n\nLink:\n${url}`);
-            }).catch(err => {
-                prompt("Copia manualmente este enlace para Prism Live Studio:", url);
-            });
+            }).catch(err => { prompt("Copia manualmente este enlace para Prism Live Studio:", url); });
         }
 
         function compartirLinkMesas() {
@@ -236,11 +233,17 @@
 
         async function inicializar() {
             try {
-                const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).eq('organizador_id', orgId).single();
-                if (torneoData) document.getElementById('nombre-torneo').innerText = torneoData.nombre;
+                const [resReglas, resTorneo, resCat, resJugadores] = await Promise.allSettled([
+                    clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', orgId).order('diferencia_min', { ascending: true }),
+                    clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).eq('organizador_id', orgId).single(),
+                    clienteSupabase.from('categorias').select('*').eq('organizador_id', orgId),
+                    clienteSupabase.from('jugadores').select('id, nombre, club, division, puntos_ranking, puntos_ranking_ant').eq('organizador_id', orgId)
+                ]);
 
-                const { data: jugData } = await clienteSupabase.from('jugadores').select('id, nombre, club, division, puntos_ranking, puntos_ranking_ant').eq('organizador_id', orgId);
-                if (jugData) todosLosJugadoresAdmin = jugData;
+                if (resTorneo.status === 'fulfilled' && resTorneo.value.data) document.getElementById('nombre-torneo').innerText = resTorneo.value.data.nombre;
+                if (resReglas.status === 'fulfilled') reglasRankingList = resReglas.value.data || [];
+                if (resCat.status === 'fulfilled') todasLasCategorias = resCat.value.data || [];
+                if (resJugadores.status === 'fulfilled') todosLosJugadoresAdmin = resJugadores.value.data || [];
 
                 await cargarPartidos();
 
@@ -276,7 +279,7 @@
         }
 
         function filtrarMesa(m) { mesaFiltro = m; dibujarPantalla(); }
-        
+
         function filtrarModalidad(mod, btn) {
             modalidadFiltro = mod;
             document.querySelectorAll('#bar-modalidad .btn-filter-pill').forEach(b => b.classList.remove('active', 'active-flash'));
@@ -287,28 +290,257 @@
 
         function filtrarEstado(est) {
             estadoFiltro = est;
-            document.querySelectorAll('#tab-todos, #tab-vivo, #tab-pendientes, #tab-finalizados').forEach(b => b.classList.remove('active'));
-            if (est === 'todos') document.getElementById('tab-todos')?.classList.add('active');
-            else if (est === 'en_curso') document.getElementById('tab-vivo')?.classList.add('active');
-            else if (est === 'pendiente') document.getElementById('tab-pendientes')?.classList.add('active');
-            else if (est === 'finalizado') document.getElementById('tab-finalizados')?.classList.add('active');
+            document.querySelectorAll('#tab-todos, #tab-resumen, #tab-ranking, #tab-vivo, #tab-pendientes, #tab-finalizados').forEach(b => b.classList.remove('active', 'active-resumen'));
+            if (est === 'resumen') document.getElementById('tab-resumen')?.classList.add('active-resumen');
+            else if (est === 'ranking') document.getElementById('tab-ranking')?.classList.add('active');
+            else document.getElementById('tab-' + est)?.classList.add('active');
             dibujarPantalla();
         }
 
+        // ==========================================
+        // FUNCIONES DE ESTADÍSTICAS Y RANKING
+        // ==========================================
+        function calcularImpacto(ptsA, ptsB) {
+            let diff = Math.abs(ptsA - ptsB);
+            let favoritoEsJ1 = ptsA >= ptsB;
+            let reglasRango = reglasRankingList.filter(r => diff >= Number(r.diferencia_min) && diff <= Number(r.diferencia_max));
+            let reglaGanaFav = null; let reglaGanaRet = null;
+            if (reglasRango.length >= 2) {
+                if (Number(reglasRango[0].puntos_ganador) < Number(reglasRango[1].puntos_ganador)) { reglaGanaFav = reglasRango[0]; reglaGanaRet = reglasRango[1]; } 
+                else if (Number(reglasRango[0].puntos_ganador) > Number(reglasRango[1].puntos_ganador)) { reglaGanaFav = reglasRango[1]; reglaGanaRet = reglasRango[0]; } 
+                else { let str = String(reglasRango[0].resultado_esperado).toLowerCase(); if (str.includes('retador') || str.includes('upset')) { reglaGanaRet = reglasRango[0]; reglaGanaFav = reglasRango[1]; } else { reglaGanaFav = reglasRango[0]; reglaGanaRet = reglasRango[1]; } }
+            } else if (reglasRango.length === 1) {
+                let str = String(reglasRango[0].resultado_esperado).toLowerCase();
+                if (str.includes('retador') || str.includes('upset')) reglaGanaRet = reglasRango[0]; else reglaGanaFav = reglasRango[0];
+            }
+            let ptsGanaFav = reglaGanaFav ? Number(reglaGanaFav.puntos_ganador) : 10;
+            let ptsPierdeFav = reglaGanaRet ? -Math.abs(Number(reglaGanaRet.puntos_perdedor)) : -5;
+            let ptsGanaRet = reglaGanaRet ? Number(reglaGanaRet.puntos_ganador) : 10;
+            let ptsPierdeRet = reglaGanaFav ? -Math.abs(Number(reglaGanaFav.puntos_perdedor)) : -5;
+            return { j1G: favoritoEsJ1 ? ptsGanaFav : ptsGanaRet, j1P: favoritoEsJ1 ? ptsPierdeFav : ptsPierdeRet, j2G: favoritoEsJ1 ? ptsGanaRet : ptsGanaFav, j2P: favoritoEsJ1 ? ptsPierdeRet : ptsPierdeFav };
+        }
+
+        function calcularRankingEnVivo(jugadorId, basePts, finMatches, partidoActualId) {
+            if (!jugadorId || !basePts) return 0;
+            let delta = 0;
+            finMatches.forEach(m => {
+                if (m.id == partidoActualId) return;
+                let p1Base = m.j1 ? m.j1.puntos_ranking : 0; let p2Base = m.j2 ? m.j2.puntos_ranking : 0;
+                let impacto = calcularImpacto(p1Base, p2Base);
+                if (m.jugador1_id === jugadorId) { delta += (m.ganador_id === jugadorId) ? impacto.j1G : impacto.j1P; } 
+                else if (m.jugador2_id === jugadorId) { delta += (m.ganador_id === jugadorId) ? impacto.j2G : impacto.j2P; }
+            });
+            return basePts + delta;
+        }
+
+        function calcularStandingsGrupos() {
+            const porCategoria = {};
+            todosLosPartidos.forEach(m => {
+                if (modalidadFiltro === 'flash' && m.grupo_nombre !== 'Flash') return;
+                if (modalidadFiltro === 'grupos' && (!m.grupo_nombre || m.grupo_nombre === 'Flash' || m.grupo_nombre === 'Único')) return;
+                if (modalidadFiltro === 'round_robin' && m.grupo_nombre !== 'Único') return;
+                if (modalidadFiltro === 'llaves' && m.grupo_nombre) return;
+                if (modalidadFiltro === 'todas' && m.grupo_nombre === 'Flash') return; 
+                
+                const catNombre = m.categorias?.nombre || 'General';
+                if (!porCategoria[catNombre]) porCategoria[catNombre] = {};
+                const gpoNombre = m.grupo_nombre || 'Llaves';
+                if (!porCategoria[catNombre][gpoNombre]) porCategoria[catNombre][gpoNombre] = {};
+                const grupoObj = porCategoria[catNombre][gpoNombre];
+
+                [m.j1, m.j2].forEach(j => {
+                    if (j && j.id && !grupoObj[j.id]) {
+                        let jData = todosLosJugadoresAdmin.find(x => x.id === j.id);
+                        let rankIni = jData ? (jData.puntos_ranking_ant || jData.puntos_ranking || 0) : (j.puntos_ranking || 0);
+                        let div = jData ? (jData.division || 1) : (j.division || 1);
+                        grupoObj[j.id] = { id: j.id, nombre: j.nombre, club: j.club, div: div, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, rankIni: rankIni, rankImpact: 0, gpo: gpoNombre };
+                    }
+                });
+
+                let estLimpio = String(m.estado || '').trim().toLowerCase();
+                if (estLimpio === 'finalizado' && m.j1 && m.j2) {
+                    const j1 = grupoObj[m.j1.id]; const j2 = grupoObj[m.j2.id];
+                    if (j1 && j2) {
+                        j1.pj += 1; j2.pj += 1;
+                        j1.setsG += (m.sets_j1 || 0); j1.setsP += (m.sets_j2 || 0);
+                        j2.setsG += (m.sets_j2 || 0); j2.setsP += (m.sets_j1 || 0);
+                        let r1 = j1.rankIni + j1.rankImpact; let r2 = j2.rankIni + j2.rankImpact;
+                        let impacto = calcularImpacto(r1, r2);
+                        if (m.ganador_id === m.jugador1_id) { j1.pg += 1; j1.pts += 2; j2.pp += 1; j2.pts += 1; j1.rankImpact += impacto.j1G; j2.rankImpact += impacto.j2P; } 
+                        else if (m.ganador_id === m.jugador2_id) { j2.pg += 1; j2.pts += 2; j1.pp += 1; j1.pts += 1; j2.rankImpact += impacto.j2G; j1.rankImpact += impacto.j1P; }
+                    }
+                }
+            });
+            return porCategoria;
+        }
+
+        function ordenarJugadoresITTF(lista) {
+            return [...lista].sort((a, b) => {
+                if (b.pts !== a.pts) return b.pts - a.pts;
+                const sG_a = a.setsG; const sP_a = a.setsP; const sG_b = b.setsG; const sP_b = b.setsP;
+                const rSetA = sG_a / (sP_a || 0.0001); const rSetB = sG_b / (sP_b || 0.0001);
+                if (Math.abs(rSetB - rSetA) > 0.0001) return rSetB - rSetA;
+                return b.pg - a.pg; 
+            });
+        }
+
+        function renderTablaGeneralDiv(jugadores, colorHex, titulo, isFlash = false) {
+            if (jugadores.length === 0) return '';
+            let html = `
+                <div style="margin-bottom:15px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:15px; border-top: 3px solid ${colorHex};">
+                    <span style="font-weight:900; font-size:13px; color:${colorHex}; text-transform:uppercase; display:block; margin-bottom:10px;">${titulo}</span>
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left; min-width: 850px;">
+                            <thead>
+                                <tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);">
+                                    <th style="padding:6px;">Pos</th><th style="padding:6px;">Jugador</th><th style="padding:6px; text-align:center;">PJ</th>
+                                    <th style="padding:6px; text-align:center;">PG</th><th style="padding:6px; text-align:center;">PP</th>
+                                    <th style="padding:6px; text-align:center;">% Efec</th><th style="padding:6px; text-align:center;">Sets (G - P)</th>
+                                    <th style="padding:6px; text-align:center; color:#fbbf24;">Pts</th><th style="padding:6px; text-align:center;">R. Ini</th>
+                                    <th style="padding:6px; text-align:center;">+/-</th><th style="padding:6px; text-align:center; color:#38bdf8;">R. Act</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+            jugadores.forEach((j, idx) => {
+                let efectividad = j.pj > 0 ? Math.round((j.pg / j.pj) * 100) : 0;
+                let opacity = (isFlash && j.pj < 5) ? '0.5' : '1';
+                let qualBadge = (isFlash && j.pj < 5) ? '<span style="font-size:8px; background:rgba(239,68,68,0.2); color:#f87171; padding:2px 4px; border-radius:4px; margin-left:6px;">Faltan PJ</span>' : '';
+                let rankTrophy = '';
+                if (!isFlash || (isFlash && j.pj >= 5)) { if(idx === 0) rankTrophy = '🥇'; else if (idx === 1) rankTrophy = '🥈'; else if (idx === 2) rankTrophy = '🥉'; else rankTrophy = `#${idx + 1}`; } else { rankTrophy = '-'; }
+                let rankDifStr = j.rankImpact > 0 ? `+${j.rankImpact}` : j.rankImpact; let rankDifColor = j.rankImpact > 0 ? '#10b981' : (j.rankImpact < 0 ? '#ef4444' : '#94a3b8');
+                let rankAct = j.rankIni + j.rankImpact; let gpoInfo = (!isFlash && j.gpo && j.gpo !== 'Llaves') ? `<span style="font-size:9px; color:#a855f7; font-weight:800; border:1px solid #a855f7; padding:2px 6px; border-radius:4px; margin-left:6px;">GPO ${j.gpo}</span>` : '';
+                let dif = j.setsG - j.setsP; let difStr = dif >= 0 ? '+' + dif : dif; let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
+                html += `
+                    <tr class="tr-header" style="border-bottom:1px solid rgba(255,255,255,0.04); opacity: ${opacity}; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <td style="padding:8px 6px; font-weight:800; color:#64748b; font-size:14px;">${rankTrophy}</td>
+                        <td style="padding:8px 6px;"><strong style="color:#ffffff; font-size:12px; display:inline-block;">${j.nombre}</strong> ${qualBadge} ${gpoInfo}<span style="font-size:9px; color:#64748b; font-weight:700; display:block;">${j.club || 'Sin Club'}</span></td>
+                        <td style="padding:8px 6px; text-align:center; font-weight:700; color:#94a3b8;">${j.pj}</td><td style="padding:8px 6px; text-align:center; font-weight:700; color:#34d399;">${j.pg}</td>
+                        <td style="padding:8px 6px; text-align:center; font-weight:700; color:#f87171;">${j.pp}</td><td style="padding:8px 6px; text-align:center; font-weight:900; color:#fbbf24;">${efectividad}%</td>
+                        <td style="padding:8px 6px; text-align:center;"><span style="color:#34d399; font-weight:800;">${j.setsG}</span><span style="color:#64748b; margin:0 2px;">:</span><span style="color:#f87171; font-weight:800;">${j.setsP}</span><span style="font-size:10px; font-weight:800; color:${colorDif}; margin-left:4px;">(${difStr})</span></td>
+                        <td style="padding:8px 6px; text-align:center; font-weight:900; color:#fbbf24; font-size:14px;">${j.pts}</td><td style="padding:8px 6px; text-align:center; font-weight:700; color:#94a3b8; font-family:'Orbitron', sans-serif;">${j.rankIni}</td>
+                        <td style="padding:8px 6px; text-align:center; font-weight:800; color:${rankDifColor};">${rankDifStr}</td><td style="padding:8px 6px; text-align:center; font-weight:900; color:#38bdf8; font-family:'Orbitron', sans-serif;">${rankAct}</td>
+                    </tr>
+                `;
+            });
+            html += `</tbody></table></div></div>`;
+            return html;
+        }
+
+        function dibujarEstadisticas(container) {
+            const standings = calcularStandingsGrupos();
+            const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
+            let catsList = [...categoriasSet];
+            if (categoriaFiltro !== 'todas') catsList = catsList.filter(c => c === categoriaFiltro);
+
+            if (catsList.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay información de estadísticas para mostrar.</div>`; return; }
+
+            let htmlContent = '';
+            catsList.forEach(catNombre => {
+                const gruposCat = standings[catNombre] || {};
+                if (Object.keys(gruposCat).length === 0) return;
+
+                htmlContent += `
+                    <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">
+                        <div style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; margin-bottom:15px; text-align:center;">
+                            <span style="font-size:14px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:1.5px;">🏆 Estadísticas: ${catNombre}</span>
+                            <span style="font-size:10px; color:#94a3b8; display:block; margin-top:6px;">Tabla General por Divisiones</span>
+                        </div>
+                `;
+
+                let todosJugadoresCatMap = new Map();
+                Object.keys(gruposCat).forEach(gpoNombre => { Object.values(gruposCat[gpoNombre]).forEach(j => { if(!todosJugadoresCatMap.has(j.id)) todosJugadoresCatMap.set(j.id, {...j, gpo: gpoNombre}); }); });
+                let todosJugadoresCat = Array.from(todosJugadoresCatMap.values());
+                todosJugadoresCat = ordenarJugadoresITTF(todosJugadoresCat);
+
+                let div1 = todosJugadoresCat.filter(j => String(j.div) === '1'); let div2 = todosJugadoresCat.filter(j => String(j.div) === '2');
+                let div3 = todosJugadoresCat.filter(j => String(j.div) === '3'); let sinDiv = todosJugadoresCat.filter(j => !['1','2','3'].includes(String(j.div)));
+                let isFlash = modalidadFiltro === 'flash';
+
+                if (div1.length > 0 || div2.length > 0 || div3.length > 0) {
+                    htmlContent += renderTablaGeneralDiv(div1, '#f43f5e', '🏆 DIVISIÓN 1', isFlash); htmlContent += renderTablaGeneralDiv(div2, '#eab308', '🏆 DIVISIÓN 2', isFlash);
+                    htmlContent += renderTablaGeneralDiv(div3, '#3b82f6', '🏆 DIVISIÓN 3', isFlash); if (sinDiv.length > 0) htmlContent += renderTablaGeneralDiv(sinDiv, '#94a3b8', 'Jugadores sin división registrada', isFlash);
+                } else { htmlContent += renderTablaGeneralDiv(todosJugadoresCat, '#94a3b8', 'Resultados Generales', isFlash); }
+                htmlContent += `</div>`;
+            });
+            container.innerHTML = htmlContent;
+        }
+
+        function dibujarRankingGlobal(container, finMatches) {
+            let jugadoresActivos = [...todosLosJugadoresAdmin];
+            if (jugadoresActivos.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay jugadores registrados en el ranking global.</div>`; return; }
+
+            jugadoresActivos.forEach(j => {
+                j.puntosEnVivo = calcularRankingEnVivo(j.id, j.puntos_ranking, finMatches, null);
+                j.difPuntos = j.puntosEnVivo - (j.puntos_ranking_ant || j.puntos_ranking);
+            });
+
+            const categoriasFuerza = todasLasCategorias.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
+            let globalRank = 1; const styles = [ { bg: '#fbbf24', text: '#000000' }, { bg: '#94a3b8', text: '#000000' }, { bg: '#d97706', text: '#ffffff' }, { bg: '#06b6d4', text: '#000000' }, { bg: '#a855f7', text: '#ffffff' } ];
+
+            let html = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
+                    <div>
+                        <span style="font-size:16px; color:#c084fc; font-weight:900; text-transform:uppercase; letter-spacing:2px; display:block;">🏆 Ranking Global Oficial en Vivo</span>
+                        <span style="font-size:10px; color:#94a3b8; display:block; margin-top:4px;">Se actualiza en tiempo real al finalizar los partidos.</span>
+                    </div>
+                </div>
+            `;
+
+            categoriasFuerza.forEach((cat, index) => {
+                const style = styles[index % styles.length];
+                const jugadoresCat = jugadoresActivos.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos).sort((a,b) => b.puntosEnVivo - a.puntosEnVivo);
+                if (jugadoresCat.length > 0) {
+                    html += `
+                    <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(255,255,255,0.1); border-radius:20px; margin-bottom:25px; overflow:hidden; backdrop-filter:blur(15px);">
+                        <div style="background: ${style.bg}; color: ${style.text}; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">🏆 ${cat.nombre}</span>
+                            <span style="font-size: 11px; font-weight: 800;">${cat.puntos_minimos} - ${cat.puntos_maximos} PTS</span>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
+                                <thead>
+                                    <tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3);">
+                                        <th style="padding:10px 15px; text-align:center; width:50px;">Pos</th><th style="padding:10px 15px;">Jugador</th><th style="padding:10px 15px;">Club</th><th style="padding:10px 15px; text-align:center;">Pts Iniciales</th><th style="padding:10px 15px; text-align:center;">+/-</th><th style="padding:10px 15px; text-align:center; color:#38bdf8;">Pts Actuales</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+                    jugadoresCat.forEach((j) => {
+                        let difStr = j.difPuntos > 0 ? `<span style="color:#10b981;">▲ +${j.difPuntos}</span>` : (j.difPuntos < 0 ? `<span style="color:#ef4444;">▼ ${j.difPuntos}</span>` : `<span style="color:#64748b;">-</span>`);
+                        html += `
+                            <tr style="border-bottom:1px solid rgba(255,255,255,0.04); transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'" onmouseout="this.style.backgroundColor='transparent'">
+                                <td style="padding:10px 15px; font-weight:800; color:#64748b; text-align:center;">#${globalRank}</td><td style="padding:10px 15px;"><strong style="color:#ffffff; font-size:13px;">${j.nombre}</strong></td>
+                                <td style="padding:10px 15px;"><span style="color:#94a3b8; font-size:10px; font-weight:700;">${j.club || 'S/C'}</span></td><td style="padding:10px 15px; text-align:center; color:#94a3b8; font-family:'Orbitron', sans-serif; font-size:11px;">${j.puntos_ranking_ant || j.puntos_ranking}</td>
+                                <td style="padding:10px 15px; text-align:center; font-weight:800; font-size:11px;">${difStr}</td><td style="padding:10px 15px; text-align:center; font-weight:900; color:#38bdf8; font-family:'Orbitron', sans-serif; font-size:15px;">${j.puntosEnVivo}</td>
+                            </tr>
+                        `;
+                        globalRank++;
+                    });
+                    html += `</tbody></table></div></div>`;
+                }
+            });
+            if(html === '') html = `<div class="mensaje-vacio">No hay jugadores categorizados para mostrar en el ranking.</div>`;
+            container.innerHTML = html;
+        }
+
+        // ==========================================
+        // DIBUJADO PRINCIPAL
+        // ==========================================
         function dibujarPantalla() {
             const container = document.getElementById('contenedor-partidos');
+            
+            if (estadoFiltro === 'resumen') { container.style.display = 'block'; dibujarEstadisticas(container); return; }
+            if (estadoFiltro === 'ranking') { container.style.display = 'block'; const finMatches = todosLosPartidos.filter(p => String(p.estado || '').toLowerCase() === 'finalizado'); dibujarRankingGlobal(container, finMatches); return; }
+
+            container.style.display = 'grid';
             let filtrados = [...todosLosPartidos];
 
-            // 1. Filtro de Modalidad (Nuevo)
-            if (modalidadFiltro === 'flash') {
-                filtrados = filtrados.filter(p => p.grupo_nombre === 'Flash');
-            } else if (modalidadFiltro === 'grupos') {
-                filtrados = filtrados.filter(p => p.grupo_nombre && p.grupo_nombre !== 'Flash');
-            } else if (modalidadFiltro === 'llaves') {
-                filtrados = filtrados.filter(p => !p.grupo_nombre);
-            }
+            if (modalidadFiltro === 'flash') filtrados = filtrados.filter(p => p.grupo_nombre === 'Flash');
+            else if (modalidadFiltro === 'grupos') filtrados = filtrados.filter(p => p.grupo_nombre && p.grupo_nombre !== 'Flash' && p.grupo_nombre !== 'Único');
+            else if (modalidadFiltro === 'round_robin') filtrados = filtrados.filter(p => p.grupo_nombre === 'Único');
+            else if (modalidadFiltro === 'llaves') filtrados = filtrados.filter(p => !p.grupo_nombre);
 
-            // 2. Otros filtros
             if (mesaFiltro !== 'todas') filtrados = filtrados.filter(p => p.mesa == mesaFiltro);
             if (categoriaFiltro !== 'todas') filtrados = filtrados.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
             if (estadoFiltro !== 'todos') filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === estadoFiltro);
