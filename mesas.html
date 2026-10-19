@@ -158,6 +158,15 @@
         </div>
     </div>
 
+    <!-- NUEVOS FILTROS SEPARADOS POR MODALIDAD, CATEGORÍA Y ESTADO -->
+    <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">🎯 Filtrar por Modalidad:</div>
+    <div class="scrolling-bar" id="bar-modalidad">
+        <button class="btn-filter-pill active" onclick="filtrarModalidad('todas', this)">Todas</button>
+        <button class="btn-filter-pill" onclick="filtrarModalidad('grupos', this)">🎲 Grupos / Liga</button>
+        <button class="btn-filter-pill" onclick="filtrarModalidad('llaves', this)">🏆 Fase Final</button>
+        <button class="btn-filter-pill" style="color:#fbbf24; border-color:rgba(245,158,11,0.5);" onclick="filtrarModalidad('flash', this)">⚡ Liga Flash</button>
+    </div>
+
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">🏆 Filtrar por Categoría:</div>
     <div class="scrolling-bar" id="bar-categorias">
         <button class="btn-filter-pill btn-cat-pill active" onclick="filtrarCategoria('todas')">Todas las Categorías</button>
@@ -190,6 +199,7 @@
         let todosLosPartidos = [];
         let reglasRankingList = [];
         let todosLosJugadoresAdmin = [];
+        let modalidadFiltro = 'todas';
         let mesaFiltro = 'todas';
         let estadoFiltro = 'todos';
         let categoriaFiltro = 'todas';
@@ -266,9 +276,18 @@
         }
 
         function filtrarMesa(m) { mesaFiltro = m; dibujarPantalla(); }
+        
+        function filtrarModalidad(mod, btn) {
+            modalidadFiltro = mod;
+            document.querySelectorAll('#bar-modalidad .btn-filter-pill').forEach(b => b.classList.remove('active', 'active-flash'));
+            if(mod === 'flash') btn.classList.add('active-flash');
+            else btn.classList.add('active');
+            dibujarPantalla();
+        }
+
         function filtrarEstado(est) {
             estadoFiltro = est;
-            document.querySelectorAll('.scrolling-bar .btn-filter-pill:not(.btn-cat-pill)').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('#tab-todos, #tab-vivo, #tab-pendientes, #tab-finalizados').forEach(b => b.classList.remove('active'));
             if (est === 'todos') document.getElementById('tab-todos')?.classList.add('active');
             else if (est === 'en_curso') document.getElementById('tab-vivo')?.classList.add('active');
             else if (est === 'pendiente') document.getElementById('tab-pendientes')?.classList.add('active');
@@ -280,11 +299,21 @@
             const container = document.getElementById('contenedor-partidos');
             let filtrados = [...todosLosPartidos];
 
+            // 1. Filtro de Modalidad (Nuevo)
+            if (modalidadFiltro === 'flash') {
+                filtrados = filtrados.filter(p => p.grupo_nombre === 'Flash');
+            } else if (modalidadFiltro === 'grupos') {
+                filtrados = filtrados.filter(p => p.grupo_nombre && p.grupo_nombre !== 'Flash');
+            } else if (modalidadFiltro === 'llaves') {
+                filtrados = filtrados.filter(p => !p.grupo_nombre);
+            }
+
+            // 2. Otros filtros
             if (mesaFiltro !== 'todas') filtrados = filtrados.filter(p => p.mesa == mesaFiltro);
             if (categoriaFiltro !== 'todas') filtrados = filtrados.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
             if (estadoFiltro !== 'todos') filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === estadoFiltro);
 
-            if (filtrados.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay partidos registrados bajo este filtro.</div>`; return; }
+            if (filtrados.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay partidos registrados bajo estos filtros.</div>`; return; }
 
             const gruposPorHora = {}; const horasOrdenadas = [];
             filtrados.forEach(p => { const h = p.hora || '09:00 AM'; if(!gruposPorHora[h]) { gruposPorHora[h] = []; horasOrdenadas.push(h); } gruposPorHora[h].push(p); });
@@ -315,7 +344,6 @@
                     let safeNom1 = nomJ1 ? String(nomJ1).replace(/'/g, "\\'") : ''; let safeClub1 = p.j1 && p.j1.club ? String(p.j1.club).replace(/'/g, "\\'") : 'Sin Club';
                     let safeNom2 = nomJ2 ? String(nomJ2).replace(/'/g, "\\'") : ''; let safeClub2 = p.j2 && p.j2.club ? String(p.j2.club).replace(/'/g, "\\'") : 'Sin Club';
 
-                    // AHORA EL BOTÓN SE ACTIVA SI ESTÁ EN VIVO O FINALIZADO
                     let btnYoutube = (isFin || isVivo) ? `
                         <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(239,68,68,0.15); border-color:#ef4444; color:#f87171;" onclick="abrirModalYouTube(${p.id}, '${p.video_url || ''}')">
                             ${p.video_url ? '<i class="fa-brands fa-youtube"></i> Editar Enlace' : '<i class="fa-brands fa-youtube"></i> Añadir YouTube'}
