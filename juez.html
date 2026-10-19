@@ -146,7 +146,7 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        const urlParams = new URLSearchParams(window.location.search);
+        const urlParams = newSearchParams(window.location.search);
         const partidoId = urlParams.get('partido');
 
         let ORG_ID = null; 
@@ -309,16 +309,14 @@
 
                 firstServersBySet = [];
                 let givesHandicap = 0;
-                // Identificamos quién da la ventaja (es el de la división más baja)
+                
                 if (p1.div < p2.div) givesHandicap = 1;
                 else if (p2.div < p1.div) givesHandicap = 2;
                 
                 for (let i = 0; i < numSetActual; i++) {
-                    // El que da la ventaja siempre saca primero en todos los sets.
                     if (givesHandicap !== 0) {
                         firstServersBySet.push(givesHandicap);
                     } else {
-                        // Si no hay handicap de divisiones, alternan normalmente.
                         if (i === 0) firstServersBySet.push(1);
                         else firstServersBySet.push(firstServersBySet[i-1] === 1 ? 2 : 1);
                     }
