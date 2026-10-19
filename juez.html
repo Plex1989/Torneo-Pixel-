@@ -146,7 +146,6 @@
         const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-        // AQUI ESTABA EL ERROR CORREGIDO: new URLSearchParams
         const urlParams = new URLSearchParams(window.location.search);
         const partidoId = urlParams.get('partido');
 
@@ -424,6 +423,7 @@
             };
         }
 
+        // ======================= CORRECCIÓN MATEMÁTICA DEL SAQUE =======================
         function getCurrentServer() {
             let currentSetIdx = numSetActual - 1; 
             if(currentSetIdx >= firstServersBySet.length) { 
@@ -431,17 +431,20 @@
             }
             let firstSrv = firstServersBySet[currentSetIdx]; 
             
-            let total = p1.score + p2.score; 
             let deuceThreshold = pointsToWin - 1;
             
+            // Calculamos EXCLUSIVAMENTE los puntos que se han ganado físicamente en la mesa (ignorando la ventaja inicial)
             let s1Base = Math.max(0, p1.score - handicapP1);
             let s2Base = Math.max(0, p2.score - handicapP2); 
+            let totalPuntosFisicos = s1Base + s2Base;
             
             if(s1Base >= deuceThreshold && s2Base >= deuceThreshold && modoJuego !== '1-15') { 
-                let extra = (s1Base + s2Base) - (deuceThreshold * 2); 
+                let extra = totalPuntosFisicos - (deuceThreshold * 2); 
                 return extra % 2 === 0 ? firstSrv : (firstSrv === 1 ? 2 : 1); 
             } else { 
-                let blocks = Math.floor(total / 2); 
+                // Al dividir SOLO los puntos físicos entre 2, el que inicia sacando 
+                // sacará el punto físico #1 y #2 sin importar si el marcador dice 5-0.
+                let blocks = Math.floor(totalPuntosFisicos / 2); 
                 return blocks % 2 === 0 ? firstSrv : (firstSrv === 1 ? 2 : 1); 
             }
         }
