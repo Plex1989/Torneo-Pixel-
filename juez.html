@@ -227,12 +227,10 @@
             }
         }
 
-        // ======================= CORRECCIÓN MATEMÁTICA DE HÁNDICAP =======================
         function calcularHandicapActual() {
             let hP1 = 0; let hP2 = 0;
             let targetPlayer = 0; 
             
-            // Evaluamos CUALQUIER diferencia de divisiones (ej. Div 1 vs 3, Div 2 vs 3, etc.)
             if (p1.div > p2.div) { hP1 = p1.handBase; targetPlayer = 1; } 
             else if (p2.div > p1.div) { hP2 = p2.handBase; targetPlayer = 2; }
             
@@ -310,27 +308,19 @@
                 handicapP2 = hActual.hP2;
 
                 firstServersBySet = [];
-                let tempHP1 = p1.div > p2.div ? p1.handBase : 0;
-                let tempHP2 = p2.div > p1.div ? p2.handBase : 0;
+                let givesHandicap = 0;
+                // Identificamos quién da la ventaja (es el de la división más baja)
+                if (p1.div < p2.div) givesHandicap = 1;
+                else if (p2.div < p1.div) givesHandicap = 2;
                 
                 for (let i = 0; i < numSetActual; i++) {
-                    if (tempHP1 > 0 || tempHP2 > 0) {
-                        // El jugador más fuerte (división menor) da la ventaja y debe sacar primero
-                        if (tempHP1 > 0 && tempHP2 === 0) firstServersBySet.push(2); // P2 es más fuerte
-                        else if (tempHP2 > 0 && tempHP1 === 0) firstServersBySet.push(1); // P1 es más fuerte
-                        else firstServersBySet.push(1);
+                    // El que da la ventaja siempre saca primero en todos los sets.
+                    if (givesHandicap !== 0) {
+                        firstServersBySet.push(givesHandicap);
                     } else {
+                        // Si no hay handicap de divisiones, alternan normalmente.
                         if (i === 0) firstServersBySet.push(1);
                         else firstServersBySet.push(firstServersBySet[i-1] === 1 ? 2 : 1);
-                    }
-                    
-                    if (i < historialSets.length) {
-                        let s = historialSets[i];
-                        if (p1.div > p2.div) {
-                            if (s.s1 > s.s2) tempHP1 = Math.max(0, tempHP1 - 1); else tempHP1 += 1;
-                        } else if (p2.div > p1.div) {
-                            if (s.s2 > s.s1) tempHP2 = Math.max(0, tempHP2 - 1); else tempHP2 += 1;
-                        }
                     }
                 }
 
@@ -452,8 +442,6 @@
                 let extra = (s1Base + s2Base) - (deuceThreshold * 2); 
                 return extra % 2 === 0 ? firstSrv : (firstSrv === 1 ? 2 : 1); 
             } else { 
-                // Al dividir el total de puntos entre 2, si alguien empieza con 5-0 
-                // automáticamente rotará el servicio después del primer punto jugado.
                 let blocks = Math.floor(total / 2); 
                 return blocks % 2 === 0 ? firstSrv : (firstSrv === 1 ? 2 : 1); 
             }
@@ -601,13 +589,12 @@
                     p2.score = handicapP2;
                     isSwapped = !isSwapped; 
                     
-                    if (handicapP1 > 0 || handicapP2 > 0) {
-                        if (handicapP1 > 0 && handicapP2 === 0) firstServersBySet.push(2);
-                        else if (handicapP2 > 0 && handicapP1 === 0) firstServersBySet.push(1);
-                        else {
-                            let prevFirst = firstServersBySet[firstServersBySet.length - 1];
-                            firstServersBySet.push(prevFirst === 1 ? 2 : 1);
-                        }
+                    let givesHandicap = 0;
+                    if (p1.div < p2.div) givesHandicap = 1;
+                    else if (p2.div < p1.div) givesHandicap = 2;
+
+                    if (givesHandicap !== 0) {
+                        firstServersBySet.push(givesHandicap);
                     } else {
                         let prevFirst = firstServersBySet[firstServersBySet.length - 1];
                         firstServersBySet.push(prevFirst === 1 ? 2 : 1);
