@@ -151,7 +151,7 @@
 
         let ORG_ID = null; 
         let partidoData = null;
-        let reglasRankingList = []; // Array centralizado de reglas
+        let reglasRankingList = []; 
         let p1 = { id: null, nombre: 'JUGADOR 1', ptsBase: 0, ptsLive: 0, score: 0, sets: 0, div: 1, handBase: 0 };
         let p2 = { id: null, nombre: 'JUGADOR 2', ptsBase: 0, ptsLive: 0, score: 0, sets: 0, div: 1, handBase: 0 };
         
@@ -227,12 +227,14 @@
             }
         }
 
+        // ======================= CORRECCIÓN MATEMÁTICA DE HÁNDICAP =======================
         function calcularHandicapActual() {
             let hP1 = 0; let hP2 = 0;
             let targetPlayer = 0; 
             
-            if (p1.div === 2 && p2.div === 1) { hP1 = p1.handBase; targetPlayer = 1; } 
-            else if (p2.div === 2 && p1.div === 1) { hP2 = p2.handBase; targetPlayer = 2; }
+            // Evaluamos CUALQUIER diferencia de divisiones (ej. Div 1 vs 3, Div 2 vs 3, etc.)
+            if (p1.div > p2.div) { hP1 = p1.handBase; targetPlayer = 1; } 
+            else if (p2.div > p1.div) { hP2 = p2.handBase; targetPlayer = 2; }
             
             if (targetPlayer === 1) {
                 historialSets.forEach(set => {
@@ -253,7 +255,6 @@
                 
                 await cargarYResolverPartido();
 
-                // Carga de reglas blindada por organizador
                 const { data: reglas, error: errReglas } = await clienteSupabase.from('reglas_ranking')
                     .select('*')
                     .eq('organizador_id', ORG_ID)
@@ -309,13 +310,14 @@
                 handicapP2 = hActual.hP2;
 
                 firstServersBySet = [];
-                let tempHP1 = p1.div === 2 && p2.div === 1 ? p1.handBase : 0;
-                let tempHP2 = p2.div === 2 && p1.div === 1 ? p2.handBase : 0;
+                let tempHP1 = p1.div > p2.div ? p1.handBase : 0;
+                let tempHP2 = p2.div > p1.div ? p2.handBase : 0;
                 
                 for (let i = 0; i < numSetActual; i++) {
                     if (tempHP1 > 0 || tempHP2 > 0) {
-                        if (tempHP1 > 0 && tempHP2 === 0) firstServersBySet.push(2); 
-                        else if (tempHP2 > 0 && tempHP1 === 0) firstServersBySet.push(1); 
+                        // El jugador más fuerte (división menor) da la ventaja y debe sacar primero
+                        if (tempHP1 > 0 && tempHP2 === 0) firstServersBySet.push(2); // P2 es más fuerte
+                        else if (tempHP2 > 0 && tempHP1 === 0) firstServersBySet.push(1); // P1 es más fuerte
                         else firstServersBySet.push(1);
                     } else {
                         if (i === 0) firstServersBySet.push(1);
@@ -324,9 +326,9 @@
                     
                     if (i < historialSets.length) {
                         let s = historialSets[i];
-                        if (p1.div === 2 && p2.div === 1) {
+                        if (p1.div > p2.div) {
                             if (s.s1 > s.s2) tempHP1 = Math.max(0, tempHP1 - 1); else tempHP1 += 1;
-                        } else if (p2.div === 2 && p1.div === 1) {
+                        } else if (p2.div > p1.div) {
                             if (s.s2 > s.s1) tempHP2 = Math.max(0, tempHP2 - 1); else tempHP2 += 1;
                         }
                     }
@@ -392,8 +394,6 @@
             } catch(e) { p1.ptsLive = p1.ptsBase; p2.ptsLive = p2.ptsBase; }
         }
 
-        // ======================= CORRECCIÓN MATEMÁTICA DEFINITIVA DE RANKING =======================
-        // Ignora las palabras clave de la base de datos y se basa en la tabla numérica de recompensas.
         function calcularImpactoPuntos(ptsA, ptsB) {
             let diff = Math.abs(ptsA - ptsB);
             let favoritoEsJ1 = ptsA >= ptsB;
@@ -404,7 +404,6 @@
             let reglaGanaRet = null;
 
             if (reglasRango.length >= 2) {
-                // Asumimos que la regla donde gana el Retador (Upset) siempre da MÁS puntos que la del Favorito
                 if (Number(reglasRango[0].puntos_ganador) < Number(reglasRango[1].puntos_ganador)) {
                     reglaGanaFav = reglasRango[0];
                     reglaGanaRet = reglasRango[1];
@@ -412,7 +411,6 @@
                     reglaGanaFav = reglasRango[1];
                     reglaGanaRet = reglasRango[0];
                 } else {
-                    // Si son idénticos, usamos las palabras como desempate final
                     let str = String(reglasRango[0].resultado_esperado).toLowerCase();
                     if (str.includes('retador') || str.includes('upset')) { reglaGanaRet = reglasRango[0]; reglaGanaFav = reglasRango[1]; }
                     else { reglaGanaFav = reglasRango[0]; reglaGanaRet = reglasRango[1]; }
@@ -454,6 +452,8 @@
                 let extra = (s1Base + s2Base) - (deuceThreshold * 2); 
                 return extra % 2 === 0 ? firstSrv : (firstSrv === 1 ? 2 : 1); 
             } else { 
+                // Al dividir el total de puntos entre 2, si alguien empieza con 5-0 
+                // automáticamente rotará el servicio después del primer punto jugado.
                 let blocks = Math.floor(total / 2); 
                 return blocks % 2 === 0 ? firstSrv : (firstSrv === 1 ? 2 : 1); 
             }
