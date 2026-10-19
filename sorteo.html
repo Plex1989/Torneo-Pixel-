@@ -352,6 +352,7 @@
         let partidosGeneradosRR = [];
         let partidosCargadosGlobal = [];
         let maxJuecesFaltantesSistema = 0; 
+        let isGuardando = false; // VARIABLE DE CONTROL GLOBAL
         
         let modoTorneoActual = 'normal'; 
         let seleccionFlash = []; 
@@ -445,8 +446,15 @@
                 }
 
                 clienteSupabase.channel('sorteo-partidos-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => {
-                    if (document.getElementById('filtro-categoria').value) cargarEstadoCategoria();
+                    if (!isGuardando && document.getElementById('filtro-categoria').value) cargarEstadoCategoria();
                 }).subscribe();
+
+                // NUEVO: Escuchador que detecta cuando regresas a la pestaña para auto-refrescar
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible' && !isGuardando && document.getElementById('filtro-categoria').value) {
+                        cargarEstadoCategoria();
+                    }
+                });
 
             } catch(e) { console.error("Error al iniciar:", e); }
         }
