@@ -19,9 +19,6 @@
             window.location.href = "torneos.html";
         }
 
-        // ==========================================
-        // FUNCIONES DE NAVEGACIÓN INTELIGENTE
-        // ==========================================
         function abrirVistaInteligente(destino) {
             let idTorneo = parseInt(localStorage.getItem('torneo_activo_id')) || 1;
             window.location.href = destino + ".html?torneo=" + idTorneo;
@@ -256,7 +253,7 @@
         </div>
     </div>
 
-    <!-- NAVEGACIÓN FIJA ÚNICA (Actualizada) -->
+    <!-- NAVEGACIÓN FIJA ÚNICA -->
     <nav class="navbar no-print">
         <div class="nav-title">CENTRAL DE TORNEOS</div>
         <div class="nav-links">
@@ -330,9 +327,16 @@
             </div>
             <p style="font-size: 11px; color: #94a3b8; margin-bottom: 20px; font-weight: 600;">Personaliza los textos que aparecerán en el cartel digital de tu torneo (visible en el portal público de inscripción).</p>
             
+            <!-- NUEVO CAMPO: WHATSAPP -->
+            <div style="margin-bottom: 20px; background: rgba(0,0,0,0.3); border: 1px dashed rgba(244, 114, 182, 0.4); padding: 15px; border-radius: 12px;">
+                <label style="font-size:10px; color:#f472b6; font-weight:800; text-transform:uppercase; margin-bottom:6px; margin-top:0; display:block;">Número de WhatsApp para Dudas:</label>
+                <p style="font-size:10px; color:#94a3b8; margin-bottom:10px;">Si agregas tu número, el botón del portal enviará el mensaje directo a ti. Usa el código de país (Ej. 52 para México).</p>
+                <input type="text" id="conv-wa" class="input-tabla" placeholder="Ej. 522281234567" style="max-width: 300px;">
+            </div>
+
             <div style="display:flex; flex-direction:column; gap:20px;">
                 <div>
-                    <label style="font-size:10px; color:#f472b6; font-weight:800; text-transform:uppercase; margin-bottom:6px; display:block;">Sistema de Competencia:</label>
+                    <label style="font-size:10px; color:#f472b6; font-weight:800; text-transform:uppercase; margin-bottom:6px; margin-top:0; display:block;">Sistema de Competencia:</label>
                     <textarea id="conv-sistema" class="input-tabla" style="width:100%; height:75px; resize:vertical;">Se jugará en 2 fases:
 Fase 1: Grupos de 3 a 5 jugadores haciendo la siembra por sistema serpiente de acuerdo a ranking.
 Fase 2: Fase de Eliminación Directa.</textarea>
@@ -553,7 +557,7 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
 
     </div>
 
-    <!-- ÁREA DE IMPRESIÓN OCULTA PARA PDF (1 COLUMNA PROFESIONAL) -->
+    <!-- ÁREA DE IMPRESIÓN OCULTA PARA PDF -->
     <div id="area-impresion-memoria" class="memoria-print-area"></div>
 
     <script>
@@ -571,25 +575,21 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
             const ventaja = (div === 2 || div === 3) ? (parseInt(inputVentaja ? inputVentaja.value : 0) || 0) : 0;
 
             try {
-                // Actualiza en BD
                 await clienteSupabase.from('jugadores').update({ division: div, handicap: ventaja }).eq('id', jugadorId);
                 
-                // Actualiza memoria local
                 const jIndex = todosLosJugadoresAdmin.findIndex(x => x.id === jugadorId);
                 if(jIndex > -1) {
                     todosLosJugadoresAdmin[jIndex].division = div;
                     todosLosJugadoresAdmin[jIndex].handicap = ventaja;
                 }
 
-                // Dar feedback visual sin recargar la página
                 const fila = divNode.closest('tr');
                 if(fila) {
                     const bgOriginal = fila.style.background;
-                    fila.style.background = 'rgba(16, 185, 129, 0.2)'; // Brillo verde
+                    fila.style.background = 'rgba(16, 185, 129, 0.2)'; 
                     setTimeout(() => { fila.style.background = bgOriginal; }, 500);
                 }
 
-                // Sincronizar la otra tabla si el jugador aparece en ambas
                 const otherPrefix = prefix === 'ins' ? 'flash' : 'ins';
                 const otherDiv = document.querySelector(`input[name="div_${otherPrefix}_${jugadorId}"][value="${div}"]`);
                 if (otherDiv) otherDiv.checked = true;
@@ -614,13 +614,11 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
             document.getElementById(`ventaja_flash_${jugadorId}`).style.display = (isDiv2 || isDiv3) ? 'block' : 'none';
         }
 
-        // ================= FUNCIÓN GLOBAL PARA QUITAR ACENTOS =================
         function quitarAcentos(str) {
             if (!str) return "";
             return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         }
 
-        // ================= TRIPLE CANDADO PARA CERRAR SESIÓN =================
         function cerrarSesionAdmin() {
             localStorage.removeItem('admin_autenticado');
             sessionStorage.removeItem('admin_autenticado');
@@ -680,10 +678,6 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
             return partes[partes.length - 1];
         };
 
-        // =========================================================================
-        // MÓDULOS DE INICIALIZACIÓN SECUENCIAL (ANTI CONGELAMIENTO)
-        // =========================================================================
-
         async function cargarDatosIniciales() {
             try {
                 const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
@@ -705,7 +699,7 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
                     clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: false }),
                     clienteSupabase.from('clubes').select('*').eq('organizador_id', ORG_ID).order('nombre', { ascending: true }),
                     clienteSupabase.from('programacion_categorias').select('*').eq('torneo_id', idTorneoActivo),
-                    clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }) // REGLA BLINDADA
+                    clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }) 
                 ]);
 
                 todosLosJugadoresAdmin = resJug.status === 'fulfilled' ? (resJug.value.data || []) : [];
@@ -715,7 +709,6 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
                 reglasRankingList = resReglas.status === 'fulfilled' ? (resReglas.value.data || []) : [];
             } catch(e) { console.error("Error en peticiones principales:", e); }
 
-            // EJECUCIÓN SECUENCIAL ESTRICTA PARA EVITAR BLOQUEOS
             await safelyRunAsync(cargarInscripcionFlashView, 'tabla-inscripcion-flash');
             await safelyRunAsync(poblarDropdownClubs, null);
             await safelyRunAsync(dibujarTablaClubs, 'tabla-clubs');
@@ -728,7 +721,7 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
             await safelyRunAsync(cargarPendientes, 'tabla-pendientes');
             await safelyRunAsync(cargarPendientesRanking, 'tabla-pendientes-ranking');
             await safelyRunAsync(cargarBono, null);
-            await safelyRunAsync(cargarConvocatoria, null); // Módulo Convocatoria
+            await safelyRunAsync(cargarConvocatoria, null); 
 
             activarSuscripcionEspectadores();
             activarSuscripcionRealtime();
@@ -746,15 +739,11 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
             }
         }
 
-        // =========================================================================
-        // MÓDULO: CONVOCATORIA DIGITAL
-        // =========================================================================
-
         async function cargarConvocatoria() {
             try {
                 const { data } = await clienteSupabase.from('configuracion')
                     .select('*')
-                    .in('clave', ['conv_sistema', 'conv_reglas', 'conv_premios'])
+                    .in('clave', ['conv_sistema', 'conv_reglas', 'conv_premios', 'conv_wa'])
                     .eq('organizador_id', ORG_ID);
                 
                 if (data && data.length > 0) {
@@ -762,6 +751,7 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
                         if (item.clave === 'conv_sistema' && item.valor_texto) document.getElementById('conv-sistema').value = item.valor_texto;
                         if (item.clave === 'conv_reglas' && item.valor_texto) document.getElementById('conv-reglas').value = item.valor_texto;
                         if (item.clave === 'conv_premios' && item.valor_texto) document.getElementById('conv-premios').value = item.valor_texto;
+                        if (item.clave === 'conv_wa' && item.valor_texto) document.getElementById('conv-wa').value = item.valor_texto;
                     });
                 }
             } catch(e) { console.error("Error cargando convocatoria:", e); }
@@ -774,33 +764,34 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
             const sistema = document.getElementById('conv-sistema').value;
             const reglas = document.getElementById('conv-reglas').value;
             const premios = document.getElementById('conv-premios').value;
+            const wa = document.getElementById('conv-wa').value.trim();
 
             const upsertData = [
                 { clave: 'conv_sistema', valor_texto: sistema, organizador_id: ORG_ID },
                 { clave: 'conv_reglas', valor_texto: reglas, organizador_id: ORG_ID },
-                { clave: 'conv_premios', valor_texto: premios, organizador_id: ORG_ID }
+                { clave: 'conv_premios', valor_texto: premios, organizador_id: ORG_ID },
+                { clave: 'conv_wa', valor_texto: wa, organizador_id: ORG_ID }
             ];
 
             try {
                 for (let item of upsertData) {
                     const { data: existe } = await clienteSupabase.from('configuracion').select('id').eq('clave', item.clave).eq('organizador_id', ORG_ID).maybeSingle();
+                    
                     if (existe) {
-                        await clienteSupabase.from('configuracion').update({ valor_texto: item.valor_texto }).eq('id', existe.id);
+                        const { error } = await clienteSupabase.from('configuracion').update({ valor_texto: item.valor_texto }).eq('id', existe.id);
+                        if (error) throw error;
                     } else {
-                        await clienteSupabase.from('configuracion').insert([item]);
+                        const { error } = await clienteSupabase.from('configuracion').insert([item]);
+                        if (error) throw error;
                     }
                 }
-                alert("✅ Textos de la convocatoria guardados correctamente.");
+                alert("✅ Textos de la convocatoria y WhatsApp guardados correctamente.");
             } catch (e) {
-                alert("❌ Error: " + e.message + "\n\n💡 Tip: Verifica en Supabase que tu tabla 'configuracion' tenga una columna llamada 'valor_texto' con tipo de dato 'Text'.");
+                alert("❌ ERROR AL GUARDAR: " + e.message + "\n\n💡 REVISA SUPABASE: Asegúrate de haber creado la columna 'valor_texto' (tipo text) en tu tabla 'configuracion'.");
             } finally {
                 btn.innerText = "💾 Guardar Textos"; btn.disabled = false;
             }
         }
-
-        // =========================================================================
-        // MÓDULOS DE UI Y COMPONENTES VISUALES
-        // =========================================================================
 
         function dibujarTablaProgramacionCategorias() {
             const tbody = document.getElementById('tabla-programacion-categorias');
@@ -836,7 +827,6 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
                 const btnClase = estaActiva ? 'btn-green' : 'btn-red';
                 const btnIcono = estaActiva ? '✅ ACTIVA' : '🚫 BLOQUEADA';
 
-                // CORRECCIÓN MATEMÁTICA ID TORNEO
                 let idTorneoReal = parseInt(idTorneoActivo);
                 if (isNaN(idTorneoReal)) idTorneoReal = 1;
 
@@ -893,8 +883,6 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
                     .eq('categoria_id', catId)
                     .maybeSingle();
 
-                if (errSearch) console.error("Error buscando en programacion_categorias:", errSearch);
-
                 let isSuccess = false;
 
                 if (existe && existe.id) {
@@ -924,14 +912,9 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
                 }
                 safelyRunAsync(dibujarTablaProgramacionCategorias, 'tabla-programacion-categorias');
             } catch(e) {
-                console.error(e);
                 alert("❌ Error al guardar: " + e.message);
             }
         }
-
-        // =========================================================================
-        // MÓDULOS DE INSCRIPCIONES Y PAGOS (RECONSTRUIDOS Y BLINDADOS)
-        // =========================================================================
 
         async function cargarPendientes() {
             const tbody = document.getElementById('tabla-pendientes');
@@ -991,7 +974,6 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
                 tbody.innerHTML = html;
                 
             } catch(e) { 
-                console.error("Error pendientes ranking:", e); 
                 tbody.innerHTML = `<tr><td colspan="4" class="mensaje-vacio" style="color:#ef4444;">⚠️ Error: ${e.message}</td></tr>`;
             }
         }
@@ -1076,7 +1058,6 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
                         let div = jListObj ? (jListObj.division || 1) : 1;
                         let handicap = jListObj && jListObj.handicap !== undefined && jListObj.handicap !== null ? jListObj.handicap : 5;
 
-                        // AÑADIR OPCIÓN DE DIVISIÓN 3 A LA TABLA DE INSCRITOS
                         html += `
                             <tr>
                                 <td><strong style="color:#ffffff; font-size:12px;">${ins.jugadores.nombre}</strong></td>
@@ -1106,7 +1087,6 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
                 tbody.innerHTML = html;
 
             } catch(e) { 
-                console.error("Error al cargar inscritos:", e); 
                 tbody.innerHTML = `<tr><td colspan="6" class="mensaje-vacio" style="color:#ef4444; font-weight:bold;">⚠️ Error Supabase: ${e.message}</td></tr>`;
             }
         }
@@ -1132,8 +1112,6 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
             safelyRunAsync(cargarInscritosEnVivo, 'tabla-inscritos-vivo');
         }
 
-        // ================= DEMÁS FUNCIONES ADMINISTRATIVAS =================
-
         function cargarInscripcionFlashView() {
             const selectCat = document.getElementById('select-cat-flash');
             if(selectCat) {
@@ -1153,7 +1131,6 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
                 let divGuardada = j.division || 1;
                 let ventajaGuardada = j.handicap !== undefined && j.handicap !== null ? j.handicap : 5;
                 
-                // AÑADIR OPCIÓN DE DIVISIÓN 3 A LA TABLA FLASH
                 tbody.innerHTML += `
                     <tr class="tr-jugador-flash" style="border-bottom:1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
                         <td style="text-align:center;">
@@ -1231,7 +1208,6 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
             const club = document.getElementById('flash-new-club').value;
             const puntos = parseInt(document.getElementById('flash-new-rank').value) || 0;
             const div = parseInt(document.querySelector('input[name="flash_new_div"]:checked').value);
-            // CORRECCIÓN MATEMÁTICA: La ventaja se guarda si la división es 2 o 3.
             const ventaja = (div === 2 || div === 3) ? (parseInt(document.getElementById('flash-new-ventaja').value) || 0) : 0;
             
             if (!nombre || puntos === 0) { alert("Por favor ingresa un nombre y sus puntos de ranking."); return; }
