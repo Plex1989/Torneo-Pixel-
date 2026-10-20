@@ -9,7 +9,6 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
 
-        /* ESTRUCTURA CORREGIDA PARA PREVENIR COLAPSO DE PANTALLA */
         body { 
             font-family: 'Sora', sans-serif; 
             margin: 0;
@@ -260,9 +259,9 @@
             </div>
             
             <div class="modal-body" id="convocatoria-body">
-                <div style="text-align:center; margin-bottom:20px;">
-                    <i class="fa-solid fa-spinner fa-spin" style="color:#f59e0b; font-size:24px;"></i>
-                    <p style="margin-top:12px; color:#94a3b8; font-weight:bold; font-size:10px; text-transform:uppercase; letter-spacing:2px;">Cargando documento...</p>
+                <div style="text-align:center; padding: 40px 0;">
+                    <i class="fa-solid fa-spinner fa-spin" style="color:#f59e0b; font-size:32px;"></i>
+                    <p style="margin-top:16px; color:#94a3b8; font-weight:bold; font-size:10px; text-transform:uppercase; letter-spacing:2px;">Sincronizando convocatoria...</p>
                 </div>
             </div>
             
@@ -435,31 +434,13 @@
                     clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID).order('nombre', { ascending: true }),
                     clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: true }),
                     clienteSupabase.from('inscripciones').select('*').eq('torneo_id', torneoActivo.id).eq('organizador_id', ORG_ID),
-                    clienteSupabase.from('clubes').select('*').eq('organizador_id', ORG_ID).order('nombre', { ascending: true }),
-                    clienteSupabase.from('configuracion').select('*').in('clave', ['conv_sistema', 'conv_reglas', 'conv_premios', 'conv_wa']).eq('organizador_id', ORG_ID)
+                    clienteSupabase.from('clubes').select('*').eq('organizador_id', ORG_ID).order('nombre', { ascending: true })
                 ]);
 
                 todosLosJugadores = resultados[0].status === 'fulfilled' ? (resultados[0].value.data || []) : [];
                 todasLasCategorias = resultados[1].status === 'fulfilled' ? (resultados[1].value.data || []) : [];
                 todasLasInscripciones = resultados[2].status === 'fulfilled' ? (resultados[2].value.data || []) : [];
                 todosLosClubs = resultados[3].status === 'fulfilled' ? (resultados[3].value.data || []) : [];
-                
-                let configData = resultados[4].status === 'fulfilled' ? (resultados[4].value.data || []) : [];
-                
-                if (configData.length > 0) {
-                    configData.forEach(item => {
-                        if(item.clave === 'conv_sistema') textosConvocatoria.sistema = item.valor_texto || '';
-                        if(item.clave === 'conv_reglas') textosConvocatoria.reglas = item.valor_texto || '';
-                        if(item.clave === 'conv_premios') textosConvocatoria.premios = item.valor_texto || '';
-                        if(item.clave === 'conv_wa') textosConvocatoria.wa = item.valor_texto || '';
-                    });
-                }
-
-                let waLink = `https://api.whatsapp.com/send?text=Hola,%20tengo%20una%20duda%20sobre%20el%20torneo:%20${encodeURIComponent(torneoActivo.nombre)}`;
-                if(textosConvocatoria.wa) {
-                    waLink = `https://api.whatsapp.com/send?phone=${textosConvocatoria.wa}&text=Hola,%20tengo%20una%20duda%20sobre%20el%20torneo:%20${encodeURIComponent(torneoActivo.nombre)}`;
-                }
-                document.getElementById('btn-wa-dudas').href = waLink;
                 
                 poblarClubs();
                 filtrarJugadores();
@@ -471,10 +452,48 @@
             }
         }
 
-        function abrirModalConvocatoria() {
+        // ==============================================
+        // MÓDULO: RENDERIZADO DE CONVOCATORIA EN VIVO
+        // ==============================================
+        async function abrirModalConvocatoria() {
             const bodyDiv = document.getElementById('convocatoria-body');
             document.getElementById('modal-convocatoria').style.display = 'flex';
             
+            // 1. Mostrar Spinner de carga
+            bodyDiv.innerHTML = `
+                <div style="text-align:center; padding: 40px 0;">
+                    <i class="fa-solid fa-spinner fa-spin" style="color:#f59e0b; font-size:32px;"></i>
+                    <p style="margin-top:16px; color:#94a3b8; font-weight:bold; font-size:10px; text-transform:uppercase; letter-spacing:2px;">Sincronizando convocatoria...</p>
+                </div>
+            `;
+
+            // 2. Extraer datos directamente de la base de datos (Garantiza info fresca)
+            try {
+                const { data, error } = await clienteSupabase.from('configuracion')
+                    .select('*')
+                    .in('clave', ['conv_sistema', 'conv_reglas', 'conv_premios', 'conv_wa'])
+                    .eq('organizador_id', ORG_ID);
+                
+                if (data && !error) {
+                    data.forEach(item => {
+                        if(item.clave === 'conv_sistema') textosConvocatoria.sistema = item.valor_texto || '';
+                        if(item.clave === 'conv_reglas') textosConvocatoria.reglas = item.valor_texto || '';
+                        if(item.clave === 'conv_premios') textosConvocatoria.premios = item.valor_texto || '';
+                        if(item.clave === 'conv_wa') textosConvocatoria.wa = item.valor_texto || '';
+                    });
+                }
+            } catch(e) {
+                console.error("Fallo al leer config:", e);
+            }
+
+            // 3. Actualizar el link de WhatsApp dinámicamente
+            let waLink = `https://api.whatsapp.com/send?text=Hola,%20tengo%20una%20duda%20sobre%20el%20torneo:%20${encodeURIComponent(torneoActivo.nombre)}`;
+            if(textosConvocatoria.wa) {
+                waLink = `https://api.whatsapp.com/send?phone=${textosConvocatoria.wa}&text=Hola,%20tengo%20una%20duda%20sobre%20el%20torneo:%20${encodeURIComponent(torneoActivo.nombre)}`;
+            }
+            document.getElementById('btn-wa-dudas').href = waLink;
+
+            // 4. Formatear y Pintar (Renderizar) la tarjeta
             const txtSis = textosConvocatoria.sistema ? textosConvocatoria.sistema.replace(/\n/g, '<br>') : '<span style="color:#64748b; font-style:italic;">No especificado.</span>';
             const txtReg = textosConvocatoria.reglas ? textosConvocatoria.reglas.replace(/\n/g, '<br>') : '<span style="color:#64748b; font-style:italic;">El vigente de la I.T.T.F.</span>';
             const txtPre = textosConvocatoria.premios ? textosConvocatoria.premios.replace(/\n/g, '<br>') : '<span style="color:#64748b; font-style:italic;">Se anunciará el día del evento.</span>';
