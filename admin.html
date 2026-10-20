@@ -3,41 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- ETIQUETAS ANTI-CACHÉ EXTREMAS -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     
     <title>Panel de Control - Arbitraje Digital</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- CANDADO DE SEGURIDAD -->
     <script>
         const isAuthLocal = localStorage.getItem('admin_autenticado') === 'true';
         if (!isAuthLocal) {
             alert("🔒 Acceso Restringido: Inicia sesión en la Central de Torneos.");
             window.location.href = "torneos.html";
         }
+
+        // ==========================================
+        // FUNCIONES DE NAVEGACIÓN INTELIGENTE
+        // ==========================================
+        function abrirVistaInteligente(destino) {
+            let idTorneo = parseInt(localStorage.getItem('torneo_activo_id')) || 1;
+            window.location.href = destino + ".html?torneo=" + idTorneo;
+        }
+
+        function enfocarPestanaEspectador() {
+            let idTorneo = parseInt(localStorage.getItem('torneo_activo_id')) || 1;
+            let url = "espectador.html?torneo=" + idTorneo;
+            let win = window.open(url, 'espectador_view');
+            if (win) win.focus();
+            else alert("Por favor, permite las ventanas emergentes (pop-ups).");
+        }
     </script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Orbitron:wght@700;800&display=swap');
 
-        body { font-family: 'Sora', sans-serif; margin: 0; padding: 0; background-color: #04060a; color: #f8fafc; min-height: 100vh; position: relative; overflow-x: hidden; }
+        body { font-family: 'Sora', sans-serif; margin: 0; padding: 0; background-color: #04060a; color: #f8fafc; min-height: 100vh; position: relative; overflow-x: hidden; scroll-behavior: smooth; }
         
         body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 10s infinite alternate; }
         body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; animation: pulse-slow 12s infinite alternate-reverse; }
         @keyframes pulse-slow { 0% { transform: scale(1) translate(0px, 0px); } 100% { transform: scale(1.3) translate(40px, -60px); } }
 
-        /* HEADER FIJO STICKY */
         .navbar { background: rgba(10, 15, 26, 0.85); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 100; }
         .nav-title { font-weight: 800; font-size: 15px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
         
         .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
-        .nav-btn { color: #94a3b8; text-decoration: none; padding: 8px 18px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
+        .nav-btn { color: #94a3b8; text-decoration: none; padding: 8px 18px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; }
         .nav-btn:hover { color: #000000; background: #f5a623; border-color: #f5a623; box-shadow: 0 0 25px rgba(245, 166, 35, 0.8); transform: translateY(-2px); }
         .nav-btn.active { color: #ffffff; border-color: #8b5cf6; background: rgba(139, 92, 246, 0.3); box-shadow: 0 0 15px rgba(139, 92, 246, 0.4); }
 
@@ -50,7 +62,7 @@
         .panel-amber { border-bottom: 5px solid #451a03; }
         .panel-purple { border-bottom: 5px solid #2e1065; }
         .panel-blue { border-bottom: 5px solid #1e3a8a; }
-        .panel-pink { border-bottom: 5px solid #500724; }
+        .panel-pink { border-bottom: 5px solid #be185d; }
         .panel-red { border-bottom: 5px solid #450a0a; }
         .panel-gold { border-bottom: 5px solid #b45309; }
         .panel-orange { border-bottom: 5px solid #ea580c; } 
@@ -110,7 +122,6 @@
 
         .memoria-print-area { display: none; background: #fff !important; color: #000 !important; padding: 40px; font-family: 'Arial', sans-serif; }
         
-        /* ================= CSS EXCLUSIVO PARA IMPRESIÓN DEL RANKING ================= */
         @media print {
             body > *:not(#area-impresion-memoria) { display: none !important; }
             body { background: #ffffff !important; }
@@ -119,7 +130,6 @@
             
             .impresion-ranking { font-family: 'Arial', sans-serif !important; color: #0f172a !important; width: 100%; max-width: 850px; margin: 0 auto; }
             
-            /* Encabezado Principal */
             .print-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 4px solid #0f172a; padding-bottom: 15px; margin-bottom: 25px; }
             .print-header-left h2 { margin: 0; font-size: 28px; font-weight: 900; color: #0f172a !important; letter-spacing: -1px; }
             .print-header-left h3 { margin: 0; font-size: 11px; font-weight: 600; color: #475569 !important; text-transform: uppercase; letter-spacing: 1px; }
@@ -128,22 +138,18 @@
             .print-header-right { text-align: right; font-size: 11px; color: #475569 !important; font-weight: 600; text-transform: uppercase;}
             .print-header-right strong { font-size: 16px; color: #0f172a !important; font-weight: 900; }
 
-            /* Contenedor de la categoría para evitar saltos raros */
             .print-cat-wrapper { margin-bottom: 25px; page-break-inside: avoid; }
             
-            /* Tablas de PDF */
             .print-table { width: 100%; border-collapse: collapse; border: 1px solid #cbd5e1; font-size: 11px; }
             .print-table th { padding: 8px 10px; text-align: left; font-size: 9px; font-weight: 800; color: #475569 !important; text-transform: uppercase; border-bottom: 2px solid #94a3b8; background: #f8fafc !important; -webkit-print-color-adjust: exact; }
             .print-table td { padding: 6px 10px; border-bottom: 1px solid #e2e8f0; color: #0f172a !important; }
             
-            /* Colores específicos de la cabecera en el PDF */
-            .bg-cat-0 { background-color: #fbbf24 !important; color: #000 !important; -webkit-print-color-adjust: exact; } /* Oro */
-            .bg-cat-1 { background-color: #94a3b8 !important; color: #000 !important; -webkit-print-color-adjust: exact; } /* Plata */
-            .bg-cat-2 { background-color: #d97706 !important; color: #fff !important; -webkit-print-color-adjust: exact; } /* Bronce */
-            .bg-cat-3 { background-color: #06b6d4 !important; color: #000 !important; -webkit-print-color-adjust: exact; } /* Cyan */
-            .bg-cat-4 { background-color: #a855f7 !important; color: #fff !important; -webkit-print-color-adjust: exact; } /* Purpura */
+            .bg-cat-0 { background-color: #fbbf24 !important; color: #000 !important; -webkit-print-color-adjust: exact; } 
+            .bg-cat-1 { background-color: #94a3b8 !important; color: #000 !important; -webkit-print-color-adjust: exact; } 
+            .bg-cat-2 { background-color: #d97706 !important; color: #fff !important; -webkit-print-color-adjust: exact; } 
+            .bg-cat-3 { background-color: #06b6d4 !important; color: #000 !important; -webkit-print-color-adjust: exact; } 
+            .bg-cat-4 { background-color: #a855f7 !important; color: #fff !important; -webkit-print-color-adjust: exact; } 
             
-            /* Elementos de la tabla */
             .pt-rank { font-weight: 800; color: #64748b !important; text-align: center; }
             .pt-name { font-weight: 800; font-size: 12px; }
             .pt-club { font-size: 9px; font-weight: 700; color: #64748b !important; text-transform: uppercase;}
@@ -159,6 +165,7 @@
             background: rgba(0, 0, 0, 0.5) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 8px !important; padding: 8px !important; color: #ffffff !important; font-size: 11px !important; outline: none !important; transition: all 0.2s !important;
         }
         .input-tabla:focus { border-color: #06b6d4 !important; }
+        textarea.input-tabla { font-family: 'Sora', sans-serif; padding: 12px !important; line-height: 1.5; }
     </style>
 </head>
 <body>
@@ -201,7 +208,6 @@
                     </select>
                     <input type="number" id="flash-new-rank" placeholder="Puntos (Ej. 1000)" class="input-tabla w-full">
                 </div>
-                <!-- AQUÍ AGREGAMOS LA OPCIÓN DE DIVISIÓN 3 -->
                 <div style="display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); flex-wrap:wrap;">
                     <span style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">División:</span>
                     <label style="display:flex; align-items:center; gap:4px; font-size:11px; font-weight:700; color:#fff; cursor:pointer;">
@@ -250,16 +256,17 @@
         </div>
     </div>
 
-    <!-- NAVEGACIÓN FIJA ÚNICA -->
+    <!-- NAVEGACIÓN FIJA ÚNICA (Actualizada) -->
     <nav class="navbar no-print">
         <div class="nav-title">CENTRAL DE TORNEOS</div>
         <div class="nav-links">
-            <a href="torneos.html" class="nav-btn">Mis Torneos</a>
-            <a href="admin.html" class="nav-btn active">Administrador</a>
-            <a href="sorteo.html" class="nav-btn">Sorteo y Rol</a>
-            <a href="mesas.html" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
-            <a href="espectador.html" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador</a>
-            <a href="index.html" class="nav-btn">Portal Público</a>
+            <a href="#" onclick="window.location.href='torneos.html'; return false;" class="nav-btn">Mis Torneos</a>
+            <a href="#" class="nav-btn active">Administrador</a>
+            <a href="#panel-convocatoria" class="nav-btn" style="border-color:#f472b6; color:#f472b6;">📄 Convocatoria</a>
+            <a href="#" onclick="abrirVistaInteligente('sorteo'); return false;" class="nav-btn">Sorteo y Rol</a>
+            <a href="#" onclick="abrirVistaInteligente('mesas'); return false;" class="nav-btn" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
+            <a href="#" onclick="enfocarPestanaEspectador(); return false;" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador</a>
+            <a href="#" onclick="window.location.href='index.html?torneo=' + idTorneoActivo; return false;" class="nav-btn">Portal Público</a>
             <button onclick="cerrarSesionAdmin()" class="nav-btn" style="border-color: rgba(239,68,68,0.4); color: #f87171; cursor:pointer;">SALIR</button>
         </div>
     </nav>
@@ -313,6 +320,35 @@
                     <tr><td colspan="6" class="mensaje-vacio">Cargando categorías...</td></tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- MÓDULO NUEVO: CONVOCATORIA DIGITAL -->
+        <div class="panel-3d panel-pink" id="panel-convocatoria">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap: wrap; gap: 10px;">
+                <h2 style="border:none; margin:0; padding:0;">📄 Generador de Convocatoria Digital</h2>
+                <button id="btn-guardar-conv" class="btn-console btn-pink" onclick="guardarConvocatoria()">💾 Guardar Textos</button>
+            </div>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 20px; font-weight: 600;">Personaliza los textos que aparecerán en el cartel digital de tu torneo (visible en el portal público de inscripción).</p>
+            
+            <div style="display:flex; flex-direction:column; gap:20px;">
+                <div>
+                    <label style="font-size:10px; color:#f472b6; font-weight:800; text-transform:uppercase; margin-bottom:6px; display:block;">Sistema de Competencia:</label>
+                    <textarea id="conv-sistema" class="input-tabla" style="width:100%; height:75px; resize:vertical;">Se jugará en 2 fases:
+Fase 1: Grupos de 3 a 5 jugadores haciendo la siembra por sistema serpiente de acuerdo a ranking.
+Fase 2: Fase de Eliminación Directa.</textarea>
+                </div>
+                <div>
+                    <label style="font-size:10px; color:#f472b6; font-weight:800; text-transform:uppercase; margin-bottom:6px; display:block;">Reglamento y Arbitraje:</label>
+                    <textarea id="conv-reglas" class="input-tabla" style="width:100%; height:75px; resize:vertical;">El vigente de la I.T.T.F.
+Todos los jugadores al inscribirse se comprometen a arbitrar los partidos cuando se les solicite.</textarea>
+                </div>
+                <div>
+                    <label style="font-size:10px; color:#f472b6; font-weight:800; text-transform:uppercase; margin-bottom:6px; display:block;">Premiación y Notas Adicionales:</label>
+                    <textarea id="conv-premios" class="input-tabla" style="width:100%; height:95px; resize:vertical;">Categoría Abierta 1er Lugar $ 1,500, 2do Lugar $ 1,000, Terceros lugares $ 750.
+Reconocimientos para primeros tres lugares de las demás categorías.
+El comité organizador se reserva el derecho de inscripciones fuera de los límites establecidos de acuerdo a las necesidades del evento.</textarea>
+                </div>
+            </div>
         </div>
 
         <!-- INSCRITOS -->
@@ -692,6 +728,7 @@
             await safelyRunAsync(cargarPendientes, 'tabla-pendientes');
             await safelyRunAsync(cargarPendientesRanking, 'tabla-pendientes-ranking');
             await safelyRunAsync(cargarBono, null);
+            await safelyRunAsync(cargarConvocatoria, null); // Módulo Convocatoria
 
             activarSuscripcionEspectadores();
             activarSuscripcionRealtime();
@@ -706,6 +743,58 @@
                     const el = document.getElementById(tableId);
                     if (el) el.innerHTML = `<tr><td colspan="10" class="mensaje-vacio" style="color:#ef4444; font-weight:bold;">⚠️ Error: ${e.message}</td></tr>`;
                 }
+            }
+        }
+
+        // =========================================================================
+        // MÓDULO: CONVOCATORIA DIGITAL
+        // =========================================================================
+
+        async function cargarConvocatoria() {
+            try {
+                const { data } = await clienteSupabase.from('configuracion')
+                    .select('*')
+                    .in('clave', ['conv_sistema', 'conv_reglas', 'conv_premios'])
+                    .eq('organizador_id', ORG_ID);
+                
+                if (data && data.length > 0) {
+                    data.forEach(item => {
+                        if (item.clave === 'conv_sistema' && item.valor_texto) document.getElementById('conv-sistema').value = item.valor_texto;
+                        if (item.clave === 'conv_reglas' && item.valor_texto) document.getElementById('conv-reglas').value = item.valor_texto;
+                        if (item.clave === 'conv_premios' && item.valor_texto) document.getElementById('conv-premios').value = item.valor_texto;
+                    });
+                }
+            } catch(e) { console.error("Error cargando convocatoria:", e); }
+        }
+
+        async function guardarConvocatoria() {
+            const btn = document.getElementById('btn-guardar-conv');
+            btn.innerText = "⏳ Guardando..."; btn.disabled = true;
+
+            const sistema = document.getElementById('conv-sistema').value;
+            const reglas = document.getElementById('conv-reglas').value;
+            const premios = document.getElementById('conv-premios').value;
+
+            const upsertData = [
+                { clave: 'conv_sistema', valor_texto: sistema, organizador_id: ORG_ID },
+                { clave: 'conv_reglas', valor_texto: reglas, organizador_id: ORG_ID },
+                { clave: 'conv_premios', valor_texto: premios, organizador_id: ORG_ID }
+            ];
+
+            try {
+                for (let item of upsertData) {
+                    const { data: existe } = await clienteSupabase.from('configuracion').select('id').eq('clave', item.clave).eq('organizador_id', ORG_ID).maybeSingle();
+                    if (existe) {
+                        await clienteSupabase.from('configuracion').update({ valor_texto: item.valor_texto }).eq('id', existe.id);
+                    } else {
+                        await clienteSupabase.from('configuracion').insert([item]);
+                    }
+                }
+                alert("✅ Textos de la convocatoria guardados correctamente.");
+            } catch (e) {
+                alert("❌ Error: " + e.message + "\n\n💡 Tip: Verifica en Supabase que tu tabla 'configuracion' tenga una columna llamada 'valor_texto' con tipo de dato 'Text'.");
+            } finally {
+                btn.innerText = "💾 Guardar Textos"; btn.disabled = false;
             }
         }
 
