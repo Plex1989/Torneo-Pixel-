@@ -18,9 +18,6 @@
             else alert("Por favor, permite las ventanas emergentes (pop-ups).");
         }
 
-        // ==========================================
-        // MAGIA DE NAVEGACIÓN EN LA MISMA PESTAÑA
-        // ==========================================
         function abrirVistaInteligente(destino) {
             let idTorneo = parseInt(localStorage.getItem('torneo_activo_id')) || 1;
             let url = destino + ".html?torneo=" + idTorneo;
@@ -109,6 +106,7 @@
 
         .badge-mesa { background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(16,185,129,0.3); }
         .badge-grupo { background: rgba(6, 182, 212, 0.15); color: #38bdf8; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(6,182,212,0.3); }
+        .badge-llave { background: rgba(245, 158, 11, 0.15); color: #fbbf24; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(245, 158, 11, 0.3); }
 
         .mensaje-vacio { text-align: center; color: #475569; font-style: italic; background: transparent !important; border: none !important; }
 
@@ -174,7 +172,7 @@
         </div>
     </div>
 
-    <!-- BOTONERA SUPERIOR ACTUALIZADA PARA NO ABRIR PESTAÑAS NUEVAS -->
+    <!-- BOTONERA SUPERIOR INTELIGENTE -->
     <nav class="navbar no-print">
         <div class="nav-title">CENTRAL DE TORNEOS</div>
         <div class="nav-links">
@@ -364,6 +362,7 @@
         let historialFlashGlobal = []; 
         let idJugadorPendienteDiv = null; 
         let draggedId = null; 
+        let llavesTienenCuartos = false; // Variable global para saber si hubo cuartos al generar proyección
 
         const clasesColoresGrupo = ['gpo-cyan', 'gpo-purple', 'gpo-emerald', 'gpo-amber'];
 
@@ -376,6 +375,31 @@
             { border: '#f97316', bg: 'rgba(249, 115, 22, 0.1)', text: '#fff', badge: '#f97316' }, 
             { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)', text: '#000', badge: '#06b6d4' }   
         ];
+
+        // Mapeo inteligente de proyección de Nombres para Fase de Llaves
+        function getProyeccionNombre(rondaFase, isJ1, hasCuartos) {
+            if (!rondaFase) return 'Por definir';
+            const rf = String(rondaFase).toLowerCase();
+            
+            if (rf.includes('cuartos')) {
+                if (rf.includes('1')) return isJ1 ? '1° Gpo A' : '2° Gpo C';
+                if (rf.includes('2')) return isJ1 ? '1° Gpo B' : '2° Gpo D';
+                if (rf.includes('3')) return isJ1 ? '1° Gpo C' : '2° Gpo A';
+                if (rf.includes('4')) return isJ1 ? '1° Gpo D' : '2° Gpo B';
+            }
+            if (rf.includes('semi')) {
+                if (hasCuartos) {
+                    if (rf.includes('1')) return isJ1 ? 'Gana Cuartos 1' : 'Gana Cuartos 2';
+                    if (rf.includes('2')) return isJ1 ? 'Gana Cuartos 3' : 'Gana Cuartos 4';
+                } else {
+                    if (rf.includes('1')) return isJ1 ? '1° Gpo A' : '2° Gpo B';
+                    if (rf.includes('2')) return isJ1 ? '1° Gpo B' : '2° Gpo A';
+                }
+            }
+            if (rf.includes('final')) return isJ1 ? 'Gana Semi 1' : 'Gana Semi 2';
+            
+            return isJ1 ? `${rondaFase} J1` : `${rondaFase} J2`;
+        }
 
         // ==============================================================
         // PARSER DE TIEMPOS BLINDADO (SOLUCIONA EL BUG DE LAS 12:00 AM)
@@ -514,7 +538,8 @@
                         contSorteo.style.display = 'none'; btnRehacer.style.display = 'inline-flex'; panelHorarios.style.display = 'none'; btnGuardar.style.display = 'none';
                         
                         let hasLlaves = partidosBD.some(p => p.ronda_fase && (p.ronda_fase.toLowerCase().includes('semi') || p.ronda_fase.toLowerCase().includes('final') || p.ronda_fase.toLowerCase().includes('cuarto')));
-                        
+                        llavesTienenCuartos = partidosBD.some(p => String(p.ronda_fase).toLowerCase().includes('cuartos'));
+
                         if (!hasLlaves && partidosBD.some(p => p.grupo_nombre === 'Único')) {
                             modoTorneoActual = 'liga';
                             document.getElementById('btn-toggle-rr').classList.remove('active');
@@ -725,7 +750,7 @@
                             <div style="margin-top:4px;"><span style="color:#fff; font-size:12px; font-weight:800;">${n1}</span><span class="vs text-fuchsia-400">VS</span><span style="color:#fff; font-size:12px; font-weight:800;">${n2}</span></div>
                         </div>
                         <div style="display:flex; gap:6px;">
-                            <a href="#" onclick="abrirVistaInteligente('juez'); return false;" class="btn-console" style="padding:6px 12px; font-size:9px; border-color:#fbbf24; color:#fbbf24; background:rgba(245,158,11,0.1);">🏓 Juez</a>
+                            <a href="juez.html?partido=${p.id}" target="_blank" class="btn-console" style="padding:6px 12px; font-size:9px; border-color:#fbbf24; color:#fbbf24; background:rgba(245,158,11,0.1);">🏓 Juez</a>
                         </div>
                     </div>
                 `;
@@ -900,7 +925,12 @@
             let breakApplied = false; partidosGeneradosRR = [];
 
             while (pendingMatches.length > 0) {
-                if (minsBreak !== null && !breakApplied && currentTimeMins >= minsBreak) { currentTimeMins += (parseInt(document.getElementById('rr-duracion-break').value) || 30); breakApplied = true; }
+                // VERIFICACIÓN DEL BREAK PARA FASE DE GRUPOS
+                if (minsBreak !== null && !breakApplied && currentTimeMins >= minsBreak) { 
+                    currentTimeMins += (parseInt(document.getElementById('rr-duracion-break').value) || 30); 
+                    breakApplied = true; 
+                }
+                
                 let blockHoraStr = minutesToTimeStr(currentTimeMins);
                 let playersBusyInBlock = new Set(); let tableCounter = 0; let externalRefCounter = 0; let matchesAssignedInBlock = [];
 
@@ -933,33 +963,43 @@
 
             if (modoTorneoActual !== 'liga') {
                 let rondasLlaves = [];
+                llavesTienenCuartos = false;
+                
                 if (gruposGlobal.length > 2) {
+                    llavesTienenCuartos = true;
                     rondasLlaves.push([
-                        { rondaFase: 'Cuartos 1', j1NombreTemp: 'Mejor 1° (Seed 1)', j2NombreTemp: 'Peor 2° (Seed 8)', modoJuego, juez: 'Comité Oficial' },
-                        { rondaFase: 'Cuartos 2', j1NombreTemp: '4° Mejor (Seed 4)', j2NombreTemp: '5° Mejor (Seed 5)', modoJuego, juez: 'Comité Oficial' },
-                        { rondaFase: 'Cuartos 3', j1NombreTemp: '3° Mejor (Seed 3)', j2NombreTemp: '6° Mejor (Seed 6)', modoJuego, juez: 'Comité Oficial' },
-                        { rondaFase: 'Cuartos 4', j1NombreTemp: '2° Mejor (Seed 2)', j2NombreTemp: '7° Mejor (Seed 7)', modoJuego, juez: 'Comité Oficial' }
+                        { rondaFase: 'Cuartos 1', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Cuartos 2', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Cuartos 3', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Cuartos 4', modoJuego, juez: 'Comité Oficial' }
                     ]);
                     rondasLlaves.push([
-                        { rondaFase: 'Semifinal 1', j1NombreTemp: 'Gana Cuartos 1', j2NombreTemp: 'Gana Cuartos 2', modoJuego, juez: 'Comité Oficial' },
-                        { rondaFase: 'Semifinal 2', j1NombreTemp: 'Gana Cuartos 3', j2NombreTemp: 'Gana Cuartos 4', modoJuego, juez: 'Comité Oficial' }
+                        { rondaFase: 'Semifinal 1', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Semifinal 2', modoJuego, juez: 'Comité Oficial' }
                     ]);
                     rondasLlaves.push([
-                        { rondaFase: 'Gran Final', j1NombreTemp: 'Gana Semi 1', j2NombreTemp: 'Gana Semi 2', modoJuego, juez: 'Comité Oficial' }
+                        { rondaFase: 'Gran Final', modoJuego, juez: 'Comité Oficial' }
                     ]);
                 } else {
                     rondasLlaves.push([
-                        { rondaFase: 'Semifinal 1', j1NombreTemp: 'Seed 1 (Mejor 1°)', j2NombreTemp: 'Seed 4 (Peor 2°)', modoJuego, juez: 'Comité Oficial' },
-                        { rondaFase: 'Semifinal 2', j1NombreTemp: 'Seed 2 (Peor 1°)', j2NombreTemp: 'Seed 3 (Mejor 2°)', modoJuego, juez: 'Comité Oficial' }
+                        { rondaFase: 'Semifinal 1', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Semifinal 2', modoJuego, juez: 'Comité Oficial' }
                     ]);
                     rondasLlaves.push([
-                        { rondaFase: 'Gran Final', j1NombreTemp: 'Ganador Semi 1', j2NombreTemp: 'Ganador Semi 2', modoJuego, juez: 'Comité Oficial' }
+                        { rondaFase: 'Gran Final', modoJuego, juez: 'Comité Oficial' }
                     ]);
                 }
 
                 rondasLlaves.forEach(ronda => {
                     let matchesAsignadosRonda = 0;
                     while(matchesAsignadosRonda < ronda.length) {
+                        
+                        // FIX DEL BREAK: Se verifica y aplica TAMBIÉN durante las llaves de eliminación directa.
+                        if (minsBreak !== null && !breakApplied && currentTimeMins >= minsBreak) { 
+                            currentTimeMins += (parseInt(document.getElementById('rr-duracion-break').value) || 30); 
+                            breakApplied = true; 
+                        }
+                        
                         let horaStr = minutesToTimeStr(currentTimeMins);
                         let tableCounter = 0;
                         while (tableCounter < numMesasFinales && matchesAsignadosRonda < ronda.length) {
@@ -989,10 +1029,11 @@
                 let esJuez = filtroActual && typeof juezTexto === 'string' && juezTexto.includes(filtroActual);
                 let esJ1 = filtroActual && p.j1 && p.j1.nombre === filtroActual; let esJ2 = filtroActual && p.j2 && p.j2.nombre === filtroActual;
                 let juezBadge = esJuez ? `<span style="background: #ef4444; color: #ffffff; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 1px; box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); display:inline-block;"><i class="fa-solid fa-gavel"></i> ¡TE TOCA ARBITRAR!</span>` : `<span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span>`;
-                let nomJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
-                let nomJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
-
+                
+                // Mapeo inteligente con los nombres proyectados para llaves guardadas en BD
                 let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Llave'));
+                let nomJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : 'Por definir');
+                let nomJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : 'Por definir');
 
                 htmlTabla += `<tr style="${esJuez ? 'background: rgba(239, 68, 68, 0.1);' : ''}"><td><strong>⏰ ${p.hora || '09:00 AM'}</strong></td><td><span class="badge-mesa">Mesa ${p.mesa || 1}</span></td><td><span class="badge-grupo">${eqGrupo}</span></td><td><strong style="${esJ1 ? 'color:#38bdf8; font-size:14px;' : ''}">${nomJ1}</strong></td><td style="text-align:center;">VS</td><td><strong style="${esJ2 ? 'color:#38bdf8; font-size:14px;' : ''}">${nomJ2}</strong></td><td>${juezBadge}</td><td class="no-print"><div style="display:flex; gap:6px; flex-wrap:wrap;"><a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 8px; font-size:9px; text-decoration:none;">🏓 Juez</a><a href="espectador.html?partido=${p.id}" class="btn-console btn-purple" style="padding:4px 8px; font-size:9px; text-decoration:none;">👁 Ver</a></div></td></tr>`;
             });
@@ -1004,9 +1045,12 @@
             let htmlTabla = '';
             lista.forEach((p) => {
                 let juezTexto = p.juez || 'Comité / Libre';
-                let nomJ1 = p.j1 ? p.j1.nombre : (p.j1NombreTemp || 'Por definir');
-                let nomJ2 = p.j2 ? p.j2.nombre : (p.j2NombreTemp || 'Por definir');
                 let eqGrupo = p.grupoNombre === 'Único' ? 'Liga Única' : (p.grupoNombre ? 'Gpo ' + p.grupoNombre : (p.rondaFase || 'Llave'));
+                
+                // Mapeo inteligente con los nombres proyectados para llaves recién generadas
+                let nomJ1 = p.j1 ? p.j1.nombre : (p.rondaFase ? getProyeccionNombre(p.rondaFase, true, llavesTienenCuartos) : 'Por definir');
+                let nomJ2 = p.j2 ? p.j2.nombre : (p.rondaFase ? getProyeccionNombre(p.rondaFase, false, llavesTienenCuartos) : 'Por definir');
+                
                 htmlTabla += `<tr><td><strong>⏰ ${p.hora}</strong></td><td><span class="badge-mesa">Mesa ${p.mesa}</span></td><td><span class="badge-grupo">${eqGrupo}</span></td><td><strong>${nomJ1}</strong></td><td style="text-align:center;">VS</td><td><strong>${nomJ2}</strong></td><td><span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span></td><td class="no-print"><small style="color:#fbbf24; font-weight:700;">Guarda en BD para habilitar arbitraje</small></td></tr>`;
             });
             tbody.innerHTML = htmlTabla;
@@ -1037,7 +1081,8 @@
 
             lista.forEach(p => {
                 let rolText = (nombre && p.juez && typeof p.juez === 'string' && p.juez.includes(nombre)) ? "⚖️ ARBITRA" : "🏓 JUEGA";
-                let n1 = p.j1 ? p.j1.nombre : (p.ronda_fase || '1° Gpo A'); let n2 = p.j2 ? p.j2.nombre : (p.ronda_fase || '2° Gpo B');
+                let n1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : '1° Gpo A'); 
+                let n2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : '2° Gpo B');
                 texto += `⏰ ${p.hora || '09:00 AM'} | Mesa ${p.mesa} [${rolText}]\n   ${n1} vs ${n2}\n   ⚖️ Juez: ${p.juez || 'Comité'}\n\n`;
             });
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
@@ -1051,7 +1096,8 @@
             let lista = nombre ? partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre) || (p.juez && typeof p.juez === 'string' && p.juez.includes(nombre))) : partidosCargadosGlobal;
 
             lista.forEach(p => {
-                let n1 = p.j1 ? p.j1.nombre : (p.ronda_fase || '1° Gpo A'); let n2 = p.j2 ? p.j2.nombre : (p.ronda_fase || '2° Gpo B');
+                let n1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : '1° Gpo A'); 
+                let n2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : '2° Gpo B');
                 let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre ? 'Gpo '+p.grupo_nombre : (p.ronda_fase||'Llave'));
                 csv += `"${p.hora || '09:00 AM'}","Mesa ${p.mesa}","${eqGrupo}","${n1}","${n2}","${p.juez || 'Comité'}"\n`;
             });
