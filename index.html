@@ -9,11 +9,11 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
 
+        /* ESTRUCTURA CORREGIDA PARA PREVENIR COLAPSO DE PANTALLA */
         body { 
             font-family: 'Sora', sans-serif; 
+            margin: 0;
             padding: 20px; 
-            max-width: 520px; 
-            margin: auto; 
             background-color: #04060a; 
             color: #f8fafc; 
             min-height: 100vh; 
@@ -32,6 +32,7 @@
         .formulario { 
             position: relative; 
             width: 100%;
+            max-width: 520px;
             background: rgba(10, 15, 26, 0.55); 
             backdrop-filter: blur(20px); 
             -webkit-backdrop-filter: blur(20px); 
@@ -98,4 +99,716 @@
             transform: translateY(-2px);
         }
 
-        .modal-overlay { position: fixed; inset: 0; background: rgba(4, 6, 10, 0.9
+        .modal-overlay { position: fixed; inset: 0; background: rgba(4, 6, 10, 0.9); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-card { 
+            background: rgba(15, 23, 42, 0.7); 
+            border: 1px solid rgba(251, 191, 36, 0.3); 
+            border-top: 5px solid #fbbf24;
+            border-radius: 20px; 
+            width: 100%; 
+            max-width: 500px; 
+            max-height: 85vh; 
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(251, 191, 36, 0.15); 
+        }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 24px; overflow-y: auto; color: #cbd5e1; font-size: 12px; line-height: 1.6; }
+        
+        .conv-seccion { margin-bottom: 25px; }
+        .conv-titulo { color: #38bdf8; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; border-bottom: 1px dashed rgba(56, 189, 248, 0.3); padding-bottom: 6px; }
+        
+        .conv-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: rgba(0,0,0,0.3); border-radius: 10px; overflow: hidden; }
+        .conv-table th { background: rgba(251, 191, 36, 0.1); color: #fbbf24; padding: 10px; text-transform: uppercase; font-size: 9px; letter-spacing: 1px; text-align: left; }
+        .conv-table td { padding: 10px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 11px; color: #fff; }
+        .conv-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .conv-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .conv-info-item { display: flex; flex-direction: column; gap: 4px; }
+        .conv-info-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
+        .conv-info-val { font-size: 12px; color: #fff; font-weight: 700; }
+
+        label { font-weight: 800; display: block; margin-top: 18px; margin-bottom: 8px; color: #ffffff; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
+        
+        input[type="text"], input[type="password"], select { 
+            width: 100%; 
+            padding: 11px 14px; 
+            border-radius: 10px; 
+            border: 1px solid rgba(255, 255, 255, 0.18) !important; 
+            background: rgba(10, 15, 26, 0.85) !important; 
+            color: #ffffff !important; 
+            font-size: 12px; 
+            font-family: 'Sora', sans-serif;
+            font-weight: 600;
+            box-sizing: border-box; 
+            transition: all 0.2s ease; 
+        }
+
+        select option { background-color: #0a0b10 !important; color: #ffffff !important; padding: 10px; }
+
+        input[type="text"]:focus, select:focus { border-color: #38bdf8 !important; outline: none; box-shadow: 0 0 16px rgba(56, 189, 248, 0.55); }
+
+        .caja-seguridad { 
+            background: rgba(15, 23, 42, 0.6); 
+            padding: 16px; 
+            border-radius: 12px; 
+            border: 1px solid rgba(239, 68, 68, 0.2); 
+            border-bottom: 3px solid #7f1d1d;
+            margin-top: 18px; 
+            display: none; 
+            transition: all 0.3s ease;
+        }
+
+        #nip-jugador:focus { border-color: #ef4444 !important; outline: none; box-shadow: 0 0 16px rgba(239, 68, 68, 0.55); }
+
+        .btn-submit { 
+            width: 100%;
+            margin-top: 20px;
+            padding: 14px; 
+            background: rgba(245, 158, 11, 0.15); 
+            color: #fbbf24; 
+            border: 1px solid rgba(245, 158, 11, 0.5); 
+            border-radius: 9999px; 
+            font-size: 11px; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px; 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            font-family: 'Sora', sans-serif;
+        }
+
+        .btn-submit:hover:not(:disabled) { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 25px rgba(245, 158, 11, 0.85); transform: translateY(-2px); }
+        .btn-submit:disabled { background: rgba(255,255,255,0.03); color: #64748b; border-color: rgba(255,255,255,0.06); cursor: not-allowed; opacity: 0.6; }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #94a3b8;
+            padding: 8px 14px;
+            border-radius: 9999px;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-secondary:hover { color: #ffffff; border-color: #06b6d4; background: rgba(6, 182, 212, 0.2); }
+
+        #info-puntos { color: #38bdf8; font-size: 11px; margin-top: 6px; font-weight: 700; }
+        .ya-inscrito { color: #34d399; font-size: 11px; font-weight: 700; margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .tarjeta-horario-cat {
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-left: 4px solid #06b6d4;
+            padding: 12px 16px;
+            border-radius: 10px;
+            margin-top: 10px;
+            display: none;
+            font-size: 11px;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+
+        .tarjeta-pendiente-ranking {
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+            border-left: 4px solid #f59e0b;
+            padding: 14px 18px;
+            border-radius: 12px;
+            margin-top: 14px;
+            display: none;
+            font-size: 11px;
+            color: #fef08a;
+            line-height: 1.6;
+        }
+
+        .seccion-plegable {
+            background: rgba(15, 23, 42, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 12px;
+            padding: 18px;
+            margin-top: 18px;
+            display: none;
+        }
+
+        .banner-jugador-seleccionado {
+            display: none; 
+            background: rgba(16, 185, 129, 0.1); 
+            border: 1px solid rgba(16, 185, 129, 0.4); 
+            border-radius: 12px; 
+            padding: 14px; 
+            margin-top: 15px; 
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        .banner-jugador-seleccionado .etiqueta { font-size: 10px; color: #34d399; text-transform: uppercase; font-weight: 800; letter-spacing: 1px; }
+        .banner-jugador-seleccionado .nombre { font-size: 15px; font-weight: 800; color: #ffffff; margin-top: 4px; margin-bottom: 10px; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <!-- MODAL CONVOCATORIA DIGITAL -->
+    <div id="modal-convocatoria" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 style="margin:0; font-size:16px; font-weight:900; color:#fbbf24; text-transform:uppercase; letter-spacing:1px;"><i class="fa-solid fa-file-contract mr-2"></i> Convocatoria</h3>
+                <button onclick="document.getElementById('modal-convocatoria').style.display='none'" style="background:transparent; border:none; color:#94a3b8; font-size:24px; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">&times;</button>
+            </div>
+            
+            <div class="modal-body" id="convocatoria-body">
+                <div style="text-align:center; margin-bottom:20px;">
+                    <i class="fa-solid fa-spinner fa-spin" style="color:#f59e0b; font-size:24px;"></i>
+                    <p style="margin-top:12px; color:#94a3b8; font-weight:bold; font-size:10px; text-transform:uppercase; letter-spacing:2px;">Cargando documento...</p>
+                </div>
+            </div>
+            
+            <div style="padding:15px 24px; border-top:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.4); display:flex; justify-content:center; gap:10px;">
+                <button onclick="document.getElementById('modal-convocatoria').style.display='none'" class="btn-secondary" style="flex:1;">Cerrar</button>
+                <a id="btn-wa-dudas" href="#" target="_blank" class="btn-secondary" style="flex:1; background:rgba(16,185,129,0.1); color:#34d399; border-color:rgba(16,185,129,0.4); text-align:center; text-decoration:none;"><i class="fa-brands fa-whatsapp mr-1"></i> Dudas al Staff</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="formulario">
+        
+        <img src="logo.png" alt="Pixel Studio Logo" class="logo-resplandor">
+        
+        <div class="banner-torneo">
+            <p class="sub-header">Portal Oficial de Registro</p>
+            <h2 id="nombre-torneo-header">Cargando Torneo...</h2>
+            <div id="info-fecha-lugar" class="detalles-evento"></div>
+            
+            <!-- BOTÓN CONVOCATORIA -->
+            <button class="btn-convocatoria" onclick="abrirModalConvocatoria()"><i class="fa-solid fa-file-pdf" style="color:#fb7185;"></i> VER CONVOCATORIA OFICIAL</button>
+        </div>
+        
+        <button id="btn-abrir-nuevo" class="btn-secondary" style="width: 100%; padding: 12px; font-size: 11px; margin-bottom: 20px; border-color: #06b6d4; color: #38bdf8;" onclick="abrirNuevoJugador()">➕ SOY NUEVO JUGADOR (CREAR PERFIL)</button>
+
+        <div id="caja-nuevo-jugador" class="seccion-plegable" style="margin-top: 0;">
+            <div style="font-size: 12px; font-weight: 800; color: #38bdf8; margin-bottom: 15px; text-transform: uppercase; text-align:center;">➕ Registro de Nuevo Jugador</div>
+            <p style="font-size: 11px; color:#94a3b8; text-align:center; margin-bottom: 15px; line-height: 1.5;">Ingresa tus datos para integrarte a la base de datos. El administrador validará tu perfil y te asignará tu ranking inicial.</p>
+            
+            <input type="text" id="reg-nombre" placeholder="Nombre Completo" style="margin-bottom: 12px;">
+            <select id="reg-club" style="margin-bottom: 12px;"><option value="Sin Club">Cargando clubs...</option></select>
+            <input type="password" id="reg-nip" maxlength="4" placeholder="Crea tu NIP de 4 dígitos (Ej. 1234)" style="margin-bottom: 15px;">
+            
+            <button class="btn-submit" style="margin-top:0; padding:12px;" onclick="registrarNuevoJugador()">Crear Perfil de Jugador</button>
+            <button class="btn-secondary" style="width: 100%; margin-top:10px; border-color: #ef4444; color: #ef4444; background: rgba(239,68,68,0.1);" onclick="cerrarNuevoJugador()">❌ Cancelar y Volver al Buscador</button>
+        </div>
+
+        <div id="bloque-principal">
+            
+            <label style="margin-top:0;">1. Busca y selecciona tu nombre:</label>
+            <input type="text" id="buscador" placeholder="🔎 Escribe tu nombre o apellido..." onkeyup="filtrarJugadores()" style="margin-bottom: 8px;">
+            <select id="select-jugador" onchange="evaluarCategorias()" size="4" style="margin-bottom: 8px;">
+                <option value="">Cargando base de datos...</option>
+            </select>
+
+            <div id="banner-jugador-seleccionado" class="banner-jugador-seleccionado">
+                <div class="etiqueta">✅ Jugador Seleccionado</div>
+                <div id="texto-jugador-seleccionado" class="nombre">ARTURO</div>
+                <button class="btn-secondary" style="border-color: #fbbf24; color: #fbbf24;" onclick="abrirCambioNip()">🔑 Cambiar mi NIP</button>
+            </div>
+
+            <div id="caja-cambiar-nip" class="seccion-plegable">
+                <div style="font-size: 11px; font-weight: 800; color: #fbbf24; margin-bottom: 15px; text-transform: uppercase; text-align:center;">
+                    🔑 Modificando NIP de:<br><span id="nombre-cambio-nip" style="color:#ffffff; font-size:14px; display:block; margin-top:6px;"></span>
+                </div>
+                <input type="password" id="nip-actual" maxlength="4" placeholder="NIP Actual (Por defecto: 1234)" style="margin-bottom: 12px;">
+                <input type="password" id="nip-nuevo" maxlength="4" placeholder="Nuevo NIP de 4 dígitos" style="margin-bottom: 15px;">
+                
+                <button class="btn-submit" style="margin-top:0; padding:12px; background:rgba(6,182,212,0.2); color:#38bdf8; border-color:#06b6d4;" onclick="actualizarNIP()">Actualizar mi NIP</button>
+                <button class="btn-secondary" style="width: 100%; margin-top:10px; border-color: #64748b; color: #94a3b8;" onclick="cerrarCambioNip()">Cancelar Edición</button>
+            </div>
+
+            <div id="bloque-inscripcion">
+                <div id="info-puntos"></div>
+                <div id="info-inscripciones"></div>
+
+                <label for="select-categoria">2. Categorías disponibles para tu nivel:</label>
+                <select id="select-categoria" disabled>
+                    <option value="">Primero selecciona tu nombre</option>
+                </select>
+
+                <div id="tarjeta-pendiente-ranking" class="tarjeta-pendiente-ranking">
+                    ⏳ <strong>Perfil en Proceso de Clasificación Oficial</strong><br>
+                    Tu registro ha sido recibido exitosamente. Para garantizar un torneo equitativo, el comité organizador debe asignar tu nivel de ranking inicial antes de habilitar tus categorías.<br><br>
+                    📌 <em>Por favor vuelve a consultar en unos minutos o contacta al administrador del torneo.</em>
+                </div>
+
+                <div id="tarjeta-horario-cat" class="tarjeta-horario-cat"></div>
+
+                <div id="caja-nip" class="caja-seguridad">
+                    <label for="nip-jugador" style="margin-top: 0; color:#f87171;">🔒 3. Ingresa tu NIP de seguridad:</label>
+                    <input type="password" id="nip-jugador" maxlength="4" placeholder="Ej. 1234">
+                    <div style="font-size: 10px; color: #94a3b8; margin-top: 6px; font-weight:600;">*Tu NIP por defecto es 1234.</div>
+                </div>
+
+                <button id="btn-inscribir" class="btn-submit" disabled onclick="inscribirJugador()">Reservar mi lugar (Pendiente de Pago)</button>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        const supabaseUrl = 'https://stytjtqshyupkyihurpd.supabase.co';
+        const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
+        const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        let torneoActivo = null;
+        let ORG_ID = null; 
+        let todosLosJugadores = [], todasLasCategorias = [], todasLasInscripciones = [], todosLosClubs = [];
+        let programacionCategoriasNube = [];
+        let categoriasCerradasSet = new Set(); 
+
+        let textosConvocatoria = { sistema: '', reglas: '', premios: '', wa: '' };
+
+        function quitarAcentos(str) {
+            if (!str) return "";
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        }
+
+        async function inicializar() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const idParam = urlParams.get('torneo');
+                
+                let idTorneoCargar = null;
+
+                if (idParam) {
+                    idTorneoCargar = parseInt(idParam);
+                    localStorage.setItem('torneo_activo_id', idTorneoCargar);
+                } else if (localStorage.getItem('torneo_activo_id')) {
+                    idTorneoCargar = parseInt(localStorage.getItem('torneo_activo_id'));
+                }
+
+                let queryTorneo = clienteSupabase.from('torneos').select('*');
+
+                if (idTorneoCargar) {
+                    queryTorneo = queryTorneo.eq('id', idTorneoCargar);
+                } else {
+                    queryTorneo = queryTorneo.neq('estado', 'finalizado').order('created_at', { ascending: false }).limit(1);
+                }
+
+                const { data: torneoData, error: errTorneo } = await queryTorneo;
+
+                if (torneoData && torneoData.length > 0) {
+                    torneoActivo = torneoData[0];
+                    ORG_ID = torneoActivo.organizador_id; 
+                    
+                    document.getElementById('nombre-torneo-header').innerText = torneoActivo.nombre;
+
+                    let detalles = [];
+                    if (torneoActivo.fecha_evento) detalles.push(`📅 ${torneoActivo.fecha_evento}`);
+                    if (torneoActivo.lugar_evento) detalles.push(`📍 ${torneoActivo.lugar_evento}`);
+                    
+                    document.getElementById('info-fecha-lugar').innerText = detalles.length > 0 ? detalles.join('  •  ') : '📅 Fecha y Sede por confirmar';
+
+                    const { data: progData } = await clienteSupabase.from('programacion_categorias').select('*').eq('torneo_id', torneoActivo.id).eq('organizador_id', ORG_ID);
+                    programacionCategoriasNube = progData || [];
+                    
+                } else {
+                    document.getElementById('nombre-torneo-header').innerText = "Sin Torneo Activo";
+                    alert("No se encontró el torneo especificado.");
+                    return;
+                }
+
+                const { data: partidosData } = await clienteSupabase
+                    .from('partidos')
+                    .select('categoria_id')
+                    .eq('torneo_id', torneoActivo.id)
+                    .eq('organizador_id', ORG_ID);
+
+                categoriasCerradasSet.clear();
+                if (partidosData && partidosData.length > 0) {
+                    partidosData.forEach(p => {
+                        if (p.categoria_id) categoriasCerradasSet.add(p.categoria_id);
+                    });
+                }
+
+                const resultados = await Promise.allSettled([
+                    clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID).order('nombre', { ascending: true }),
+                    clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: true }),
+                    clienteSupabase.from('inscripciones').select('*').eq('torneo_id', torneoActivo.id).eq('organizador_id', ORG_ID),
+                    clienteSupabase.from('clubes').select('*').eq('organizador_id', ORG_ID).order('nombre', { ascending: true }),
+                    clienteSupabase.from('configuracion').select('*').in('clave', ['conv_sistema', 'conv_reglas', 'conv_premios', 'conv_wa']).eq('organizador_id', ORG_ID)
+                ]);
+
+                todosLosJugadores = resultados[0].status === 'fulfilled' ? (resultados[0].value.data || []) : [];
+                todasLasCategorias = resultados[1].status === 'fulfilled' ? (resultados[1].value.data || []) : [];
+                todasLasInscripciones = resultados[2].status === 'fulfilled' ? (resultados[2].value.data || []) : [];
+                todosLosClubs = resultados[3].status === 'fulfilled' ? (resultados[3].value.data || []) : [];
+                
+                let configData = resultados[4].status === 'fulfilled' ? (resultados[4].value.data || []) : [];
+                
+                if (configData.length > 0) {
+                    configData.forEach(item => {
+                        if(item.clave === 'conv_sistema') textosConvocatoria.sistema = item.valor_texto || '';
+                        if(item.clave === 'conv_reglas') textosConvocatoria.reglas = item.valor_texto || '';
+                        if(item.clave === 'conv_premios') textosConvocatoria.premios = item.valor_texto || '';
+                        if(item.clave === 'conv_wa') textosConvocatoria.wa = item.valor_texto || '';
+                    });
+                }
+
+                let waLink = `https://api.whatsapp.com/send?text=Hola,%20tengo%20una%20duda%20sobre%20el%20torneo:%20${encodeURIComponent(torneoActivo.nombre)}`;
+                if(textosConvocatoria.wa) {
+                    waLink = `https://api.whatsapp.com/send?phone=${textosConvocatoria.wa}&text=Hola,%20tengo%20una%20duda%20sobre%20el%20torneo:%20${encodeURIComponent(torneoActivo.nombre)}`;
+                }
+                document.getElementById('btn-wa-dudas').href = waLink;
+                
+                poblarClubs();
+                filtrarJugadores();
+
+            } catch (err) {
+                console.error("Error al inicializar:", err);
+                document.getElementById('nombre-torneo-header').innerText = "Error de conexión";
+                document.getElementById('info-fecha-lugar').innerHTML = `<span style="color:#ef4444;">No se pudo conectar a la base de datos. Por favor, recarga la página.</span>`;
+            }
+        }
+
+        function abrirModalConvocatoria() {
+            const bodyDiv = document.getElementById('convocatoria-body');
+            document.getElementById('modal-convocatoria').style.display = 'flex';
+            
+            const txtSis = textosConvocatoria.sistema ? textosConvocatoria.sistema.replace(/\n/g, '<br>') : '<span style="color:#64748b; font-style:italic;">No especificado.</span>';
+            const txtReg = textosConvocatoria.reglas ? textosConvocatoria.reglas.replace(/\n/g, '<br>') : '<span style="color:#64748b; font-style:italic;">El vigente de la I.T.T.F.</span>';
+            const txtPre = textosConvocatoria.premios ? textosConvocatoria.premios.replace(/\n/g, '<br>') : '<span style="color:#64748b; font-style:italic;">Se anunciará el día del evento.</span>';
+            
+            let trCatHtml = '';
+            todasLasCategorias.forEach(cat => {
+                const progCat = programacionCategoriasNube.find(p => p.categoria_id === cat.id);
+                let estaActiva = true;
+                if (progCat && (progCat.activa === false || progCat.activa === 'false' || progCat.activa === 0)) estaActiva = false;
+                if (cat.activa === false || cat.activa === 'false' || cat.activa === 0) estaActiva = false;
+                
+                const esCerrada = categoriasCerradasSet.has(cat.id);
+
+                if (estaActiva && !esCerrada) {
+                    let costoVal = progCat ? progCat.costo_inscripcion : cat.costo_inscripcion;
+                    costoVal = costoVal || 200;
+                    trCatHtml += `<tr><td><strong>${cat.nombre}</strong></td><td>De ${cat.puntos_minimos} a ${cat.puntos_maximos}</td><td>$${costoVal} MXN</td></tr>`;
+                }
+            });
+
+            if(trCatHtml === '') trCatHtml = `<tr><td colspan="3" style="text-align:center; color:#94a3b8; font-style:italic;">No hay categorías abiertas en este momento.</td></tr>`;
+
+            let fEvento = torneoActivo.fecha_evento || 'Por confirmar';
+            let lEvento = torneoActivo.lugar_evento || 'Por confirmar';
+
+            let html = `
+                <div class="conv-info-grid">
+                    <div class="conv-info-item">
+                        <span class="conv-info-label"><i class="fa-regular fa-calendar" style="color:#22d3ee;"></i> Fecha del Evento</span>
+                        <span class="conv-info-val">${fEvento}</span>
+                    </div>
+                    <div class="conv-info-item">
+                        <span class="conv-info-label"><i class="fa-solid fa-location-dot" style="color:#fb7185;"></i> Sede del Torneo</span>
+                        <span class="conv-info-val">${lEvento}</span>
+                    </div>
+                </div>
+
+                <div class="conv-seccion">
+                    <div class="conv-titulo"><i class="fa-solid fa-layer-group"></i> Categorías Oficiales y Costos</div>
+                    <table class="conv-table">
+                        <thead><tr><th>Categoría</th><th>Puntos (Min - Max)</th><th>Inscripción</th></tr></thead>
+                        <tbody>${trCatHtml}</tbody>
+                    </table>
+                </div>
+
+                <div class="conv-seccion">
+                    <div class="conv-titulo"><i class="fa-solid fa-medal"></i> Premiación y Notas</div>
+                    <div style="background:rgba(251, 191, 36, 0.05); border:1px solid rgba(251, 191, 36, 0.2); padding:15px; border-radius:12px; color:#fef3c7;">
+                        ${txtPre}
+                    </div>
+                </div>
+
+                <div class="conv-seccion">
+                    <div class="conv-titulo"><i class="fa-solid fa-sitemap"></i> Sistema de Competencia</div>
+                    <div>${txtSis}</div>
+                </div>
+
+                <div class="conv-seccion">
+                    <div class="conv-titulo"><i class="fa-solid fa-scale-balanced"></i> Reglamento y Arbitraje</div>
+                    <div>${txtReg}</div>
+                </div>
+            `;
+            
+            bodyDiv.innerHTML = html;
+        }
+
+        function poblarClubs() {
+            const select = document.getElementById('reg-club');
+            select.innerHTML = '<option value="Sin Club">Sin Club</option>';
+            todosLosClubs.forEach(c => select.innerHTML += `<option value="${c.nombre}">${c.nombre}</option>`);
+        }
+
+        function abrirNuevoJugador() {
+            document.getElementById('bloque-principal').style.display = 'none';
+            document.getElementById('caja-nuevo-jugador').style.display = 'block';
+            document.getElementById('btn-abrir-nuevo').style.display = 'none';
+        }
+
+        function cerrarNuevoJugador() {
+            document.getElementById('bloque-principal').style.display = 'block';
+            document.getElementById('caja-nuevo-jugador').style.display = 'none';
+            document.getElementById('btn-abrir-nuevo').style.display = 'block';
+        }
+
+        function abrirCambioNip() {
+            document.getElementById('caja-cambiar-nip').style.display = 'block';
+            document.getElementById('bloque-inscripcion').style.display = 'none';
+        }
+
+        function cerrarCambioNip() {
+            document.getElementById('caja-cambiar-nip').style.display = 'none';
+            document.getElementById('bloque-inscripcion').style.display = 'block';
+            document.getElementById('nip-actual').value = '';
+            document.getElementById('nip-nuevo').value = '';
+        }
+
+        function filtrarJugadores() {
+            const textoOriginal = document.getElementById('buscador').value;
+            const textoLimpio = quitarAcentos(textoOriginal.toLowerCase());
+            
+            const selectJugador = document.getElementById('select-jugador');
+            selectJugador.innerHTML = '';
+            
+            const filtrados = todosLosJugadores.filter(j => {
+                const nombreLimpio = quitarAcentos(j.nombre.toLowerCase());
+                return nombreLimpio.includes(textoLimpio);
+            });
+            
+            if (filtrados.length === 0) {
+                selectJugador.innerHTML = '<option value="" disabled>No se encontraron jugadores</option>';
+            } else {
+                filtrados.forEach(j => {
+                    let opt = document.createElement('option');
+                    opt.value = j.id; 
+                    opt.textContent = `${j.nombre} (${j.club || 'Sin Club'}) - ${j.puntos_ranking} pts`;
+                    selectJugador.appendChild(opt);
+                });
+            }
+            evaluarCategorias();
+        }
+
+        function evaluarCategorias() {
+            const idSeleccionado = document.getElementById('select-jugador').value;
+            const selectCategoria = document.getElementById('select-categoria');
+            const infoPuntos = document.getElementById('info-puntos');
+            const infoInscripciones = document.getElementById('info-inscripciones');
+            const btnInscribir = document.getElementById('btn-inscribir');
+            const cajaNip = document.getElementById('caja-nip');
+            const tarjetaHorario = document.getElementById('tarjeta-horario-cat');
+            const tarjetaPendiente = document.getElementById('tarjeta-pendiente-ranking');
+            const bannerJugador = document.getElementById('banner-jugador-seleccionado');
+            
+            cerrarCambioNip(); 
+
+            if (!idSeleccionado) {
+                bannerJugador.style.display = 'none';
+                selectCategoria.innerHTML = '<option value="">Primero selecciona tu nombre</option>';
+                selectCategoria.disabled = true; 
+                btnInscribir.disabled = true; 
+                cajaNip.style.display = 'none'; 
+                tarjetaHorario.style.display = 'none';
+                tarjetaPendiente.style.display = 'none';
+                infoPuntos.innerText = ""; 
+                infoInscripciones.innerHTML = ""; 
+                return;
+            }
+
+            const jugador = todosLosJugadores.find(j => j.id == idSeleccionado);
+            const pts = jugador.puntos_ranking;
+
+            document.getElementById('texto-jugador-seleccionado').innerText = jugador.nombre;
+            document.getElementById('nombre-cambio-nip').innerText = jugador.nombre;
+            bannerJugador.style.display = 'block';
+
+            if (pts === 0) {
+                infoPuntos.innerText = `Estado: Perfil Nuevo (Sin Clasificación Oficial) | Club: ${jugador.club || 'Sin Club'}`;
+                selectCategoria.innerHTML = '<option value="" disabled selected>⏳ En espera de asignación de ranking por el Administrador</option>';
+                selectCategoria.disabled = true;
+                btnInscribir.disabled = true;
+                cajaNip.style.display = 'none';
+                tarjetaHorario.style.display = 'none';
+                tarjetaPendiente.style.display = 'block';
+                return;
+            }
+
+            tarjetaPendiente.style.display = 'none';
+            infoPuntos.innerText = `Ranking actual: ${pts} pts | Club: ${jugador.club || 'Sin Club'}`;
+
+            const misInscripciones = todasLasInscripciones.filter(ins => ins.jugador_id == idSeleccionado).map(ins => ins.categoria_id);
+            if (misInscripciones.length > 0) {
+                const nombres = todasLasCategorias.filter(c => misInscripciones.includes(c.id)).map(c => c.nombre).join(', ');
+                infoInscripciones.innerHTML = `<div class="ya-inscrito">Inscrito en este torneo en: ${nombres}</div>`;
+            } else {
+                infoInscripciones.innerHTML = "";
+            }
+
+            let htmlOpciones = '<option value="">-- Selecciona una categoría --</option>';
+            let opcionesDisponibles = 0;
+
+            todasLasCategorias.forEach(cat => {
+                const nombreCatLower = cat.nombre.toLowerCase();
+                const esLibre = nombreCatLower === 'libre';
+                const esPrimera = nombreCatLower.includes('primera');
+                const esCerrada = categoriasCerradasSet.has(cat.id);
+
+                const progCat = programacionCategoriasNube.find(p => p.categoria_id === cat.id);
+                let estaActiva = true;
+                if (progCat && (progCat.activa === false || progCat.activa === 'false' || progCat.activa === 0)) estaActiva = false;
+                if (cat.activa === false || cat.activa === 'false' || cat.activa === 0) estaActiva = false;
+
+                let permitido = false;
+
+                if (esLibre) {
+                    permitido = true;
+                } else if (esPrimera) {
+                    permitido = pts >= cat.puntos_minimos;
+                } else {
+                    permitido = pts <= cat.puntos_maximos;
+                }
+
+                if (permitido && estaActiva) {
+                    if (misInscripciones.includes(cat.id)) {
+                        htmlOpciones += `<option value="${cat.id}" disabled>✅ ${cat.nombre} (Ya inscrito)</option>`;
+                    } else if (esCerrada) {
+                        htmlOpciones += `<option value="${cat.id}" disabled>🔒 ${cat.nombre} (Inscripciones Cerradas - En Curso)</option>`;
+                    } else {
+                        htmlOpciones += `<option value="${cat.id}">${cat.nombre}</option>`;
+                        opcionesDisponibles++;
+                    }
+                }
+            });
+
+            selectCategoria.innerHTML = opcionesDisponibles === 0 ? '<option value="">No hay categorías disponibles abiertas para tu ranking</option>' : htmlOpciones;
+            selectCategoria.disabled = false;
+            
+            selectCategoria.onchange = () => {
+                const catIdSel = selectCategoria.value;
+                const categoriaValida = catIdSel !== "";
+                btnInscribir.disabled = !categoriaValida;
+                cajaNip.style.display = categoriaValida ? 'block' : 'none';
+                document.getElementById('nip-jugador').value = '';
+
+                if (categoriaValida) {
+                    const catObj = todasLasCategorias.find(c => c.id == catIdSel);
+                    const prog = programacionCategoriasNube.find(p => p.categoria_id == catIdSel) || {};
+
+                    const fechaVal = prog.fecha || torneoActivo.fecha_evento || 'Por confirmar';
+                    const horaVal = prog.hora || '09:00';
+                    const lugarVal = prog.lugar || torneoActivo.lugar_evento || 'Sede Principal';
+                    const costoVal = prog.costo_inscripcion || (catObj ? catObj.costo_inscripcion : 200) || 200;
+
+                    let horaFormateada = horaVal;
+                    if (horaVal && horaVal.includes(':')) {
+                        let [hrs, mins] = horaVal.split(':');
+                        let hNum = parseInt(hrs);
+                        let ampm = hNum >= 12 ? 'PM' : 'AM';
+                        hNum = hNum % 12 || 12;
+                        horaFormateada = `${hNum}:${mins} ${ampm}`;
+                    }
+
+                    tarjetaHorario.innerHTML = `📌 <strong>Programación de tu Categoría:</strong><br>` +
+                                               `📅 Fecha: <strong>${fechaVal}</strong> | ⏰ Hora: <strong>${horaFormateada}</strong><br>` +
+                                               `📍 Lugar / Mesas: <strong>${lugarVal}</strong><br>` +
+                                               `💵 Inscripción: <strong style="color:#fbbf24;">$${costoVal} MXN</strong>`;
+                    tarjetaHorario.style.display = 'block';
+                } else {
+                    tarjetaHorario.style.display = 'none';
+                }
+            };
+        }
+
+        async function registrarNuevoJugador() {
+            const nombre = document.getElementById('reg-nombre').value.trim();
+            const club = document.getElementById('reg-club').value;
+            const nip = document.getElementById('reg-nip').value.trim();
+
+            if (!nombre || nip.length !== 4) {
+                alert("Ingresa tu nombre completo y un NIP válido de 4 dígitos.");
+                return;
+            }
+
+            const { data, error } = await clienteSupabase.from('jugadores').insert([{
+                nombre: nombre,
+                club: club,
+                puntos_ranking: 0,
+                nip_seguridad: nip,
+                organizador_id: ORG_ID
+            }]).select();
+
+            if (error || !data) { alert("Error al registrar jugador."); return; }
+
+            alert(`✅ ¡Bienvenido ${nombre}!\n\nTu perfil fue creado con éxito.\n\n⏳ Para mantener un torneo equitativo, el administrador asignará tus puntos de ranking oficial en breve. Una vez asignados podrás elegir tu categoría.`);
+            
+            cerrarNuevoJugador();
+            document.getElementById('buscador').value = nombre;
+            inicializar();
+        }
+
+        async function actualizarNIP() {
+            const idJugador = document.getElementById('select-jugador').value;
+            const nipActual = document.getElementById('nip-actual').value;
+            const nipNuevo = document.getElementById('nip-nuevo').value.trim();
+
+            if (!idJugador) { alert("Primero selecciona tu nombre en la lista arriba."); return; }
+            if (nipNuevo.length !== 4) { alert("El nuevo NIP debe ser de 4 dígitos."); return; }
+
+            const jugadorActual = todosLosJugadores.find(j => j.id == idJugador);
+            const nipValidar = jugadorActual.nip_seguridad || '1234';
+
+            if (nipActual !== nipValidar) {
+                alert("❌ El NIP actual es incorrecto.");
+                return;
+            }
+
+            const { error } = await clienteSupabase.from('jugadores').update({ nip_seguridad: nipNuevo }).eq('id', idJugador).eq('organizador_id', ORG_ID);
+
+            if (error) { alert("Error al actualizar NIP."); return; }
+
+            alert("✅ ¡Tu NIP ha sido actualizado con éxito!");
+            cerrarCambioNip();
+            inicializar();
+        }
+
+        async function inscribirJugador() {
+            const idJugador = document.getElementById('select-jugador').value;
+            const nipIngresado = document.getElementById('nip-jugador').value;
+            const selectCategoria = document.getElementById('select-categoria');
+            const btnInscribir = document.getElementById('btn-inscribir');
+
+            const jugadorActual = todosLosJugadores.find(j => j.id == idJugador);
+            const nipValidar = jugadorActual.nip_seguridad || '1234';
+
+            if (nipIngresado !== nipValidar) {
+                alert("❌ NIP incorrecto. Intenta de nuevo.");
+                return;
+            }
+            
+            btnInscribir.disabled = true; btnInscribir.innerText = "Guardando reserva...";
+
+            const { error } = await clienteSupabase.from('inscripciones').insert([{ 
+                torneo_id: torneoActivo.id,
+                jugador_id: idJugador, 
+                categoria_id: selectCategoria.value,
+                estatus_pago: 'Pendiente de Pago',
+                organizador_id: ORG_ID
+            }]);
+
+            if (error) { alert("Error al guardar."); btnInscribir.innerText = "Reservar mi lugar"; btnInscribir.disabled = false; return; }
+
+            alert(`¡Listo! Reserva guardada para el torneo "${torneoActivo.nombre}". Envia tu comprobante para validar el pago.`);
+            window.location.reload();
+        }
+
+        inicializar();
+    </script>
+</body>
+</html>
