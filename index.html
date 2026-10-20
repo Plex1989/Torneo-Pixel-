@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inscripción al Torneo - Pixel Studio</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
 
@@ -70,6 +71,63 @@
         .banner-torneo .sub-header { margin: 0 0 6px 0; font-size: 10px; color: #38bdf8; text-transform: uppercase; letter-spacing: 1.5px; font-weight: 800; }
         .banner-torneo h2 { margin: 0; font-size: 18px; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
         .banner-torneo .detalles-evento { font-size: 11px; color: #fbbf24; margin-top: 10px; font-weight: 700; display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+
+        /* Estilo para el botón de convocatoria */
+        .btn-convocatoria {
+            width: 100%;
+            background: rgba(244, 63, 94, 0.1);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.4);
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-convocatoria:hover {
+            background: rgba(251, 191, 36, 0.15);
+            border-color: #fbbf24;
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Estilos del Modal de Convocatoria */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(4, 6, 10, 0.9); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal-card { 
+            background: rgba(15, 23, 42, 0.7); 
+            border: 1px solid rgba(251, 191, 36, 0.3); 
+            border-top: 5px solid #fbbf24;
+            border-radius: 20px; 
+            width: 100%; 
+            max-width: 500px; 
+            max-height: 85vh; 
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 30px rgba(251, 191, 36, 0.15); 
+        }
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 24px; overflow-y: auto; color: #cbd5e1; font-size: 12px; line-height: 1.6; }
+        
+        .conv-seccion { margin-bottom: 25px; }
+        .conv-titulo { color: #38bdf8; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; border-bottom: 1px dashed rgba(56, 189, 248, 0.3); padding-bottom: 6px; }
+        
+        .conv-table { width: 100%; border-collapse: collapse; margin-top: 10px; background: rgba(0,0,0,0.3); border-radius: 10px; overflow: hidden; }
+        .conv-table th { background: rgba(251, 191, 36, 0.1); color: #fbbf24; padding: 10px; text-transform: uppercase; font-size: 9px; letter-spacing: 1px; text-align: left; }
+        .conv-table td { padding: 10px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 11px; color: #fff; }
+        .conv-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .conv-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; background: rgba(0,0,0,0.4); padding: 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }
+        .conv-info-item { display: flex; flex-direction: column; gap: 4px; }
+        .conv-info-label { font-size: 9px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 800; }
+        .conv-info-val { font-size: 12px; color: #fff; font-weight: 700; }
 
         label { font-weight: 800; display: block; margin-top: 18px; margin-bottom: 8px; color: #ffffff; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; }
         
@@ -194,6 +252,28 @@
 </head>
 <body>
 
+    <!-- MODAL CONVOCATORIA DIGITAL -->
+    <div id="modal-convocatoria" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 style="margin:0; font-size:16px; font-weight:900; color:#fbbf24; text-transform:uppercase; letter-spacing:1px;"><i class="fa-solid fa-file-contract mr-2"></i> Convocatoria</h3>
+                <button onclick="document.getElementById('modal-convocatoria').style.display='none'" style="background:transparent; border:none; color:#94a3b8; font-size:24px; cursor:pointer; transition:color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">&times;</button>
+            </div>
+            
+            <div class="modal-body" id="convocatoria-body">
+                <div style="text-align:center; margin-bottom:20px;">
+                    <i class="fa-solid fa-spinner fa-spin text-amber-500 text-3xl"></i>
+                    <p class="mt-3 text-zinc-400 font-bold text-xs uppercase tracking-widest">Generando documento...</p>
+                </div>
+            </div>
+            
+            <div style="padding:15px 24px; border-top:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.4); display:flex; justify-content:center; gap:10px;">
+                <button onclick="document.getElementById('modal-convocatoria').style.display='none'" class="btn-secondary" style="flex:1;">Cerrar</button>
+                <a id="btn-wa-dudas" href="#" target="_blank" class="btn-secondary" style="flex:1; background:rgba(16,185,129,0.1); color:#34d399; border-color:rgba(16,185,129,0.4); text-align:center; text-decoration:none;"><i class="fa-brands fa-whatsapp mr-1"></i> Dudas al Staff</a>
+            </div>
+        </div>
+    </div>
+
     <div class="formulario">
         
         <img src="logo.png" alt="Pixel Studio Logo" class="logo-resplandor">
@@ -202,6 +282,9 @@
             <p class="sub-header">Portal Oficial de Registro</p>
             <h2 id="nombre-torneo-header">Cargando Torneo...</h2>
             <div id="info-fecha-lugar" class="detalles-evento"></div>
+            
+            <!-- BOTÓN CONVOCATORIA -->
+            <button class="btn-convocatoria" onclick="abrirModalConvocatoria()"><i class="fa-solid fa-file-pdf text-rose-400"></i> VER CONVOCATORIA OFICIAL</button>
         </div>
         
         <button id="btn-abrir-nuevo" class="btn-secondary" style="width: 100%; padding: 12px; font-size: 11px; margin-bottom: 20px; border-color: #06b6d4; color: #38bdf8;" onclick="abrirNuevoJugador()">➕ SOY NUEVO JUGADOR (CREAR PERFIL)</button>
@@ -284,6 +367,8 @@
         let programacionCategoriasNube = [];
         let categoriasCerradasSet = new Set(); 
 
+        let textosConvocatoria = { sistema: '', reglas: '', premios: '' };
+
         // ================= FUNCIÓN GLOBAL PARA QUITAR ACENTOS =================
         function quitarAcentos(str) {
             if (!str) return "";
@@ -327,6 +412,9 @@
 
                 const { data: progData } = await clienteSupabase.from('programacion_categorias').select('*').eq('torneo_id', torneoActivo.id).eq('organizador_id', ORG_ID);
                 programacionCategoriasNube = progData || [];
+                
+                // Preparar link de WhatsApp para dudas
+                document.getElementById('btn-wa-dudas').href = `https://api.whatsapp.com/send?text=Hola,%20tengo%20una%20duda%20sobre%20el%20torneo:%20${encodeURIComponent(torneoActivo.nombre)}`;
             } else {
                 document.getElementById('nombre-torneo-header').innerText = "Sin Torneo Activo";
                 alert("No se encontró el torneo especificado.");
@@ -346,11 +434,12 @@
                 });
             }
 
-            const [resJugadores, resCategorias, resInscripciones, resClubs] = await Promise.all([
+            const [resJugadores, resCategorias, resInscripciones, resClubs, resConv] = await Promise.all([
                 clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID).order('nombre', { ascending: true }),
                 clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: true }),
                 clienteSupabase.from('inscripciones').select('*').eq('torneo_id', torneoActivo.id).eq('organizador_id', ORG_ID),
-                clienteSupabase.from('clubes').select('*').eq('organizador_id', ORG_ID).order('nombre', { ascending: true }) 
+                clienteSupabase.from('clubes').select('*').eq('organizador_id', ORG_ID).order('nombre', { ascending: true }),
+                clienteSupabase.from('configuracion').select('*').in('clave', ['conv_sistema', 'conv_reglas', 'conv_premios']).eq('organizador_id', ORG_ID)
             ]);
 
             todosLosJugadores = resJugadores.data || [];
@@ -358,8 +447,92 @@
             todasLasInscripciones = resInscripciones.data || [];
             todosLosClubs = resClubs.data || [];
             
+            if (resConv.data && resConv.data.length > 0) {
+                resConv.data.forEach(item => {
+                    if(item.clave === 'conv_sistema') textosConvocatoria.sistema = item.valor_texto || '';
+                    if(item.clave === 'conv_reglas') textosConvocatoria.reglas = item.valor_texto || '';
+                    if(item.clave === 'conv_premios') textosConvocatoria.premios = item.valor_texto || '';
+                });
+            }
+            
             poblarClubs();
             filtrarJugadores();
+        }
+
+        // ==============================================
+        // MÓDULO: RENDERIZADO DE CONVOCATORIA DIGITAL
+        // ==============================================
+        function abrirModalConvocatoria() {
+            const bodyDiv = document.getElementById('convocatoria-body');
+            document.getElementById('modal-convocatoria').style.display = 'flex';
+            
+            // Reemplazar saltos de línea por <br> para HTML
+            const txtSis = textosConvocatoria.sistema ? textosConvocatoria.sistema.replace(/\n/g, '<br>') : '<span style="color:#64748b; font-style:italic;">No especificado.</span>';
+            const txtReg = textosConvocatoria.reglas ? textosConvocatoria.reglas.replace(/\n/g, '<br>') : '<span style="color:#64748b; font-style:italic;">El vigente de la I.T.T.F.</span>';
+            const txtPre = textosConvocatoria.premios ? textosConvocatoria.premios.replace(/\n/g, '<br>') : '<span style="color:#64748b; font-style:italic;">Se anunciará el día del evento.</span>';
+            
+            // Construir tabla de categorías abiertas
+            let trCatHtml = '';
+            todasLasCategorias.forEach(cat => {
+                const progCat = programacionCategoriasNube.find(p => p.categoria_id === cat.id);
+                let estaActiva = true;
+                if (progCat && (progCat.activa === false || progCat.activa === 'false' || progCat.activa === 0)) estaActiva = false;
+                if (cat.activa === false || cat.activa === 'false' || cat.activa === 0) estaActiva = false;
+                
+                const esCerrada = categoriasCerradasSet.has(cat.id);
+
+                if (estaActiva && !esCerrada) {
+                    let costoVal = progCat ? progCat.costo_inscripcion : cat.costo_inscripcion;
+                    costoVal = costoVal || 200;
+                    trCatHtml += `<tr><td><strong>${cat.nombre}</strong></td><td>De ${cat.puntos_minimos} a ${cat.puntos_maximos}</td><td>$${costoVal} MXN</td></tr>`;
+                }
+            });
+
+            if(trCatHtml === '') trCatHtml = `<tr><td colspan="3" style="text-align:center; color:#94a3b8; font-style:italic;">No hay categorías abiertas en este momento.</td></tr>`;
+
+            // Construir detalles de fecha y lugar
+            let fEvento = torneoActivo.fecha_evento || 'Por confirmar';
+            let lEvento = torneoActivo.lugar_evento || 'Por confirmar';
+
+            let html = `
+                <div class="conv-info-grid">
+                    <div class="conv-info-item">
+                        <span class="conv-info-label"><i class="fa-regular fa-calendar text-cyan-400"></i> Fecha del Evento</span>
+                        <span class="conv-info-val">${fEvento}</span>
+                    </div>
+                    <div class="conv-info-item">
+                        <span class="conv-info-label"><i class="fa-solid fa-location-dot text-rose-400"></i> Sede del Torneo</span>
+                        <span class="conv-info-val">${lEvento}</span>
+                    </div>
+                </div>
+
+                <div class="conv-seccion">
+                    <div class="conv-titulo"><i class="fa-solid fa-layer-group"></i> Categorías Oficiales y Costos</div>
+                    <table class="conv-table">
+                        <thead><tr><th>Categoría</th><th>Puntos (Min - Max)</th><th>Inscripción</th></tr></thead>
+                        <tbody>${trCatHtml}</tbody>
+                    </table>
+                </div>
+
+                <div class="conv-seccion">
+                    <div class="conv-titulo"><i class="fa-solid fa-medal"></i> Premiación y Notas</div>
+                    <div style="background:rgba(251, 191, 36, 0.05); border:1px solid rgba(251, 191, 36, 0.2); padding:15px; border-radius:12px; color:#fef3c7;">
+                        ${txtPre}
+                    </div>
+                </div>
+
+                <div class="conv-seccion">
+                    <div class="conv-titulo"><i class="fa-solid fa-sitemap"></i> Sistema de Competencia</div>
+                    <div>${txtSis}</div>
+                </div>
+
+                <div class="conv-seccion">
+                    <div class="conv-titulo"><i class="fa-solid fa-scale-balanced"></i> Reglamento y Arbitraje</div>
+                    <div>${txtReg}</div>
+                </div>
+            `;
+            
+            bodyDiv.innerHTML = html;
         }
 
         function poblarClubs() {
