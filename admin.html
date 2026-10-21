@@ -270,12 +270,24 @@
 
     <div class="main-content no-print">
         
-        <!-- BANNER TORNEO -->
+        <!-- BANNER TORNEO Y PIN DE ESPECTADOR -->
         <div class="panel-3d panel-cyan" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding: 20px 28px;">
-            <div>
-                <span style="font-size: 9px; font-weight: 800; text-transform: uppercase; color:#a855f7; letter-spacing: 2px;">Torneo Activo en el Sistema</span>
-                <h3 id="nombre-torneo-banner" style="margin: 4px 0 0 0; border: none; padding: 0; color:#ffffff; font-size:18px; letter-spacing: 1px;">Cargando...</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
+                <div>
+                    <span style="font-size: 9px; font-weight: 800; text-transform: uppercase; color:#a855f7; letter-spacing: 2px;">Torneo Activo en el Sistema</span>
+                    <h3 id="nombre-torneo-banner" style="margin: 4px 0 0 0; border: none; padding: 0; color:#ffffff; font-size:18px; letter-spacing: 1px;">Cargando...</h3>
+                </div>
+                
+                <!-- CAJA DE CONFIGURACIÓN DEL PIN DE ESPECTADOR -->
+                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(251, 191, 36, 0.3); padding: 8px 12px; border-radius: 12px; display: flex; align-items: center; gap: 10px;">
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-size: 8px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px;"><i class="fa-solid fa-lock mr-1"></i> PIN de Espectador</span>
+                        <input type="text" id="admin-pin-torneo" maxlength="8" class="input-tabla" style="width: 80px; padding: 4px 8px !important; font-family: monospace; font-size: 12px !important; margin-top: 4px; border-color: #fbbf24 !important; color: #fbbf24 !important; text-align: center;">
+                    </div>
+                    <button class="btn-console btn-gold" onclick="guardarPinTorneo()" style="padding: 6px 10px; font-size: 9px;">Guardar PIN</button>
+                </div>
             </div>
+
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
                 <button class="btn-console btn-ws-style" onclick="compartirLinkInscripcionWS()">📲 LINK INSCRIPCIÓN</button>
                 <button class="btn-console btn-purple" onclick="compartirLinkTransmisionWS()">📺 LINK TRANSMISIÓN (FANS)</button>
@@ -635,9 +647,40 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
 
         function compartirLinkTransmisionWS() {
             if (!torneoActivoObj) return alert("Cargando datos del torneo...");
+            
+            let extraInfo = "";
+            if (torneoActivoObj.pin_espectador && String(torneoActivoObj.pin_espectador).trim() !== '') {
+                extraInfo = `\n🔒 *PIN de Acceso VIP:* ${torneoActivoObj.pin_espectador}\n`;
+            }
+
             let url = window.location.origin + '/espectador.html?torneo=' + torneoActivoObj.id;
-            let texto = `📺 *¡Sigue el Torneo en Vivo!* 📺\n\n*Pixel Studio T.*\nTorneo: *${torneoActivoObj.nombre}*\n\nSigue los marcadores y resultados en tiempo real aquí:\n👉 ${url}`;
+            let texto = `📺 *¡Sigue el Torneo en Vivo!* 📺\n\n*Pixel Studio T.*\nTorneo: *${torneoActivoObj.nombre}*\n${extraInfo}\nSigue los marcadores y resultados en tiempo real aquí:\n👉 ${url}`;
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+
+        // ================= FUNCIÓN GUARDAR PIN TORNEO =================
+        async function guardarPinTorneo() {
+            const inputPin = document.getElementById('admin-pin-torneo');
+            const nuevoPin = inputPin.value.trim();
+            
+            try {
+                // Actualizamos la columna en la base de datos
+                const { error } = await clienteSupabase
+                    .from('torneos')
+                    .update({ pin_espectador: nuevoPin })
+                    .eq('id', idTorneoActivo);
+                
+                if (error) throw error;
+
+                // Actualizamos el objeto en memoria
+                if (torneoActivoObj) {
+                    torneoActivoObj.pin_espectador = nuevoPin;
+                }
+
+                alert("✅ PIN de Espectador actualizado correctamente.");
+            } catch (err) {
+                alert("❌ Error al guardar el PIN: " + err.message);
+            }
         }
 
         const supabaseUrl = 'https://stytjtqshyupkyihurpd.supabase.co';
@@ -683,6 +726,10 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
                 const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
                 if (torneoData) {
                     torneoActivoObj = torneoData;
+                    
+                    // Cargar el PIN en la caja
+                    document.getElementById('admin-pin-torneo').value = torneoData.pin_espectador || '';
+
                     let infoExtra = [];
                     if (torneoData.fecha_evento) infoExtra.push(`📅 ${torneoData.fecha_evento}`);
                     if (torneoData.lugar_evento) infoExtra.push(`📍 ${torneoData.lugar_evento}`);
