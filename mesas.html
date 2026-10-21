@@ -14,7 +14,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
-    <!-- LIBRERÍA PREMIUM PARA GENERAR CÓDIGOS QR EN TIEMPO REAL -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <script>
@@ -50,30 +49,23 @@
 
         .grid-espectador { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; max-width: 1200px; margin: auto; }
 
-        /* DISEÑOS DE TARJETAS REGULARES Y VIP (LLAVES) */
-        .card-mesa { background: rgba(10, 15, 26, 0.7); backdrop-filter: blur(20px); border-radius: 20px; padding: 18px; position: relative; transition: all 0.3s ease; }
+        .card-mesa { background: rgba(10, 15, 26, 0.7); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); padding: 18px; position: relative; transition: all 0.3s ease; }
+        .card-mesa-grupo { border-bottom: 3px solid #0e7490; }
         
-        /* GRUPOS: Borde superior Neón Cyan */
-        .card-mesa-grupo { border-top: 4px solid #0e7490; border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); }
-        .card-mesa-grupo:hover { border-color: rgba(6,182,212,0.4); transform: translateY(-2px); }
-        
-        /* LLAVES: Diseño VIP - Sutil destello dorado cayendo desde arriba */
         .card-mesa-llave { 
-            border-top: 4px solid #fbbf24 !important; 
-            background: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(15, 23, 42, 0.8) 100%) !important; 
-            box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.15) !important; 
-            border-left: 1px solid rgba(245,158,11,0.2) !important;
-            border-right: 1px solid rgba(245,158,11,0.2) !important;
-            border-bottom: 1px solid rgba(245,158,11,0.2) !important;
+            border-bottom: 3px solid #fbbf24 !important; 
+            background: rgba(15, 23, 42, 0.6) !important; 
+            box-shadow: 0 5px 20px -5px rgba(251,191,36,0.1) !important; 
+            border: 1px solid rgba(251,191,36,0.15) !important; 
         }
         .card-mesa-llave:hover {
-            border-color: rgba(245,158,11,0.4) !important; 
-            box-shadow: 0 12px 30px -5px rgba(245,158,11,0.25) !important; 
+            border-color: rgba(251,191,36,0.3) !important; 
+            box-shadow: 0 8px 25px -5px rgba(251,191,36,0.2) !important; 
             transform: translateY(-3px);
         }
         
-        .card-mesa.vivo { border-top-color: #34d399 !important; box-shadow: 0 0 25px rgba(52, 211, 153, 0.15) !important; }
-        .card-mesa.finalizado { border-top-color: #64748b !important; opacity: 0.85; }
+        .card-mesa.vivo { border-bottom-color: #34d399 !important; box-shadow: 0 0 25px rgba(52, 211, 153, 0.15) !important; }
+        .card-mesa.finalizado { border-bottom-color: #64748b !important; opacity: 0.85; }
 
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .mesa-title { font-size: 12px; font-weight: 800; color: #38bdf8; letter-spacing: 1px; }
@@ -86,14 +78,14 @@
         .est-curso { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; }
         .est-fin { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); color: #94a3b8; }
 
-        .score-container { background: rgba(0,0,0,0.4); border-radius: 14px; padding: 12px 16px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.03); }
-        .card-mesa-llave .score-container { background: rgba(0,0,0,0.55); border: 1px inset rgba(251,191,36,0.15); }
+        .score-container { background: rgba(0,0,0,0.3); border-radius: 14px; padding: 12px 16px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.03); }
+        .card-mesa-llave .score-container { background: rgba(0,0,0,0.4); border: 1px solid rgba(251,191,36,0.1); }
 
         .jugador-box { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
         .jugador-nombre { font-size: 13px; font-weight: 800; color: #ffffff; cursor: pointer; transition: color 0.2s; }
         .jugador-nombre:hover { color: #38bdf8; }
         .score-big { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 900; color: #06b6d4; }
-        .card-mesa-llave .score-big { color: #fbbf24; text-shadow: 0 0 10px rgba(251,191,36,0.3); }
+        .card-mesa-llave .score-big { color: #fbbf24; text-shadow: 0 0 10px rgba(251,191,36,0.2); }
         .score-big.p2 { color: #d946ef; }
         .sets-badge { font-size: 10px; font-weight: 800; color: #94a3b8; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 6px; margin-left: 6px; }
 
@@ -114,7 +106,6 @@
 </head>
 <body>
 
-    <!-- MODAL PARA GENERAR QR DE TRANSMISIÓN -->
     <div id="modal-qr" class="modal-overlay" style="display: none;">
         <div class="modal-card" style="max-width: 380px; padding: 30px; border: 2px solid #3b82f6; text-align: center;">
             <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:15px;">
@@ -133,7 +124,6 @@
         </div>
     </div>
 
-    <!-- MODAL EXPEDIENTE COMPLETO -->
     <div id="modal-jugador-admin" class="modal-overlay" style="display: none;">
         <div class="modal-card">
             <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
@@ -150,7 +140,6 @@
         </div>
     </div>
 
-    <!-- MODAL PARA ASIGNAR MARCADOR -->
     <div id="modal-marcador" class="modal-overlay" style="display: none;">
         <div class="modal-card" style="max-width: 400px; padding: 30px; border: 2px solid #a855f7;">
             <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:20px;">
@@ -168,12 +157,15 @@
                     <input type="number" id="input-sets-j2" class="input-tabla" style="width: 100%; text-align: center; font-size: 30px !important; font-family:'Orbitron',sans-serif; font-weight: 900; padding: 15px !important; background:rgba(0,0,0,0.8)!important;" min="0" max="7">
                 </div>
             </div>
+            <!-- CAMPOS OCULTOS PARA IDs DINÁMICOS -->
             <input type="hidden" id="hidden-marcador-partidoid">
+            <input type="hidden" id="hidden-marcador-j1id">
+            <input type="hidden" id="hidden-marcador-j2id">
+            
             <button id="btn-guardar-marcador" onclick="guardarMarcadorManual()" class="btn-console" style="width: 100%; justify-content: center; background: #a855f7; color: white; border-color: #c084fc; padding: 14px; font-size: 13px;">💾 Guardar Resultado</button>
         </div>
     </div>
 
-    <!-- MODAL PARA LINK DE YOUTUBE -->
     <div id="modal-youtube" class="modal-overlay" style="display: none;">
         <div class="modal-card" style="max-width: 400px; padding: 30px; border: 2px solid #ef4444;">
             <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:20px;">
@@ -210,7 +202,6 @@
         </nav>
     </div>
 
-    <!-- FILTROS -->
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">🎯 Filtrar por Modalidad:</div>
     <div class="scrolling-bar" id="bar-modalidad">
         <button class="btn-filter-pill active" onclick="filtrarModalidad('todas', this)">Todas</button>
@@ -291,14 +282,15 @@
         };
 
         // ================= MOTOR INTELIGENTE DE PROYECCIÓN DE NOMBRES =================
-        function getProyeccionNombreDinamico(p, isJ1, resumenGlobal) {
-            if (isJ1 && p.j1) return p.j1.nombre; 
-            if (!isJ1 && p.j2) return p.j2.nombre;
+        function getProyeccionDinamica(p, isJ1, resumenGlobal) {
+            // Retorna { nombre: String, id: Integer|null }
+            if (isJ1 && p.j1) return { nombre: p.j1.nombre, id: p.j1.id }; 
+            if (!isJ1 && p.j2) return { nombre: p.j2.nombre, id: p.j2.id };
 
             let rf = String(p.ronda_fase || '').toLowerCase();
             let catNombre = p.categorias?.nombre || 'General';
             
-            const getRank = (gpo, pos, fallback) => {
+            const getRank = (gpo, pos, fallbackText) => {
                 let targetGpo = null;
                 if (resumenGlobal[catNombre] && resumenGlobal[catNombre].grupos && resumenGlobal[catNombre].grupos[gpo]) {
                     targetGpo = resumenGlobal[catNombre].grupos[gpo];
@@ -306,7 +298,7 @@
                     targetGpo = resumenGlobal[catNombre][gpo];
                 }
                 
-                if (!targetGpo) return fallback;
+                if (!targetGpo) return { nombre: fallbackText, id: null };
 
                 let arr = Object.values(targetGpo);
                 arr.sort((a, b) => {
@@ -322,21 +314,21 @@
                 });
 
                 if (arr.length > pos && arr[pos]) {
-                    return arr[pos].nombre;
+                    return { nombre: arr[pos].nombre, id: arr[pos].id };
                 }
-                return fallback;
+                return { nombre: fallbackText, id: null };
             };
 
             let catMatches = todosLosPartidos.filter(m => (m.categorias?.nombre || 'General') === catNombre);
             let hasCuartos = catMatches.some(m => String(m.ronda_fase || '').toLowerCase().includes('cuartos'));
 
-            const getWinner = (faseStr, fallback) => {
+            const getWinner = (faseStr, fallbackText) => {
                 let m = catMatches.find(m => String(m.ronda_fase || '').toLowerCase() === faseStr.toLowerCase());
                 if (m && m.ganador_id) {
-                    if (m.ganador_id === m.jugador1_id && m.j1) return m.j1.nombre;
-                    if (m.ganador_id === m.jugador2_id && m.j2) return m.j2.nombre;
+                    let pWin = todosLosJugadoresAdmin.find(x => x.id === m.ganador_id);
+                    if (pWin) return { nombre: pWin.nombre, id: pWin.id };
                 }
-                return fallback;
+                return { nombre: fallbackText, id: null };
             };
 
             if (rf.includes('cuartos')) {
@@ -358,7 +350,7 @@
                 return isJ1 ? getWinner('Semifinal 1', 'Gana Semi 1') : getWinner('Semifinal 2', 'Gana Semi 2');
             }
             
-            return isJ1 ? `${p.ronda_fase} J1` : `${p.ronda_fase} J2`;
+            return { nombre: isJ1 ? `${p.ronda_fase} J1` : `${p.ronda_fase} J2`, id: null };
         }
         // ==============================================================================
 
@@ -484,14 +476,11 @@
             return basePts + delta;
         }
 
+        // ================= CÁLCULO DE GRUPOS SIN FILTROS UI =================
         function calcularStandingsGrupos() {
             const porCategoria = {};
             todosLosPartidos.forEach(m => {
-                if (modalidadFiltro === 'flash' && m.grupo_nombre !== 'Flash') return;
-                if (modalidadFiltro === 'grupos' && (!m.grupo_nombre || m.grupo_nombre === 'Flash' || m.grupo_nombre === 'Único')) return;
-                if (modalidadFiltro === 'round_robin' && m.grupo_nombre !== 'Único') return;
-                if (modalidadFiltro === 'llaves' && m.grupo_nombre) return;
-                if (modalidadFiltro === 'todas' && m.grupo_nombre === 'Flash') return; 
+                if (!m.grupo_nombre || m.grupo_nombre === 'Flash') return; 
                 
                 const catNombre = m.categorias?.nombre || 'General';
                 if (!porCategoria[catNombre]) porCategoria[catNombre] = {};
@@ -579,6 +568,7 @@
         }
 
         function dibujarEstadisticas(container) {
+            // Filtrar estadísticas respetando UI
             const standings = calcularStandingsGrupos();
             const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
             let catsList = [...categoriasSet];
@@ -717,9 +707,12 @@
 
                     let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
                     
-                    // PROYECCIÓN DE NOMBRES INTELIGENTE
-                    let nomJ1 = getProyeccionNombreDinamico(p, true, resumenGlobal);
-                    let nomJ2 = getProyeccionNombreDinamico(p, false, resumenGlobal);
+                    // PROYECCIÓN DE NOMBRES INTELIGENTE Y EXTRACCIÓN DE IDs
+                    let proyJ1 = getProyeccionDinamica(p, true, resumenGlobal);
+                    let proyJ2 = getProyeccionDinamica(p, false, resumenGlobal);
+                    
+                    let nomJ1 = proyJ1.nombre; let idDinamicoJ1 = proyJ1.id;
+                    let nomJ2 = proyJ2.nombre; let idDinamicoJ2 = proyJ2.id;
                     
                     let iconJ1 = (isFin && p.ganador_id === p.jugador1_id) ? '🏆 ' : '';
                     let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '🏆 ' : '';
@@ -746,6 +739,7 @@
                         </button>
                     `;
 
+                    // Enlazamos los IDs dinámicos al botón del marcador manual
                     htmlContent += `
                         <div class="${cardClassStyle}">
                             <div class="top-bar">
@@ -757,7 +751,7 @@
                             </div>
                             <div style="margin-bottom:12px; display: flex; gap: 8px; flex-wrap: wrap;">
                                 <span class="cat-badge" style="color:${catStyle.text}; background:${catStyle.bg}; border:1px solid ${catStyle.border};">🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'}</span>
-                                <span class="cat-badge" style="${!isLlave ? `color:${cGpo.color}; background:${cGpo.bg}; border:1px solid ${cGpo.border};` : 'background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);'}">📍 ${eqGrupo}</span>
+                                <span class="${isLlave ? 'badge-llave' : 'cat-badge'}" style="${!isLlave ? `color:${cGpo.color}; background:${cGpo.bg}; border:1px solid ${cGpo.border};` : 'background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);'}">📍 ${eqGrupo}</span>
                             </div>
                             <div class="score-container">
                                 <div class="jugador-box"><div style="cursor:pointer;" onclick="abrirModalJugadorAdmin(${p.jugador1_id}, '${safeNom1}', '${safeClub1}')"><span class="jugador-nombre">${iconJ1}${nomJ1}</span></div><div style="display:flex; align-items:center;">${score1}</div></div>
@@ -773,7 +767,7 @@
                                     <i class="fa-solid fa-qrcode"></i> Transmitir
                                 </button>
                                 
-                                <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(168,85,247,0.15); border-color:#a855f7; color:#c084fc;" onclick="abrirModalMarcador(${p.id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(nomJ2).replace(/'/g, "\\'")}')">
+                                <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(168,85,247,0.15); border-color:#a855f7; color:#c084fc;" onclick="abrirModalMarcador(${p.id}, '${String(safeNom1)}', '${String(safeNom2)}', ${idDinamicoJ1 || 'null'}, ${idDinamicoJ2 || 'null'})">
                                     📝 Marcador
                                 </button>
                                 
@@ -808,9 +802,14 @@
             } catch (e) { alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Enlace'; }
         }
 
-        function abrirModalMarcador(partidoId, nombreJ1, nombreJ2) {
+        function abrirModalMarcador(partidoId, nombreJ1, nombreJ2, idJ1, idJ2) {
             document.getElementById('hidden-marcador-partidoid').value = partidoId;
-            document.getElementById('lbl-marcador-j1').innerText = nombreJ1; document.getElementById('lbl-marcador-j2').innerText = nombreJ2;
+            document.getElementById('hidden-marcador-j1id').value = idJ1;
+            document.getElementById('hidden-marcador-j2id').value = idJ2;
+            
+            document.getElementById('lbl-marcador-j1').innerText = nombreJ1; 
+            document.getElementById('lbl-marcador-j2').innerText = nombreJ2;
+            
             document.getElementById('input-sets-j1').value = ''; document.getElementById('input-sets-j2').value = '';
             document.getElementById('modal-marcador').style.display = 'flex';
         }
@@ -819,19 +818,39 @@
 
         async function guardarMarcadorManual() {
             let partidoId = document.getElementById('hidden-marcador-partidoid').value;
+            let idJ1 = document.getElementById('hidden-marcador-j1id').value;
+            let idJ2 = document.getElementById('hidden-marcador-j2id').value;
+            
             let valJ1 = document.getElementById('input-sets-j1').value; let valJ2 = document.getElementById('input-sets-j2').value;
             if (valJ1 === '' || valJ2 === '') return;
             let setsJ1 = parseInt(valJ1); let setsJ2 = parseInt(valJ2);
             if (isNaN(setsJ1) || isNaN(setsJ2)) return;
+            
             const btn = document.getElementById('btn-guardar-marcador');
             if (setsJ1 === setsJ2) { btn.innerText = "❌ Empate no válido"; setTimeout(() => { btn.innerText = "💾 Guardar Manualmente"; }, 2000); return; }
+            
             btn.disabled = true; btn.innerText = '⏳ Guardando...';
+            
             try {
-                const { data: partido } = await clienteSupabase.from('partidos').select('jugador1_id, jugador2_id').eq('id', partidoId).single();
-                let ganador_id = setsJ1 > setsJ2 ? partido.jugador1_id : partido.jugador2_id;
-                const { error } = await clienteSupabase.from('partidos').update({ sets_j1: setsJ1, sets_j2: setsJ2, puntos_j1: setsJ1, puntos_j2: setsJ2, estado: 'finalizado', ganador_id: ganador_id }).eq('id', partidoId);
-                if (!error) { cerrarModalMarcador(); window.location.reload(); } else { alert("❌ Error: " + error.message); btn.disabled = false; btn.innerText = '💾 Guardar Manualmente'; }
-            } catch (e) { alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Manualmente'; }
+                // Sella al ganador y empuja a los jugadores oficiales a la base de datos si estaban en "Por definir"
+                let ganador_id = setsJ1 > setsJ2 ? (idJ1 !== 'null' ? parseInt(idJ1) : null) : (idJ2 !== 'null' ? parseInt(idJ2) : null);
+                
+                let payload = { sets_j1: setsJ1, sets_j2: setsJ2, puntos_j1: setsJ1, puntos_j2: setsJ2, estado: 'finalizado', ganador_id: ganador_id };
+                
+                // Si la proyección detectó un ID real, lo amarramos a la tabla de partidos para que avance de ronda
+                if (idJ1 !== 'null') payload.jugador1_id = parseInt(idJ1);
+                if (idJ2 !== 'null') payload.jugador2_id = parseInt(idJ2);
+                
+                const { error } = await clienteSupabase.from('partidos').update(payload).eq('id', partidoId);
+                
+                if (!error) { 
+                    cerrarModalMarcador(); window.location.reload(); 
+                } else { 
+                    alert("❌ Error: " + error.message); btn.disabled = false; btn.innerText = '💾 Guardar Manualmente'; 
+                }
+            } catch (e) { 
+                alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Manualmente'; 
+            }
         }
 
         function abrirModalJugadorAdmin(jugadorId, nombre, club) {
