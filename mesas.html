@@ -104,6 +104,11 @@
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .modal-card { background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; width: 100%; max-width: 680px; padding: 24px; color: white; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+
+        .btn-copy-chip { background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; padding: 6px 12px; border-radius: 8px; font-size: 10px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; }
+        .btn-copy-chip:hover { background: #38bdf8; color: #000; }
+        .btn-copy-chip.chip-gold { background: rgba(251, 191, 36, 0.15); border-color: rgba(251, 191, 36, 0.4); color: #fbbf24; }
+        .btn-copy-chip.chip-gold:hover { background: #fbbf24; color: #000; }
     </style>
 </head>
 <body>
@@ -183,50 +188,78 @@
         </div>
     </div>
 
-    <!-- MODAL LINK Y TRANSMISIÓN AUTOMÁTICA YOUTUBE -->
+    <!-- MODAL LINK Y TRANSMISIÓN AUTOMÁTICA YOUTUBE CON BOTONES DE COPIA -->
     <div id="modal-youtube" class="modal-overlay" style="display: none;">
-        <div class="modal-card" style="max-width: 440px; padding: 26px; border: 2px solid #ef4444;">
+        <div class="modal-card" style="max-width: 460px; padding: 24px; border: 2px solid #ef4444;">
             <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:16px;">
                 <h3 style="color: #ef4444; font-size: 16px; font-weight: 900; text-transform: uppercase; margin: 0;"><i class="fa-brands fa-youtube mr-2"></i> Transmisión YouTube</h3>
                 <button onclick="cerrarModalYouTube()" style="background:transparent; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">✕</button>
             </div>
 
             <!-- BOTÓN AUTOMÁTICO VINCULADO CON EDGE FUNCTION -->
-            <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 14px; padding: 16px; margin-bottom: 20px; text-align: center;">
+            <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 14px; padding: 16px; margin-bottom: 18px; text-align: center;">
                 <div style="font-size: 11px; font-weight: 800; color: #f87171; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
                     <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Automatización en la Nube
                 </div>
                 <p style="font-size: 11px; color: #cbd5e1; margin-bottom: 12px; line-height: 1.4;">
-                    Crea la transmisión en tu canal de YouTube automáticamente y asigna el enlace a este partido.
+                    Crea la transmisión en YouTube y obtén los accesos para PRISM Live Studio.
                 </p>
                 <button id="btn-crear-stream-auto" onclick="generarStreamYouTubeAutomatico()" class="btn-console" style="width: 100%; justify-content: center; background: #dc2626; color: white; border-color: #ef4444; padding: 12px; font-size: 11px; font-weight: 800; box-shadow: 0 0 15px rgba(239, 68, 68, 0.35);">
                     <i class="fa-brands fa-youtube mr-1"></i> Crear Stream en YouTube Ahora
                 </button>
 
-                <!-- DATOS RTMP GENERADOS -->
-                <div id="caja-detalles-stream" style="display: none; margin-top: 14px; text-align: left; background: rgba(0,0,0,0.6); padding: 12px; border-radius: 10px; border: 1px solid rgba(52, 211, 153, 0.3);">
-                    <div style="color: #34d399; font-weight: 800; font-size: 11px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+                <!-- CAJA DE CLAVES Y ACCESOS RTMP CON BOTONES DE COPIAR CON UN CLIC -->
+                <div id="caja-detalles-stream" style="display: none; margin-top: 15px; text-align: left; background: rgba(0,0,0,0.7); padding: 14px; border-radius: 12px; border: 1px solid rgba(52, 211, 153, 0.35);">
+                    <div style="color: #34d399; font-weight: 800; font-size: 11px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
                         <i class="fa-solid fa-circle-check"></i> ¡Transmisión Creada en YouTube!
                     </div>
-                    <div style="font-size: 10px; color: #94a3b8; margin-bottom: 4px;"><strong>URL RTMP (Servidor):</strong></div>
-                    <div id="txt-rtmp" style="font-size: 10px; color: #38bdf8; word-break: break-all; margin-bottom: 8px; font-family: monospace;"></div>
-                    <div style="font-size: 10px; color: #94a3b8; margin-bottom: 4px;"><strong>Clave de Emisión (Stream Key):</strong></div>
-                    <div id="txt-streamkey" style="font-size: 10px; color: #fbbf24; word-break: break-all; font-family: monospace;"></div>
+
+                    <!-- CAMPO 1: URL RTMP -->
+                    <div style="margin-bottom: 10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <label style="font-size: 10px; color: #94a3b8; font-weight: 800; text-transform: uppercase;">1. URL RTMP (Servidor):</label>
+                            <button id="btn-copiar-rtmp" class="btn-copy-chip" onclick="copiarDatoDirecto('input-rtmp-copiable', this)">
+                                <i class="fa-regular fa-copy"></i> Copiar URL
+                            </button>
+                        </div>
+                        <input type="text" id="input-rtmp-copiable" class="input-tabla" readonly style="width: 100%; padding: 8px 10px !important; color: #38bdf8 !important; font-family: monospace; font-size: 11px !important;" onclick="this.select()">
+                    </div>
+
+                    <!-- CAMPO 2: STREAM KEY -->
+                    <div style="margin-bottom: 12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                            <label style="font-size: 10px; color: #94a3b8; font-weight: 800; text-transform: uppercase;">2. Clave de Emisión (Stream Key):</label>
+                            <button id="btn-copiar-key" class="btn-copy-chip chip-gold" onclick="copiarDatoDirecto('input-streamkey-copiable', this)">
+                                <i class="fa-regular fa-copy"></i> Copiar Clave
+                            </button>
+                        </div>
+                        <input type="text" id="input-streamkey-copiable" class="input-tabla" readonly style="width: 100%; padding: 8px 10px !important; color: #fbbf24 !important; font-family: monospace; font-size: 11px !important;" onclick="this.select()">
+                    </div>
+
+                    <!-- BOTÓN COPIAR AMBOS (TEXTO COMPLETO) -->
+                    <button id="btn-copiar-ambos" onclick="copiarAmbosDatos(this)" class="btn-console" style="width: 100%; justify-content: center; background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.2); color: #cbd5e1; padding: 8px; font-size: 10px;">
+                        <i class="fa-solid fa-list-check mr-1"></i> Copiar Ambos (Texto para WhatsApp o Notas)
+                    </button>
                 </div>
             </div>
 
             <!-- EDICIÓN MANUAL / ENLACE DIRECTO -->
             <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
-                <p style="font-size: 11px; color: #94a3b8; margin-bottom: 8px; text-align: left;">O ingresa/edita el enlace manualmente:</p>
-                <input type="text" id="input-youtube-link" class="input-tabla" style="width: 100%; padding: 12px !important; margin-bottom: 15px;" placeholder="Ej. https://youtu.be/abcd123">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                    <p style="font-size: 11px; color: #94a3b8; margin: 0; text-align: left;">Enlace del video en vivo:</p>
+                    <button id="btn-copiar-link-yt" class="btn-copy-chip" onclick="copiarDatoDirecto('input-youtube-link', this)" style="padding: 4px 8px; font-size: 9px;">
+                        <i class="fa-regular fa-copy"></i> Copiar Link
+                    </button>
+                </div>
+                <input type="text" id="input-youtube-link" class="input-tabla" style="width: 100%; padding: 10px !important; margin-bottom: 15px;" placeholder="Ej. https://youtu.be/abcd123">
                 <input type="hidden" id="hidden-youtube-partidoid">
                 
                 <div style="display: flex; gap: 10px;">
-                    <button id="btn-guardar-youtube" onclick="guardarLinkYouTube()" class="btn-console" style="flex: 1; justify-content: center; background: rgba(255, 255, 255, 0.08); color: white; border-color: rgba(255, 255, 255, 0.2); padding: 12px; font-size: 12px;">
+                    <button id="btn-guardar-youtube" onclick="guardarLinkYouTube()" class="btn-console" style="flex: 1; justify-content: center; background: rgba(255, 255, 255, 0.08); color: white; border-color: rgba(255, 255, 255, 0.2); padding: 12px; font-size: 11px;">
                         💾 Guardar Enlace
                     </button>
-                    <button id="btn-abrir-youtube" onclick="abrirEnlaceDirecto()" class="btn-console" style="background: rgba(239,68,68,0.2); color: #f87171; border-color: #ef4444; padding: 12px; font-size: 12px; display: none;">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Ver
+                    <button id="btn-abrir-youtube" onclick="abrirEnlaceDirecto()" class="btn-console" style="background: rgba(239,68,68,0.2); color: #f87171; border-color: #ef4444; padding: 12px; font-size: 11px; display: none;">
+                        <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> Ver en YouTube
                     </button>
                 </div>
             </div>
@@ -320,6 +353,63 @@
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
         }
 
+        // ================= HELPERS UNIVERSALES DE COPIA CON UN TOQUE =================
+        function copiarTextoUniversal(texto, btnElement, feedbackMsg = "¡Copiado!") {
+            if (!texto) return;
+            
+            const tempInput = document.createElement("input");
+            tempInput.value = texto;
+            tempInput.style.position = "fixed";
+            tempInput.style.opacity = "0";
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            tempInput.setSelectionRange(0, 99999);
+
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    navigator.clipboard.writeText(texto);
+                } else {
+                    document.execCommand('copy');
+                }
+                
+                if (btnElement) {
+                    const originalHtml = btnElement.innerHTML;
+                    btnElement.innerHTML = `<i class="fa-solid fa-check"></i> ${feedbackMsg}`;
+                    btnElement.style.background = "#10b981";
+                    btnElement.style.borderColor = "#34d399";
+                    btnElement.style.color = "#000000";
+                    setTimeout(() => {
+                        btnElement.innerHTML = originalHtml;
+                        btnElement.style.background = "";
+                        btnElement.style.borderColor = "";
+                        btnElement.style.color = "";
+                    }, 1800);
+                }
+            } catch (err) {
+                console.error("Error copiando texto:", err);
+            } finally {
+                document.body.removeChild(tempInput);
+            }
+        }
+
+        function copiarDatoDirecto(inputId, btnElement) {
+            const input = document.getElementById(inputId);
+            if (input && input.value) {
+                copiarTextoUniversal(input.value.trim(), btnElement, "¡Copiado!");
+            }
+        }
+
+        function copiarAmbosDatos(btnElement) {
+            const rtmp = document.getElementById('input-rtmp-copiable').value.trim();
+            const key = document.getElementById('input-streamkey-copiable').value.trim();
+            const linkYt = document.getElementById('input-youtube-link').value.trim();
+            
+            if (!rtmp && !key) return;
+
+            const bloqueTexto = `📡 DATOS DE TRANSMISIÓN:\n\n🌐 URL RTMP: ${rtmp}\n🔑 Clave: ${key}\n\n▶️ Enlace en vivo: ${linkYt}`;
+            copiarTextoUniversal(bloqueTexto, btnElement, "¡Ambos Copiados!");
+        }
+
         // ================= OVERLAY Y QR =================
         function abrirModalTransmision(partidoId) {
             const urlOverlay = `${window.location.origin}/overlay.html?partido=${partidoId}`;
@@ -343,18 +433,8 @@
 
         function copiarAlPortapapelesOverlay() {
             const input = document.getElementById('link-overlay-visible');
-            input.select();
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(input.value).then(() => {
-                    alert("📋 Link de Overlay copiado al portapapeles.");
-                }).catch(() => {
-                    document.execCommand('copy');
-                    alert("📋 Link copiado.");
-                });
-            } else {
-                document.execCommand('copy');
-                alert("📋 Link copiado.");
-            }
+            copiarTextoUniversal(input.value, null);
+            alert("📋 Link de Overlay copiado al portapapeles.");
         }
 
         const obtenerEstiloCategoria = (catId) => {
@@ -829,10 +909,10 @@
             const cleanUrl = (urlActual && urlActual !== 'null' && urlActual !== 'undefined') ? urlActual : '';
             document.getElementById('input-youtube-link').value = cleanUrl;
             
-            // Restablecer detalles y botones de stream automático
+            // Restablecer campos
             document.getElementById('caja-detalles-stream').style.display = 'none';
-            document.getElementById('txt-rtmp').innerText = '';
-            document.getElementById('txt-streamkey').innerText = '';
+            document.getElementById('input-rtmp-copiable').value = '';
+            document.getElementById('input-streamkey-copiable').value = '';
             
             const btnAuto = document.getElementById('btn-crear-stream-auto');
             btnAuto.disabled = false;
@@ -864,7 +944,6 @@
             const btnAuto = document.getElementById('btn-crear-stream-auto');
             const p = todosLosPartidos.find(x => x.id == partidoId);
             
-            // Proyección y datos del partido
             let proy1 = datosGeneralesCuadro?.mapaProyecciones?.[`${partidoId}_j1`]?.nombre;
             let proy2 = datosGeneralesCuadro?.mapaProyecciones?.[`${partidoId}_j2`]?.nombre;
             let nom1 = proy1 || p?.j1?.nombre || 'Jugador 1';
@@ -879,7 +958,6 @@
             btnAuto.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Conectando con YouTube...';
 
             try {
-                // Invocamos la Edge Function de Supabase
                 const { data, error } = await clienteSupabase.functions.invoke('crear-stream-youtube', {
                     body: { titulo: tituloStream }
                 });
@@ -889,7 +967,7 @@
 
                 const { videoUrl, rtmpUrl, streamKey } = data;
 
-                // Guardar automáticamente el video_url en la base de datos
+                // Guardar enlace en base de datos
                 const { error: dbError } = await clienteSupabase
                     .from('partidos')
                     .update({ video_url: videoUrl })
@@ -897,10 +975,10 @@
 
                 if (dbError) throw dbError;
 
-                // Actualizar interfaz
+                // Cargar datos en los inputs copiables
                 document.getElementById('input-youtube-link').value = videoUrl;
-                document.getElementById('txt-rtmp').innerText = rtmpUrl || 'rtmp://a.rtmp.youtube.com/live2';
-                document.getElementById('txt-streamkey').innerText = streamKey || '(No disponible)';
+                document.getElementById('input-rtmp-copiable').value = rtmpUrl || 'rtmp://a.rtmp.youtube.com/live2';
+                document.getElementById('input-streamkey-copiable').value = streamKey || '';
                 document.getElementById('caja-detalles-stream').style.display = 'block';
 
                 btnAuto.innerHTML = '<i class="fa-solid fa-check mr-1"></i> ¡Stream Creado Exitosamente!';
