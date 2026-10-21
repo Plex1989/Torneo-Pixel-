@@ -92,22 +92,131 @@
         /* PANTALLA COMPLETA VIP */
         #modal-fullscreen-partido { background: radial-gradient(circle at center, #111115 0%, #04060a 100%); }
         .card-score-fs { background: rgba(20, 20, 24, 0.6); backdrop-filter: blur(25px); border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); box-shadow: inset 0 0 40px rgba(0,0,0,0.5); }
-        .fs-title-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); p-5; rounded-3xl; }
+        .fs-title-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; }
 
         /* Reproductor Video */
         #modal-video { backdrop-filter: blur(20px); background: rgba(0,0,0,0.9); }
         .iframe-container { position: relative; width: 100%; padding-bottom: 56.25%; height: 0; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1); }
         .iframe-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
+        /* ========================================================
+           PORTAL DE BLOQUEO POR PIN (GATEWAY VIP)
+           ======================================================== */
+        #gate-pin-espectador {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            background: radial-gradient(circle at center, #18181f 0%, #050508 100%);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+        }
+
+        .card-pin-box {
+            background: rgba(18, 18, 24, 0.95);
+            border: 2px solid #fbbf24;
+            box-shadow: 0 0 50px rgba(251, 191, 36, 0.25);
+            border-radius: 28px;
+            padding: 35px 25px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            position: relative;
+        }
+
+        .input-pin-code {
+            background: rgba(0, 0, 0, 0.7) !important;
+            border: 2px solid rgba(251, 191, 36, 0.3) !important;
+            border-radius: 16px !important;
+            color: #fbbf24 !important;
+            font-family: 'Orbitron', sans-serif !important;
+            font-size: 32px !important;
+            font-weight: 900 !important;
+            letter-spacing: 12px !important;
+            text-align: center !important;
+            width: 100% !important;
+            padding: 14px 10px !important;
+            margin: 20px 0 !important;
+            outline: none !important;
+            transition: all 0.3s ease !important;
+        }
+
+        .input-pin-code:focus {
+            border-color: #fbbf24 !important;
+            box-shadow: 0 0 25px rgba(251, 191, 36, 0.4) !important;
+        }
+
+        .btn-ingresar-pin {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #fbbf24, #d97706);
+            color: #000000;
+            border: none;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 10px 25px rgba(251, 191, 36, 0.3);
+        }
+
+        .btn-ingresar-pin:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(251, 191, 36, 0.5);
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-8px); }
+            40%, 80% { transform: translateX(8px); }
+        }
+        .anim-shake { animation: shake 0.4s ease-in-out; }
+
         @media print {
             body { background: #ffffff !important; color: #000000 !important; }
-            body::before, body::after, .header, .scrolling-bar, .no-print, #modal-fullscreen-partido, #modal-video { display: none !important; }
+            body::before, body::after, .header, .scrolling-bar, .no-print, #modal-fullscreen-partido, #modal-video, #gate-pin-espectador { display: none !important; }
             * { color: #000 !important; text-shadow: none !important; box-shadow: none !important; }
             .card-mesa { border: 1px solid #ccc !important; page-break-inside: avoid; }
         }
     </style>
 </head>
 <body>
+
+    <!-- ========================================================
+         BLOQUEO POR PIN OFICIAL DEL TORNEO (GATEWAY VIP)
+         ======================================================== -->
+    <div id="gate-pin-espectador" class="no-print">
+        <div class="card-pin-box" id="box-card-pin">
+            <div style="width: 64px; height: 64px; background: rgba(251, 191, 36, 0.1); border: 2px solid rgba(251, 191, 36, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);">
+                <i class="fa-solid fa-lock text-amber-400 text-2xl"></i>
+            </div>
+            
+            <span class="header-tag">Acceso Exclusivo</span>
+            <h2 id="gate-torneo-titulo" class="text-lg md:text-xl font-black text-white uppercase tracking-wider mt-2 mb-1">TORNEO PRIVADO</h2>
+            <p class="text-xs text-zinc-400 font-medium px-4">Ingresa el PIN de espectador para ver los partidos y transmisiones en directo.</p>
+
+            <form onsubmit="verificarPinEspectador(event)">
+                <input type="password" id="input-pin-espectador" class="input-pin-code" maxlength="8" inputmode="numeric" placeholder="••••" autocomplete="off" autofocus>
+                
+                <div id="gate-pin-error" class="text-rose-500 text-xs font-bold mb-3 hidden">
+                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> PIN incorrecto. Intenta de nuevo.
+                </div>
+
+                <button type="submit" class="btn-ingresar-pin">
+                    <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Ingresar al Torneo
+                </button>
+            </form>
+
+            <p class="text-[10px] text-zinc-500 font-bold tracking-wider uppercase mt-4">
+                Pide el código de acceso al comité organizador.
+            </p>
+        </div>
+    </div>
 
     <!-- REPRODUCTOR VOD/LIVE DE YOUTUBE -->
     <div id="modal-video" class="fixed inset-0 z-[200] flex-col items-center justify-center hidden no-print">
@@ -227,7 +336,6 @@
     </div>
 
     <div class="scrolling-bar no-print hidden" id="bar-mesas">
-        <!-- Oculto intencionalmente en vista VIP, no es tan relevante para el espectador filtrar por mesa individual -->
         <button class="btn-filter-pill active" onclick="filtrarMesa('todas')">Todas las Mesas</button>
     </div>
 
@@ -245,6 +353,7 @@
         let partidoUrlId = urlParams.get('partido');
 
         let ORG_ID = null; 
+        let pinOficialTorneo = null;
         let todosLosPartidos = [];
         let reglasRankingList = [];
         let todasLasCategorias = [];
@@ -258,6 +367,57 @@
         let activePartidoFullScreenId = null;
         let audioMuted = false;
         let lastAnnouncedScore = "";
+
+        // ==========================================
+        // CANDADO Y VERIFICACIÓN DE PIN
+        // ==========================================
+        function verificarAccesoPIN() {
+            // Si el torneo no tiene configurado ningún PIN, se concede acceso directo
+            if (!pinOficialTorneo || String(pinOficialTorneo).trim() === '') {
+                document.getElementById('gate-pin-espectador').style.display = 'none';
+                return true;
+            }
+
+            const storageKey = `acceso_espectador_torneo_${idTorneoActivo}`;
+            const pinGuardado = localStorage.getItem(storageKey);
+
+            if (pinGuardado && String(pinGuardado).trim() === String(pinOficialTorneo).trim()) {
+                document.getElementById('gate-pin-espectador').style.display = 'none';
+                return true;
+            }
+
+            // Si no coincide o no existe, mostramos el modal de bloqueo
+            document.getElementById('gate-pin-espectador').style.display = 'flex';
+            setTimeout(() => {
+                document.getElementById('input-pin-espectador')?.focus();
+            }, 300);
+            return false;
+        }
+
+        function verificarPinEspectador(e) {
+            if (e) e.preventDefault();
+            const input = document.getElementById('input-pin-espectador');
+            const errBox = document.getElementById('gate-pin-error');
+            const cardBox = document.getElementById('box-card-pin');
+            const valorIngresado = (input.value || '').trim();
+
+            if (valorIngresado === String(pinOficialTorneo).trim()) {
+                // Guardar en el dispositivo para no volver a pedirlo en este torneo
+                localStorage.setItem(`acceso_espectador_torneo_${idTorneoActivo}`, valorIngresado);
+                errBox.classList.add('hidden');
+                document.getElementById('gate-pin-espectador').style.display = 'none';
+
+                // Si se pasó un partido directo en la URL, abrirlo en pantalla completa
+                if (partidoUrlId) abrirPartidoFullScreen(partidoUrlId);
+            } else {
+                errBox.classList.remove('hidden');
+                cardBox.classList.remove('anim-shake');
+                void cardBox.offsetWidth; // Forzar reflujo para reiniciar la animación
+                cardBox.classList.add('anim-shake');
+                input.value = '';
+                input.focus();
+            }
+        }
 
         // ==========================================
         // FUNCIONES DEL REPRODUCTOR YOUTUBE
@@ -294,7 +454,6 @@
             let str = String(texto).toUpperCase(); let letra = '';
             if (str.includes('GPO A') || str.includes('GRUPO A') || str.includes('(A)')) letra = 'A'; else if (str.includes('GPO B') || str.includes('GRUPO B') || str.includes('(B)')) letra = 'B'; else if (str.includes('GPO C') || str.includes('GRUPO C') || str.includes('(C)')) letra = 'C'; else if (str.includes('GPO D') || str.includes('GRUPO D') || str.includes('(D)')) letra = 'D'; else if (str.includes('GPO E') || str.includes('GRUPO E') || str.includes('(E)')) letra = 'E'; else if (str.includes('GPO F') || str.includes('GRUPO F') || str.includes('(F)')) letra = 'F';
             
-            // Colores VIP para los grupos
             switch(letra) { 
                 case 'A': return { color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.1)', border: 'rgba(251, 191, 36, 0.3)' }; 
                 case 'B': return { color: '#f8fafc', bg: 'rgba(248, 250, 252, 0.1)', border: 'rgba(248, 250, 252, 0.3)' }; 
@@ -308,11 +467,30 @@
 
         async function inicializarEspectador() {
             try {
-                if (!idTorneoActivo && partidoUrlId) { const { data: pData } = await clienteSupabase.from('partidos').select('torneo_id').eq('id', partidoUrlId).maybeSingle(); if (pData && pData.torneo_id) { idTorneoActivo = pData.torneo_id; } }
+                if (!idTorneoActivo && partidoUrlId) { 
+                    const { data: pData } = await clienteSupabase.from('partidos').select('torneo_id').eq('id', partidoUrlId).maybeSingle(); 
+                    if (pData && pData.torneo_id) { idTorneoActivo = pData.torneo_id; } 
+                }
                 if (!idTorneoActivo) idTorneoActivo = 1;
-                const { data: torneoData, error: errTorneo } = await clienteSupabase.from('torneos').select('id, nombre, organizador_id').eq('id', idTorneoActivo).maybeSingle();
+
+                // Cargar datos del torneo, incluyendo pin_espectador
+                const { data: torneoData, error: errTorneo } = await clienteSupabase
+                    .from('torneos')
+                    .select('id, nombre, organizador_id, pin_espectador')
+                    .eq('id', idTorneoActivo)
+                    .maybeSingle();
+
                 if (errTorneo) throw new Error("No se pudo cargar el torneo.");
-                if (torneoData) { document.getElementById('torneo-nombre-header').innerText = torneoData.nombre; ORG_ID = torneoData.organizador_id; }
+                
+                if (torneoData) { 
+                    document.getElementById('torneo-nombre-header').innerText = torneoData.nombre; 
+                    document.getElementById('gate-torneo-titulo').innerText = torneoData.nombre;
+                    ORG_ID = torneoData.organizador_id;
+                    pinOficialTorneo = torneoData.pin_espectador || null;
+                }
+
+                // Evaluar si requiere PIN antes de renderizar
+                const tieneAcceso = verificarAccesoPIN();
 
                 const [resReglas, resCat, resJugadores] = await Promise.allSettled([
                     clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }),
@@ -325,7 +503,7 @@
                 if(resJugadores.status === 'fulfilled') todosLosJugadores = resJugadores.value.data || [];
 
                 await cargarMarcadores();
-                if (partidoUrlId) abrirPartidoFullScreen(partidoUrlId);
+                if (partidoUrlId && tieneAcceso) abrirPartidoFullScreen(partidoUrlId);
 
                 clienteSupabase.channel('espectador-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => { cargarMarcadores(); }).subscribe();
             } catch (err) { console.error("Error inicializando espectador:", err); }
@@ -582,12 +760,11 @@
                 let div1 = todosJugadoresCat.filter(j => String(j.div) === '1'); let div2 = todosJugadoresCat.filter(j => String(j.div) === '2'); let div3 = todosJugadoresCat.filter(j => String(j.div) === '3'); let sinDiv = todosJugadoresCat.filter(j => !['1','2','3'].includes(String(j.div)));
                 let isFlash = modalidadFiltro === 'flash';
                 
-                // Colores VIP para las tablas: Div 1 (Oro), Div 2 (Plata), Div 3 (Bronce)
                 if (div1.length > 0 || div2.length > 0 || div3.length > 0) { htmlContent += renderTablaGeneralDiv(div1, '#fbbf24', '🏆 DIVISIÓN 1 (ORO)', isFlash); htmlContent += renderTablaGeneralDiv(div2, '#cbd5e1', '🏆 DIVISIÓN 2 (PLATA)', isFlash); htmlContent += renderTablaGeneralDiv(div3, '#d97706', '🏆 DIVISIÓN 3 (BRONCE)', isFlash); if (sinDiv.length > 0) htmlContent += renderTablaGeneralDiv(sinDiv, '#64748b', 'Jugadores sin división registrada', isFlash); } 
                 else { htmlContent += renderTablaGeneralDiv(todosJugadoresCat, '#fbbf24', 'Resultados Generales', isFlash); }
                 htmlContent += `</div>`;
             });
-            container.innerHTML = htmlContent; dibujarLlavesInferiores(container);
+            container.innerHTML = htmlContent;
         }
 
         function dibujarEstadisticasFlash(container) {
