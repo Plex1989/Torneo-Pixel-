@@ -14,6 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
+    <!-- LIBRERÍA PREMIUM PARA GENERAR CÓDIGOS QR EN TIEMPO REAL -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <script>
@@ -50,6 +51,7 @@
         .grid-espectador { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; max-width: 1200px; margin: auto; }
 
         .card-mesa { background: rgba(10, 15, 26, 0.7); backdrop-filter: blur(20px); border-radius: 20px; padding: 18px; position: relative; transition: all 0.3s ease; }
+        
         .card-mesa-grupo { border-top: 4px solid #0e7490; border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); }
         .card-mesa-grupo:hover { border-color: rgba(6,182,212,0.4); transform: translateY(-2px); }
         
@@ -88,7 +90,7 @@
         .jugador-nombre { font-size: 13px; font-weight: 800; color: #ffffff; cursor: pointer; transition: color 0.2s; }
         .jugador-nombre:hover { color: #38bdf8; }
         .score-big { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 900; color: #06b6d4; }
-        .card-mesa-llave .score-big { color: #fbbf24; text-shadow: 0 0 10px rgba(251,191,36,0.2); }
+        .card-mesa-llave .score-big { color: #fbbf24; text-shadow: 0 0 10px rgba(251,191,36,0.3); }
         .score-big.p2 { color: #d946ef; }
         .sets-badge { font-size: 10px; font-weight: 800; color: #94a3b8; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 6px; margin-left: 6px; }
 
@@ -249,7 +251,6 @@
         let reglasRankingList = [];
         let todasLasCategorias = [];
         let todosLosJugadoresAdmin = [];
-        let llavesTienenCuartos = false; 
         
         let modalidadFiltro = 'todas';
         let mesaFiltro = 'todas';
@@ -280,16 +281,14 @@
             return { color: '#cbd5e1', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' }; 
         };
 
-        // ================= MOTOR RECURSIVO BLINDADO DE PROYECCIÓN DE LLAVES =================
+        // ================= MOTOR RECURSIVO DE PROYECCIÓN DE LLAVES =================
         function getProyeccionDinamica(p, isJ1, resumenGlobal, partidosArr) {
-            // 1. Si ya tiene el jugador oficial enganchado en BD, úsalo directamente.
             if (isJ1 && p.j1) return { nombre: p.j1.nombre, id: p.j1.id }; 
             if (!isJ1 && p.j2) return { nombre: p.j2.nombre, id: p.j2.id };
 
             let rf = String(p.ronda_fase || p.rondaFase || '').toLowerCase();
             let catNombre = p.categorias?.nombre || p.categoriaNombre || 'General';
             
-            // Función auxiliar interna para calcular al líder/sublíder de un grupo
             const getRank = (gpo, pos, fallbackText) => {
                 let targetGpo = null;
                 if (resumenGlobal[catNombre] && resumenGlobal[catNombre].grupos && resumenGlobal[catNombre].grupos[gpo]) {
@@ -319,24 +318,18 @@
             let catMatches = partidosArr.filter(m => (m.categorias?.nombre || m.categoriaNombre || 'General') === catNombre);
             let hasCuartos = catMatches.some(m => String(m.ronda_fase || m.rondaFase || '').toLowerCase().includes('cuartos'));
 
-            // Función recursiva para detectar al ganador de la fase anterior
             const getWinner = (faseStr, fallbackText) => {
                 let m = catMatches.find(x => String(x.ronda_fase || x.rondaFase || '').toLowerCase() === faseStr.toLowerCase());
                 if (m) {
-                    // Si el administrador o el juez ya guardó un ID de ganador oficial, lo usamos.
                     if (m.ganador_id) {
                         let pWin = todosLosJugadoresAdmin.find(x => x.id === m.ganador_id);
                         if (pWin) return { nombre: pWin.nombre, id: pWin.id };
                     }
-                    
-                    // Si el partido ya terminó pero NO se ha guardado el ganador_id, lo CALCULAMOS EN VIVO:
                     if (String(m.estado).toLowerCase() === 'finalizado') {
                         let proy1 = getProyeccionDinamica(m, true, resumenGlobal, partidosArr);
                         let proy2 = getProyeccionDinamica(m, false, resumenGlobal, partidosArr);
-                        
                         let s1 = m.sets_j1 || m.puntos_j1 || 0;
                         let s2 = m.sets_j2 || m.puntos_j2 || 0;
-                        
                         if (s1 > s2 && proy1.id) return proy1;
                         if (s2 > s1 && proy2.id) return proy2;
                     }
@@ -344,7 +337,6 @@
                 return { nombre: fallbackText, id: null };
             };
 
-            // Ruteo Inteligente
             if (rf.includes('cuartos')) {
                 if (rf.includes('1')) return isJ1 ? getRank('A', 0, '1° Gpo A') : getRank('C', 1, '2° Gpo C');
                 if (rf.includes('2')) return isJ1 ? getRank('B', 0, '1° Gpo B') : getRank('D', 1, '2° Gpo D');
@@ -360,34 +352,25 @@
                     if (rf.includes('2')) return isJ1 ? getRank('B', 0, '1° Gpo B') : getRank('A', 1, '2° Gpo A');
                 }
             }
-            if (rf.includes('final')) {
-                return isJ1 ? getWinner('Semifinal 1', 'Gana Semi 1') : getWinner('Semifinal 2', 'Gana Semi 2');
-            }
+            if (rf.includes('final')) return isJ1 ? getWinner('Semifinal 1', 'Gana Semi 1') : getWinner('Semifinal 2', 'Gana Semi 2');
             
             return { nombre: isJ1 ? `${p.ronda_fase || p.rondaFase} J1` : `${p.ronda_fase || p.rondaFase} J2`, id: null };
         }
         // ==============================================================================
 
-        function abrirModalTransmision(partidoId) {
-            urlOverlayActualModal = `${window.location.origin}/overlay.html?partido=${partidoId}`;
-            const qrContainer = document.getElementById('qrcode-container');
-            qrContainer.innerHTML = ''; 
-            new QRCode(qrContainer, { text: urlOverlayActualModal, width: 180, height: 180, colorDark : "#0f172a", colorLight : "#ffffff", correctLevel : QRCode.CorrectLevel.H });
-            document.getElementById('modal-qr').style.display = 'flex';
+        function timeToMinutes(timeStr) { 
+            if (!timeStr) return 540; 
+            let cleanStr = String(timeStr).trim().toLowerCase();
+            let match = cleanStr.match(/^(\d+):(\d+)/);
+            if (!match) return 540;
+            let hrs = parseInt(match[1], 10);
+            let mins = parseInt(match[2], 10);
+            if (cleanStr.includes('p') && hrs < 12) hrs += 12;
+            if (cleanStr.includes('a') && hrs === 12) hrs = 0;
+            return hrs * 60 + mins; 
         }
 
-        function cerrarModalQR() { document.getElementById('modal-qr').style.display = 'none'; }
-
-        function copiarAlPortapapelesOverlay() {
-            navigator.clipboard.writeText(urlOverlayActualModal).then(() => { alert("¡Link copiado con éxito! Pégalo como fuente 'Web' en Prism Live Studio."); })
-            .catch(err => { prompt("Tu dispositivo bloqueó la copia automática. Copia manualmente este enlace:", urlOverlayActualModal); });
-        }
-
-        function compartirLinkMesas() {
-            const urlMesas = `${window.location.origin}/mesas.html?torneo=${idTorneoActivo}&org=${orgId}`;
-            const texto = `🏓 *ACCESO A MESA DE JUECES* 🏓\n\nIngresa al siguiente enlace desde tu celular o tablet para arbitrar o transmitir los partidos en tu mesa asignada:\n👉 ${urlMesas}`;
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
-        }
+        function quitarAcentos(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : ""; }
 
         async function inicializar() {
             try {
@@ -410,11 +393,11 @@
 
         async function cargarPartidos() {
             try {
-                const { data } = await clienteSupabase.from('partidos').select('*, j1:jugador1_id(id, nombre, club, puntos_ranking, division, handicap), j2:jugador2_id(id, nombre, club, puntos_ranking, division, handicap), categorias(id, nombre)').eq('torneo_id', idTorneoActivo).eq('organizador_id', orgId).order('id', { ascending: true });
+                // Se agregó la carga profunda de puntos_ranking_ant en j1 y j2 por si acaso
+                const { data } = await clienteSupabase.from('partidos')
+                    .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking, puntos_ranking_ant, division, handicap), j2:jugador2_id(id, nombre, club, puntos_ranking, puntos_ranking_ant, division, handicap), categorias(id, nombre)')
+                    .eq('torneo_id', idTorneoActivo).eq('organizador_id', orgId).order('id', { ascending: true });
                 todosLosPartidos = data || [];
-                
-                llavesTienenCuartos = todosLosPartidos.some(p => String(p.ronda_fase).toLowerCase().includes('cuartos'));
-
                 generarBotonesCategorias(); generarBotonesMesas(); dibujarPantalla();
             } catch (err) { console.error(err); }
         }
@@ -490,23 +473,22 @@
             return basePts + delta;
         }
 
-        // ================= CÁLCULO DE GRUPOS 100% INDEPENDIENTE DE LA UI =================
+        // ================= CÁLCULO DE ESTADÍSTICAS TOTAL (SIN IMPORTAR EL FILTRO UI) =================
         function calcularStandingsGruposGlobal() {
             const porCategoria = {};
             todosLosPartidos.forEach(m => {
-                // AQUÍ ESTABA EL BUG: Ahora el sistema procesa los grupos sin importar qué filtro presiones arriba.
-                if (!m.grupo_nombre || m.grupo_nombre === 'Flash') return; 
+                if (m.grupo_nombre === 'Flash') return; 
                 
                 const catNombre = m.categorias?.nombre || 'General';
-                if (!porCategoria[catNombre]) porCategoria[catNombre] = {};
-                const gpoNombre = m.grupo_nombre;
-                if (!porCategoria[catNombre][gpoNombre]) porCategoria[catNombre][gpoNombre] = {};
-                const grupoObj = porCategoria[catNombre][gpoNombre];
+                if (!porCategoria[catNombre]) porCategoria[catNombre] = { grupos: {} };
+                const gpoNombre = m.grupo_nombre || 'Llaves';
+                if (!porCategoria[catNombre].grupos[gpoNombre]) porCategoria[catNombre].grupos[gpoNombre] = {};
+                const grupoObj = porCategoria[catNombre].grupos[gpoNombre];
 
                 [m.j1, m.j2].forEach(j => {
                     if (j && j.id && !grupoObj[j.id]) {
                         let jData = todosLosJugadoresAdmin.find(x => x.id === j.id);
-                        let rankIni = jData ? (jData.puntos_ranking_ant || jData.puntos_ranking || 0) : (j.puntos_ranking || 0);
+                        let rankIni = jData ? (jData.puntos_ranking_ant ?? jData.puntos_ranking ?? 0) : (j.puntos_ranking_ant ?? j.puntos_ranking ?? 0);
                         let div = jData ? (jData.division || 1) : (j.division || 1);
                         grupoObj[j.id] = { id: j.id, nombre: j.nombre, club: j.club, div: div, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, rankIni: rankIni, rankImpact: 0, gpo: gpoNombre };
                     }
@@ -551,7 +533,7 @@
                                     <th style="padding:6px;">Pos</th><th style="padding:6px;">Jugador</th><th style="padding:6px; text-align:center;">PJ</th>
                                     <th style="padding:6px; text-align:center;">PG</th><th style="padding:6px; text-align:center;">PP</th>
                                     <th style="padding:6px; text-align:center;">% Efec</th><th style="padding:6px; text-align:center;">Sets (G - P)</th>
-                                    <th style="padding:6px; text-align:center; color:#fbbf24;">Pts</th><th style="padding:6px; text-align:center;">R. Ini</th>
+                                    <th style="padding:6px; text-align:center; color:#fbbf24;">Pts</th><th style="padding:6px; text-align:center;">R. Ant</th>
                                     <th style="padding:6px; text-align:center;">+/-</th><th style="padding:6px; text-align:center; color:#38bdf8;">R. Act</th>
                                 </tr>
                             </thead>
@@ -592,7 +574,7 @@
 
             let htmlContent = '';
             catsList.forEach(catNombre => {
-                const gruposCat = standings[catNombre] || {};
+                const gruposCat = standings[catNombre]?.grupos || {};
                 if (Object.keys(gruposCat).length === 0) return;
 
                 htmlContent += `
@@ -603,8 +585,26 @@
                         </div>
                 `;
 
+                // FUSIONAMOS TODAS LAS FASES (Grupos + Llaves) EN UN SOLO EXPEDIENTE POR JUGADOR
                 let todosJugadoresCatMap = new Map();
-                Object.keys(gruposCat).forEach(gpoNombre => { Object.values(gruposCat[gpoNombre]).forEach(j => { if(!todosJugadoresCatMap.has(j.id)) todosJugadoresCatMap.set(j.id, {...j, gpo: gpoNombre}); }); });
+                Object.keys(gruposCat).forEach(gpoNombre => { 
+                    Object.values(gruposCat[gpoNombre]).forEach(j => { 
+                        if(!todosJugadoresCatMap.has(j.id)) {
+                            todosJugadoresCatMap.set(j.id, {...j, gpo: gpoNombre === 'Llaves' ? null : gpoNombre}); 
+                        } else {
+                            let prev = todosJugadoresCatMap.get(j.id);
+                            prev.pj += j.pj;
+                            prev.pg += j.pg;
+                            prev.pp += j.pp;
+                            prev.pts += j.pts;
+                            prev.setsG += j.setsG;
+                            prev.setsP += j.setsP;
+                            prev.rankImpact += j.rankImpact;
+                            if (gpoNombre !== 'Llaves' && !prev.gpo) prev.gpo = gpoNombre;
+                        }
+                    }); 
+                });
+                
                 let todosJugadoresCat = Array.from(todosJugadoresCatMap.values());
                 todosJugadoresCat = ordenarJugadoresITTF(todosJugadoresCat);
 
@@ -697,10 +697,7 @@
 
             if (filtrados.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay partidos registrados bajo estos filtros.</div>`; return; }
 
-            // ================== CÁLCULO 100% BLINDADO PARA LLAVES ==================
-            // Usamos el resumen que calcula todos los grupos sin importar el filtro visual
             const resumenGlobal = calcularStandingsGruposGlobal();
-            // =========================================================================
 
             const gruposPorHora = {}; const horasOrdenadas = [];
             filtrados.forEach(p => { const h = p.hora || '09:00 AM'; if(!gruposPorHora[h]) { gruposPorHora[h] = []; horasOrdenadas.push(h); } gruposPorHora[h].push(p); });
@@ -844,7 +841,6 @@
             btn.disabled = true; btn.innerText = '⏳ Guardando...';
             
             try {
-                // Aquí el sistema engancha definitivamente a los ganadores proyectados en la BD
                 let ganador_id = setsJ1 > setsJ2 ? (idJ1 !== 'null' ? parseInt(idJ1) : null) : (idJ2 !== 'null' ? parseInt(idJ2) : null);
                 
                 let payload = { sets_j1: setsJ1, sets_j2: setsJ2, puntos_j1: setsJ1, puntos_j2: setsJ2, estado: 'finalizado', ganador_id: ganador_id };
