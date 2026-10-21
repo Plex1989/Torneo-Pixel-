@@ -3,168 +3,249 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Overlay de Transmisión - Pixel Studio</title>
+    <title>Overlay de Transmisión - Torneo Pixel</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Orbitron:wght@700;900&family=Sora:wght@600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        /* FONDO TOTALMENTE TRANSPARENTE */
-        body { 
-            font-family: 'Sora', sans-serif; 
-            margin: 0; 
-            padding: 0; 
-            background-color: transparent !important; 
-            overflow: hidden; 
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: transparent !important;
+            overflow: hidden;
+            font-family: 'Sora', sans-serif;
+            color: #ffffff;
+            width: 100vw;
             height: 100vh;
-            width: 100vw;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end; 
-        }
-        
-        .font-digital { font-family: 'Orbitron', sans-serif; }
-        
-        /* DISEÑO ESCALABLE VECTORIAL (Uso de VW para evitar sobreposiciones) */
-        .scoreboard-container {
-            width: 100vw;
-            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.6) 70%, transparent 100%);
-            padding: 2vw 2vw 1vw 2vw;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 1.5vw;
-            box-sizing: border-box;
-            transition: all 0.5s ease;
         }
 
-        .jugador-panel {
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(10px);
-            border: 0.15vw solid rgba(255,255,255,0.1);
-            border-radius: 1vw;
-            padding: 0.8vw 1.5vw;
-            display: flex;
-            align-items: center;
-            gap: 1.5vw;
-            flex: 1;
-            max-width: 38vw;
-        }
-
-        .panel-j1 { border-left: 0.5vw solid #06b6d4; }
-        .panel-j2 { border-left: 0.5vw solid #d946ef; }
-
-        .info-jugador { flex: 1; overflow: hidden; }
-        .nombre { font-size: 1.5vw; font-weight: 900; color: white; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
-        .club { font-size: 0.8vw; color: #94a3b8; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        .sets-caja { background: rgba(0,0,0,0.5); padding: 0.4vw 0.8vw; border-radius: 0.6vw; text-align: center; border: 0.1vw solid rgba(255,255,255,0.05); flex-shrink: 0; }
-        .sets-num { font-family: 'Orbitron', sans-serif; font-size: 1.4vw; font-weight: 900; color: white; line-height: 1; }
-        .sets-lbl { font-size: 0.6vw; color: #64748b; font-weight: 800; text-transform: uppercase; margin-bottom: 0.2vw; }
-
-        .puntos-num { font-family: 'Orbitron', sans-serif; font-size: 3.5vw; font-weight: 900; line-height: 1; width: 4.5vw; text-align: center; flex-shrink: 0; }
-        .pts-j1 { color: #06b6d4; text-shadow: 0 0 1vw rgba(6, 182, 212, 0.5); }
-        .pts-j2 { color: #d946ef; text-shadow: 0 0 1vw rgba(217, 70, 239, 0.5); }
-
-        .centro-info { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 12vw; flex-shrink: 0; }
-        .mesa-badge { background: #f5a623; color: black; font-weight: 900; font-size: 1vw; padding: 0.4vw 1.2vw; border-radius: 2vw; text-transform: uppercase; letter-spacing: 0.1vw; box-shadow: 0 0 1vw rgba(245, 166, 35, 0.5); margin-bottom: 0.5vw; white-space: nowrap; text-align: center; }
-        .fase-txt { font-size: 0.75vw; color: #cbd5e1; font-weight: 800; text-transform: uppercase; text-shadow: 0.1vw 0.1vw 0.2vw black; text-align: center; line-height: 1.3; }
-
-        /* ESTILOS DE LA CLAQUETA GIGANTE */
-        #claqueta-overlay {
+        /* CARÁTULA DE PORTADA / MINIATURA (PRIMEROS 5 SEGUNDOS) */
+        #caratula-portada {
             position: fixed;
             inset: 0;
-            background: rgba(0,0,0,0.95);
-            z-index: 1000;
+            z-index: 9999;
+            background: radial-gradient(circle at center, #0b1329 0%, #030712 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            padding: 30px;
+            box-sizing: border-box;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        .portada-box {
+            width: 92%;
+            max-width: 900px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 3px solid #38bdf8;
+            box-shadow: 0 0 50px rgba(56, 189, 248, 0.35);
+            border-radius: 28px;
+            padding: 32px 24px;
             text-align: center;
-            transition: opacity 0.5s ease;
         }
 
-        .claqueta-box {
-            border: 0.2vw dashed #f5a623;
-            padding: 3vw;
-            border-radius: 1.5vw;
-            background: rgba(15, 23, 42, 0.8);
-            box-shadow: 0 0 4vw rgba(245, 166, 35, 0.2);
-            animation: pulse-border 2s infinite;
+        .badge-torneo {
+            display: inline-block;
+            background: linear-gradient(90deg, #06b6d4, #3b82f6);
+            color: #000;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 6px 18px;
+            border-radius: 9999px;
+            margin-bottom: 14px;
         }
 
-        @keyframes pulse-border {
-            0% { border-color: #f5a623; box-shadow: 0 0 1.5vw rgba(245, 166, 35, 0.2); }
-            50% { border-color: #ffed4a; box-shadow: 0 0 4vw rgba(245, 166, 35, 0.6); }
-            100% { border-color: #f5a623; box-shadow: 0 0 1.5vw rgba(245, 166, 35, 0.2); }
+        .portada-info-partido {
+            font-size: 14px;
+            font-weight: 800;
+            color: #fbbf24;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-bottom: 22px;
         }
-        
-        .c-title { font-size: 1.5vw; margin-bottom: 1vw; }
-        .c-id { font-size: 6vw; margin-bottom: 2vw; }
-        .c-match { font-size: 3vw; margin-bottom: 1vw; }
-        .c-cat { font-size: 1.5vw; }
 
+        .duelo-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .jugador-portada {
+            flex: 1;
+            padding: 10px;
+        }
+
+        .nombre-gigante {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 28px;
+            font-weight: 900;
+            line-height: 1.1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            word-break: break-word;
+        }
+
+        .club-subtitulo {
+            font-size: 13px;
+            color: #94a3b8;
+            font-weight: 700;
+            margin-top: 6px;
+            text-transform: uppercase;
+        }
+
+        .vs-circulo {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: rgba(239, 68, 68, 0.2);
+            border: 2px solid #ef4444;
+            color: #ef4444;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+
+        /* MARCADOR PERMANENTE (ESQUINA SUPERIOR) */
+        #marcador-stream {
+            position: fixed;
+            top: 24px;
+            left: 24px;
+            z-index: 100;
+            background: rgba(10, 15, 26, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-top: 3px solid #06b6d4;
+            border-radius: 14px;
+            padding: 10px 14px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            min-width: 280px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .top-info-marcador {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            font-weight: 800;
+            color: #94a3b8;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding-bottom: 4px;
+        }
+
+        .fila-jugador-marcador {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .marcador-nombre {
+            font-size: 13px;
+            font-weight: 800;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 170px;
+        }
+
+        .caja-puntos {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .badge-sets {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fbbf24;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 13px;
+            padding: 2px 7px;
+            border-radius: 6px;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .badge-puntos {
+            background: #0284c7;
+            color: #ffffff;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            font-size: 14px;
+            padding: 2px 8px;
+            border-radius: 6px;
+            min-width: 22px;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
 
-    <div id="claqueta-overlay" style="display: none;">
-        <div class="claqueta-box">
-            <div class="text-amber-500 font-black tracking-widest uppercase c-title">🎬 Claqueta de Grabación</div>
-            <div class="text-white font-bold text-sm mb-4">El Título en YouTube DEBE incluir el siguiente ID:</div>
-            
-            <div class="font-digital c-id text-cyan-400 font-black drop-shadow-[0_0_20px_rgba(6,182,212,0.8)]">
-                [ID: <span id="claqueta-id">--</span>]
+    <!-- 1. CARÁTULA GIGANTE DE 5 SEGUNDOS (PARA LA MINIATURA) -->
+    <div id="caratula-portada">
+        <div class="portada-box">
+            <span id="portada-torneo" class="badge-torneo">Torneo Pixel</span>
+            <div id="portada-info" class="portada-info-partido">Mesa 1 • Grupo A • Categoría Primera</div>
+
+            <div class="duelo-container">
+                <div class="jugador-portada">
+                    <div id="portada-j1-nombre" class="nombre-gigante text-cyan-400">Jugador 1</div>
+                    <div id="portada-j1-club" class="club-subtitulo">Club México</div>
+                </div>
+
+                <div class="vs-circulo">VS</div>
+
+                <div class="jugador-portada">
+                    <div id="portada-j2-nombre" class="nombre-gigante text-fuchsia-400">Jugador 2</div>
+                    <div id="portada-j2-club" class="club-subtitulo">Club Puebla</div>
+                </div>
             </div>
-            
-            <h1 id="claqueta-match" class="c-match text-white font-black uppercase tracking-wider">Jugador 1 VS Jugador 2</h1>
-            <h2 id="claqueta-cat" class="c-cat text-fuchsia-400 font-bold uppercase tracking-widest">Categoría • Grupo A</h2>
-            
-            <div class="mt-8 text-zinc-500 font-bold uppercase tracking-widest text-sm animate-pulse">Ocultando claqueta automáticamente...</div>
         </div>
     </div>
 
-    <!-- MARCADOR INFERIOR TRANSPARENTE -->
-    <div id="scoreboard" class="scoreboard-container" style="display: none;">
-        
-        <div class="jugador-panel panel-j1">
-            <div class="info-jugador">
-                <div id="sb-nombre-j1" class="nombre">JUGADOR 1</div>
-                <div id="sb-club-j1" class="club">CLUB</div>
-            </div>
-            <div class="sets-caja">
-                <div class="sets-lbl">SETS</div>
-                <div id="sb-sets-j1" class="sets-num text-cyan-400">0</div>
-            </div>
-            <div id="sb-pts-j1" class="puntos-num pts-j1">0</div>
+    <!-- 2. MARCADOR EN VIVO DE ESQUINA (PERMANENTE TRAS LOS 5 SEGUNDOS) -->
+    <div id="marcador-stream">
+        <div class="top-info-marcador">
+            <span id="score-mesa-label"><i class="fa-solid fa-table-tennis-paddle-ball text-cyan-400 mr-1"></i> MESA 1</span>
+            <span id="score-fase-label" style="color: #fbbf24;">FASE DE GRUPOS</span>
         </div>
 
-        <div class="centro-info">
-            <div id="sb-mesa" class="mesa-badge">MESA 1</div>
-            <div id="sb-fase" class="fase-txt">FASE DE GRUPOS<br>1RA FUERZA</div>
+        <!-- Fila J1 -->
+        <div class="fila-jugador-marcador">
+            <span id="score-j1-nombre" class="marcador-nombre">Jugador 1</span>
+            <div class="caja-puntos">
+                <span id="score-j1-sets" class="badge-sets">0</span>
+                <span id="score-j1-puntos" class="badge-puntos">0</span>
+            </div>
         </div>
 
-        <div class="jugador-panel panel-j2 flex-row-reverse text-right">
-            <div class="info-jugador">
-                <div id="sb-nombre-j2" class="nombre">JUGADOR 2</div>
-                <div id="sb-club-j2" class="club">CLUB</div>
+        <!-- Fila J2 -->
+        <div class="fila-jugador-marcador">
+            <span id="score-j2-nombre" class="marcador-nombre">Jugador 2</span>
+            <div class="caja-puntos">
+                <span id="score-j2-sets" class="badge-sets">0</span>
+                <span id="score-j2-puntos" class="badge-puntos" style="background: #a21caf;">0</span>
             </div>
-            <div class="sets-caja">
-                <div class="sets-lbl">SETS</div>
-                <div id="sb-sets-j2" class="sets-num text-fuchsia-400">0</div>
-            </div>
-            <div id="sb-pts-j2" class="puntos-num pts-j2">0</div>
-        </div>
-
-    </div>
-
-    <!-- PANTALLA DE ESPERA -->
-    <div id="pantalla-espera" class="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
-        <div class="bg-slate-900/90 border border-white/10 p-6 rounded-2xl text-center">
-            <i class="fa-solid fa-satellite-dish text-4xl text-cyan-500 animate-pulse mb-4"></i>
-            <h2 class="text-white font-black uppercase tracking-widest text-xl mb-1">Esperando Partido...</h2>
-            <p id="txt-espera-mesa" class="text-zinc-400 font-bold text-sm">Mesa --</p>
         </div>
     </div>
 
@@ -174,122 +255,98 @@
         const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
         const urlParams = new URLSearchParams(window.location.search);
-        const urlPartido = urlParams.get('partido'); 
-        const urlTorneo = urlParams.get('torneo');
-        const urlMesa = urlParams.get('mesa');
-        
-        let ORG_ID = null;
-        let partidoActivoId = null;
-        let timerClaqueta = null;
+        const partidoId = urlParams.get('partido');
 
-        async function inicializarOverlay() {
-            if (!urlPartido && (!urlTorneo || !urlMesa)) {
-                document.getElementById('pantalla-espera').innerHTML = `
-                    <div class="bg-rose-900/90 border border-rose-500/50 p-6 rounded-2xl text-center">
-                        <i class="fa-solid fa-triangle-exclamation text-4xl text-rose-500 mb-4"></i>
-                        <h2 class="text-white font-black uppercase tracking-widest text-xl mb-2">Error de Configuración</h2>
-                        <p class="text-rose-200 font-bold text-sm">Falta el parámetro en el link.<br>Ejemplo recomendado: overlay.html?partido=123</p>
-                    </div>`;
+        // Función que retira la carátula al segundo 5
+        function iniciarTemporizadorPortada() {
+            setTimeout(() => {
+                const portada = document.getElementById('caratula-portada');
+                if (portada) {
+                    portada.style.opacity = '0';
+                    portada.style.transform = 'scale(1.05)';
+                    setTimeout(() => {
+                        portada.style.display = 'none';
+                    }, 800);
+                }
+            }, 5000); // 5000 milisegundos = 5 segundos
+        }
+
+        async function cargarDatosPartido() {
+            if (!partidoId) {
+                // Si no hay ID en la URL, mostramos datos de prueba
+                iniciarTemporizadorPortada();
                 return;
             }
 
-            document.getElementById('txt-espera-mesa').innerText = urlPartido ? `Conectando al partido #${urlPartido}...` : `Monitoreando Mesa ${urlMesa}...`;
-
             try {
-                await buscarPartidoActual();
+                const { data: p, error } = await clienteSupabase
+                    .from('partidos')
+                    .select('*, j1:jugador1_id(id, nombre, club), j2:jugador2_id(id, nombre, club), categorias(id, nombre), torneos(nombre)')
+                    .eq('id', partidoId)
+                    .single();
 
-                let filtroRealtime = urlPartido ? `id=eq.${urlPartido}` : `torneo_id=eq.${urlTorneo}`;
+                if (error || !p) {
+                    console.error("Error cargando partido:", error);
+                    iniciarTemporizadorPortada();
+                    return;
+                }
 
+                // Nombres y detalles
+                const nomJ1 = p.j1?.nombre || 'Jugador 1';
+                const clubJ1 = p.j1?.club || 'Sin Club';
+                const nomJ2 = p.j2?.nombre || 'Jugador 2';
+                const clubJ2 = p.j2?.club || 'Sin Club';
+                const numMesa = p.mesa || 1;
+                const catNombre = p.categorias?.nombre || 'Categoría Oficial';
+                const fase = p.grupo_nombre 
+                    ? (p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre === 'Flash' ? 'Liga Flash' : `Grupo ${p.grupo_nombre}`))
+                    : (p.ronda_fase || 'Eliminatoria');
+
+                // 1. Asignar datos a la Carátula de Portada (Miniatura)
+                document.getElementById('portada-torneo').innerText = p.torneos?.nombre || 'Torneo Pixel';
+                document.getElementById('portada-info').innerText = `MESA ${numMesa} • ${fase} • ${catNombre}`;
+                document.getElementById('portada-j1-nombre').innerText = nomJ1;
+                document.getElementById('portada-j1-club').innerText = clubJ1;
+                document.getElementById('portada-j2-nombre').innerText = nomJ2;
+                document.getElementById('portada-j2-club').innerText = clubJ2;
+
+                // 2. Asignar datos al Marcador Permanente
+                document.getElementById('score-mesa-label').innerHTML = `<i class="fa-solid fa-table-tennis-paddle-ball text-cyan-400 mr-1"></i> MESA ${numMesa}`;
+                document.getElementById('score-fase-label').innerText = fase;
+                document.getElementById('score-j1-nombre').innerText = nomJ1;
+                document.getElementById('score-j2-nombre').innerText = nomJ2;
+                document.getElementById('score-j1-sets').innerText = p.sets_j1 || 0;
+                document.getElementById('score-j2-sets').innerText = p.sets_j2 || 0;
+                document.getElementById('score-j1-puntos').innerText = p.puntos_j1 || 0;
+                document.getElementById('score-j2-puntos').innerText = p.puntos_j2 || 0;
+
+                // Iniciar la cuenta atrás de 5 segundos
+                iniciarTemporizadorPortada();
+
+                // 3. Suscripción en tiempo real a los puntos del árbitro
                 clienteSupabase
-                    .channel('overlay-realtime')
-                    .on('postgres_changes', { event: '*', schema: 'public', table: 'partidos', filter: filtroRealtime }, payload => {
-                        if (urlPartido || (payload.new && payload.new.mesa == urlMesa)) {
-                            buscarPartidoActual();
-                        }
+                    .channel(`partido-score-${partidoId}`)
+                    .on('postgres_changes', {
+                        event: 'UPDATE',
+                        schema: 'public',
+                        table: 'partidos',
+                        filter: `id=eq.${partidoId}`
+                    }, (payload) => {
+                        const nuevo = payload.new;
+                        document.getElementById('score-j1-sets').innerText = nuevo.sets_j1 || 0;
+                        document.getElementById('score-j2-sets').innerText = nuevo.sets_j2 || 0;
+                        document.getElementById('score-j1-puntos').innerText = nuevo.puntos_j1 || 0;
+                        document.getElementById('score-j2-puntos').innerText = nuevo.puntos_j2 || 0;
                     })
                     .subscribe();
 
             } catch (err) {
-                console.error("Error inicializando overlay:", err);
+                console.error("Error inesperado:", err);
+                iniciarTemporizadorPortada();
             }
         }
 
-        async function buscarPartidoActual() {
-            try {
-                let query = clienteSupabase
-                    .from('partidos')
-                    .select('*, j1:jugador1_id(nombre, club), j2:jugador2_id(nombre, club), categorias(nombre)');
-
-                if (urlPartido) {
-                    query = query.eq('id', urlPartido);
-                } else {
-                    query = query.eq('torneo_id', urlTorneo).eq('mesa', urlMesa).eq('estado', 'en_curso').order('updated_at', { ascending: false }).limit(1);
-                }
-
-                const { data, error } = await query.maybeSingle();
-
-                if (error) throw error;
-
-                if (data && data.estado === 'en_curso') {
-                    procesarPartido(data);
-                } else {
-                    document.getElementById('scoreboard').style.display = 'none';
-                    document.getElementById('claqueta-overlay').style.display = 'none';
-                    document.getElementById('pantalla-espera').style.display = 'flex';
-                    partidoActivoId = null;
-                }
-            } catch (error) {
-                console.error("Error buscando partido:", error);
-            }
-        }
-
-        function procesarPartido(p) {
-            document.getElementById('pantalla-espera').style.display = 'none';
-
-            let nomJ1 = p.j1?.nombre || 'J1';
-            let nomJ2 = p.j2?.nombre || 'J2';
-            let catFase = `${p.categorias?.nombre || 'Categoría'} • ${p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Llave')}`;
-
-            if (partidoActivoId !== p.id) {
-                partidoActivoId = p.id;
-                
-                document.getElementById('claqueta-id').innerText = p.id;
-                document.getElementById('claqueta-match').innerText = `${nomJ1} VS ${nomJ2}`;
-                document.getElementById('claqueta-cat').innerText = catFase;
-
-                document.getElementById('claqueta-overlay').style.display = 'flex';
-                document.getElementById('scoreboard').style.display = 'none';
-
-                if(timerClaqueta) clearTimeout(timerClaqueta);
-                timerClaqueta = setTimeout(() => {
-                    document.getElementById('claqueta-overlay').style.opacity = '0';
-                    setTimeout(() => {
-                        document.getElementById('claqueta-overlay').style.display = 'none';
-                        document.getElementById('claqueta-overlay').style.opacity = '1'; 
-                        document.getElementById('scoreboard').style.display = 'flex';
-                    }, 500); 
-                }, 8000);
-            } else {
-                if (document.getElementById('claqueta-overlay').style.display === 'none') {
-                    document.getElementById('scoreboard').style.display = 'flex';
-                }
-            }
-
-            document.getElementById('sb-nombre-j1').innerText = nomJ1;
-            document.getElementById('sb-club-j1').innerText = p.j1?.club || 'Sin Club';
-            document.getElementById('sb-pts-j1').innerText = p.puntos_j1 || 0;
-            document.getElementById('sb-sets-j1').innerText = p.sets_j1 || 0;
-
-            document.getElementById('sb-nombre-j2').innerText = nomJ2;
-            document.getElementById('sb-club-j2').innerText = p.j2?.club || 'Sin Club';
-            document.getElementById('sb-pts-j2').innerText = p.puntos_j2 || 0;
-            document.getElementById('sb-sets-j2').innerText = p.sets_j2 || 0;
-
-            document.getElementById('sb-mesa').innerText = `MESA ${p.mesa}`;
-            document.getElementById('sb-fase').innerHTML = `${p.categorias?.nombre || 'Cat'}<br>${p.grupo_nombre ? 'Grupo ' + p.grupo_nombre : (p.ronda_fase || '')}`;
-        }
-
-        inicializarOverlay();
+        window.onload = cargarDatosPartido;
     </script>
 </body>
 </html>
