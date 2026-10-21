@@ -49,23 +49,26 @@
 
         .grid-espectador { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; max-width: 1200px; margin: auto; }
 
-        .card-mesa { background: rgba(10, 15, 26, 0.7); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.08); padding: 18px; position: relative; transition: all 0.3s ease; }
-        .card-mesa-grupo { border-bottom: 3px solid #0e7490; }
+        .card-mesa { background: rgba(10, 15, 26, 0.7); backdrop-filter: blur(20px); border-radius: 20px; padding: 18px; position: relative; transition: all 0.3s ease; }
+        .card-mesa-grupo { border-top: 4px solid #0e7490; border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); }
+        .card-mesa-grupo:hover { border-color: rgba(6,182,212,0.4); transform: translateY(-2px); }
         
         .card-mesa-llave { 
-            border-bottom: 3px solid #fbbf24 !important; 
-            background: rgba(15, 23, 42, 0.6) !important; 
-            box-shadow: 0 5px 20px -5px rgba(251,191,36,0.1) !important; 
-            border: 1px solid rgba(251,191,36,0.15) !important; 
+            border-top: 4px solid #fbbf24 !important; 
+            background: linear-gradient(180deg, rgba(245, 158, 11, 0.08) 0%, rgba(15, 23, 42, 0.8) 100%) !important; 
+            box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.15) !important; 
+            border-left: 1px solid rgba(245,158,11,0.2) !important;
+            border-right: 1px solid rgba(245,158,11,0.2) !important;
+            border-bottom: 1px solid rgba(245,158,11,0.2) !important;
         }
         .card-mesa-llave:hover {
-            border-color: rgba(251,191,36,0.3) !important; 
-            box-shadow: 0 8px 25px -5px rgba(251,191,36,0.2) !important; 
+            border-color: rgba(245,158,11,0.4) !important; 
+            box-shadow: 0 12px 30px -5px rgba(245,158,11,0.25) !important; 
             transform: translateY(-3px);
         }
         
-        .card-mesa.vivo { border-bottom-color: #34d399 !important; box-shadow: 0 0 25px rgba(52, 211, 153, 0.15) !important; }
-        .card-mesa.finalizado { border-bottom-color: #64748b !important; opacity: 0.85; }
+        .card-mesa.vivo { border-top-color: #34d399 !important; box-shadow: 0 0 25px rgba(52, 211, 153, 0.15) !important; }
+        .card-mesa.finalizado { border-top-color: #64748b !important; opacity: 0.85; }
 
         .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .mesa-title { font-size: 12px; font-weight: 800; color: #38bdf8; letter-spacing: 1px; }
@@ -78,8 +81,8 @@
         .est-curso { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; }
         .est-fin { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); color: #94a3b8; }
 
-        .score-container { background: rgba(0,0,0,0.3); border-radius: 14px; padding: 12px 16px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.03); }
-        .card-mesa-llave .score-container { background: rgba(0,0,0,0.4); border: 1px solid rgba(251,191,36,0.1); }
+        .score-container { background: rgba(0,0,0,0.4); border-radius: 14px; padding: 12px 16px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.03); }
+        .card-mesa-llave .score-container { background: rgba(0,0,0,0.55); border: 1px inset rgba(251,191,36,0.15); }
 
         .jugador-box { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
         .jugador-nombre { font-size: 13px; font-weight: 800; color: #ffffff; cursor: pointer; transition: color 0.2s; }
@@ -157,7 +160,6 @@
                     <input type="number" id="input-sets-j2" class="input-tabla" style="width: 100%; text-align: center; font-size: 30px !important; font-family:'Orbitron',sans-serif; font-weight: 900; padding: 15px !important; background:rgba(0,0,0,0.8)!important;" min="0" max="7">
                 </div>
             </div>
-            <!-- CAMPOS OCULTOS PARA IDs DINÁMICOS -->
             <input type="hidden" id="hidden-marcador-partidoid">
             <input type="hidden" id="hidden-marcador-j1id">
             <input type="hidden" id="hidden-marcador-j2id">
@@ -202,6 +204,7 @@
         </nav>
     </div>
 
+    <!-- FILTROS -->
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">🎯 Filtrar por Modalidad:</div>
     <div class="scrolling-bar" id="bar-modalidad">
         <button class="btn-filter-pill active" onclick="filtrarModalidad('todas', this)">Todas</button>
@@ -255,15 +258,11 @@
         
         let urlOverlayActualModal = '';
 
-        function abrirVistaInteligente(destino) {
-            window.location.href = destino + ".html?torneo=" + idTorneoActivo;
-        }
-
+        function abrirVistaInteligente(destino) { window.location.href = destino + ".html?torneo=" + idTorneoActivo; }
         function enfocarPestanaEspectador() {
             let url = "espectador.html?torneo=" + idTorneoActivo;
             let win = window.open(url, 'espectador_view');
-            if (win) win.focus();
-            else alert("Por favor, permite las ventanas emergentes (pop-ups).");
+            if (win) win.focus(); else alert("Por favor, permite las ventanas emergentes (pop-ups).");
         }
 
         const obtenerEstiloCategoria = (catId) => {
@@ -281,15 +280,16 @@
             return { color: '#cbd5e1', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' }; 
         };
 
-        // ================= MOTOR INTELIGENTE DE PROYECCIÓN DE NOMBRES =================
-        function getProyeccionDinamica(p, isJ1, resumenGlobal) {
-            // Retorna { nombre: String, id: Integer|null }
+        // ================= MOTOR RECURSIVO BLINDADO DE PROYECCIÓN DE LLAVES =================
+        function getProyeccionDinamica(p, isJ1, resumenGlobal, partidosArr) {
+            // 1. Si ya tiene el jugador oficial enganchado en BD, úsalo directamente.
             if (isJ1 && p.j1) return { nombre: p.j1.nombre, id: p.j1.id }; 
             if (!isJ1 && p.j2) return { nombre: p.j2.nombre, id: p.j2.id };
 
-            let rf = String(p.ronda_fase || '').toLowerCase();
-            let catNombre = p.categorias?.nombre || 'General';
+            let rf = String(p.ronda_fase || p.rondaFase || '').toLowerCase();
+            let catNombre = p.categorias?.nombre || p.categoriaNombre || 'General';
             
+            // Función auxiliar interna para calcular al líder/sublíder de un grupo
             const getRank = (gpo, pos, fallbackText) => {
                 let targetGpo = null;
                 if (resumenGlobal[catNombre] && resumenGlobal[catNombre].grupos && resumenGlobal[catNombre].grupos[gpo]) {
@@ -297,7 +297,6 @@
                 } else if (resumenGlobal[catNombre] && resumenGlobal[catNombre][gpo]) {
                     targetGpo = resumenGlobal[catNombre][gpo];
                 }
-                
                 if (!targetGpo) return { nombre: fallbackText, id: null };
 
                 let arr = Object.values(targetGpo);
@@ -313,24 +312,39 @@
                     return rankB - rankA; 
                 });
 
-                if (arr.length > pos && arr[pos]) {
-                    return { nombre: arr[pos].nombre, id: arr[pos].id };
-                }
+                if (arr.length > pos && arr[pos]) return { nombre: arr[pos].nombre, id: arr[pos].id };
                 return { nombre: fallbackText, id: null };
             };
 
-            let catMatches = todosLosPartidos.filter(m => (m.categorias?.nombre || 'General') === catNombre);
-            let hasCuartos = catMatches.some(m => String(m.ronda_fase || '').toLowerCase().includes('cuartos'));
+            let catMatches = partidosArr.filter(m => (m.categorias?.nombre || m.categoriaNombre || 'General') === catNombre);
+            let hasCuartos = catMatches.some(m => String(m.ronda_fase || m.rondaFase || '').toLowerCase().includes('cuartos'));
 
+            // Función recursiva para detectar al ganador de la fase anterior
             const getWinner = (faseStr, fallbackText) => {
-                let m = catMatches.find(m => String(m.ronda_fase || '').toLowerCase() === faseStr.toLowerCase());
-                if (m && m.ganador_id) {
-                    let pWin = todosLosJugadoresAdmin.find(x => x.id === m.ganador_id);
-                    if (pWin) return { nombre: pWin.nombre, id: pWin.id };
+                let m = catMatches.find(x => String(x.ronda_fase || x.rondaFase || '').toLowerCase() === faseStr.toLowerCase());
+                if (m) {
+                    // Si el administrador o el juez ya guardó un ID de ganador oficial, lo usamos.
+                    if (m.ganador_id) {
+                        let pWin = todosLosJugadoresAdmin.find(x => x.id === m.ganador_id);
+                        if (pWin) return { nombre: pWin.nombre, id: pWin.id };
+                    }
+                    
+                    // Si el partido ya terminó pero NO se ha guardado el ganador_id, lo CALCULAMOS EN VIVO:
+                    if (String(m.estado).toLowerCase() === 'finalizado') {
+                        let proy1 = getProyeccionDinamica(m, true, resumenGlobal, partidosArr);
+                        let proy2 = getProyeccionDinamica(m, false, resumenGlobal, partidosArr);
+                        
+                        let s1 = m.sets_j1 || m.puntos_j1 || 0;
+                        let s2 = m.sets_j2 || m.puntos_j2 || 0;
+                        
+                        if (s1 > s2 && proy1.id) return proy1;
+                        if (s2 > s1 && proy2.id) return proy2;
+                    }
                 }
                 return { nombre: fallbackText, id: null };
             };
 
+            // Ruteo Inteligente
             if (rf.includes('cuartos')) {
                 if (rf.includes('1')) return isJ1 ? getRank('A', 0, '1° Gpo A') : getRank('C', 1, '2° Gpo C');
                 if (rf.includes('2')) return isJ1 ? getRank('B', 0, '1° Gpo B') : getRank('D', 1, '2° Gpo D');
@@ -350,7 +364,7 @@
                 return isJ1 ? getWinner('Semifinal 1', 'Gana Semi 1') : getWinner('Semifinal 2', 'Gana Semi 2');
             }
             
-            return { nombre: isJ1 ? `${p.ronda_fase} J1` : `${p.ronda_fase} J2`, id: null };
+            return { nombre: isJ1 ? `${p.ronda_fase || p.rondaFase} J1` : `${p.ronda_fase || p.rondaFase} J2`, id: null };
         }
         // ==============================================================================
 
@@ -476,15 +490,16 @@
             return basePts + delta;
         }
 
-        // ================= CÁLCULO DE GRUPOS SIN FILTROS UI =================
-        function calcularStandingsGrupos() {
+        // ================= CÁLCULO DE GRUPOS 100% INDEPENDIENTE DE LA UI =================
+        function calcularStandingsGruposGlobal() {
             const porCategoria = {};
             todosLosPartidos.forEach(m => {
+                // AQUÍ ESTABA EL BUG: Ahora el sistema procesa los grupos sin importar qué filtro presiones arriba.
                 if (!m.grupo_nombre || m.grupo_nombre === 'Flash') return; 
                 
                 const catNombre = m.categorias?.nombre || 'General';
                 if (!porCategoria[catNombre]) porCategoria[catNombre] = {};
-                const gpoNombre = m.grupo_nombre || 'Llaves';
+                const gpoNombre = m.grupo_nombre;
                 if (!porCategoria[catNombre][gpoNombre]) porCategoria[catNombre][gpoNombre] = {};
                 const grupoObj = porCategoria[catNombre][gpoNombre];
 
@@ -568,8 +583,7 @@
         }
 
         function dibujarEstadisticas(container) {
-            // Filtrar estadísticas respetando UI
-            const standings = calcularStandingsGrupos();
+            const standings = calcularStandingsGruposGlobal();
             const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
             let catsList = [...categoriasSet];
             if (categoriaFiltro !== 'todas') catsList = catsList.filter(c => c === categoriaFiltro);
@@ -683,8 +697,9 @@
 
             if (filtrados.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay partidos registrados bajo estos filtros.</div>`; return; }
 
-            // ================== CÁLCULO EN TIEMPO REAL PARA LLAVES ==================
-            const resumenGlobal = calcularStandingsGrupos();
+            // ================== CÁLCULO 100% BLINDADO PARA LLAVES ==================
+            // Usamos el resumen que calcula todos los grupos sin importar el filtro visual
+            const resumenGlobal = calcularStandingsGruposGlobal();
             // =========================================================================
 
             const gruposPorHora = {}; const horasOrdenadas = [];
@@ -697,7 +712,6 @@
                     let est = String(p.estado || '').toLowerCase();
                     let isFin = est === 'finalizado'; let isVivo = est === 'en_curso';
 
-                    // NUEVA LÓGICA DE DETECCIÓN DE LLAVES: IGNORA RONDAS DE LIGA
                     let rfStr = String(p.ronda_fase || '').toLowerCase();
                     let isLlave = rfStr.includes('cuarto') || rfStr.includes('semi') || rfStr.includes('final') || rfStr.includes('octavo');
 
@@ -707,9 +721,8 @@
 
                     let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
                     
-                    // PROYECCIÓN DE NOMBRES INTELIGENTE Y EXTRACCIÓN DE IDs
-                    let proyJ1 = getProyeccionDinamica(p, true, resumenGlobal);
-                    let proyJ2 = getProyeccionDinamica(p, false, resumenGlobal);
+                    let proyJ1 = getProyeccionDinamica(p, true, resumenGlobal, todosLosPartidos);
+                    let proyJ2 = getProyeccionDinamica(p, false, resumenGlobal, todosLosPartidos);
                     
                     let nomJ1 = proyJ1.nombre; let idDinamicoJ1 = proyJ1.id;
                     let nomJ2 = proyJ2.nombre; let idDinamicoJ2 = proyJ2.id;
@@ -739,7 +752,6 @@
                         </button>
                     `;
 
-                    // Enlazamos los IDs dinámicos al botón del marcador manual
                     htmlContent += `
                         <div class="${cardClassStyle}">
                             <div class="top-bar">
@@ -751,7 +763,7 @@
                             </div>
                             <div style="margin-bottom:12px; display: flex; gap: 8px; flex-wrap: wrap;">
                                 <span class="cat-badge" style="color:${catStyle.text}; background:${catStyle.bg}; border:1px solid ${catStyle.border};">🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'}</span>
-                                <span class="${isLlave ? 'badge-llave' : 'cat-badge'}" style="${!isLlave ? `color:${cGpo.color}; background:${cGpo.bg}; border:1px solid ${cGpo.border};` : 'background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);'}">📍 ${eqGrupo}</span>
+                                <span class="cat-badge" style="${!isLlave ? `color:${cGpo.color}; background:${cGpo.bg}; border:1px solid ${cGpo.border};` : 'background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);'}">📍 ${eqGrupo}</span>
                             </div>
                             <div class="score-container">
                                 <div class="jugador-box"><div style="cursor:pointer;" onclick="abrirModalJugadorAdmin(${p.jugador1_id}, '${safeNom1}', '${safeClub1}')"><span class="jugador-nombre">${iconJ1}${nomJ1}</span></div><div style="display:flex; align-items:center;">${score1}</div></div>
@@ -832,12 +844,11 @@
             btn.disabled = true; btn.innerText = '⏳ Guardando...';
             
             try {
-                // Sella al ganador y empuja a los jugadores oficiales a la base de datos si estaban en "Por definir"
+                // Aquí el sistema engancha definitivamente a los ganadores proyectados en la BD
                 let ganador_id = setsJ1 > setsJ2 ? (idJ1 !== 'null' ? parseInt(idJ1) : null) : (idJ2 !== 'null' ? parseInt(idJ2) : null);
                 
                 let payload = { sets_j1: setsJ1, sets_j2: setsJ2, puntos_j1: setsJ1, puntos_j2: setsJ2, estado: 'finalizado', ganador_id: ganador_id };
                 
-                // Si la proyección detectó un ID real, lo amarramos a la tabla de partidos para que avance de ronda
                 if (idJ1 !== 'null') payload.jugador1_id = parseInt(idJ1);
                 if (idJ2 !== 'null') payload.jugador2_id = parseInt(idJ2);
                 
