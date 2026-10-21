@@ -50,6 +50,7 @@
         .grid-espectador { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; max-width: 1200px; margin: auto; }
 
         .card-mesa { background: rgba(10, 15, 26, 0.7); backdrop-filter: blur(20px); border-radius: 20px; padding: 18px; position: relative; transition: all 0.3s ease; }
+        
         .card-mesa-grupo { border-top: 4px solid #0e7490; border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); }
         .card-mesa-grupo:hover { border-color: rgba(6,182,212,0.4); transform: translateY(-2px); }
         
@@ -104,7 +105,7 @@
         .mensaje-vacio { text-align: center; color: #475569; font-style: italic; grid-column: 1/-1; padding: 40px; }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .modal-card { background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; width: 100%; max-width: 520px; padding: 24px; color: white; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        .modal-card { background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; width: 100%; max-width: 650px; padding: 24px; color: white; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
     </style>
 </head>
 <body>
@@ -127,6 +128,7 @@
         </div>
     </div>
 
+    <!-- MODAL EXPEDIENTE (A ESTILO MEMORIA TÉCNICA) -->
     <div id="modal-jugador-admin" class="modal-overlay" style="display: none;">
         <div class="modal-card">
             <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
@@ -136,10 +138,21 @@
                 </div>
                 <button onclick="cerrarModalJugadorAdmin()" style="background: rgba(255,255,255,0.1); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-weight: 800;">✕</button>
             </div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: rgba(0,0,0,0.3); padding: 10px 15px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+                <div>
+                    <div style="font-size: 10px; color: #94a3b8; font-weight: 800; text-transform: uppercase;">Resumen Ranking Oficial</div>
+                    <span id="modal-jugador-variacion" style="font-size: 11px; font-weight: 700; color: #cbd5e1;"></span>
+                </div>
+                <div style="text-align: right;">
+                    <div id="modal-jugador-ranking-header" style="font-size: 20px; font-family: 'Orbitron', sans-serif; font-weight: 900; color: #fbbf24;"></div>
+                </div>
+            </div>
+
             <div id="modal-jugador-partidos-list" style="display: flex; flex-direction: column; gap: 10px;">
                 <div class="mensaje-vacio">Cargando expediente...</div>
             </div>
-            <button onclick="cerrarModalJugadorAdmin()" style="width: 100%; justify-content: center; margin-top: 20px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; padding: 12px; border-radius: 9999px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer;">Cerrar Detalle</button>
+            <button onclick="cerrarModalJugadorAdmin()" style="width: 100%; justify-content: center; margin-top: 20px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; padding: 12px; border-radius: 9999px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer;">Cerrar Expediente</button>
         </div>
     </div>
 
@@ -204,7 +217,6 @@
         </nav>
     </div>
 
-    <!-- FILTROS -->
     <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">🎯 Filtrar por Modalidad:</div>
     <div class="scrolling-bar" id="bar-modalidad">
         <button class="btn-filter-pill active" onclick="filtrarModalidad('todas', this)">Todas</button>
@@ -280,7 +292,6 @@
             return { color: '#cbd5e1', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' }; 
         };
 
-        // ================= MOTOR RECURSIVO DE PROYECCIÓN DE LLAVES =================
         function getProyeccionDinamica(p, isJ1, resumenGlobal, partidosArr) {
             if (isJ1 && p.j1) return { nombre: p.j1.nombre, id: p.j1.id }; 
             if (!isJ1 && p.j2) return { nombre: p.j2.nombre, id: p.j2.id };
@@ -351,13 +362,10 @@
                     if (rf.includes('2')) return isJ1 ? getRank('B', 0, '1° Gpo B') : getRank('A', 1, '2° Gpo A');
                 }
             }
-            if (rf.includes('final')) {
-                return isJ1 ? getWinner('Semifinal 1', 'Gana Semi 1') : getWinner('Semifinal 2', 'Gana Semi 2');
-            }
+            if (rf.includes('final')) return isJ1 ? getWinner('Semifinal 1', 'Gana Semi 1') : getWinner('Semifinal 2', 'Gana Semi 2');
             
             return { nombre: isJ1 ? `${p.ronda_fase || p.rondaFase} J1` : `${p.ronda_fase || p.rondaFase} J2`, id: null };
         }
-        // ==============================================================================
 
         function timeToMinutes(timeStr) { 
             if (!timeStr) return 540; 
@@ -460,81 +468,53 @@
             return { j1G: favoritoEsJ1 ? ptsGanaFav : ptsGanaRet, j1P: favoritoEsJ1 ? ptsPierdeFav : ptsPierdeRet, j2G: favoritoEsJ1 ? ptsGanaRet : ptsGanaFav, j2P: favoritoEsJ1 ? ptsPierdeRet : ptsPierdeFav };
         }
 
-        // ================= CÁLCULO MÁSTER DE ESTADÍSTICAS GLOBALES =================
-        function calcularResumenGlobal() {
+        function calcularRankingEnVivo(jugadorId, basePts, finMatches, partidoActualId) {
+            if (!jugadorId || !basePts) return 0;
+            let delta = 0;
+            finMatches.forEach(m => {
+                if (m.id == partidoActualId) return;
+                let p1Base = m.j1 ? m.j1.puntos_ranking : 0; let p2Base = m.j2 ? m.j2.puntos_ranking : 0;
+                let impacto = calcularImpacto(p1Base, p2Base);
+                if (m.jugador1_id === jugadorId) { delta += (m.ganador_id === jugadorId) ? impacto.j1G : impacto.j1P; } 
+                else if (m.jugador2_id === jugadorId) { delta += (m.ganador_id === jugadorId) ? impacto.j2G : impacto.j2P; }
+            });
+            return basePts + delta;
+        }
+
+        function calcularStandingsGruposGlobal() {
             const porCategoria = {};
-            
             todosLosPartidos.forEach(m => {
                 if (m.grupo_nombre === 'Flash') return; 
+                
                 const catNombre = m.categorias?.nombre || 'General';
                 if (!porCategoria[catNombre]) porCategoria[catNombre] = { grupos: {} };
                 const gpoNombre = m.grupo_nombre || 'Llaves';
                 if (!porCategoria[catNombre].grupos[gpoNombre]) porCategoria[catNombre].grupos[gpoNombre] = {};
-            });
-
-            let partidosGrupos = todosLosPartidos.filter(m => m.grupo_nombre && m.grupo_nombre !== 'Flash' && m.grupo_nombre !== 'Llaves');
-            let partidosLlaves = todosLosPartidos.filter(m => !m.grupo_nombre || m.grupo_nombre === 'Llaves');
-
-            const procesarPartido = (m, j1Real, j2Real, gpoNombre) => {
-                const catNombre = m.categorias?.nombre || 'General';
                 const grupoObj = porCategoria[catNombre].grupos[gpoNombre];
 
-                [j1Real, j2Real].forEach(j => {
+                [m.j1, m.j2].forEach(j => {
                     if (j && j.id && !grupoObj[j.id]) {
                         let jData = todosLosJugadoresAdmin.find(x => x.id === j.id);
-                        let rankIni = jData ? (jData.puntos_ranking_ant ?? jData.puntos_ranking ?? 0) : 0;
-                        let div = jData ? (jData.division || 1) : 1;
-                        let club = jData ? jData.club : 'Sin Club';
-                        grupoObj[j.id] = { id: j.id, nombre: j.nombre, club: club, div: div, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, rankIni: rankIni, rankImpact: 0, gpo: gpoNombre };
+                        let rankIni = jData ? (jData.puntos_ranking_ant ?? jData.puntos_ranking ?? 0) : (j.puntos_ranking_ant ?? j.puntos_ranking ?? 0);
+                        let div = jData ? (jData.division || 1) : (j.division || 1);
+                        grupoObj[j.id] = { id: j.id, nombre: j.nombre, club: j.club, div: div, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, rankIni: rankIni, rankImpact: 0, gpo: gpoNombre };
                     }
                 });
 
                 let estLimpio = String(m.estado || '').trim().toLowerCase();
-                if (estLimpio === 'finalizado' && j1Real && j2Real && j1Real.id && j2Real.id) {
-                    const j1Obj = grupoObj[j1Real.id]; 
-                    const j2Obj = grupoObj[j2Real.id];
-                    
-                    let ganador = m.ganador_id;
-                    if (!ganador) {
-                        let s1 = m.sets_j1 || m.puntos_j1 || 0; let s2 = m.sets_j2 || m.puntos_j2 || 0;
-                        if (s1 > s2) ganador = j1Real.id; else if (s2 > s1) ganador = j2Real.id;
-                    }
-
-                    if (j1Obj && j2Obj) {
-                        j1Obj.pj += 1; j2Obj.pj += 1;
-                        j1Obj.setsG += (m.sets_j1 || 0); j1Obj.setsP += (m.sets_j2 || 0);
-                        j2Obj.setsG += (m.sets_j2 || 0); j2Obj.setsP += (m.sets_j1 || 0);
-                        let r1 = j1Obj.rankIni + j1Obj.rankImpact; let r2 = j2Obj.rankIni + j2Obj.rankImpact;
+                if (estLimpio === 'finalizado' && m.j1 && m.j2) {
+                    const j1 = grupoObj[m.j1.id]; const j2 = grupoObj[m.j2.id];
+                    if (j1 && j2) {
+                        j1.pj += 1; j2.pj += 1;
+                        j1.setsG += (m.sets_j1 || 0); j1.setsP += (m.sets_j2 || 0);
+                        j2.setsG += (m.sets_j2 || 0); j2.setsP += (m.sets_j1 || 0);
+                        let r1 = j1.rankIni + j1.rankImpact; let r2 = j2.rankIni + j2.rankImpact;
                         let impacto = calcularImpacto(r1, r2);
-                        if (ganador === j1Real.id) { 
-                            j1Obj.pg += 1; j1Obj.pts += 2; j2Obj.pp += 1; j2Obj.pts += 1; 
-                            j1Obj.rankImpact += impacto.j1G; j2Obj.rankImpact += impacto.j2P; 
-                        } else if (ganador === j2Real.id) { 
-                            j2Obj.pg += 1; j2Obj.pts += 2; j1Obj.pp += 1; j1Obj.pts += 1; 
-                            j2Obj.rankImpact += impacto.j2G; j1Obj.rankImpact += impacto.j1P; 
-                        }
+                        if (m.ganador_id === m.jugador1_id) { j1.pg += 1; j1.pts += 2; j2.pp += 1; j2.pts += 1; j1.rankImpact += impacto.j1G; j2.rankImpact += impacto.j2P; } 
+                        else if (m.ganador_id === m.jugador2_id) { j2.pg += 1; j2.pts += 2; j1.pp += 1; j1.pts += 1; j2.rankImpact += impacto.j2G; j1.rankImpact += impacto.j1P; }
                     }
                 }
-            };
-
-            // Procesar Grupos
-            partidosGrupos.forEach(m => {
-                let j1Real = m.j1 ? { id: m.j1.id, nombre: m.j1.nombre } : null;
-                let j2Real = m.j2 ? { id: m.j2.id, nombre: m.j2.nombre } : null;
-                procesarPartido(m, j1Real, j2Real, m.grupo_nombre);
             });
-
-            // Procesar Llaves
-            partidosLlaves.forEach(m => {
-                let proyJ1 = getProyeccionDinamica(m, true, porCategoria, todosLosPartidos);
-                let proyJ2 = getProyeccionDinamica(m, false, porCategoria, todosLosPartidos);
-                
-                let j1Real = proyJ1.id ? { id: proyJ1.id, nombre: proyJ1.nombre } : null;
-                let j2Real = proyJ2.id ? { id: proyJ2.id, nombre: proyJ2.nombre } : null;
-                
-                procesarPartido(m, j1Real, j2Real, 'Llaves');
-            });
-
             return porCategoria;
         }
 
@@ -560,8 +540,8 @@
                                     <th style="padding:6px;">Pos</th><th style="padding:6px;">Jugador</th><th style="padding:6px; text-align:center;">PJ</th>
                                     <th style="padding:6px; text-align:center;">PG</th><th style="padding:6px; text-align:center;">PP</th>
                                     <th style="padding:6px; text-align:center;">% Efec</th><th style="padding:6px; text-align:center;">Sets (G - P)</th>
-                                    <th style="padding:6px; text-align:center; color:#fbbf24;">Pts</th><th style="padding:6px; text-align:center;">R. ANT</th>
-                                    <th style="padding:6px; text-align:center;">+/-</th><th style="padding:6px; text-align:center; color:#38bdf8;">R. ACT</th>
+                                    <th style="padding:6px; text-align:center; color:#fbbf24;">Pts</th><th style="padding:6px; text-align:center;">R. Ant</th>
+                                    <th style="padding:6px; text-align:center;">+/-</th><th style="padding:6px; text-align:center; color:#38bdf8;">R. Act</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -575,10 +555,19 @@
                 let rankDifStr = j.rankImpact > 0 ? `+${j.rankImpact}` : j.rankImpact; let rankDifColor = j.rankImpact > 0 ? '#10b981' : (j.rankImpact < 0 ? '#ef4444' : '#94a3b8');
                 let rankAct = j.rankIni + j.rankImpact; let gpoInfo = (!isFlash && j.gpo && j.gpo !== 'Llaves') ? `<span style="font-size:9px; color:#a855f7; font-weight:800; border:1px solid #a855f7; padding:2px 6px; border-radius:4px; margin-left:6px;">GPO ${j.gpo}</span>` : '';
                 let dif = j.setsG - j.setsP; let difStr = dif >= 0 ? '+' + dif : dif; let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
+                
+                let safeNom = j.nombre ? String(j.nombre).replace(/'/g, "\\'") : ''; 
+                let safeClub = j.club ? String(j.club).replace(/'/g, "\\'") : 'Sin Club';
+
                 html += `
                     <tr class="tr-header" style="border-bottom:1px solid rgba(255,255,255,0.04); opacity: ${opacity}; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'">
                         <td style="padding:8px 6px; font-weight:800; color:#64748b; font-size:14px;">${rankTrophy}</td>
-                        <td style="padding:8px 6px;"><strong style="color:#ffffff; font-size:12px; display:inline-block;">${j.nombre}</strong> ${qualBadge} ${gpoInfo}<span style="font-size:9px; color:#64748b; font-weight:700; display:block;">${j.club || 'Sin Club'}</span></td>
+                        <td style="padding:8px 6px;">
+                            <strong style="color:#ffffff; font-size:12px; display:inline-block; cursor:pointer;" onclick="abrirModalJugadorAdmin(${j.id}, '${safeNom}', '${safeClub}')" class="hover:text-cyan-400 transition-colors">
+                                ${j.nombre}
+                            </strong> ${qualBadge} ${gpoInfo}
+                            <span style="font-size:9px; color:#64748b; font-weight:700; display:block;">${j.club || 'Sin Club'}</span>
+                        </td>
                         <td style="padding:8px 6px; text-align:center; font-weight:700; color:#94a3b8;">${j.pj}</td><td style="padding:8px 6px; text-align:center; font-weight:700; color:#34d399;">${j.pg}</td>
                         <td style="padding:8px 6px; text-align:center; font-weight:700; color:#f87171;">${j.pp}</td><td style="padding:8px 6px; text-align:center; font-weight:900; color:#fbbf24;">${efectividad}%</td>
                         <td style="padding:8px 6px; text-align:center;"><span style="color:#34d399; font-weight:800;">${j.setsG}</span><span style="color:#64748b; margin:0 2px;">:</span><span style="color:#f87171; font-weight:800;">${j.setsP}</span><span style="font-size:10px; font-weight:800; color:${colorDif}; margin-left:4px;">(${difStr})</span></td>
@@ -592,7 +581,7 @@
         }
 
         function dibujarEstadisticas(container) {
-            const standings = calcularResumenGlobal();
+            const standings = calcularStandingsGruposGlobal();
             const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
             let catsList = [...categoriasSet];
             if (categoriaFiltro !== 'todas') catsList = catsList.filter(c => c === categoriaFiltro);
@@ -612,7 +601,6 @@
                         </div>
                 `;
 
-                // FUSIONAMOS TODAS LAS FASES (Grupos + Llaves) EN UN SOLO EXPEDIENTE POR JUGADOR
                 let todosJugadoresCatMap = new Map();
                 Object.keys(gruposCat).forEach(gpoNombre => { 
                     Object.values(gruposCat[gpoNombre]).forEach(j => { 
@@ -620,8 +608,13 @@
                             todosJugadoresCatMap.set(j.id, {...j, gpo: gpoNombre === 'Llaves' ? null : gpoNombre}); 
                         } else {
                             let prev = todosJugadoresCatMap.get(j.id);
-                            prev.pj += j.pj; prev.pg += j.pg; prev.pp += j.pp; prev.pts += j.pts;
-                            prev.setsG += j.setsG; prev.setsP += j.setsP; prev.rankImpact += j.rankImpact;
+                            prev.pj += j.pj;
+                            prev.pg += j.pg;
+                            prev.pp += j.pp;
+                            prev.pts += j.pts;
+                            prev.setsG += j.setsG;
+                            prev.setsP += j.setsP;
+                            prev.rankImpact += j.rankImpact;
                             if (gpoNombre !== 'Llaves' && !prev.gpo) prev.gpo = gpoNombre;
                         }
                     }); 
@@ -643,19 +636,13 @@
             container.innerHTML = htmlContent;
         }
 
-        function dibujarRankingGlobal(container) {
+        function dibujarRankingGlobal(container, finMatches) {
             let jugadoresActivos = [...todosLosJugadoresAdmin];
             if (jugadoresActivos.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay jugadores registrados en el ranking global.</div>`; return; }
 
-            const resumenGlobal = calcularResumenGlobal();
-
             jugadoresActivos.forEach(j => {
-                let rankImpactTotal = 0;
-                Object.values(resumenGlobal).forEach(cat => {
-                    Object.values(cat.grupos).forEach(gpo => { if (gpo[j.id]) rankImpactTotal += gpo[j.id].rankImpact; });
-                });
-                j.puntosEnVivo = (j.puntos_ranking_ant ?? j.puntos_ranking ?? 0) + rankImpactTotal;
-                j.difPuntos = rankImpactTotal;
+                j.puntosEnVivo = calcularRankingEnVivo(j.id, j.puntos_ranking, finMatches, null);
+                j.difPuntos = j.puntosEnVivo - (j.puntos_ranking_ant || j.puntos_ranking);
             });
 
             const categoriasFuerza = todasLasCategorias.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
@@ -709,7 +696,7 @@
             const container = document.getElementById('contenedor-partidos');
             
             if (estadoFiltro === 'resumen') { container.style.display = 'block'; dibujarEstadisticas(container); return; }
-            if (estadoFiltro === 'ranking') { container.style.display = 'block'; dibujarRankingGlobal(container); return; }
+            if (estadoFiltro === 'ranking') { container.style.display = 'block'; const finMatches = todosLosPartidos.filter(p => String(p.estado || '').toLowerCase() === 'finalizado'); dibujarRankingGlobal(container, finMatches); return; }
 
             container.style.display = 'grid';
             let filtrados = [...todosLosPartidos];
@@ -725,7 +712,7 @@
 
             if (filtrados.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay partidos registrados bajo estos filtros.</div>`; return; }
 
-            const resumenGlobal = calcularResumenGlobal();
+            const resumenGlobal = calcularStandingsGruposGlobal();
 
             const gruposPorHora = {}; const horasOrdenadas = [];
             filtrados.forEach(p => { const h = p.hora || '09:00 AM'; if(!gruposPorHora[h]) { gruposPorHora[h] = []; horasOrdenadas.push(h); } gruposPorHora[h].push(p); });
@@ -791,8 +778,8 @@
                                 <span class="cat-badge" style="${!isLlave ? `color:${cGpo.color}; background:${cGpo.bg}; border:1px solid ${cGpo.border};` : 'background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);'}">📍 ${eqGrupo}</span>
                             </div>
                             <div class="score-container">
-                                <div class="jugador-box"><div style="cursor:pointer;" onclick="abrirModalJugadorAdmin(${p.jugador1_id}, '${safeNom1}', '${safeClub1}')"><span class="jugador-nombre">${iconJ1}${nomJ1}</span></div><div style="display:flex; align-items:center;">${score1}</div></div>
-                                <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;"><div style="cursor:pointer;" onclick="abrirModalJugadorAdmin(${p.jugador2_id}, '${safeNom2}', '${safeClub2}')"><span class="jugador-nombre">${iconJ2}${nomJ2}</span></div><div style="display:flex; align-items:center;">${score2}</div></div>
+                                <div class="jugador-box"><div style="cursor:pointer;" onclick="abrirModalJugadorAdmin(${p.jugador1_id || idDinamicoJ1}, '${safeNom1}', '${safeClub1}')"><span class="jugador-nombre">${iconJ1}${nomJ1}</span></div><div style="display:flex; align-items:center;">${score1}</div></div>
+                                <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;"><div style="cursor:pointer;" onclick="abrirModalJugadorAdmin(${p.jugador2_id || idDinamicoJ2}, '${safeNom2}', '${safeClub2}')"><span class="jugador-nombre">${iconJ2}${nomJ2}</span></div><div style="display:flex; align-items:center;">${score2}</div></div>
                             </div>
                             
                             <div style="display:flex; gap:10px; flex-wrap: wrap;">
@@ -889,9 +876,10 @@
         }
 
         function abrirModalJugadorAdmin(jugadorId, nombre, club) {
-            if(!jugadorId) return; 
+            if(!jugadorId || isNaN(jugadorId)) return; 
             document.getElementById('modal-jugador-nombre').innerText = nombre; document.getElementById('modal-jugador-club').innerText = club || 'Sin Club';
             const modalList = document.getElementById('modal-jugador-partidos-list'); modalList.innerHTML = '<div class="mensaje-vacio">Cargando expediente...</div>';
+            
             const partidosJugador = todosLosPartidos.filter(p => p.jugador1_id === jugadorId || p.jugador2_id === jugadorId);
             const jugObj = todosLosJugadoresAdmin.find(j => j.id === jugadorId);
 
@@ -901,42 +889,73 @@
                 document.getElementById('modal-jugador-ranking-header').innerText = `${rInicial} pts`; document.getElementById('modal-jugador-variacion').innerHTML = `<span style="color:#64748b;">(Sin partidos)</span>`;
                 modalList.innerHTML = '<div class="mensaje-vacio">Este jugador no ha disputado partidos registrados aún.</div>';
             } else {
-                let html = ''; let estaEnLlaves = partidosJugador.some(p => (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase && !p.grupo_nombre);
+                partidosJugador.sort((a,b) => a.id - b.id);
+                
+                let tableHtml = `
+                <div style="background:rgba(0,0,0,0.4); border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.05);">
+                    <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left; margin:0;">
+                        <thead>
+                            <tr style="background:rgba(255,255,255,0.05); color:#94a3b8; text-transform:uppercase; font-size:9px;">
+                                <th style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.1);">Fase / Mesa</th>
+                                <th style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.1);">Rival</th>
+                                <th style="padding:10px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.1);">Resultado</th>
+                                <th style="padding:10px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.1);">+/- Rank</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
                 
                 partidosJugador.forEach(p => {
                     const esJ1 = p.jugador1_id === jugadorId;
                     const rivalNombre = esJ1 ? (p.j2 ? p.j2.nombre : 'Por definir') : (p.j1 ? p.j1.nombre : 'Por definir');
-                    const rivalClub = esJ1 ? (p.j2 ? p.j2.club : '') : (p.j1 ? p.j1.club : '');
                     const rivalPts = esJ1 ? (p.j2 ? p.j2.puntos_ranking || 0 : 0) : (p.j1 ? p.j1.puntos_ranking || 0 : 0);
-                    const estLimpio = (p.estado || '').trim().toLowerCase(); const esFin = estLimpio === 'finalizado'; const esVivo = estLimpio === 'en_curso';
-                    const ganoPlayer = esFin && p.ganador_id === jugadorId; const perdioPlayer = esFin && p.ganador_id && p.ganador_id !== jugadorId;
+                    const estLimpio = (p.estado || '').trim().toLowerCase(); 
+                    const esFin = estLimpio === 'finalizado'; 
+                    const esVivo = estLimpio === 'en_curso';
+                    const ganoPlayer = esFin && p.ganador_id === jugadorId; 
+                    const perdioPlayer = esFin && p.ganador_id && p.ganador_id !== jugadorId;
 
                     let deltaPartido = 0;
-                    if (esFin) { let calc = calcularPuntosMatch(rInicial, rivalPts, p.ganador_id, p.jugador1_id, p.jugador2_id); deltaPartido = ganoPlayer ? calc.ptsGanador : calc.ptsPerdedor; deltaTotal += deltaPartido; }
-
-                    let estadoBadge = '<span style="font-size:9px; background:rgba(245,158,11,0.2); color:#fbbf24; padding:3px 8px; border-radius:99px; font-weight:800;">⏳ PENDIENTE</span>';
-                    if (esVivo) estadoBadge = '<span style="font-size:9px; background:rgba(16,185,129,0.2); color:#34d399; padding:3px 8px; border-radius:99px; font-weight:800;">🔴 EN VIVO</span>';
-                    else if (ganoPlayer) estadoBadge = `<span style="font-size:9px; background:rgba(16,185,129,0.2); color:#34d399; padding:3px 8px; border-radius:99px; font-weight:800;">🏆 VICTORIA (+${deltaPartido} pts)</span>`;
-                    else if (perdioPlayer) estadoBadge = `<span style="font-size:9px; background:rgba(239,68,68,0.2); color:#f87171; padding:3px 8px; border-radius:99px; font-weight:800;">❌ DERROTA (${deltaPartido} pts)</span>`;
-
-                    let marcadorText = esFin ? (esJ1 ? `${p.sets_j1} - ${p.sets_j2}` : `${p.sets_j2} - ${p.sets_j1}`) + ' Sets' : (esVivo ? (esJ1 ? `${p.puntos_j1} - ${p.puntos_j2}` : `${p.puntos_j2} - ${p.puntos_j1}`) + ' Pts' : 'VS');
-
-                    let historialText = '';
-                    if (p.historial_sets && Array.isArray(p.historial_sets) && p.historial_sets.length > 0) {
-                        let parciales = p.historial_sets.map(s => esJ1 ? `${s.s1}-${s.s2}` : `${s.s2}-${s.s1}`);
-                        historialText = `<div style="font-size:10px; color:#94a3b8; margin-top:6px; font-weight:700;">Parciales: ${parciales.join(', ')}</div>`;
+                    if (esFin) { 
+                        let calc = calcularPuntosMatch(rInicial, rivalPts, p.ganador_id, p.jugador1_id, p.jugador2_id); 
+                        deltaPartido = ganoPlayer ? calc.ptsGanador : calc.ptsPerdedor; 
+                        deltaTotal += deltaPartido; 
                     }
 
-                    let etiqGpo = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? 'Grupo ' + p.grupo_nombre : (p.ronda_fase || 'Fase Final'));
+                    let rankBadge = '-';
+                    if (esFin) {
+                        rankBadge = ganoPlayer ? `<span style="color:#34d399; font-weight:900;">+${deltaPartido}</span>` : `<span style="color:#f87171; font-weight:900;">${deltaPartido}</span>`;
+                    } else if (esVivo) {
+                        rankBadge = `<span style="color:#fbbf24; font-size:8px; font-weight:800; border:1px solid rgba(245,158,11,0.5); padding:2px 4px; border-radius:4px; background:rgba(245,158,11,0.1);">EN VIVO</span>`;
+                    } else {
+                        rankBadge = `<span style="color:#94a3b8; font-size:8px; font-weight:800; border:1px solid rgba(148,163,184,0.5); padding:2px 4px; border-radius:4px; background:rgba(148,163,184,0.1);">PENDIENTE</span>`;
+                    }
 
-                    html += `
-                        <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.08); padding:12px 16px; border-radius:12px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><span style="font-size:10px; color:#38bdf8; font-weight:800; text-transform:uppercase;">${etiqGpo} • Mesa ${p.mesa || 1}</span>${estadoBadge}</div>
-                            <div style="display:flex; justify-content:space-between; align-items:center;"><div><strong style="font-size:13px; color:#ffffff;">vs ${rivalNombre}</strong><small style="display:block; color:#64748b; font-size:10px;">${rivalClub || 'Sin Club'}</small></div><span style="font-family:'Orbitron', sans-serif; font-size:15px; font-weight:800; color:#fbbf24;">${marcadorText}</span></div>
-                            ${historialText}
-                        </div>
+                    let sFav = esJ1 ? p.sets_j1 : p.sets_j2;
+                    let sRiv = esJ1 ? p.sets_j2 : p.sets_j1;
+                    
+                    let resText = '-';
+                    if (esFin) {
+                        resText = ganoPlayer 
+                            ? `<span style="color:#34d399; font-weight:800;">VICTORIA <span style="color:#fff; font-size:10px;">(${sFav}-${sRiv})</span></span>` 
+                            : `<span style="color:#f87171; font-weight:800;">DERROTA <span style="color:#fff; font-size:10px;">(${sFav}-${sRiv})</span></span>`;
+                    } else if (esVivo) {
+                        resText = `<span style="color:#38bdf8; font-weight:900; font-size:14px; font-family:'Orbitron',sans-serif;">${sFav} - ${sRiv}</span>`;
+                    }
+
+                    let etiqGpo = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Fase Final'));
+
+                    tableHtml += `
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                            <td style="padding:10px; color:#38bdf8; font-weight:800;">${etiqGpo}<br><span style="color:#64748b; font-size:9px;">Mesa ${p.mesa}</span></td>
+                            <td style="padding:10px; color:#fff; font-weight:700;">vs ${rivalNombre}</td>
+                            <td style="padding:10px; text-align:center;">${resText}</td>
+                            <td style="padding:10px; text-align:center;">${rankBadge}</td>
+                        </tr>
                     `;
                 });
+                
+                tableHtml += `</tbody></table></div>`;
 
                 let rFinal = rInicial + deltaTotal;
                 let difStr = deltaTotal >= 0 ? `<span style="color:#34d399;">+${deltaTotal}</span>` : `<span style="color:#f87171;">${deltaTotal}</span>`;
@@ -944,7 +963,7 @@
                 document.getElementById('modal-jugador-ranking-header').innerText = `${rFinal} pts`;
                 document.getElementById('modal-jugador-variacion').innerHTML = `${rInicial} ➔ ${rFinal} (${difStr})`;
 
-                modalList.innerHTML = html;
+                modalList.innerHTML = tableHtml;
             }
             document.getElementById('modal-jugador-admin').style.display = 'flex';
         }
