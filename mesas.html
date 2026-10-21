@@ -81,7 +81,7 @@
         .est-fin { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); color: #94a3b8; }
 
         .score-container { background: rgba(0,0,0,0.4); border-radius: 14px; padding: 12px 16px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.03); }
-        .card-mesa-llave .score-container { background: rgba(0,0,0,0.5); border: 1px solid rgba(251,191,36,0.15); }
+        .card-mesa-llave .score-container { background: rgba(0,0,0,0.55); border: 1px inset rgba(251,191,36,0.15); }
 
         .jugador-box { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
         .jugador-nombre { font-size: 13px; font-weight: 800; color: #ffffff; cursor: pointer; transition: color 0.2s; }
@@ -108,6 +108,7 @@
 </head>
 <body>
 
+    <!-- MODAL PARA GENERAR QR DE TRANSMISIÓN -->
     <div id="modal-qr" class="modal-overlay" style="display: none;">
         <div class="modal-card" style="max-width: 380px; padding: 30px; border: 2px solid #3b82f6; text-align: center;">
             <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:15px;">
@@ -259,11 +260,13 @@
         let todasLasCategorias = [];
         let todosLosJugadoresAdmin = [];
         let jugadoresMemoriaExpedientes = {}; 
+        let datosGeneralesCuadro = null; // Guardará el cuadro resuelto linealmente
         
         let modalidadFiltro = 'todas';
         let mesaFiltro = 'todas';
         let estadoFiltro = 'todos';
         let categoriaFiltro = 'todas';
+        let urlOverlayActualModal = '';
 
         function abrirVistaInteligente(destino) { window.location.href = destino + ".html?torneo=" + idTorneoActivo; }
         function enfocarPestanaEspectador() {
@@ -307,231 +310,231 @@
             return { j1G: favoritoEsJ1 ? ptsGanaFav : ptsGanaRet, j1P: favoritoEsJ1 ? ptsPierdeFav : ptsPierdeRet, j2G: favoritoEsJ1 ? ptsGanaRet : ptsGanaFav, j2P: favoritoEsJ1 ? ptsPierdeRet : ptsPierdeFav };
         }
 
-        // ================= MOTOR LINEAL DE LLAVES: 0 RECURSIÓN Y CARGA INSTANTÁNEA =================
-        function procesarTorneoLineal() {
-            let memoriaStandings = {}; 
-            let mapaProyecciones = {}; 
-            let ganadoresFase = {};    
-            
-            let rankingEnVivoTracker = {}; 
-            todosLosJugadoresAdmin.forEach(j => rankingEnVivoTracker[j.id] = (j.puntos_ranking_ant ?? j.puntos_ranking ?? 0));
-
-            // 1. Inicializar Categorías
-            todosLosPartidos.forEach(m => {
-                if (m.grupo_nombre === 'Flash') return;
-                let cat = m.categorias?.nombre || 'General';
-                if (!memoriaStandings[cat]) memoriaStandings[cat] = { grupos: {}, expedientes: {} };
-                if (!ganadoresFase[cat]) ganadoresFase[cat] = {};
-            });
-
-            // Función unificada para registrar en el expediente Global directamente
-            const registrarMatchGlobal = (m, p1Obj, p2Obj, catNombre) => {
-                let exps = memoriaStandings[catNombre].expedientes;
-                [p1Obj, p2Obj].forEach(p => {
-                    if (p && p.id && !exps[p.id]) {
-                        let jA = todosLosJugadoresAdmin.find(x => x.id == p.id);
-                        exps[p.id] = { 
-                            id: p.id, nombre: p.nombre, club: jA?.club || 'Sin Club', div: jA?.division || 1, 
-                            pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, 
-                            rankIni: (jA?.puntos_ranking_ant ?? jA?.puntos_ranking ?? 0), 
-                            rankImpact: 0, gpo: null, historial: [] 
-                        };
-                    }
-                });
-
-                if (String(m.estado).toLowerCase() === 'finalizado' && p1Obj?.id && p2Obj?.id) {
-                    let j1 = exps[p1Obj.id]; let j2 = exps[p2Obj.id];
-                    if (j1 && j2) {
-                        j1.pj++; j2.pj++;
-                        let s1 = m.sets_j1 || m.puntos_j1 || 0; let s2 = m.sets_j2 || m.puntos_j2 || 0;
-                        j1.setsG += s1; j1.setsP += s2;
-                        j2.setsG += s2; j2.setsP += s1;
-
-                        let r1 = rankingEnVivoTracker[p1Obj.id] || j1.rankIni;
-                        let r2 = rankingEnVivoTracker[p2Obj.id] || j2.rankIni;
-                        let imp = calcularImpacto(r1, r2);
-
-                        let ganoJ1 = m.ganador_id ? (m.ganador_id == p1Obj.id) : (s1 > s2);
-                        let d1 = ganoJ1 ? imp.j1G : imp.j1P;
-                        let d2 = !ganoJ1 ? imp.j2G : imp.j2P;
-
-                        if (ganoJ1) { j1.pg++; j1.pts+=2; j2.pp++; j2.pts+=1; } else { j2.pg++; j2.pts+=2; j1.pp++; j1.pts+=1; }
-                        
-                        j1.rankImpact += d1; j2.rankImpact += d2;
-                        rankingEnVivoTracker[p1Obj.id] += d1;
-                        rankingEnVivoTracker[p2Obj.id] += d2;
-
-                        let faseLabel = m.grupo_nombre ? `Grupo ${m.grupo_nombre}` : (m.ronda_fase || 'Eliminatoria');
-                        j1.historial.push({ id: m.id, fase: faseLabel, mesa: m.mesa, rival: j2.nombre, sFav: s1, sRiv: s2, gano: ganoJ1, delta: d1 });
-                        j2.historial.push({ id: m.id, fase: faseLabel, mesa: m.mesa, rival: j1.nombre, sFav: s2, sRiv: s1, gano: !ganoJ1, delta: d2 });
-                    }
-                }
-            };
-
-            // 2. Procesar Fase de Grupos
-            let gruposMatches = todosLosPartidos.filter(m => m.grupo_nombre && m.grupo_nombre !== 'Flash');
-            gruposMatches.forEach(m => {
-                let cat = m.categorias?.nombre || 'General';
-                let gpo = m.grupo_nombre;
-                if (!memoriaStandings[cat].grupos[gpo]) memoriaStandings[cat].grupos[gpo] = {};
-                let gObj = memoriaStandings[cat].grupos[gpo];
-
-                [m.j1, m.j2].forEach(j => {
-                    if (j && j.id) {
-                        if (!gObj[j.id]) {
-                            let jAdmin = todosLosJugadoresAdmin.find(x => x.id == j.id);
-                            let rIni = jAdmin ? (jAdmin.puntos_ranking_ant ?? jAdmin.puntos_ranking ?? 0) : (j.puntos_ranking_ant ?? j.puntos_ranking ?? 0);
-                            gObj[j.id] = { id: j.id, nombre: j.nombre, club: j.club, rankIni: rIni, pts: 0, setsG: 0, setsP: 0, pg: 0 };
-                        }
-                    }
-                });
-
-                if (m.j1 && m.j2) {
-                    registrarMatchGlobal(m, {id: m.j1.id, nombre: m.j1.nombre}, {id: m.j2.id, nombre: m.j2.nombre}, cat);
-                    if (memoriaStandings[cat].expedientes[m.j1.id]) memoriaStandings[cat].expedientes[m.j1.id].gpo = gpo;
-                    if (memoriaStandings[cat].expedientes[m.j2.id]) memoriaStandings[cat].expedientes[m.j2.id].gpo = gpo;
-                }
-
-                if (String(m.estado || '').toLowerCase() === 'finalizado' && m.j1 && m.j2) {
-                    let j1 = gObj[m.j1.id]; let j2 = gObj[m.j2.id];
-                    if (j1 && j2) {
-                        let s1 = m.sets_j1 || m.puntos_j1 || 0; let s2 = m.sets_j2 || m.puntos_j2 || 0;
-                        j1.setsG += s1; j1.setsP += s2; j2.setsG += s2; j2.setsP += s1;
-                        if (m.ganador_id ? (m.ganador_id == m.j1.id) : (s1 > s2)) { j1.pg++; j1.pts += 2; j2.pts += 1; }
-                        else { j2.pg++; j2.pts += 2; j1.pts += 1; }
-                    }
-                }
-            });
-
-            // Extraer líderes de grupos
-            Object.keys(memoriaStandings).forEach(cat => {
-                let gCat = memoriaStandings[cat].grupos;
-                ['A', 'B', 'C', 'D'].forEach(g => {
-                    if (gCat[g]) {
-                        let arr = Object.values(gCat[g]).sort((a,b) => {
-                            if (b.pts !== a.pts) return b.pts - a.pts;
-                            let rA = a.setsG / (a.setsP || 0.0001); let rB = b.setsG / (b.setsP || 0.0001);
-                            if (Math.abs(rB - rA) > 0.0001) return rB - rA;
-                            if (b.pg !== a.pg) return b.pg - a.pg;
-                            return b.rankIni - a.rankIni;
-                        });
-                        if (arr[0]) ganadoresFase[cat][`1_GPO_${g}`] = { id: arr[0].id, nombre: arr[0].nombre };
-                        if (arr[1]) ganadoresFase[cat][`2_GPO_${g}`] = { id: arr[1].id, nombre: arr[1].nombre };
-                    }
-                });
-            });
-
-            // 3. Procesar Cuartos
-            todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('cuarto')).forEach(m => {
-                let cat = m.categorias?.nombre || 'General';
-                let rf = String(m.ronda_fase).toLowerCase();
-                let gCat = ganadoresFase[cat];
-                
-                let p1 = m.j1 ? {id: m.j1.id, nombre: m.j1.nombre} : null;
-                let p2 = m.j2 ? {id: m.j2.id, nombre: m.j2.nombre} : null;
-
-                if (!p1) {
-                    if (rf.includes('1')) p1 = gCat['1_GPO_A'];
-                    else if (rf.includes('2')) p1 = gCat['1_GPO_B'];
-                    else if (rf.includes('3')) p1 = gCat['1_GPO_C'];
-                    else if (rf.includes('4')) p1 = gCat['1_GPO_D'];
-                }
-                if (!p2) {
-                    if (rf.includes('1')) p2 = gCat['2_GPO_C'];
-                    else if (rf.includes('2')) p2 = gCat['2_GPO_D'];
-                    else if (rf.includes('3')) p2 = gCat['2_GPO_A'];
-                    else if (rf.includes('4')) p2 = gCat['2_GPO_B'];
-                }
-
-                p1 = p1 || { nombre: rf.includes('1') ? '1° Gpo A' : (rf.includes('2') ? '1° Gpo B' : (rf.includes('3') ? '1° Gpo C' : '1° Gpo D')), id: null };
-                p2 = p2 || { nombre: rf.includes('1') ? '2° Gpo C' : (rf.includes('2') ? '2° Gpo D' : (rf.includes('3') ? '2° Gpo A' : '2° Gpo B')), id: null };
-
-                mapaProyecciones[`${m.id}_j1`] = p1;
-                mapaProyecciones[`${m.id}_j2`] = p2;
-
-                if (String(m.estado).toLowerCase() === 'finalizado') {
-                    let s1 = m.sets_j1 || m.puntos_j1 || 0; let s2 = m.sets_j2 || m.puntos_j2 || 0;
-                    let ganoP1 = m.ganador_id ? (m.ganador_id == p1.id) : (s1 > s2);
-                    for(let i of ['1','2','3','4']) {
-                        if (rf.includes(i)) gCat[`GANA_CUARTOS_${i}`] = ganoP1 ? p1 : p2;
-                    }
-                    if(p1.id && p2.id) registrarMatchGlobal(m, p1, p2, cat);
-                }
-            });
-
-            // 4. Procesar Semis
-            todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('semi')).forEach(m => {
-                let cat = m.categorias?.nombre || 'General';
-                let rf = String(m.ronda_fase).toLowerCase();
-                let gCat = ganadoresFase[cat];
-                let hasCuartos = todosLosPartidos.some(x => (x.categorias?.nombre || 'General') === cat && String(x.ronda_fase).toLowerCase().includes('cuarto'));
-                
-                let p1 = m.j1 ? {id: m.j1.id, nombre: m.j1.nombre} : null;
-                let p2 = m.j2 ? {id: m.j2.id, nombre: m.j2.nombre} : null;
-
-                if (!p1) {
-                    if (hasCuartos) {
-                        if (rf.includes('1')) p1 = gCat['GANA_CUARTOS_1'];
-                        else if (rf.includes('2')) p1 = gCat['GANA_CUARTOS_3'];
-                    } else {
-                        if (rf.includes('1')) p1 = gCat['1_GPO_A'];
-                        else if (rf.includes('2')) p1 = gCat['1_GPO_B'];
-                    }
-                }
-                if (!p2) {
-                    if (hasCuartos) {
-                        if (rf.includes('1')) p2 = gCat['GANA_CUARTOS_2'];
-                        else if (rf.includes('2')) p2 = gCat['GANA_CUARTOS_4'];
-                    } else {
-                        if (rf.includes('1')) p2 = gCat['2_GPO_B'];
-                        else if (rf.includes('2')) p2 = gCat['2_GPO_A'];
-                    }
-                }
-
-                p1 = p1 || { nombre: hasCuartos ? (rf.includes('1') ? 'Gana Cuartos 1' : 'Gana Cuartos 3') : (rf.includes('1') ? '1° Gpo A' : '1° Gpo B'), id: null };
-                p2 = p2 || { nombre: hasCuartos ? (rf.includes('1') ? 'Gana Cuartos 2' : 'Gana Cuartos 4') : (rf.includes('1') ? '2° Gpo B' : '2° Gpo A'), id: null };
-
-                mapaProyecciones[`${m.id}_j1`] = p1;
-                mapaProyecciones[`${m.id}_j2`] = p2;
-
-                if (String(m.estado).toLowerCase() === 'finalizado') {
-                    let s1 = m.sets_j1 || m.puntos_j1 || 0; let s2 = m.sets_j2 || m.puntos_j2 || 0;
-                    let ganoP1 = m.ganador_id ? (m.ganador_id == p1.id) : (s1 > s2);
-                    if (rf.includes('1')) gCat[`GANA_SEMI_1`] = ganoP1 ? p1 : p2;
-                    if (rf.includes('2')) gCat[`GANA_SEMI_2`] = ganoP1 ? p1 : p2;
-                    if(p1.id && p2.id) registrarMatchGlobal(m, p1, p2, cat);
-                }
-            });
-
-            // 5. Procesar Final
-            todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('final') && !String(m.ronda_fase).toLowerCase().includes('semi')).forEach(m => {
-                let cat = m.categorias?.nombre || 'General';
-                let gCat = ganadoresFase[cat];
-                
-                let p1 = m.j1 ? {id: m.j1.id, nombre: m.j1.nombre} : (gCat['GANA_SEMI_1'] || { nombre: 'Gana Semi 1', id: null });
-                let p2 = m.j2 ? {id: m.j2.id, nombre: m.j2.nombre} : (gCat['GANA_SEMI_2'] || { nombre: 'Gana Semi 2', id: null });
-
-                mapaProyecciones[`${m.id}_j1`] = p1;
-                mapaProyecciones[`${m.id}_j2`] = p2;
-
-                if (String(m.estado).toLowerCase() === 'finalizado' && p1.id && p2.id) {
-                    registrarMatchGlobal(m, p1, p2, cat);
-                }
-            });
-
-            return { mapaProyecciones, memoriaStandings };
-        }
-        // ==============================================================================
-
-        function ordenarExpedientesITTF(lista) {
+        function ordenarJugadoresITTF(lista) {
             return [...lista].sort((a, b) => {
                 if (b.pts !== a.pts) return b.pts - a.pts;
                 const sG_a = a.setsG; const sP_a = a.setsP; const sG_b = b.setsG; const sP_b = b.setsP;
                 const rSetA = sG_a / (sP_a || 0.0001); const rSetB = sG_b / (sP_b || 0.0001);
                 if (Math.abs(rSetB - rSetA) > 0.0001) return rSetB - rSetA;
                 if (b.pg !== a.pg) return b.pg - a.pg;
-                return b.rankIni - a.rankIni;
+                return b.rankIni - a.rankIni; 
             });
+        }
+
+        // ================= MOTOR MAESTRO LINEAL DE TORNEO (CERO RECURSIÓN) =================
+        function resolverCuadroTorneoTotal() {
+            let datos = { porCategoria: {}, mapaProyecciones: {} };
+            let ganadoresFase = {};
+
+            // 1. Inicializar Categorías y Expedientes
+            todosLosPartidos.forEach(m => {
+                if (m.grupo_nombre === 'Flash') return;
+                let cat = m.categorias?.nombre || 'General';
+                if (!datos.porCategoria[cat]) datos.porCategoria[cat] = { grupos: {}, jugadores: {} };
+                if (!ganadoresFase[cat]) ganadoresFase[cat] = {};
+            });
+
+            const registrarJugador = (pObj, cat) => {
+                if (!pObj || !pObj.id) return;
+                let jCat = datos.porCategoria[cat].jugadores;
+                if (!jCat[pObj.id]) {
+                    let jData = todosLosJugadoresAdmin.find(x => x.id == pObj.id);
+                    let rankIni = jData ? (jData.puntos_ranking_ant ?? jData.puntos_ranking ?? 0) : 0;
+                    let div = jData ? (jData.division || 1) : 1;
+                    jCat[pObj.id] = { id: pObj.id, nombre: pObj.nombre, club: jData?.club || 'Sin Club', div: div, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, rankIni: rankIni, rankImpact: 0, gpo: null, historial: [] };
+                }
+            };
+
+            const procesarPartidoFinalizado = (m, p1, p2, cat, faseLabel) => {
+                let j1 = datos.porCategoria[cat].jugadores[p1.id];
+                let j2 = datos.porCategoria[cat].jugadores[p2.id];
+                if (!j1 || !j2) return;
+
+                let s1 = m.sets_j1 || m.puntos_j1 || 0;
+                let s2 = m.sets_j2 || m.puntos_j2 || 0;
+                j1.pj++; j2.pj++;
+                j1.setsG += s1; j1.setsP += s2;
+                j2.setsG += s2; j2.setsP += s1;
+
+                let r1 = j1.rankIni + j1.rankImpact; 
+                let r2 = j2.rankIni + j2.rankImpact;
+                let imp = calcularImpacto(r1, r2);
+
+                let ganoJ1 = m.ganador_id ? (m.ganador_id == p1.id) : (s1 > s2);
+                let delta1 = ganoJ1 ? imp.j1G : imp.j1P;
+                let delta2 = !ganoJ1 ? imp.j2G : imp.j2P;
+
+                if (ganoJ1) { j1.pg++; j1.pts+=2; j2.pp++; j2.pts+=1; } 
+                else { j2.pg++; j2.pts+=2; j1.pp++; j1.pts+=1; }
+                
+                j1.rankImpact += delta1; 
+                j2.rankImpact += delta2;
+
+                j1.historial.push({ id: m.id, fase: faseLabel, mesa: m.mesa, rival: j2.nombre, sFav: s1, sRiv: s2, gano: ganoJ1, delta: delta1 });
+                j2.historial.push({ id: m.id, fase: faseLabel, mesa: m.mesa, rival: j1.nombre, sFav: s2, sRiv: s1, gano: !ganoJ1, delta: delta2 });
+
+                return ganoJ1 ? p1 : p2;
+            };
+
+            // 2. Procesar Fase de Grupos
+            todosLosPartidos.filter(m => m.grupo_nombre && m.grupo_nombre !== 'Flash').forEach(m => {
+                let cat = m.categorias?.nombre || 'General';
+                let gpo = m.grupo_nombre;
+                if (!datos.porCategoria[cat].grupos[gpo]) datos.porCategoria[cat].grupos[gpo] = {};
+                
+                [m.j1, m.j2].forEach(j => {
+                    if (j && j.id) {
+                        registrarJugador(j, cat);
+                        datos.porCategoria[cat].jugadores[j.id].gpo = gpo;
+                        if (!datos.porCategoria[cat].grupos[gpo][j.id]) datos.porCategoria[cat].grupos[gpo][j.id] = datos.porCategoria[cat].jugadores[j.id];
+                    }
+                });
+
+                if (String(m.estado).toLowerCase() === 'finalizado' && m.j1 && m.j2) {
+                    procesarPartidoFinalizado(m, {id: m.j1.id, nombre: m.j1.nombre}, {id: m.j2.id, nombre: m.j2.nombre}, cat, `Grupo ${gpo}`);
+                }
+            });
+
+            // Determinar ganadores de cada grupo
+            Object.keys(datos.porCategoria).forEach(cat => {
+                ['A', 'B', 'C', 'D'].forEach(g => {
+                    let gpoObj = datos.porCategoria[cat].grupos[g];
+                    if (gpoObj) {
+                        let ordenados = ordenarJugadoresITTF(Object.values(gpoObj));
+                        ganadoresFase[cat][`1_GPO_${g}`] = ordenados[0] ? { id: ordenados[0].id, nombre: ordenados[0].nombre } : { nombre: `1° Gpo ${g}`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}`] = ordenados[1] ? { id: ordenados[1].id, nombre: ordenados[1].nombre } : { nombre: `2° Gpo ${g}`, id: null };
+                    } else {
+                        ganadoresFase[cat][`1_GPO_${g}`] = { nombre: `1° Gpo ${g}`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}`] = { nombre: `2° Gpo ${g}`, id: null };
+                    }
+                });
+            });
+
+            // 3. Helper para resolver partidos de llave lineales
+            const resolverLlave = (listaPartidos, regex1, regP1, regP2, tagGanador) => {
+                listaPartidos.forEach(m => {
+                    let cat = m.categorias?.nombre || 'General';
+                    let rf = String(m.ronda_fase).toLowerCase();
+                    if(rf.includes(regex1)) {
+                        let p1 = m.j1 ? {id: m.j1.id, nombre: m.j1.nombre} : ganadoresFase[cat][regP1];
+                        let p2 = m.j2 ? {id: m.j2.id, nombre: m.j2.nombre} : ganadoresFase[cat][regP2];
+                        datos.mapaProyecciones[`${m.id}_j1`] = p1;
+                        datos.mapaProyecciones[`${m.id}_j2`] = p2;
+                        
+                        if (String(m.estado).toLowerCase() === 'finalizado' && p1.id && p2.id) {
+                            registrarJugador(p1, cat); registrarJugador(p2, cat);
+                            let ganador = procesarPartidoFinalizado(m, p1, p2, cat, m.ronda_fase || 'Eliminatoria');
+                            ganadoresFase[cat][tagGanador] = ganador;
+                        } else {
+                            ganadoresFase[cat][tagGanador] = { nombre: `Gana ${m.ronda_fase}`, id: null };
+                        }
+                    }
+                });
+            };
+
+            let cuartos = todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('cuarto'));
+            let semis = todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('semi'));
+            let finales = todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('final') && !String(m.ronda_fase).toLowerCase().includes('semi'));
+
+            // A) Resolver Cuartos
+            resolverLlave(cuartos, '1', '1_GPO_A', '2_GPO_C', 'GANA_CUARTOS_1');
+            resolverLlave(cuartos, '2', '1_GPO_B', '2_GPO_D', 'GANA_CUARTOS_2');
+            resolverLlave(cuartos, '3', '1_GPO_C', '2_GPO_A', 'GANA_CUARTOS_3');
+            resolverLlave(cuartos, '4', '1_GPO_D', '2_GPO_B', 'GANA_CUARTOS_4');
+
+            // B) Resolver Semis
+            semis.forEach(m => {
+                let cat = m.categorias?.nombre || 'General';
+                let hasCuartos = cuartos.some(x => (x.categorias?.nombre || 'General') === cat);
+                let rf = String(m.ronda_fase).toLowerCase();
+                
+                let p1Def = hasCuartos ? (rf.includes('1') ? 'GANA_CUARTOS_1' : 'GANA_CUARTOS_3') : (rf.includes('1') ? '1_GPO_A' : '1_GPO_B');
+                let p2Def = hasCuartos ? (rf.includes('1') ? 'GANA_CUARTOS_2' : 'GANA_CUARTOS_4') : (rf.includes('1') ? '2_GPO_B' : '2_GPO_A');
+                let tagG = rf.includes('1') ? 'GANA_SEMI_1' : 'GANA_SEMI_2';
+                
+                resolverLlave([m], rf.includes('1') ? '1' : '2', p1Def, p2Def, tagG);
+            });
+
+            // C) Resolver Final
+            resolverLlave(finales, 'final', 'GANA_SEMI_1', 'GANA_SEMI_2', 'GANA_FINAL');
+
+            // Preparar memoria global para expediente auditable
+            jugadoresMemoriaExpedientes = {};
+            Object.keys(datos.porCategoria).forEach(cat => {
+                Object.values(datos.porCategoria[cat].jugadores).forEach(j => {
+                    jugadoresMemoriaExpedientes[j.id] = j;
+                });
+            });
+
+            return datos;
+        }
+        // ==============================================================================
+
+        async function inicializar() {
+            try {
+                const [resReglas, resTorneo, resCat, resJugadores] = await Promise.allSettled([
+                    clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', orgId).order('diferencia_min', { ascending: true }),
+                    clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).eq('organizador_id', orgId).single(),
+                    clienteSupabase.from('categorias').select('*').eq('organizador_id', orgId),
+                    clienteSupabase.from('jugadores').select('id, nombre, club, division, puntos_ranking, puntos_ranking_ant').eq('organizador_id', orgId)
+                ]);
+
+                if (resTorneo.status === 'fulfilled' && resTorneo.value.data) document.getElementById('nombre-torneo').innerText = resTorneo.value.data.nombre;
+                if (resReglas.status === 'fulfilled') reglasRankingList = resReglas.value.data || [];
+                if (resCat.status === 'fulfilled') todasLasCategorias = resCat.value.data || [];
+                if (resJugadores.status === 'fulfilled') todosLosJugadoresAdmin = resJugadores.value.data || [];
+
+                await cargarPartidos();
+                clienteSupabase.channel('mesas-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => { cargarPartidos(); }).subscribe();
+            } catch (err) { console.error("Error inicializando mesas:", err); }
+        }
+
+        async function cargarPartidos() {
+            try {
+                const { data } = await clienteSupabase.from('partidos')
+                    .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking, puntos_ranking_ant, division, handicap), j2:jugador2_id(id, nombre, club, puntos_ranking, puntos_ranking_ant, division, handicap), categorias(id, nombre)')
+                    .eq('torneo_id', idTorneoActivo).eq('organizador_id', orgId).order('id', { ascending: true });
+                todosLosPartidos = data || [];
+                generarBotonesCategorias(); generarBotonesMesas(); dibujarPantalla();
+            } catch (err) { console.error(err); }
+        }
+
+        function generarBotonesCategorias() {
+            const bar = document.getElementById('bar-categorias');
+            const catsMap = new Map();
+            todosLosPartidos.forEach(p => { if (p.categorias && p.categorias.nombre) catsMap.set(p.categorias.nombre, p.categorias.id); });
+            let html = `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === 'todas' ? 'active' : ''}" onclick="filtrarCategoria('todas')">Todas las Categorías</button>`;
+            catsMap.forEach((id, nombre) => { html += `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === nombre ? 'active' : ''}" onclick="filtrarCategoria('${nombre}')">🏆 ${nombre}</button>`; });
+            bar.innerHTML = html;
+        }
+
+        function filtrarCategoria(catNombre) { categoriaFiltro = catNombre; dibujarPantalla(); }
+
+        function generarBotonesMesas() {
+            const bar = document.getElementById('bar-mesas');
+            let mesasUnicas = [...new Set(todosLosPartidos.map(p => p.mesa))].sort((a,b) => a-b);
+            let html = `<button class="btn-filter-pill ${mesaFiltro === 'todas' ? 'active' : ''}" onclick="filtrarMesa('todas')">Todas las Mesas</button>`;
+            mesasUnicas.forEach(m => { if(m) html += `<button class="btn-filter-pill ${mesaFiltro == m ? 'active' : ''}" onclick="filtrarMesa(${m})">Mesa ${m}</button>`; });
+            bar.innerHTML = html;
+        }
+
+        function filtrarMesa(m) { mesaFiltro = m; dibujarPantalla(); }
+        
+        function filtrarModalidad(mod, btn) {
+            modalidadFiltro = mod;
+            document.querySelectorAll('#bar-modalidad .btn-filter-pill').forEach(b => b.classList.remove('active', 'active-flash'));
+            if(mod === 'flash') btn.classList.add('active-flash');
+            else btn.classList.add('active');
+            dibujarPantalla();
+        }
+
+        function filtrarEstado(est) {
+            estadoFiltro = est;
+            document.querySelectorAll('#tab-todos, #tab-resumen, #tab-ranking, #tab-vivo, #tab-pendientes, #tab-finalizados').forEach(b => b.classList.remove('active', 'active-resumen'));
+            if (est === 'resumen') document.getElementById('tab-resumen')?.classList.add('active-resumen');
+            else if (est === 'ranking') document.getElementById('tab-ranking')?.classList.add('active');
+            else document.getElementById('tab-' + est)?.classList.add('active');
+            dibujarPantalla();
         }
 
         function renderTablaGeneralDiv(jugadores, colorHex, titulo, isFlash = false) {
@@ -565,11 +568,8 @@
                 let safeNom = j.nombre ? String(j.nombre).replace(/'/g, "\\'") : ''; 
                 let safeClub = j.club ? String(j.club).replace(/'/g, "\\'") : 'Sin Club';
 
-                // Enlazar expediente a memoria global para abrir al dar clic
-                jugadoresMemoriaExpedientes[j.id] = j;
-
                 html += `
-                    <tr class="tr-header cursor-pointer" style="border-bottom:1px solid rgba(255,255,255,0.04); opacity: ${opacity}; transition:all 0.2s ease;" onclick="abrirModalJugadorAdmin(${j.id}, '${safeNom}', '${safeClub}')" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'">
+                    <tr class="tr-header cursor-pointer" style="border-bottom:1px solid rgba(255,255,255,0.04); opacity: ${opacity}; transition:all 0.2s ease;" onclick="abrirModalJugadorAdmin(${j.id})" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'">
                         <td style="padding:8px 6px; font-weight:800; color:#64748b; font-size:14px;">${rankTrophy}</td>
                         <td style="padding:8px 6px;">
                             <strong style="color:#ffffff; font-size:12px; display:inline-block;" class="hover:text-cyan-400 transition-colors">
@@ -589,7 +589,9 @@
             return html;
         }
 
-        function dibujarEstadisticas(container, cuadroData) {
+        function dibujarEstadisticas(container) {
+            datosGeneralesCuadro = resolverCuadroTorneoTotal();
+            
             const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
             let catsList = [...categoriasSet];
             if (categoriaFiltro !== 'todas') catsList = catsList.filter(c => c === categoriaFiltro);
@@ -598,19 +600,19 @@
 
             let htmlContent = '';
             catsList.forEach(catNombre => {
-                const expsCat = cuadroData.memoriaStandings[catNombre]?.expedientes || {};
-                let todosJugadoresCat = Object.values(expsCat);
+                const jCatObj = datosGeneralesCuadro.porCategoria[catNombre]?.jugadores || {};
+                let todosJugadoresCat = Object.values(jCatObj);
                 if (todosJugadoresCat.length === 0) return;
 
                 htmlContent += `
                     <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">
                         <div style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; margin-bottom:15px; text-align:center;">
                             <span style="font-size:14px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:1.5px;">🏆 Estadísticas: ${catNombre}</span>
-                            <span style="font-size:10px; color:#94a3b8; display:block; margin-top:6px;">Tabla General (Grupos + Eliminatorias Totales)</span>
+                            <span style="font-size:10px; color:#94a3b8; display:block; margin-top:6px;">Tabla General por Divisiones (Grupos + Eliminatorias)</span>
                         </div>
                 `;
                 
-                todosJugadoresCat = ordenarExpedientesITTF(todosJugadoresCat);
+                todosJugadoresCat = ordenarJugadoresITTF(todosJugadoresCat);
 
                 let div1 = todosJugadoresCat.filter(j => String(j.div) === '1'); 
                 let div2 = todosJugadoresCat.filter(j => String(j.div) === '2');
@@ -631,70 +633,10 @@
             container.innerHTML = htmlContent;
         }
 
-        function dibujarRankingGlobal(container, finMatches) {
-            let jugadoresActivos = [...todosLosJugadoresAdmin];
-            if (jugadoresActivos.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay jugadores registrados en el ranking global.</div>`; return; }
-
-            jugadoresActivos.forEach(j => {
-                j.puntosEnVivo = calcularRankingEnVivo(j.id, j.puntos_ranking, finMatches, null);
-                j.difPuntos = j.puntosEnVivo - (j.puntos_ranking_ant || j.puntos_ranking);
-            });
-
-            const categoriasFuerza = todasLasCategorias.filter(c => c.nombre && c.nombre.toLowerCase() !== 'libre').sort((a, b) => b.puntos_minimos - a.puntos_minimos);
-            let globalRank = 1; const styles = [ { bg: '#fbbf24', text: '#000000' }, { bg: '#94a3b8', text: '#000000' }, { bg: '#d97706', text: '#ffffff' }, { bg: '#06b6d4', text: '#000000' }, { bg: '#a855f7', text: '#ffffff' } ];
-
-            let html = `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px;">
-                    <div>
-                        <span style="font-size:16px; color:#c084fc; font-weight:900; text-transform:uppercase; letter-spacing:2px; display:block;">🏆 Ranking Global Oficial en Vivo</span>
-                        <span style="font-size:10px; color:#94a3b8; display:block; margin-top:4px;">Se actualiza en tiempo real al finalizar los partidos.</span>
-                    </div>
-                </div>
-            `;
-
-            categoriasFuerza.forEach((cat, index) => {
-                const style = styles[index % styles.length];
-                const jugadoresCat = jugadoresActivos.filter(j => j.puntos_ranking >= cat.puntos_minimos && j.puntos_ranking <= cat.puntos_maximos).sort((a,b) => b.puntosEnVivo - a.puntosEnVivo);
-                if (jugadoresCat.length > 0) {
-                    html += `
-                    <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(255,255,255,0.1); border-radius:20px; margin-bottom:25px; overflow:hidden; backdrop-filter:blur(15px);">
-                        <div style="background: ${style.bg}; color: ${style.text}; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">🏆 ${cat.nombre}</span>
-                            <span style="font-size: 11px; font-weight: 800;">${cat.puntos_minimos} - ${cat.puntos_maximos} PTS</span>
-                        </div>
-                        <div style="overflow-x:auto;">
-                            <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left;">
-                                <thead>
-                                    <tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.3);"><th style="padding:10px 15px; text-align:center; width:50px;">Pos</th><th style="padding:10px 15px;">Jugador</th><th style="padding:10px 15px;">Club</th><th style="padding:10px 15px; text-align:center;">Pts Iniciales</th><th style="padding:10px 15px; text-align:center;">+/-</th><th style="padding:10px 15px; text-align:center; color:#38bdf8;">Pts Actuales</th></tr>
-                                </thead>
-                                <tbody>
-                    `;
-                    jugadoresCat.forEach((j) => {
-                        let difStr = j.difPuntos > 0 ? `<span style="color:#10b981;">▲ +${j.difPuntos}</span>` : (j.difPuntos < 0 ? `<span style="color:#ef4444;">▼ ${j.difPuntos}</span>` : `<span style="color:#64748b;">-</span>`);
-                        html += `
-                            <tr style="border-bottom:1px solid rgba(255,255,255,0.04); transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(255,255,255,0.05)'" onmouseout="this.style.backgroundColor='transparent'">
-                                <td style="padding:10px 15px; font-weight:800; color:#64748b; text-align:center;">#${globalRank}</td><td style="padding:10px 15px;"><strong style="color:#ffffff; font-size:13px;">${j.nombre}</strong></td>
-                                <td style="padding:10px 15px;"><span style="color:#94a3b8; font-size:10px; font-weight:700;">${j.club || 'S/C'}</span></td><td style="padding:10px 15px; text-align:center; color:#94a3b8; font-family:'Orbitron', sans-serif; font-size:11px;">${j.puntos_ranking_ant || j.puntos_ranking}</td>
-                                <td style="padding:10px 15px; text-align:center; font-weight:800; font-size:11px;">${difStr}</td><td style="padding:10px 15px; text-align:center; font-weight:900; color:#38bdf8; font-family:'Orbitron', sans-serif; font-size:15px;">${j.puntosEnVivo}</td>
-                            </tr>
-                        `;
-                        globalRank++;
-                    });
-                    html += `</tbody></table></div></div>`;
-                }
-            });
-            if(html === '') html = `<div class="mensaje-vacio">No hay jugadores categorizados para mostrar en el ranking.</div>`;
-            container.innerHTML = html;
-        }
-
         function dibujarPantalla() {
             const container = document.getElementById('contenedor-partidos');
             
-            // RESOLVER CUADRO LINEALMENTE
-            const cuadroData = procesarTorneoLineal();
-
-            if (estadoFiltro === 'resumen') { container.style.display = 'block'; dibujarEstadisticas(container, cuadroData); return; }
-            if (estadoFiltro === 'ranking') { container.style.display = 'block'; const finMatches = todosLosPartidos.filter(p => String(p.estado || '').toLowerCase() === 'finalizado'); dibujarRankingGlobal(container, finMatches); return; }
+            if (estadoFiltro === 'resumen') { container.style.display = 'block'; dibujarEstadisticas(container); return; }
 
             container.style.display = 'grid';
             let filtrados = [...todosLosPartidos];
@@ -709,6 +651,9 @@
             if (estadoFiltro !== 'todos') filtrados = filtrados.filter(p => String(p.estado || '').trim().toLowerCase() === estadoFiltro);
 
             if (filtrados.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay partidos registrados bajo estos filtros.</div>`; return; }
+
+            // RESOLVEMOS TODO EL CUADRO DE FORMA LINEAL Y RÁPIDA
+            datosGeneralesCuadro = resolverCuadroTorneoTotal();
 
             const gruposPorHora = {}; const horasOrdenadas = [];
             filtrados.forEach(p => { const h = p.hora || '09:00 AM'; if(!gruposPorHora[h]) { gruposPorHora[h] = []; horasOrdenadas.push(h); } gruposPorHora[h].push(p); });
@@ -729,8 +674,9 @@
 
                     let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
                     
-                    let proyJ1 = cuadroData.mapaProyecciones[`${p.id}_j1`] || (p.j1 ? { nombre: p.j1.nombre, id: p.j1.id } : { nombre: 'Por definir', id: null });
-                    let proyJ2 = cuadroData.mapaProyecciones[`${p.id}_j2`] || (p.j2 ? { nombre: p.j2.nombre, id: p.j2.id } : { nombre: 'Por definir', id: null });
+                    // Extraemos proyecciones precalculadas para evitar bucles
+                    let proyJ1 = datosGeneralesCuadro.mapaProyecciones[`${p.id}_j1`] || (p.j1 ? { nombre: p.j1.nombre, id: p.j1.id } : { nombre: 'Por definir', id: null });
+                    let proyJ2 = datosGeneralesCuadro.mapaProyecciones[`${p.id}_j2`] || (p.j2 ? { nombre: p.j2.nombre, id: p.j2.id } : { nombre: 'Por definir', id: null });
                     
                     let nomJ1 = proyJ1.nombre; let idDinamicoJ1 = proyJ1.id;
                     let nomJ2 = proyJ2.nombre; let idDinamicoJ2 = proyJ2.id;
@@ -747,8 +693,8 @@
                     let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
                     if (isVivo) { score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`; score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`; }
 
-                    let safeNom1 = nomJ1 ? String(nomJ1).replace(/'/g, "\\'") : ''; let safeClub1 = p.j1 && p.j1.club ? String(p.j1.club).replace(/'/g, "\\'") : 'Sin Club';
-                    let safeNom2 = nomJ2 ? String(nomJ2).replace(/'/g, "\\'") : ''; let safeClub2 = p.j2 && p.j2.club ? String(p.j2.club).replace(/'/g, "\\'") : 'Sin Club';
+                    let safeNom1 = nomJ1 ? String(nomJ1).replace(/'/g, "\\'") : ''; 
+                    let safeNom2 = nomJ2 ? String(nomJ2).replace(/'/g, "\\'") : ''; 
 
                     let btnYoutube = (isFin || isVivo) ? `
                         <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(239,68,68,0.15); border-color:#ef4444; color:#f87171;" onclick="abrirModalYouTube(${p.id}, '${p.video_url || ''}')">
@@ -774,8 +720,8 @@
                                 <span class="cat-badge" style="${!isLlave ? `color:${cGpo.color}; background:${cGpo.bg}; border:1px solid ${cGpo.border};` : 'background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);'}">📍 ${eqGrupo}</span>
                             </div>
                             <div class="score-container">
-                                <div class="jugador-box"><div style="cursor:pointer;" onclick="abrirModalJugadorAdmin(${p.jugador1_id || idDinamicoJ1}, '${safeNom1}', '${safeClub1}')"><span class="jugador-nombre">${iconJ1}${nomJ1}</span></div><div style="display:flex; align-items:center;">${score1}</div></div>
-                                <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;"><div style="cursor:pointer;" onclick="abrirModalJugadorAdmin(${p.jugador2_id || idDinamicoJ2}, '${safeNom2}', '${safeClub2}')"><span class="jugador-nombre">${iconJ2}${nomJ2}</span></div><div style="display:flex; align-items:center;">${score2}</div></div>
+                                <div class="jugador-box"><div style="cursor:pointer;" onclick="abrirModalJugadorAdmin(${p.jugador1_id || idDinamicoJ1})"><span class="jugador-nombre">${iconJ1}${nomJ1}</span></div><div style="display:flex; align-items:center;">${score1}</div></div>
+                                <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;"><div style="cursor:pointer;" onclick="abrirModalJugadorAdmin(${p.jugador2_id || idDinamicoJ2})"><span class="jugador-nombre">${iconJ2}${nomJ2}</span></div><div style="display:flex; align-items:center;">${score2}</div></div>
                             </div>
                             
                             <div style="display:flex; gap:10px; flex-wrap: wrap;">
@@ -871,22 +817,23 @@
             }
         }
 
-        // ================= APERTURA DE EXPEDIENTE BLINDADO =================
-        function abrirModalJugadorAdmin(jugadorId, nombre, club) {
+        // ================= APERTURA DE EXPEDIENTE BLINDADO (LEE LA MEMORIA DEL CUADRO) =================
+        function abrirModalJugadorAdmin(jugadorId) {
             if(!jugadorId || isNaN(jugadorId)) return; 
-            
-            document.getElementById('modal-jugador-nombre').innerText = nombre;
-            document.getElementById('modal-jugador-club').innerText = club || 'Sin Club';
             
             const modalList = document.getElementById('modal-jugador-partidos-list'); 
             modalList.innerHTML = '<div class="mensaje-vacio">Cargando expediente...</div>';
             
             let jugMemoria = jugadoresMemoriaExpedientes[jugadorId];
-            let jugObj = todosLosJugadoresAdmin.find(j => j.id == jugadorId);
+            if (!jugMemoria) return;
 
-            let rInicial = jugMemoria ? jugMemoria.rankIni : (jugObj ? (jugObj.puntos_ranking_ant ?? jugObj.puntos_ranking ?? 0) : 0);
-            let partidosList = jugMemoria?.historial || [];
-            let deltaTotal = 0;
+            document.getElementById('modal-jugador-nombre').innerText = jugMemoria.nombre;
+            document.getElementById('modal-jugador-club').innerText = jugMemoria.club;
+
+            let rInicial = jugMemoria.rankIni;
+            let deltaTotal = jugMemoria.rankImpact;
+            let rFinal = rInicial + deltaTotal;
+            let partidosList = jugMemoria.historial || [];
 
             if (partidosList.length === 0) {
                 document.getElementById('modal-jugador-ranking-header').innerText = `${rInicial} pts`; 
@@ -908,7 +855,6 @@
                 `;
                 
                 partidosList.forEach(p => {
-                    deltaTotal += p.delta;
                     let rankBadge = p.delta > 0 
                         ? `<span style="color:#34d399; font-weight:900;">+${p.delta}</span>` 
                         : (p.delta < 0 ? `<span style="color:#f87171; font-weight:900;">${p.delta}</span>` : `<span style="color:#94a3b8;">0</span>`);
@@ -929,7 +875,6 @@
                 
                 tableHtml += `</tbody></table></div>`;
 
-                let rFinal = rInicial + deltaTotal;
                 let difStr = deltaTotal >= 0 
                     ? `<span style="color:#34d399;">+${deltaTotal} pts</span>` 
                     : `<span style="color:#f87171;">${deltaTotal} pts</span>`;
