@@ -52,7 +52,6 @@
         .card-mesa-grupo { border-top: 4px solid #0e7490; border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); }
         .card-mesa-grupo:hover { border-color: rgba(6,182,212,0.4); transform: translateY(-2px); }
         
-        /* DISEÑO SUTIL VIP PARA FASE FINAL */
         .card-mesa-llave { 
             border-top: 4px solid #fbbf24 !important; 
             background: linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, rgba(15, 23, 42, 0.75) 100%) !important; 
@@ -259,7 +258,7 @@
         let reglasRankingList = [];
         let todasLasCategorias = [];
         let todosLosJugadoresAdmin = [];
-        let jugadoresMemoriaExpedientes = {}; 
+        let llavesTienenCuartos = false;
         
         let modalidadFiltro = 'todas';
         let mesaFiltro = 'todas';
@@ -290,6 +289,30 @@
             return { color: '#cbd5e1', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' }; 
         };
 
+        function getProyeccionNombre(rondaFase, isJ1, hasCuartos) {
+            if (!rondaFase) return 'Por definir';
+            const rf = String(rondaFase).toLowerCase();
+            
+            if (rf.includes('cuartos')) {
+                if (rf.includes('1')) return isJ1 ? '1° Gpo A' : '2° Gpo C';
+                if (rf.includes('2')) return isJ1 ? '1° Gpo B' : '2° Gpo D';
+                if (rf.includes('3')) return isJ1 ? '1° Gpo C' : '2° Gpo A';
+                if (rf.includes('4')) return isJ1 ? '1° Gpo D' : '2° Gpo B';
+            }
+            if (rf.includes('semi')) {
+                if (hasCuartos) {
+                    if (rf.includes('1')) return isJ1 ? 'Gana Cuartos 1' : 'Gana Cuartos 2';
+                    if (rf.includes('2')) return isJ1 ? 'Gana Cuartos 3' : 'Gana Cuartos 4';
+                } else {
+                    if (rf.includes('1')) return isJ1 ? '1° Gpo A' : '2° Gpo B';
+                    if (rf.includes('2')) return isJ1 ? '1° Gpo B' : '2° Gpo A';
+                }
+            }
+            if (rf.includes('final')) return isJ1 ? 'Gana Semi 1' : 'Gana Semi 2';
+            
+            return isJ1 ? `${rondaFase} J1` : `${rondaFase} J2`;
+        }
+
         function calcularImpacto(ptsA, ptsB) {
             let diff = Math.abs(ptsA - ptsB);
             let favoritoEsJ1 = ptsA >= ptsB;
@@ -311,11 +334,11 @@
         }
 
         function calcularPuntosMatch(p1Pts, p2Pts, ganadorId, j1Id, j2Id) {
-            let imp = calcularImpacto(p1Pts, p2Pts);
-            let ganoJ1 = ganadorId === j1Id;
+            let impacto = calcularImpacto(p1Pts, p2Pts);
+            let esJ1 = (ganadorId == j1Id);
             return {
-                ptsGanador: ganoJ1 ? imp.j1G : imp.j2G,
-                ptsPerdedor: ganoJ1 ? imp.j2P : imp.j1P
+                ptsGanador: esJ1 ? impacto.j1G : impacto.j2G,
+                ptsPerdedor: esJ1 ? impacto.j2P : impacto.j1P
             };
         }
 
@@ -326,8 +349,8 @@
                 if (m.id == partidoActualId) return;
                 let p1Base = m.j1 ? m.j1.puntos_ranking : 0; let p2Base = m.j2 ? m.j2.puntos_ranking : 0;
                 let impacto = calcularImpacto(p1Base, p2Base);
-                if (m.jugador1_id === jugadorId) { delta += (m.ganador_id === jugadorId) ? impacto.j1G : impacto.j1P; } 
-                else if (m.jugador2_id === jugadorId) { delta += (m.ganador_id === jugadorId) ? impacto.j2G : impacto.j2P; }
+                if (m.jugador1_id == jugadorId) { delta += (m.ganador_id == jugadorId) ? impacto.j1G : impacto.j1P; } 
+                else if (m.jugador2_id == jugadorId) { delta += (m.ganador_id == jugadorId) ? impacto.j2G : impacto.j2P; }
             });
             return basePts + delta;
         }
@@ -338,243 +361,206 @@
                 const sG_a = a.setsG; const sP_a = a.setsP; const sG_b = b.setsG; const sP_b = b.setsP;
                 const rSetA = sG_a / (sP_a || 0.0001); const rSetB = sG_b / (sP_b || 0.0001);
                 if (Math.abs(rSetB - rSetA) > 0.0001) return rSetB - rSetA;
-                let pgA = a.pg || 0; let pgB = b.pg || 0;
-                if (pgB !== pgA) return pgB - pgA;
-                return (b.rankIni || 0) - (a.rankIni || 0); 
+                return b.pg - a.pg; 
             });
         }
 
-        // ================= RESOLUTOR LINEAL DEL CUADRO DEL TORNEO (CERO RECURSIÓN) =================
-        function resolverCuadroTorneoTotal() {
-            let datos = { porCategoria: {}, mapaPartidosResueltos: {} };
+        // ================= CONEXIÓN LINEAL DE LLAVES: 0 RECURSIÓN Y CARGA INSTANTÁNEA =================
+        function sincronizarJugadoresLlaves() {
+            const standings = {};
             
-            // Paso A: Inicializar y resolver Fase de Grupos
+            // 1. Resolver grupos
             todosLosPartidos.filter(m => m.grupo_nombre && m.grupo_nombre !== 'Flash').forEach(m => {
-                const catNombre = m.categorias?.nombre || 'General';
-                if (!datos.porCategoria[catNombre]) datos.porCategoria[catNombre] = { grupos: {}, jugadores: {} };
-                const gpoNombre = m.grupo_nombre;
-                if (!datos.porCategoria[catNombre].grupos[gpoNombre]) datos.porCategoria[catNombre].grupos[gpoNombre] = {};
+                const cat = m.categorias?.nombre || 'General';
+                if (!standings[cat]) standings[cat] = {};
+                const g = m.grupo_nombre;
+                if (!standings[cat][g]) standings[cat][g] = {};
                 
-                const grupoObj = datos.porCategoria[catNombre].grupos[gpoNombre];
-                const jugCatObj = datos.porCategoria[catNombre].jugadores;
-
                 [m.j1, m.j2].forEach(j => {
-                    if (j && j.id) {
-                        if (!grupoObj[j.id]) {
-                            let jData = todosLosJugadoresAdmin.find(x => x.id === j.id);
-                            let rankIni = jData ? (jData.puntos_ranking_ant ?? jData.puntos_ranking ?? 0) : (j.puntos_ranking_ant ?? j.puntos_ranking ?? 0);
-                            let div = jData ? (jData.division || 1) : (j.division || 1);
-                            let obj = { id: j.id, nombre: j.nombre, club: j.club, div: div, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, rankIni: rankIni, rankImpact: 0, gpo: gpoNombre, historial: [] };
-                            grupoObj[j.id] = obj;
-                            if(!jugCatObj[j.id]) jugCatObj[j.id] = { ...obj, historial: [] };
-                        }
+                    if (j && j.id && !standings[cat][g][j.id]) {
+                        let jData = todosLosJugadoresAdmin.find(x => x.id == j.id);
+                        let rankIni = jData ? (jData.puntos_ranking_ant ?? jData.puntos_ranking ?? 0) : (j.puntos_ranking_ant ?? j.puntos_ranking ?? 0);
+                        standings[cat][g][j.id] = { id: j.id, nombre: j.nombre, club: j.club, rankIni: rankIni, pts: 0, setsG: 0, setsP: 0, pg: 0 };
                     }
                 });
 
-                let est = String(m.estado || '').trim().toLowerCase();
-                if (est === 'finalizado' && m.j1 && m.j2) {
-                    const j1 = grupoObj[m.j1.id]; const j2 = grupoObj[m.j2.id];
-                    const jGlobal1 = jugCatObj[m.j1.id]; const jGlobal2 = jugCatObj[m.j2.id];
-                    
+                if (String(m.estado).toLowerCase() === 'finalizado' && m.j1 && m.j2) {
+                    const j1 = standings[cat][g][m.j1.id];
+                    const j2 = standings[cat][g][m.j2.id];
                     if (j1 && j2) {
-                        j1.pj += 1; j2.pj += 1;
-                        jGlobal1.pj += 1; jGlobal2.pj += 1;
-                        
                         let s1 = m.sets_j1 || m.puntos_j1 || 0;
                         let s2 = m.sets_j2 || m.puntos_j2 || 0;
                         j1.setsG += s1; j1.setsP += s2;
                         j2.setsG += s2; j2.setsP += s1;
-                        jGlobal1.setsG += s1; jGlobal1.setsP += s2;
-                        jGlobal2.setsG += s2; jGlobal2.setsP += s1;
-
-                        let r1 = j1.rankIni + j1.rankImpact; let r2 = j2.rankIni + j2.rankImpact;
-                        let imp = calcularImpacto(r1, r2);
-                        let ganoJ1 = m.ganador_id === m.jugador1_id;
-                        let delta1 = ganoJ1 ? imp.j1G : imp.j1P;
-                        let delta2 = !ganoJ1 ? imp.j2G : imp.j2P;
-
-                        if (ganoJ1) { 
-                            j1.pg += 1; j1.pts += 2; j2.pp += 1; j2.pts += 1; 
-                            jGlobal1.pg += 1; jGlobal1.pts += 2; jGlobal2.pp += 1; jGlobal2.pts += 1;
-                        } else { 
-                            j2.pg += 1; j2.pts += 2; j1.pp += 1; j1.pts += 1; 
-                            jGlobal2.pg += 1; jGlobal2.pts += 2; jGlobal1.pp += 1; jGlobal1.pts += 1;
-                        }
-
-                        j1.rankImpact += delta1; j2.rankImpact += delta2;
-                        jGlobal1.rankImpact += delta1; jGlobal2.rankImpact += delta2;
-
-                        let hist1 = { id: m.id, fase: `Grupo ${m.grupo_nombre}`, mesa: m.mesa, rival: j2.nombre, sFav: s1, sRiv: s2, gano: ganoJ1, delta: delta1 };
-                        let hist2 = { id: m.id, fase: `Grupo ${m.grupo_nombre}`, mesa: m.mesa, rival: j1.nombre, sFav: s2, sRiv: s1, gano: !ganoJ1, delta: delta2 };
-                        
-                        j1.historial.push(hist1); j2.historial.push(hist2);
-                        jGlobal1.historial.push(hist1); jGlobal2.historial.push(hist2);
+                        if (m.ganador_id == m.jugador1_id || s1 > s2) { j1.pts += 2; j1.pg += 1; j2.pts += 1; }
+                        else { j2.pts += 2; j2.pg += 1; j1.pts += 1; }
                     }
                 }
             });
 
-            // Paso B: Determinar líderes de Grupos
-            let ganadoresFase = {};
-            Object.keys(datos.porCategoria).forEach(cat => {
-                ganadoresFase[cat] = {};
-                let grupos = datos.porCategoria[cat].grupos;
-                ['A', 'B', 'C', 'D'].forEach(g => {
-                    if (grupos[g]) {
-                        let ordenados = ordenarJugadoresITTF(Object.values(grupos[g]));
-                        if (ordenados.length > 0) ganadoresFase[cat][`1_GPO_${g}`] = { id: ordenados[0].id, nombre: ordenados[0].nombre };
-                        if (ordenados.length > 1) ganadoresFase[cat][`2_GPO_${g}`] = { id: ordenados[1].id, nombre: ordenados[1].nombre };
-                    }
+            const getLider = (cat, gpo, pos) => {
+                if (!standings[cat] || !standings[cat][gpo]) return null;
+                let arr = Object.values(standings[cat][gpo]);
+                arr.sort((a,b) => {
+                    if (b.pts !== a.pts) return b.pts - a.pts;
+                    let rA = a.setsG / (a.setsP || 0.0001);
+                    let rB = b.setsG / (b.setsP || 0.0001);
+                    if (Math.abs(rB - rA) > 0.0001) return rB - rA;
+                    if (b.pg !== a.pg) return b.pg - a.pg;
+                    return b.rankIni - a.rankIni;
                 });
+                return arr[pos] || null;
+            };
+
+            const getGanadorMatch = (match) => {
+                if (!match) return null;
+                let s1 = match.sets_j1 || match.puntos_j1 || 0;
+                let s2 = match.sets_j2 || match.puntos_j2 || 0;
+                if (match.ganador_id) {
+                    if (match.j1 && match.ganador_id == match.j1.id) return match.j1;
+                    if (match.j2 && match.ganador_id == match.j2.id) return match.j2;
+                    let pWin = todosLosJugadoresAdmin.find(x => x.id == match.ganador_id);
+                    if (pWin) return pWin;
+                }
+                if (String(match.estado).toLowerCase() === 'finalizado') {
+                    if (s1 > s2 && match.j1) return match.j1;
+                    if (s2 > s1 && match.j2) return match.j2;
+                }
+                return null;
+            };
+
+            // 2. Asignar jugadores a Cuartos
+            const cuartosMatches = todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('cuarto'));
+            cuartosMatches.forEach(m => {
+                const cat = m.categorias?.nombre || 'General';
+                const rf = String(m.ronda_fase).toLowerCase();
+                if (!m.j1) {
+                    if (rf.includes('1')) m.j1 = getLider(cat, 'A', 0);
+                    else if (rf.includes('2')) m.j1 = getLider(cat, 'B', 0);
+                    else if (rf.includes('3')) m.j1 = getLider(cat, 'C', 0);
+                    else if (rf.includes('4')) m.j1 = getLider(cat, 'D', 0);
+                    if (m.j1) m.jugador1_id = m.j1.id;
+                }
+                if (!m.j2) {
+                    if (rf.includes('1')) m.j2 = getLider(cat, 'C', 1);
+                    else if (rf.includes('2')) m.j2 = getLider(cat, 'D', 1);
+                    else if (rf.includes('3')) m.j2 = getLider(cat, 'A', 1);
+                    else if (rf.includes('4')) m.j2 = getLider(cat, 'B', 1);
+                    if (m.j2) m.jugador2_id = m.j2.id;
+                }
+                if (String(m.estado).toLowerCase() === 'finalizado' && !m.ganador_id && m.j1 && m.j2) {
+                    let s1 = m.sets_j1 || m.puntos_j1 || 0;
+                    let s2 = m.sets_j2 || m.puntos_j2 || 0;
+                    m.ganador_id = s1 > s2 ? m.j1.id : m.j2.id;
+                }
             });
 
-            // Paso C: Resolver Cuartos de Final Linealmente
-            todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('cuarto')).forEach(m => {
-                let cat = m.categorias?.nombre || 'General';
-                let rf = String(m.ronda_fase).toLowerCase();
-                let gCat = ganadoresFase[cat] || {};
+            // 3. Asignar jugadores a Semifinales
+            const semiMatches = todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('semi'));
+            semiMatches.forEach(m => {
+                const cat = m.categorias?.nombre || 'General';
+                const rf = String(m.ronda_fase).toLowerCase();
+                const hasCuartos = cuartosMatches.some(x => (x.categorias?.nombre || 'General') === cat);
+
+                if (!m.j1) {
+                    if (hasCuartos) {
+                        if (rf.includes('1')) m.j1 = getGanadorMatch(cuartosMatches.find(x => (x.categorias?.nombre || 'General') === cat && String(x.ronda_fase).includes('1')));
+                        else if (rf.includes('2')) m.j1 = getGanadorMatch(cuartosMatches.find(x => (x.categorias?.nombre || 'General') === cat && String(x.ronda_fase).includes('3')));
+                    } else {
+                        if (rf.includes('1')) m.j1 = getLider(cat, 'A', 0);
+                        else if (rf.includes('2')) m.j1 = getLider(cat, 'B', 0);
+                    }
+                    if (m.j1) m.jugador1_id = m.j1.id;
+                }
+                if (!m.j2) {
+                    if (hasCuartos) {
+                        if (rf.includes('1')) m.j2 = getGanadorMatch(cuartosMatches.find(x => (x.categorias?.nombre || 'General') === cat && String(x.ronda_fase).includes('2')));
+                        else if (rf.includes('2')) m.j2 = getGanadorMatch(cuartosMatches.find(x => (x.categorias?.nombre || 'General') === cat && String(x.ronda_fase).includes('4')));
+                    } else {
+                        if (rf.includes('1')) m.j2 = getLider(cat, 'B', 1);
+                        else if (rf.includes('2')) m.j2 = getLider(cat, 'A', 1);
+                    }
+                    if (m.j2) m.jugador2_id = m.j2.id;
+                }
+                if (String(m.estado).toLowerCase() === 'finalizado' && !m.ganador_id && m.j1 && m.j2) {
+                    let s1 = m.sets_j1 || m.puntos_j1 || 0;
+                    let s2 = m.sets_j2 || m.puntos_j2 || 0;
+                    m.ganador_id = s1 > s2 ? m.j1.id : m.j2.id;
+                }
+            });
+
+            // 4. Asignar jugadores a Gran Final
+            const finalMatches = todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('final') && !String(m.ronda_fase).toLowerCase().includes('semi'));
+            finalMatches.forEach(m => {
+                const cat = m.categorias?.nombre || 'General';
+                const semisCat = semiMatches.filter(x => (x.categorias?.nombre || 'General') === cat);
                 
-                let p1 = m.j1 ? { id: m.j1.id, nombre: m.j1.nombre } : null;
-                let p2 = m.j2 ? { id: m.j2.id, nombre: m.j2.nombre } : null;
-
-                if (!p1) {
-                    if (rf.includes('1')) p1 = gCat['1_GPO_A'] || { nombre: '1° Gpo A', id: null };
-                    else if (rf.includes('2')) p1 = gCat['1_GPO_B'] || { nombre: '1° Gpo B', id: null };
-                    else if (rf.includes('3')) p1 = gCat['1_GPO_C'] || { nombre: '1° Gpo C', id: null };
-                    else if (rf.includes('4')) p1 = gCat['1_GPO_D'] || { nombre: '1° Gpo D', id: null };
-                    else p1 = { nombre: 'Por definir', id: null };
+                if (!m.j1) {
+                    m.j1 = getGanadorMatch(semisCat.find(x => String(x.ronda_fase).includes('1')));
+                    if (m.j1) m.jugador1_id = m.j1.id;
                 }
-
-                if (!p2) {
-                    if (rf.includes('1')) p2 = gCat['2_GPO_C'] || { nombre: '2° Gpo C', id: null };
-                    else if (rf.includes('2')) p2 = gCat['2_GPO_D'] || { nombre: '2° Gpo D', id: null };
-                    else if (rf.includes('3')) p2 = gCat['2_GPO_A'] || { nombre: '2° Gpo A', id: null };
-                    else if (rf.includes('4')) p2 = gCat['2_GPO_B'] || { nombre: '2° Gpo B', id: null };
-                    else p2 = { nombre: 'Por definir', id: null };
+                if (!m.j2) {
+                    m.j2 = getGanadorMatch(semisCat.find(x => String(x.ronda_fase).includes('2')));
+                    if (m.j2) m.jugador2_id = m.j2.id;
                 }
-
-                datos.mapaPartidosResueltos[m.id] = { p1, p2 };
-
-                // Si terminó el cuarto, se almacena el ganador y se suma la estadística
-                let est = String(m.estado || '').toLowerCase();
-                if (est === 'finalizado' && p1.id && p2.id) {
+                if (String(m.estado).toLowerCase() === 'finalizado' && !m.ganador_id && m.j1 && m.j2) {
                     let s1 = m.sets_j1 || m.puntos_j1 || 0;
                     let s2 = m.sets_j2 || m.puntos_j2 || 0;
-                    let ganoP1 = m.ganador_id ? (m.ganador_id === p1.id) : (s1 > s2);
-                    let ganador = ganoP1 ? p1 : p2;
-
-                    for(let num of ['1','2','3','4']) {
-                        if (rf.includes(num)) ganadoresFase[cat][`GANA_CUARTOS_${num}`] = ganador;
-                    }
-
-                    acumularEstadisticaFaseFinal(datos.porCategoria[cat]?.jugadores, p1, p2, m, s1, s2, ganoP1);
+                    m.ganador_id = s1 > s2 ? m.j1.id : m.j2.id;
                 }
             });
-
-            // Paso D: Resolver Semifinales Linealmente
-            todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('semi')).forEach(m => {
-                let cat = m.categorias?.nombre || 'General';
-                let rf = String(m.ronda_fase).toLowerCase();
-                let gCat = ganadoresFase[cat] || {};
-                let catMatches = todosLosPartidos.filter(x => (x.categorias?.nombre || 'General') === cat);
-                let hasCuartos = catMatches.some(x => String(x.ronda_fase).toLowerCase().includes('cuartos'));
-
-                let p1 = m.j1 ? { id: m.j1.id, nombre: m.j1.nombre } : null;
-                let p2 = m.j2 ? { id: m.j2.id, nombre: m.j2.nombre } : null;
-
-                if (!p1) {
-                    if (hasCuartos) {
-                        if (rf.includes('1')) p1 = gCat['GANA_CUARTOS_1'] || { nombre: 'Gana Cuartos 1', id: null };
-                        else if (rf.includes('2')) p1 = gCat['GANA_CUARTOS_3'] || { nombre: 'Gana Cuartos 3', id: null };
-                    } else {
-                        if (rf.includes('1')) p1 = gCat['1_GPO_A'] || { nombre: '1° Gpo A', id: null };
-                        else if (rf.includes('2')) p1 = gCat['1_GPO_B'] || { nombre: '1° Gpo B', id: null };
-                    }
-                    if(!p1) p1 = { nombre: 'Por definir', id: null };
-                }
-
-                if (!p2) {
-                    if (hasCuartos) {
-                        if (rf.includes('1')) p2 = gCat['GANA_CUARTOS_2'] || { nombre: 'Gana Cuartos 2', id: null };
-                        else if (rf.includes('2')) p2 = gCat['GANA_CUARTOS_4'] || { nombre: 'Gana Cuartos 4', id: null };
-                    } else {
-                        if (rf.includes('1')) p2 = gCat['2_GPO_B'] || { nombre: '2° Gpo B', id: null };
-                        else if (rf.includes('2')) p2 = gCat['2_GPO_A'] || { nombre: '2° Gpo A', id: null };
-                    }
-                    if(!p2) p2 = { nombre: 'Por definir', id: null };
-                }
-
-                datos.mapaPartidosResueltos[m.id] = { p1, p2 };
-
-                let est = String(m.estado || '').toLowerCase();
-                if (est === 'finalizado' && p1.id && p2.id) {
-                    let s1 = m.sets_j1 || m.puntos_j1 || 0;
-                    let s2 = m.sets_j2 || m.puntos_j2 || 0;
-                    let ganoP1 = m.ganador_id ? (m.ganador_id === p1.id) : (s1 > s2);
-                    let ganador = ganoP1 ? p1 : p2;
-
-                    if (rf.includes('1')) ganadoresFase[cat]['GANA_SEMI_1'] = ganador;
-                    if (rf.includes('2')) ganadoresFase[cat]['GANA_SEMI_2'] = ganador;
-
-                    acumularEstadisticaFaseFinal(datos.porCategoria[cat]?.jugadores, p1, p2, m, s1, s2, ganoP1);
-                }
-            });
-
-            // Paso E: Resolver Gran Final Linealmente
-            todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('final') && !String(m.ronda_fase).toLowerCase().includes('semi')).forEach(m => {
-                let cat = m.categorias?.nombre || 'General';
-                let gCat = ganadoresFase[cat] || {};
-
-                let p1 = m.j1 ? { id: m.j1.id, nombre: m.j1.nombre } : (gCat['GANA_SEMI_1'] || { nombre: 'Gana Semi 1', id: null });
-                let p2 = m.j2 ? { id: m.j2.id, nombre: m.j2.nombre } : (gCat['GANA_SEMI_2'] || { nombre: 'Gana Semi 2', id: null });
-
-                datos.mapaPartidosResueltos[m.id] = { p1, p2 };
-
-                let est = String(m.estado || '').toLowerCase();
-                if (est === 'finalizado' && p1.id && p2.id) {
-                    let s1 = m.sets_j1 || m.puntos_j1 || 0;
-                    let s2 = m.sets_j2 || m.puntos_j2 || 0;
-                    let ganoP1 = m.ganador_id ? (m.ganador_id === p1.id) : (s1 > s2);
-                    acumularEstadisticaFaseFinal(datos.porCategoria[cat]?.jugadores, p1, p2, m, s1, s2, ganoP1);
-                }
-            });
-
-            return datos;
         }
 
-        function acumularEstadisticaFaseFinal(jugadoresObj, p1, p2, m, s1, s2, ganoP1) {
-            if(!jugadoresObj) return;
-            [p1, p2].forEach(p => {
-                if (p && p.id && !jugadoresObj[p.id]) {
-                    let jData = todosLosJugadoresAdmin.find(x => x.id === p.id);
-                    let rankIni = jData ? (jData.puntos_ranking_ant ?? jData.puntos_ranking ?? 0) : 0;
-                    let div = jData ? (jData.division || 1) : 1;
-                    jugadoresObj[p.id] = { id: p.id, nombre: p.nombre, club: jData ? jData.club : 'Sin Club', div: div, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, rankIni: rankIni, rankImpact: 0, gpo: null, historial: [] };
+        // ================= CÁLCULO DE ESTADÍSTICAS TOTAL (SIN IMPORTAR EL FILTRO UI) =================
+        function calcularStandingsGruposGlobal() {
+            const porCategoria = {};
+            todosLosPartidos.forEach(m => {
+                if (m.grupo_nombre === 'Flash') return; 
+                
+                const catNombre = m.categorias?.nombre || 'General';
+                if (!porCategoria[catNombre]) porCategoria[catNombre] = { grupos: {} };
+                const gpoNombre = m.grupo_nombre || 'Llaves';
+                if (!porCategoria[catNombre].grupos[gpoNombre]) porCategoria[catNombre].grupos[gpoNombre] = {};
+                const grupoObj = porCategoria[catNombre].grupos[gpoNombre];
+
+                [m.j1, m.j2].forEach(j => {
+                    if (j && j.id && !grupoObj[j.id]) {
+                        let jData = todosLosJugadoresAdmin.find(x => x.id == j.id);
+                        let rankIni = jData ? (jData.puntos_ranking_ant ?? jData.puntos_ranking ?? 0) : (j.puntos_ranking_ant ?? j.puntos_ranking ?? 0);
+                        let div = jData ? (jData.division || 1) : (j.division || 1);
+                        grupoObj[j.id] = { id: j.id, nombre: j.nombre, club: j.club, div: div, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, rankIni: rankIni, rankImpact: 0, gpo: gpoNombre, partidosHistorial: [] };
+                    }
+                });
+
+                let estLimpio = String(m.estado || '').trim().toLowerCase();
+                if (estLimpio === 'finalizado' && m.j1 && m.j2) {
+                    const j1 = grupoObj[m.j1.id]; const j2 = grupoObj[m.j2.id];
+                    if (j1 && j2) {
+                        j1.pj += 1; j2.pj += 1;
+                        let s1 = m.sets_j1 || m.puntos_j1 || 0;
+                        let s2 = m.sets_j2 || m.puntos_j2 || 0;
+                        j1.setsG += s1; j1.setsP += s2;
+                        j2.setsG += s2; j2.setsP += s1;
+                        
+                        let r1 = j1.rankIni + j1.rankImpact; let r2 = j2.rankIni + j2.rankImpact;
+                        let impacto = calcularImpacto(r1, r2);
+                        
+                        let ganoJ1 = (m.ganador_id == m.j1.id) || (s1 > s2);
+                        let delta1 = ganoJ1 ? impacto.j1G : impacto.j1P;
+                        let delta2 = !ganoJ1 ? impacto.j2G : impacto.j2P;
+
+                        if (ganoJ1) { j1.pg += 1; j1.pts += 2; j2.pp += 1; j2.pts += 1; } 
+                        else { j2.pg += 1; j2.pts += 2; j1.pp += 1; j1.pts += 1; }
+                        
+                        j1.rankImpact += delta1; j2.rankImpact += delta2;
+
+                        let faseStr = m.grupo_nombre ? `Grupo ${m.grupo_nombre}` : (m.ronda_fase || 'Eliminatoria');
+                        j1.partidosHistorial.push({ id: m.id, fase: faseStr, mesa: m.mesa, rival: j2.nombre, sFav: s1, sRiv: s2, gano: ganoJ1, delta: delta1 });
+                        j2.partidosHistorial.push({ id: m.id, fase: faseStr, mesa: m.mesa, rival: j1.nombre, sFav: s2, sRiv: s1, gano: !ganoJ1, delta: delta2 });
+                    }
                 }
             });
-
-            const j1 = jugadoresObj[p1.id];
-            const j2 = jugadoresObj[p2.id];
-
-            if (j1 && j2) {
-                j1.pj += 1; j2.pj += 1;
-                j1.setsG += s1; j1.setsP += s2;
-                j2.setsG += s2; j2.setsP += s1;
-
-                let r1 = j1.rankIni + j1.rankImpact; let r2 = j2.rankIni + j2.rankImpact;
-                let imp = calcularImpacto(r1, r2);
-                let delta1 = ganoP1 ? imp.j1G : imp.j1P;
-                let delta2 = !ganoP1 ? imp.j2G : imp.j2P;
-
-                if (ganoP1) { j1.pg += 1; j1.pts += 2; j2.pp += 1; j2.pts += 1; }
-                else { j2.pg += 1; j2.pts += 2; j1.pp += 1; j1.pts += 1; }
-
-                j1.rankImpact += delta1; j2.rankImpact += delta2;
-
-                let hist1 = { id: m.id, fase: m.ronda_fase || 'Eliminatoria', mesa: m.mesa, rival: j2.nombre, sFav: s1, sRiv: s2, gano: ganoP1, delta: delta1 };
-                let hist2 = { id: m.id, fase: m.ronda_fase || 'Eliminatoria', mesa: m.mesa, rival: j1.nombre, sFav: s2, sRiv: s1, gano: !ganoP1, delta: delta2 };
-                
-                j1.historial.push(hist1); j2.historial.push(hist2);
-            }
+            return porCategoria;
         }
 
         function renderTablaGeneralDiv(jugadores, colorHex, titulo, isFlash = false) {
@@ -608,9 +594,6 @@
                 let safeNom = j.nombre ? String(j.nombre).replace(/'/g, "\\'") : ''; 
                 let safeClub = j.club ? String(j.club).replace(/'/g, "\\'") : 'Sin Club';
 
-                // Guardar en memoria para abrir de inmediato el expediente
-                jugadoresMemoriaExpedientes[j.id] = j;
-
                 html += `
                     <tr class="tr-header cursor-pointer" style="border-bottom:1px solid rgba(255,255,255,0.04); opacity: ${opacity}; transition:all 0.2s ease;" onclick="abrirModalJugadorAdmin(${j.id}, '${safeNom}', '${safeClub}')" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'">
                         <td style="padding:8px 6px; font-weight:800; color:#64748b; font-size:14px;">${rankTrophy}</td>
@@ -633,7 +616,7 @@
         }
 
         function dibujarEstadisticas(container) {
-            const cuadroData = resolverCuadroTorneoTotal();
+            const standings = calcularStandingsGruposGlobal();
             const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
             let catsList = [...categoriasSet];
             if (categoriaFiltro !== 'todas') catsList = catsList.filter(c => c === categoriaFiltro);
@@ -642,11 +625,8 @@
 
             let htmlContent = '';
             catsList.forEach(catNombre => {
-                const jugadoresCatObj = cuadroData.porCategoria[catNombre]?.jugadores || {};
-                let todosJugadoresCat = Object.values(jugadoresCatObj);
-                if (todosJugadoresCat.length === 0) return;
-
-                todosJugadoresCat = ordenarJugadoresITTF(todosJugadoresCat);
+                const gruposCat = standings[catNombre]?.grupos || {};
+                if (Object.keys(gruposCat).length === 0) return;
 
                 htmlContent += `
                     <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">
@@ -655,6 +635,34 @@
                             <span style="font-size:10px; color:#94a3b8; display:block; margin-top:6px;">Tabla General por Divisiones (Grupos + Eliminatorias Totales)</span>
                         </div>
                 `;
+
+                // FUSIONAMOS TODAS LAS FASES EN UN SOLO EXPEDIENTE POR JUGADOR
+                let todosJugadoresCatMap = new Map();
+                Object.keys(gruposCat).forEach(gpoNombre => { 
+                    Object.values(gruposCat[gpoNombre]).forEach(j => { 
+                        if(!todosJugadoresCatMap.has(j.id)) {
+                            todosJugadoresCatMap.set(j.id, {
+                                ...j, 
+                                gpo: gpoNombre === 'Llaves' ? null : gpoNombre,
+                                partidosHistorial: [...(j.partidosHistorial || [])]
+                            }); 
+                        } else {
+                            let prev = todosJugadoresCatMap.get(j.id);
+                            prev.pj += j.pj;
+                            prev.pg += j.pg;
+                            prev.pp += j.pp;
+                            prev.pts += j.pts;
+                            prev.setsG += j.setsG;
+                            prev.setsP += j.setsP;
+                            prev.rankImpact += j.rankImpact;
+                            if (gpoNombre !== 'Llaves' && !prev.gpo) prev.gpo = gpoNombre;
+                            prev.partidosHistorial.push(...(j.partidosHistorial || []));
+                        }
+                    }); 
+                });
+                
+                let todosJugadoresCat = Array.from(todosJugadoresCatMap.values());
+                todosJugadoresCat = ordenarJugadoresITTF(todosJugadoresCat);
 
                 let div1 = todosJugadoresCat.filter(j => String(j.div) === '1'); 
                 let div2 = todosJugadoresCat.filter(j => String(j.div) === '2');
@@ -751,9 +759,6 @@
 
             if (filtrados.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay partidos registrados bajo estos filtros.</div>`; return; }
 
-            // RESOLVEMOS TODO EL CUADRO DE FORMA LINEAL (0 RECURSIÓN)
-            const cuadroData = resolverCuadroTorneoTotal();
-
             const gruposPorHora = {}; const horasOrdenadas = [];
             filtrados.forEach(p => { const h = p.hora || '09:00 AM'; if(!gruposPorHora[h]) { gruposPorHora[h] = []; horasOrdenadas.push(h); } gruposPorHora[h].push(p); });
 
@@ -773,16 +778,14 @@
 
                     let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
                     
-                    // Extraemos los nombres resueltos linealmente
-                    let partidoResuelto = cuadroData.mapaPartidosResueltos[p.id] || {};
-                    let proyJ1 = partidoResuelto.p1 || (p.j1 ? { nombre: p.j1.nombre, id: p.j1.id } : { nombre: 'Por definir', id: null });
-                    let proyJ2 = partidoResuelto.p2 || (p.j2 ? { nombre: p.j2.nombre, id: p.j2.id } : { nombre: 'Por definir', id: null });
+                    let nomJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : 'Por definir');
+                    let nomJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : 'Por definir');
                     
-                    let nomJ1 = proyJ1.nombre; let idDinamicoJ1 = proyJ1.id;
-                    let nomJ2 = proyJ2.nombre; let idDinamicoJ2 = proyJ2.id;
-                    
-                    let iconJ1 = (isFin && p.ganador_id === (p.jugador1_id || idDinamicoJ1)) ? '🏆 ' : '';
-                    let iconJ2 = (isFin && p.ganador_id === (p.jugador2_id || idDinamicoJ2)) ? '🏆 ' : '';
+                    let idDinamicoJ1 = p.j1 ? p.j1.id : null;
+                    let idDinamicoJ2 = p.j2 ? p.j2.id : null;
+
+                    let iconJ1 = (isFin && p.ganador_id == (p.jugador1_id || idDinamicoJ1)) ? '🏆 ' : '';
+                    let iconJ2 = (isFin && p.ganador_id == (p.jugador2_id || idDinamicoJ2)) ? '🏆 ' : '';
 
                     let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
                     let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre === 'Flash' ? '⚡ Liga Flash' : (p.ronda_fase || 'Eliminatoria Directa'));
@@ -898,11 +901,12 @@
             btn.disabled = true; btn.innerText = '⏳ Guardando...';
             
             try {
-                let ganador_id = setsJ1 > setsJ2 ? (idJ1 !== 'null' ? parseInt(idJ1) : null) : (idJ2 !== 'null' ? parseInt(idJ2) : null);
+                let ganador_id = setsJ1 > setsJ2 ? (idJ1 && idJ1 !== 'null' ? parseInt(idJ1) : null) : (idJ2 && idJ2 !== 'null' ? parseInt(idJ2) : null);
+                
                 let payload = { sets_j1: setsJ1, sets_j2: setsJ2, puntos_j1: setsJ1, puntos_j2: setsJ2, estado: 'finalizado', ganador_id: ganador_id };
                 
-                if (idJ1 !== 'null') payload.jugador1_id = parseInt(idJ1);
-                if (idJ2 !== 'null') payload.jugador2_id = parseInt(idJ2);
+                if (idJ1 && idJ1 !== 'null') payload.jugador1_id = parseInt(idJ1);
+                if (idJ2 && idJ2 !== 'null') payload.jugador2_id = parseInt(idJ2);
                 
                 const { error } = await clienteSupabase.from('partidos').update(payload).eq('id', partidoId);
                 
@@ -920,29 +924,25 @@
         function abrirModalJugadorAdmin(jugadorId, nombre, club) {
             if(!jugadorId || isNaN(jugadorId)) return; 
             
+            document.getElementById('modal-jugador-nombre').innerText = nombre;
+            document.getElementById('modal-jugador-club').innerText = club || 'Sin Club';
+            
             const modalList = document.getElementById('modal-jugador-partidos-list'); 
             modalList.innerHTML = '<div class="mensaje-vacio">Cargando expediente...</div>';
             
-            let jugMemoria = jugadoresMemoriaExpedientes[jugadorId];
-            let jugObj = todosLosJugadoresAdmin.find(j => j.id === jugadorId);
+            const jugObj = todosLosJugadoresAdmin.find(j => j.id == jugadorId);
+            let rInicial = jugObj ? (jugObj.puntos_ranking_ant ?? jugObj.puntos_ranking ?? 0) : 0;
+            let deltaTotal = 0;
 
-            let realNombre = jugMemoria?.nombre || jugObj?.nombre || nombre;
-            let realClub = jugMemoria?.club || jugObj?.club || club || 'Sin Club';
+            const partidosJugador = todosLosPartidos.filter(p => p.jugador1_id == jugadorId || p.jugador2_id == jugadorId);
 
-            document.getElementById('modal-jugador-nombre').innerText = realNombre;
-            document.getElementById('modal-jugador-club').innerText = realClub;
-
-            let rInicial = jugMemoria ? jugMemoria.rankIni : (jugObj ? (jugObj.puntos_ranking_ant ?? jugObj.puntos_ranking ?? 0) : 0);
-            let deltaTotal = jugMemoria ? jugMemoria.rankImpact : 0;
-            let rFinal = rInicial + deltaTotal;
-
-            let partidosList = jugMemoria?.historial || [];
-
-            if (partidosList.length === 0) {
+            if (partidosJugador.length === 0) {
                 document.getElementById('modal-jugador-ranking-header').innerText = `${rInicial} pts`; 
                 document.getElementById('modal-jugador-variacion').innerHTML = `<span style="color:#64748b;">(Sin partidos registrados aún)</span>`;
                 modalList.innerHTML = '<div class="mensaje-vacio">Este jugador no ha disputado partidos registrados aún.</div>';
             } else {
+                partidosJugador.sort((a,b) => a.id - b.id);
+
                 let tableHtml = `
                 <div style="background:rgba(0,0,0,0.4); border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.05);">
                     <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left; margin:0;">
@@ -957,19 +957,49 @@
                         <tbody>
                 `;
                 
-                partidosList.forEach(p => {
-                    let rankBadge = p.delta > 0 
-                        ? `<span style="color:#34d399; font-weight:900;">+${p.delta}</span>` 
-                        : (p.delta < 0 ? `<span style="color:#f87171; font-weight:900;">${p.delta}</span>` : `<span style="color:#94a3b8;">0</span>`);
+                partidosJugador.forEach(p => {
+                    const esJ1 = p.jugador1_id == jugadorId;
+                    const rivalNombre = esJ1 ? (p.j2 ? p.j2.nombre : 'Por definir') : (p.j1 ? p.j1.nombre : 'Por definir');
+                    const rivalPts = esJ1 ? (p.j2 ? (p.j2.puntos_ranking_ant ?? p.j2.puntos_ranking ?? 0) : 0) : (p.j1 ? (p.j1.puntos_ranking_ant ?? p.j1.puntos_ranking ?? 0) : 0);
+                    const estLimpio = String(p.estado || '').trim().toLowerCase(); 
+                    const esFin = estLimpio === 'finalizado'; 
+                    const esVivo = estLimpio === 'en_curso';
+                    const ganoPlayer = esFin && (p.ganador_id == jugadorId);
 
-                    let resText = p.gano 
-                        ? `<span style="color:#34d399; font-weight:800;">VICTORIA <span style="color:#fff; font-size:10px;">(${p.sFav}-${p.sRiv})</span></span>` 
-                        : `<span style="color:#f87171; font-weight:800;">DERROTA <span style="color:#fff; font-size:10px;">(${p.sFav}-${p.sRiv})</span></span>`;
+                    let deltaPartido = 0;
+                    if (esFin) { 
+                        let calc = calcularPuntosMatch(rInicial, rivalPts, p.ganador_id, p.jugador1_id, p.jugador2_id); 
+                        deltaPartido = ganoPlayer ? calc.ptsGanador : calc.ptsPerdedor; 
+                        deltaTotal += deltaPartido; 
+                    }
+
+                    let rankBadge = '-';
+                    if (esFin) {
+                        rankBadge = ganoPlayer ? `<span style="color:#34d399; font-weight:900;">+${deltaPartido}</span>` : `<span style="color:#f87171; font-weight:900;">${deltaPartido}</span>`;
+                    } else if (esVivo) {
+                        rankBadge = `<span style="color:#fbbf24; font-size:8px; font-weight:800; border:1px solid rgba(245,158,11,0.5); padding:2px 4px; border-radius:4px; background:rgba(245,158,11,0.1);">EN VIVO</span>`;
+                    } else {
+                        rankBadge = `<span style="color:#94a3b8; font-size:8px; font-weight:800; border:1px solid rgba(148,163,184,0.5); padding:2px 4px; border-radius:4px; background:rgba(148,163,184,0.1);">PENDIENTE</span>`;
+                    }
+
+                    let sFav = esJ1 ? (p.sets_j1 ?? p.puntos_j1 ?? 0) : (p.sets_j2 ?? p.puntos_j2 ?? 0);
+                    let sRiv = esJ1 ? (p.sets_j2 ?? p.puntos_j2 ?? 0) : (p.sets_j1 ?? p.puntos_j1 ?? 0);
+
+                    let resText = '-';
+                    if (esFin) {
+                        resText = ganoPlayer 
+                            ? `<span style="color:#34d399; font-weight:800;">VICTORIA <span style="color:#fff; font-size:10px;">(${sFav}-${sRiv})</span></span>` 
+                            : `<span style="color:#f87171; font-weight:800;">DERROTA <span style="color:#fff; font-size:10px;">(${sFav}-${sRiv})</span></span>`;
+                    } else if (esVivo) {
+                        resText = `<span style="color:#38bdf8; font-weight:900; font-size:14px; font-family:'Orbitron',sans-serif;">${sFav} - ${sRiv}</span>`;
+                    }
+
+                    let etiqGpo = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Fase Final'));
 
                     tableHtml += `
                         <tr style="border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
-                            <td style="padding:10px; color:#38bdf8; font-weight:800;">${p.fase}<br><span style="color:#64748b; font-size:9px;">Mesa ${p.mesa}</span></td>
-                            <td style="padding:10px; color:#fff; font-weight:700;">vs ${p.rival}</td>
+                            <td style="padding:10px; color:#38bdf8; font-weight:800;">${etiqGpo}<br><span style="color:#64748b; font-size:9px;">Mesa ${p.mesa}</span></td>
+                            <td style="padding:10px; color:#fff; font-weight:700;">vs ${rivalNombre}</td>
                             <td style="padding:10px; text-align:center;">${resText}</td>
                             <td style="padding:10px; text-align:center;">${rankBadge}</td>
                         </tr>
@@ -978,6 +1008,7 @@
                 
                 tableHtml += `</tbody></table></div>`;
 
+                let rFinal = rInicial + deltaTotal;
                 let difStr = deltaTotal >= 0 
                     ? `<span style="color:#34d399;">+${deltaTotal} pts</span>` 
                     : `<span style="color:#f87171;">${deltaTotal} pts</span>`;
@@ -993,7 +1024,11 @@
 
         function cerrarModalJugadorAdmin() { document.getElementById('modal-jugador-admin').style.display = 'none'; }
 
-        inicializar();
+        async function cargarDatosIniciales() {
+            await inicializar();
+        }
+
+        window.onload = cargarDatosIniciales;
     </script>
 </body>
 </html>
