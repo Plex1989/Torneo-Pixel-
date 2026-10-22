@@ -165,7 +165,7 @@
         .export-container-hidden { position: absolute; left: -9999px; top: -9999px; overflow: hidden; height: 0; width: 0; }
         
         .vip-gold-theme {
-            background: #0a0a0a;
+            background: #04060a;
             color: #ffffff;
             font-family: 'Sora', sans-serif;
             position: relative;
@@ -479,7 +479,7 @@
                     </div>
                     
                     <!-- PISTAS Y BARRAS -->
-                    <div id="vip-gantt-tracks" style="position: relative; display: flex; flex-direction: column; gap: 20px;">
+                    <div id="vip-gantt-tracks" style="position: relative; display: flex; flex-direction: column; gap: 25px;">
                         <!-- Tracks inyectados -->
                     </div>
 
@@ -1260,34 +1260,44 @@
             let mainHtml = '';
             gruposGlobal = []; 
 
+            // Para mapear los Rankings necesitamos extraer todos los jugadores de los partidos
+            let todosLosJugadoresDeLaFase = new Map();
+            partidosBD.forEach(p => {
+                if (p.j1 && p.jugador1_id) todosLosJugadoresDeLaFase.set(p.jugador1_id, p.j1);
+                if (p.j2 && p.jugador2_id) todosLosJugadoresDeLaFase.set(p.jugador2_id, p.j2);
+            });
+            
+            let jugadoresOrdenadosGlobal = Array.from(todosLosJugadoresDeLaFase.values());
+            
+            // Recuperar rankings reales desde la base global (todosLosJugadoresAdmin) para mayor seguridad
+            jugadoresOrdenadosGlobal.forEach(jObj => {
+                let jReal = todosLosJugadoresAdmin.find(tj => tj.id === jObj.id);
+                if(jReal) jObj.puntos_ranking = jReal.puntos_ranking;
+            });
+            
+            // Ordenamos la lista principal de forma descendente por Puntos para calcular el Seed Master
+            jugadoresOrdenadosGlobal.sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
+            
+            // Les asignamos el Seed que les corresponde
+            jugadoresOrdenadosGlobal.forEach((jObj, idx) => {
+                jObj.seedOriginal = idx + 1;
+            });
+
+            // Ahora sí agruparlos visualmente
             [...new Set(partidosBD.map(p => p.grupo_nombre).filter(Boolean))].sort().forEach((nombreGpo, idx) => {
-                let mapaJugadores = new Map();
+                let mapaJugadoresDelGrupo = new Map();
                 partidosBD.filter(p => p.grupo_nombre === nombreGpo).forEach(p => {
-                    if (p.j1 && p.jugador1_id) mapaJugadores.set(p.jugador1_id, p.j1);
-                    if (p.j2 && p.jugador2_id) mapaJugadores.set(p.jugador2_id, p.j2);
+                    if (p.jugador1_id) mapaJugadoresDelGrupo.set(p.jugador1_id, jugadoresOrdenadosGlobal.find(j => j.id === p.jugador1_id));
+                    if (p.jugador2_id) mapaJugadoresDelGrupo.set(p.jugador2_id, jugadoresOrdenadosGlobal.find(j => j.id === p.jugador2_id));
                 });
                 
                 let titleName = nombreGpo === 'Único' ? 'Liga Única' : `Grupo ${nombreGpo}`;
-                let jugadoresOrdenados = Array.from(mapaJugadores.values());
+                let jugadoresOrdenadosGrupo = Array.from(mapaJugadoresDelGrupo.values()).sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
 
-                // FIX: Asignar Seed y Ranking real buscando en todosLosJugadoresAdmin y jugadoresListos
-                jugadoresOrdenados.forEach(jObj => {
-                    let jReal = todosLosJugadoresAdmin.find(tj => tj.id === jObj.id);
-                    if (jReal) {
-                        jObj.puntos_ranking = jReal.puntos_ranking;
-                        jObj.club = jReal.club;
-                    }
-                    let realIdx = jugadoresListos.findIndex(jl => jl.id === jObj.id);
-                    jObj.seedOriginal = realIdx !== -1 ? (realIdx + 1) : '-';
-                });
-
-                // Ordenamos por ranking real
-                jugadoresOrdenados.sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
-
-                gruposGlobal.push({ nombre: nombreGpo, jugadores: jugadoresOrdenados }); 
+                gruposGlobal.push({ nombre: nombreGpo, jugadores: jugadoresOrdenadosGrupo }); 
 
                 let html = `<div class="grupo-card ${clasesColoresGrupo[idx % clasesColoresGrupo.length]}"><div class="grupo-header">${titleName}</div>`;
-                jugadoresOrdenados.forEach((jObj, i) => { 
+                jugadoresOrdenadosGrupo.forEach((jObj, i) => { 
                     html += `<div class="jugador-item"><div class="jugador-info"><strong style="color:#ffffff;">${jObj.nombre || 'Desconocido'}</strong><div><span class="tag-club">${jObj.club || 'Sin Club'}</span></div><span style="font-size:10px; color:#94a3b8;">${jObj.puntos_ranking || 0} pts (Seed #${jObj.seedOriginal})</span></div></div>`; 
                 });
                 mainHtml += html + `</div>`;
@@ -1466,16 +1476,28 @@
         }
 
         async function generarCronogramaImagen() {
+            let idCat = document.getElementById('filtro-categoria').value;
+            let breakVal = document.getElementById('rr-hora-break').value || localStorage.getItem(`break_val_${ORG_ID}_${idCat}`);
+            let breakDur = parseInt(document.getElementById('rr-duracion-break').value || localStorage.getItem(`break_dur_${ORG_ID}_${idCat}`)) || 30;
+
+            // Preguntar si hay un break si no está configurado, para que lo inyecte en el render final
+            if (!breakVal) {
+                let ask = prompt("Si hubo un receso (Break), ingresa la hora de inicio (Ej. 13:00 o 01:00 PM). Deja en blanco si no hubo:");
+                if (ask && ask.trim() !== '') {
+                    breakVal = ask.trim();
+                    let dur = prompt("¿Cuántos minutos duró el receso?", "30");
+                    breakDur = parseInt(dur) || 30;
+                }
+            }
+
             const btn = document.querySelector('button[onclick="generarCronogramaImagen()"]');
             const txtOr = btn.innerText; 
             btn.innerText = "⏳ Generando..."; 
             btn.disabled = true;
 
             try {
-                // 1. Buscamos la fecha configurada para las categorías
                 const { data: progData } = await clienteSupabase.from('programacion_categorias').select('categoria_id, fecha').eq('torneo_id', idTorneoActivo);
 
-                // 2. Buscamos TODOS los partidos del torneo en BD
                 const { data: allMatches } = await clienteSupabase.from('partidos')
                     .select('hora, categoria_id, categorias(nombre), grupo_nombre, ronda_fase')
                     .eq('torneo_id', idTorneoActivo)
@@ -1487,7 +1509,6 @@
                     return;
                 }
 
-                // 3. Agrupar la información por Categoría + Fase + Fecha
                 let blocksMap = new Map();
 
                 allMatches.forEach(p => {
@@ -1512,27 +1533,22 @@
                     blocksMap.get(key).times.push(timeToMinutes(p.hora));
                 });
 
-                // 4. Determinar los límites de tiempo de cada bloque y ordenarlos cronológicamente
                 let blocks = Array.from(blocksMap.values()).map(b => {
                     let minTime = Math.min(...b.times);
                     let maxTime = Math.max(...b.times) + 30; // Simulamos +30mins al último partido de la fase
                     return { ...b, minTime, maxTime, isBreak: false };
                 }).sort((a,b) => a.minTime - b.minTime);
 
-                // 5. Inyectar Bloque de BREAK
-                let idCat = document.getElementById('filtro-categoria').value;
-                let breakVal = document.getElementById('rr-hora-break').value || localStorage.getItem(`break_val_${ORG_ID}_${idCat}`);
-                let breakDur = parseInt(document.getElementById('rr-duracion-break').value || localStorage.getItem(`break_dur_${ORG_ID}_${idCat}`)) || 30;
-
+                // INYECCIÓN DEL BLOQUE DE BREAK PARA LA IMAGEN (Pausa Global)
                 if (breakVal) {
                     let breakMins = timeToMinutes(breakVal);
                     blocks.push({
                         isBreak: true,
                         minTime: breakMins,
                         maxTime: breakMins + breakDur,
-                        catName: '☕ RECESO GENERAL',
-                        faseType: 'PAUSA DEL TORNEO',
-                        fecha: torneoActivoObj.fecha_evento || ''
+                        catName: '', 
+                        faseType: '',
+                        fecha: ''
                     });
                     blocks.sort((a,b) => a.minTime - b.minTime);
                 }
@@ -1543,18 +1559,17 @@
                     return;
                 }
 
-                // 6. Obtener el límite mínimo y máximo global del torneo
                 let absoluteMinTime = Math.min(...blocks.map(b => b.minTime));
                 let absoluteMaxTime = Math.max(...blocks.map(b => b.maxTime));
 
-                // Redondear para que el eje X se vea limpio
+                // Redondear ejes X para que quede exacto (Ej: arrancar en hora en punto)
                 let startAxis = Math.floor(absoluteMinTime / 60) * 60;
                 let endAxis = Math.ceil(absoluteMaxTime / 60) * 60;
                 let totalDuration = endAxis - startAxis;
 
                 if (totalDuration <= 0) totalDuration = 60;
 
-                // 7. Dibujar EJE X (Las horas)
+                // EJE X (Las Horas Globales Superiores)
                 let axisHtml = '';
                 let gridHtml = '';
                 let numTicks = Math.ceil(totalDuration / 60);
@@ -1570,8 +1585,10 @@
 
                 document.getElementById('vip-gantt-axis').innerHTML = axisHtml;
 
-                // 8. Dibujar PISTAS y BARRAS
+                // PISTAS Y BARRAS
                 let tracksHtml = '';
+                let breaksHtml = '';
+                
                 const colors = [
                     { bg: 'rgba(56, 189, 248, 0.15)', border: '#38bdf8', glow: 'rgba(56,189,248,0.4)' }, // Cyan
                     { bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b', glow: 'rgba(245,158,11,0.4)' }, // Gold
@@ -1589,11 +1606,12 @@
                     let endStr = minutesToTimeStr(b.maxTime);
                     
                     if (b.isBreak) {
-                        tracksHtml += `
-                            <div style="position: relative; height: 75px; width: 100%; background: rgba(255,255,255,0.02); border-radius: 8px;">
-                                <div style="position: absolute; left: ${leftPct}%; width: ${widthPct}%; height: 100%; background: rgba(239, 68, 68, 0.1); border: 1px dashed #ef4444; border-radius: 8px; box-shadow: inset 0 0 15px rgba(239,68,68,0.3); display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; z-index: 10;">
-                                    <div style="font-weight: 900; font-size: 13px; text-transform: uppercase; color: #fca5a5; white-space: nowrap; text-shadow: 1px 1px 3px black;">${b.catName}</div>
-                                    <div style="font-weight: 800; font-size: 10px; color: #f87171; margin-top: 2px;">⏰ ${startStr} a ${endStr}</div>
+                        // El break se dibuja como un PILAR VERTICAL que corta por encima de todas las barras
+                        breaksHtml += `
+                            <div style="position: absolute; left: ${leftPct}%; width: ${widthPct}%; top: -10px; bottom: -10px; background: rgba(4, 6, 10, 0.95); border-left: 2px dashed #ef4444; border-right: 2px dashed #ef4444; z-index: 20; display: flex; align-items: center; justify-content: center;">
+                                <div style="background: rgba(239,68,68,0.15); border: 1px solid #ef4444; padding: 10px 20px; border-radius: 12px; box-shadow: 0 0 20px rgba(239,68,68,0.4); text-align: center; white-space: nowrap; backdrop-filter: blur(5px);">
+                                    <div style="font-weight: 900; font-size: 14px; text-transform: uppercase; color: #fca5a5; letter-spacing: 1px; margin-bottom: 4px;">☕ Receso General</div>
+                                    <div style="font-weight: 800; font-size: 11px; color: #f87171;">⏰ ${startStr} a ${endStr}</div>
                                 </div>
                             </div>
                         `;
@@ -1601,20 +1619,21 @@
                         let color = colors[colorIdx % colors.length];
                         colorIdx++;
                         
-                        let dateHtml = b.fecha ? `📅 ${b.fecha} • ` : '';
+                        let dateHtml = b.fecha ? `📅 ${b.fecha} &nbsp;•&nbsp; ` : '';
 
                         tracksHtml += `
-                            <div style="position: relative; height: 75px; width: 100%; background: rgba(255,255,255,0.02); border-radius: 8px;">
+                            <div style="position: relative; height: 50px; width: 100%; background: rgba(255,255,255,0.02); border-radius: 8px;">
                                 <div style="position: absolute; left: ${leftPct}%; width: ${widthPct}%; height: 100%; background: ${color.bg}; border: 1px solid ${color.border}; border-left: 4px solid ${color.border}; border-radius: 8px; box-shadow: 0 0 15px ${color.glow}; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; z-index: 10;">
-                                    <div style="font-weight: 900; font-size: 13px; text-transform: uppercase; color: white; white-space: nowrap; text-shadow: 1px 1px 3px black;">${b.catName} - ${b.faseType}</div>
-                                    <div style="font-weight: 800; font-size: 10px; color: #cbd5e1; margin-top: 2px;">${dateHtml}⏰ ${startStr} a ${endStr}</div>
+                                    <div style="font-weight: 900; font-size: 12px; text-transform: uppercase; color: white; white-space: nowrap; text-shadow: 1px 1px 3px black;">${b.catName} - ${b.faseType}</div>
+                                    <div style="font-weight: 800; font-size: 9px; color: #cbd5e1; margin-top: 3px;">${dateHtml}⏰ ${startStr} a ${endStr}</div>
                                 </div>
                             </div>
                         `;
                     }
                 });
 
-                document.getElementById('vip-gantt-tracks').innerHTML = gridHtml + tracksHtml;
+                document.getElementById('vip-gantt-tracks').innerHTML = gridHtml + tracksHtml + breaksHtml;
+
                 document.getElementById('vip-crono-torneo-name').innerText = torneoActivoObj ? `${torneoActivoObj.nombre} • ${torneoActivoObj.fecha_evento || ''}` : 'TORNEO OFICIAL';
 
                 await renderAndDownload('plantilla-cronograma', `Cronograma_Grafico_General.png`);
