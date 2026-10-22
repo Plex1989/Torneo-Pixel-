@@ -6,7 +6,7 @@
     <title>Sorteo y Rol de Partidos - Pixel Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- LIBRERÍA PARA GENERAR IMÁGENES VIP -->
+    <!-- LIBRERÍA PARA GENERAR IMÁGENES VIP EN ALTA RESOLUCIÓN -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <script>
@@ -123,21 +123,7 @@
 
         .flash-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
         
-        .flash-btn-jugador {
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 12px 12px 12px 22px; 
-            text-align: left;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            position: relative;
-            overflow: visible; 
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            min-height: 70px;
-        }
+        .flash-btn-jugador { background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; padding: 12px 12px 12px 22px; text-align: left; cursor: pointer; transition: all 0.2s ease; position: relative; overflow: visible; display: flex; flex-direction: column; justify-content: space-between; min-height: 70px; }
         .flash-btn-jugador:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.3); }
         .flash-btn-jugador.selected { background: rgba(16, 185, 129, 0.2); border-color: #10b981; box-shadow: inset 0 0 10px rgba(16, 185, 129, 0.3); }
         
@@ -159,6 +145,7 @@
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .modal-card { background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; width: 100%; max-width: 400px; padding: 24px; color: white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center; }
         
+        @media print { body { display: none !important; } }
     </style>
 </head>
 <body>
@@ -188,8 +175,8 @@
         </div>
     </nav>
 
-    <div class="main-content">
-        <div class="panel-3d panel-cyan no-print">
+    <div class="main-content no-print">
+        <div class="panel-3d panel-cyan">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px; border-bottom: 1px solid rgba(255,255,255,0.08); margin-bottom: 20px; padding-bottom: 15px;">
                 <div>
                     <h2 style="border:none; margin:0; padding:0;">Cerebro del Torneo: Sorteo y Rol 🧠🏆</h2>
@@ -317,7 +304,7 @@
         </div>
 
         <div class="panel-3d panel-purple" id="seccion-partidos-rr" style="display: none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 15px; flex-wrap:wrap; gap:12px;">
+            <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 15px; flex-wrap:wrap; gap:12px;">
                 <h2 style="border:none; padding:0; margin:0;">📋 Rol Oficial de Partidos Guardado</h2>
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                     <button type="button" class="btn-console btn-ws-style" onclick="compartirAgendaWhatsApp()">📲 Compartir WhatsApp</button>
@@ -349,66 +336,73 @@
         </div>
         
         <!-- CONTENEDORES OCULTOS PARA GENERAR LAS IMÁGENES VIP EN SEGUNDO PLANO -->
-        <div style="position: absolute; left: -9999px; top: -9999px; width: 1200px;">
+        <div style="position: absolute; left: -9999px; top: -9999px; width: 1200px;" class="no-print">
             
-            <!-- 1. GAFETE INDIVIDUAL VIP -->
-            <div id="plantilla-itinerario-vip" style="width: 800px; background: #0f172a; padding: 0; font-family: 'Sora', sans-serif; color: #fff; border: 4px solid #38bdf8; border-radius: 20px; overflow: hidden; position: relative;">
-                <div style="background: rgba(15, 23, 42, 0.9); padding: 25px 40px; border-bottom: 2px solid rgba(56, 189, 248, 0.5); display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <div style="font-size: 12px; color: #38bdf8; font-weight: 900; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 5px;" id="it-torneo-nombre">Torneo Pixel</div>
-                        <div style="font-size: 38px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;" id="it-jugador-nombre">JUGADOR</div>
-                        <div style="font-size: 16px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-top: 5px;" id="it-jugador-club">CLUB</div>
+            <!-- 1. GAFETE INDIVIDUAL VIP (Diseño Claro Premium) -->
+            <div id="plantilla-itinerario-vip" style="width: 800px; background: #ffffff; padding: 0; font-family: 'Montserrat', sans-serif; color: #000; border: 2px solid #1e3a8a; position: relative;">
+                <!-- Banner Superior -->
+                <div style="background: #ffffff; display: flex; align-items: center; justify-content: space-between; padding: 15px 30px;">
+                    <div style="font-weight: 900; font-size: 24px; color: #1e3a8a; font-style: italic;">
+                        <i class="fa-solid fa-table-tennis-paddle-ball mr-2"></i> TORNEO PIXEL
                     </div>
-                    <div style="text-align: right; background: rgba(251, 191, 36, 0.1); border: 2px solid #fbbf24; padding: 15px 25px; border-radius: 16px; box-shadow: 0 0 30px rgba(251, 191, 36, 0.2);">
-                        <div style="font-size: 10px; color: #fbbf24; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">Rating Oficial</div>
-                        <div style="font-family: 'Orbitron', sans-serif; font-size: 42px; font-weight: 900; color: #fbbf24;" id="it-jugador-rating">0</div>
+                    <div style="font-weight: 900; font-size: 32px; color: #1e3a8a; font-style: italic; letter-spacing: -1px; text-transform: uppercase;" id="it-torneo-nombre">
+                        TORNEO OFICIAL
                     </div>
                 </div>
-                <div style="padding: 30px 40px;">
-                    <div style="font-size: 14px; font-weight: 900; color: #cbd5e1; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-                        <i class="fa-regular fa-clock mr-2 text-cyan-400"></i> Horario de Competencia
+                <!-- Franja Azul -->
+                <div style="background: #1e3a8a; color: white; text-align: center; font-size: 20px; font-weight: 700; padding: 8px 0; font-style: italic; text-transform: uppercase; letter-spacing: 2px;">
+                    Horario de competencia
+                </div>
+                <!-- Player Info -->
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 30px; background: #ffffff; border-bottom: 4px solid #3b82f6;">
+                    <div style="font-size: 32px; font-weight: 900; color: #000000; text-transform: uppercase;">
+                        <span id="it-jugador-nombre">NOMBRE</span> <span style="font-size: 24px; color: #1e3a8a;" id="it-jugador-club">(CLUB)</span>
                     </div>
-                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; border: none;">
-                        <thead>
-                            <tr style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">
-                                <th style="padding: 12px 15px; text-align: left; background:transparent; color:#38bdf8; border:none;">Hora</th>
-                                <th style="padding: 12px 15px; text-align: left; background:transparent; color:#38bdf8; border:none;">Mesa</th>
-                                <th style="padding: 12px 15px; text-align: left; background:transparent; color:#38bdf8; border:none;">Evento / Fase</th>
-                                <th style="padding: 12px 15px; text-align: left; background:transparent; color:#38bdf8; border:none;">Oponente</th>
-                                <th style="padding: 12px 15px; text-align: center; background:transparent; color:#38bdf8; border:none;">Rating</th>
-                            </tr>
-                        </thead>
-                        <tbody id="it-tabla-partidos">
-                        </tbody>
-                    </table>
-                    <div style="margin-top: 25px; font-size: 11px; color: #64748b; font-weight: 600; text-align: center;">
-                        * Los horarios son aproximados. Favor de estar presente en su mesa 15 minutos antes. <br>
-                        Generado por Central de Torneos - Arbitraje Digital
-                    </div>
+                    <div style="font-size: 38px; font-weight: 900; color: #b45309;" id="it-jugador-rating">0</div>
+                </div>
+                
+                <!-- Tabla -->
+                <table style="width: 100%; border-collapse: collapse; text-align: center;">
+                    <thead>
+                        <tr style="background: #3b82f6; color: #ffffff; font-size: 13px; font-weight: 700; font-style: italic;">
+                            <th style="padding: 6px; border: none; text-align: center;">HORA</th>
+                            <th style="padding: 6px; border: none; text-align: center;">MESA</th>
+                            <th style="padding: 6px; border: none; text-align: center;">EVENTO</th>
+                            <th style="padding: 6px; border: none; text-align: center;">CLUB</th>
+                            <th style="padding: 6px; border: none; text-align: left;">OPONENTE</th>
+                            <th style="padding: 6px; border: none; text-align: center;">RATING</th>
+                        </tr>
+                    </thead>
+                    <tbody id="it-tabla-partidos" style="font-size: 14px; font-weight: 600; color: #1e3a8a;">
+                    </tbody>
+                </table>
+                
+                <!-- Footer -->
+                <div style="background: #3b82f6; color: #fbbf24; font-size: 16px; font-weight: 700; padding: 15px 30px; font-style: italic;">
+                    *Los horarios son aproximados<br>
+                    *Para etapas finales favor de consultar el programa general
                 </div>
             </div>
 
             <!-- 2. CUADRO DE GRUPOS VIP -->
-            <div id="plantilla-grupos-vip" style="width: 1200px; background: #0b1120; padding: 40px; font-family: 'Sora', sans-serif; color: #fff;">
+            <div id="plantilla-grupos-vip" style="width: 1200px; background: #0b1120; padding: 40px; font-family: 'Sora', sans-serif; color: #fff; position: relative;">
                 <div style="text-align: center; margin-bottom: 40px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 20px;">
                     <h1 style="font-size: 42px; font-weight: 900; color: #fbbf24; text-transform: uppercase; letter-spacing: 2px; margin: 0; text-shadow: 0 0 20px rgba(251,191,36,0.3);" id="img-grupos-torneo">TORNEO PIXEL</h1>
                     <h2 style="font-size: 24px; color: #38bdf8; font-weight: 700; margin: 10px 0 0 0; text-transform: uppercase; letter-spacing: 4px;" id="img-grupos-cat">CATEGORÍA</h2>
                     <p style="color: #94a3b8; font-size: 14px; margin-top: 5px; font-weight: 600;">Sorteo Oficial de Fase de Grupos</p>
                 </div>
                 <div id="img-grupos-grid" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
-                    <!-- Se llena con JS -->
                 </div>
             </div>
 
             <!-- 3. CRONOGRAMA VIP (GRÁFICA DE BARRAS) -->
-            <div id="plantilla-cronograma-vip" style="width: 1200px; background: #0f172a; padding: 40px; font-family: 'Sora', sans-serif; color: #fff;">
+            <div id="plantilla-cronograma-vip" style="width: 1200px; background: #0f172a; padding: 40px; font-family: 'Sora', sans-serif; color: #fff; position: relative;">
                 <div style="text-align: center; margin-bottom: 30px;">
                     <h1 style="font-size: 38px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 2px; margin: 0;" id="img-crono-torneo">TORNEO PIXEL</h1>
                     <h2 style="font-size: 20px; color: #34d399; font-weight: 700; margin: 10px 0 0 0; text-transform: uppercase; letter-spacing: 4px;" id="img-crono-cat">CRONOGRAMA DE ACTIVIDADES</h2>
                 </div>
                 <div style="background: rgba(0,0,0,0.5); border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
-                    <table style="width: 100%; border-collapse: collapse; text-align: center;" id="img-crono-table">
-                        <!-- Se llena con JS -->
+                    <table style="width: 100%; border-collapse: collapse; text-align: center; border: none;" id="img-crono-table">
                     </table>
                 </div>
                 <div style="margin-top: 20px; display: flex; justify-content: center; gap: 15px;">
@@ -487,7 +481,6 @@
         function timeToMinutes(timeStr) { 
             if (!timeStr) return 540; // 09:00 default
             let cleanStr = String(timeStr).trim().toLowerCase();
-            // Soporta "14:00" o "14:00 PM"
             let match = cleanStr.match(/^(\d+):(\d+)/);
             if (!match) return 540;
             
@@ -508,28 +501,12 @@
             return `${hrsStr}:${minsStr}`; 
         }
 
-        function quitarAcentos(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : ""; }
-
-        function cambiarModoTorneo(modo) {
-            modoTorneoActual = modo;
-            
-            document.getElementById('btn-toggle-rr').classList.remove('active');
-            document.getElementById('btn-toggle-liga').classList.remove('active-liga');
-            document.getElementById('btn-toggle-flash').classList.remove('active-flash');
-
-            if (modo === 'normal') {
-                document.getElementById('btn-toggle-rr').classList.add('active');
-                document.getElementById('tamano-grupo').style.display = 'block';
-                document.getElementById('rr-vueltas').style.display = 'none';
-            } else if (modo === 'liga') {
-                document.getElementById('btn-toggle-liga').classList.add('active-liga');
-                document.getElementById('tamano-grupo').style.display = 'none';
-                document.getElementById('rr-vueltas').style.display = 'block';
-            } else {
-                document.getElementById('btn-toggle-flash').classList.add('active-flash');
-            }
-            cargarEstadoCategoria();
+        function formatHoraSencilla(horaInput) {
+            if(!horaInput) return '09:00';
+            return horaInput;
         }
+
+        function quitarAcentos(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : ""; }
 
         async function inicializarSorteo() {
             try {
@@ -556,13 +533,9 @@
                     if (!isGuardando && document.getElementById('filtro-categoria').value) cargarEstadoCategoria();
                 }).subscribe();
 
-                document.addEventListener('visibilitychange', () => {
-                    if (document.visibilityState === 'visible' && !isGuardando && document.getElementById('filtro-categoria').value) {
-                        cargarEstadoCategoria();
-                    }
-                });
-
-            } catch(e) { console.error("Error al iniciar:", e); }
+            } catch(e) { 
+                console.error("Error al iniciar:", e); 
+            }
         }
 
         async function cargarEstadoCategoria() {
@@ -590,10 +563,12 @@
                     return; 
                 }
 
-                const { data: inscripcionesData, count } = await clienteSupabase.from('inscripciones')
+                const { data: inscripcionesData, count, error: insErr } = await clienteSupabase.from('inscripciones')
                     .select('jugadores ( id, nombre, puntos_ranking, club )', { count: 'exact' })
                     .eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID).eq('estatus_pago', 'Pagado');
                 
+                if (insErr) throw new Error(insErr.message);
+
                 contador.innerText = count || 0;
                 jugadoresListos = inscripcionesData ? inscripcionesData.map(ins => ins.jugadores).filter(Boolean).sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0)) : [];
 
@@ -607,19 +582,19 @@
 
                     const { data: partidosBD, error } = await clienteSupabase
                         .from('partidos')
-                        .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking)')
+                        .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)')
                         .eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID)
                         .or('grupo_nombre.neq.Flash,grupo_nombre.is.null') 
                         .order('id', { ascending: true });
 
-                    if (error) console.error("Error al cargar partidos de la BD:", error);
+                    if (error) throw new Error(error.message);
 
                     if (partidosBD && partidosBD.length > 0) {
                         partidosCargadosGlobal = partidosBD;
                         contSorteo.style.display = 'none'; btnRehacer.style.display = 'inline-flex'; panelHorarios.style.display = 'none'; btnGuardar.style.display = 'none';
                         
-                        let hasLlaves = partidosBD.some(p => p.ronda_fase && (p.ronda_fase.toLowerCase().includes('semi') || p.ronda_fase.toLowerCase().includes('final') || p.ronda_fase.toLowerCase().includes('cuarto')));
-                        llavesTienenCuartos = partidosBD.some(p => String(p.ronda_fase).toLowerCase().includes('cuartos'));
+                        let hasLlaves = partidosBD.some(p => p.ronda_fase && (String(p.ronda_fase).toLowerCase().includes('semi') || String(p.ronda_fase).toLowerCase().includes('final') || String(p.ronda_fase).toLowerCase().includes('cuarto')));
+                        llavesTienenCuartos = partidosBD.some(p => p.ronda_fase && String(p.ronda_fase).toLowerCase().includes('cuartos'));
 
                         if (!hasLlaves && partidosBD.some(p => p.grupo_nombre === 'Único')) {
                             modoTorneoActual = 'liga';
@@ -632,12 +607,17 @@
                             bloqueLlaves.style.display = 'flex';
                         }
 
-                        reconstruirGruposDesdePartidosBD(partidosBD);
-                        poblarDropdownAgenda(partidosBD);
+                        try { reconstruirGruposDesdePartidosBD(partidosBD); } catch(e) { console.error("Error en reconstruir grupos", e); }
+                        try { poblarDropdownAgenda(partidosBD); } catch(e) { console.error("Error en dropdown agenda", e); }
+                        
                         seccionPartidos.style.display = 'block';
-                        dibujarTablaPartidosBD(partidosBD);
-                        document.getElementById('filtro-jugador-agenda').value = "";
-                        filtrarPartidosPorJugador();
+                        try { dibujarTablaPartidosBD(partidosBD); } catch(e) { console.error("Error en dibujar tabla", e); }
+                        
+                        let selectJugadorAgenda = document.getElementById('filtro-jugador-agenda');
+                        if (selectJugadorAgenda) {
+                            selectJugadorAgenda.value = "";
+                            filtrarPartidosPorJugador();
+                        }
                     } else {
                         partidosCargadosGlobal = [];
                         contSorteo.style.display = 'flex'; btnRehacer.style.display = 'none'; contenedorGrupos.innerHTML = ''; panelHorarios.style.display = 'none'; btnGuardar.style.display = 'none'; seccionPartidos.style.display = 'none';
@@ -645,7 +625,7 @@
                 }
             } catch (err) { 
                 console.error(err);
-                alert("Ocurrió un problema al leer la base de datos: " + err.message); 
+                alert("Ocurrió un problema de conexión al leer los datos. Intenta recargar la página.\nDetalle: " + err.message); 
             }
         }
 
@@ -757,7 +737,7 @@
             html += `</tr></thead><tbody>`;
 
             tiempos.forEach(t => {
-                html += `<tr><td style="padding: 15px; font-weight: 800; font-size: 13px; color: #e2e8f0; background: rgba(255,255,255,0.02); border-right: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">${t}</td>`;
+                html += `<tr><td style="padding: 15px; font-weight: 800; font-size: 13px; color: #e2e8f0; background: rgba(255,255,255,0.02); border-right: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">${formatHoraSencilla(t)}</td>`;
                 
                 mesas.forEach(m => {
                     let match = partidosCargadosGlobal.find(p => p.hora === t && p.mesa === m);
@@ -837,7 +817,7 @@
 
             document.getElementById('it-torneo-nombre').innerText = torneoActivoObj ? torneoActivoObj.nombre : 'TORNEO OFICIAL';
             document.getElementById('it-jugador-nombre').innerText = jNombre;
-            document.getElementById('it-jugador-club').innerText = jClub;
+            document.getElementById('it-jugador-club').innerText = `(${jClub})`;
             document.getElementById('it-jugador-rating').innerText = jRating;
 
             const tbody = document.getElementById('it-tabla-partidos');
@@ -853,12 +833,11 @@
                 let opRating = "";
                 let opClub = "";
                 let evento = p.categorias?.nombre || 'General';
-                let bgRow = index % 2 === 0 ? 'background: rgba(255,255,255,0.02);' : 'background: transparent;';
+                let bgRow = index % 2 === 0 ? 'background: #f0f9ff;' : 'background: #ffffff;';
                 
                 if (esArbitro) {
                     oponente = `<span style="color:#ef4444; font-weight:900;">ARBITRAJE</span>`;
                     opRating = "-";
-                    bgRow = 'background: rgba(244, 63, 94, 0.1); border-left: 3px solid #f43f5e;';
                 } else {
                     let objRival = esJ1 ? p.j2 : p.j1;
                     if (objRival) {
@@ -872,12 +851,13 @@
                 }
 
                 tbody.innerHTML += `
-                    <tr style="${bgRow} border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 14px 15px; font-weight: 800; color: #e2e8f0; font-size: 13px;">${p.hora || 'S/A'}</td>
-                        <td style="padding: 14px 15px; font-weight: 900; color: #38bdf8; font-size: 14px;">M-${p.mesa || 1}</td>
-                        <td style="padding: 14px 15px; color: #cbd5e1; font-size: 12px; font-weight: 700; text-transform: uppercase;">${evento}</td>
-                        <td style="padding: 14px 15px; font-size: 13px;">${oponente} <span style="font-size:10px; color:#94a3b8; margin-left:4px;">${opClub}</span></td>
-                        <td style="padding: 14px 15px; text-align: center; color:#fbbf24; font-family:'Orbitron', sans-serif; font-weight:800;">${opRating}</td>
+                    <tr style="${bgRow} border-bottom: 1px solid #e2e8f0; height: 40px;">
+                        <td style="padding: 10px; font-weight: 700; color:#0f172a;">${formatHoraSencilla(p.hora)}</td>
+                        <td style="padding: 10px; font-weight: 900; color:#1e3a8a;">M-${(p.mesa || 1).toString().padStart(2, '0')}</td>
+                        <td style="padding: 10px; font-weight: 700;">${evento.toUpperCase()}</td>
+                        <td style="padding: 10px; color:#3b82f6; font-weight: 700;">${opClub}</td>
+                        <td style="padding: 10px; text-align: left; font-weight: 800; color:#000;">${oponente}</td>
+                        <td style="padding: 10px; font-weight: 800; color:#b45309;">${opRating}</td>
                     </tr>
                 `;
             });
@@ -885,7 +865,7 @@
             setTimeout(async () => {
                 try {
                     const elemento = document.getElementById('plantilla-itinerario-vip');
-                    const opciones = { scale: 2, backgroundColor: '#0f172a', logging: false };
+                    const opciones = { scale: 2, backgroundColor: '#ffffff', logging: false };
                     const canvas = await html2canvas(elemento, opciones);
                     const imagenDataUrl = canvas.toDataURL("image/png");
 
@@ -903,278 +883,74 @@
             }, 300);
         }
 
-        async function prepararSorteo() {
-            const idCategoria = document.getElementById('filtro-categoria').value;
-            if (!idCategoria) { alert("Selecciona una categoría."); return; }
-            const { data } = await clienteSupabase.from('inscripciones').select(`jugadores ( id, nombre, puntos_ranking, club )`).eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID).eq('estatus_pago', 'Pagado');
-            if (!data || data.length === 0) { alert("No hay jugadores pagados en esta categoría."); return; }
-            
-            jugadoresListos = data.map(ins => ins.jugadores).filter(Boolean).sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
-            
-            if (modoTorneoActual === 'liga') {
-                const vueltas = parseInt(document.getElementById('rr-vueltas').value) || 1;
-                ejecutarLiga(vueltas);
-            } else {
-                ejecutarSerpiente(parseInt(document.getElementById('tamano-grupo').value));
-            }
-            
-            document.getElementById('panel-config-horarios').style.display = 'block'; 
-            document.getElementById('bloque-llaves-config').style.display = modoTorneoActual === 'liga' ? 'none' : 'flex';
-            simularJuecesYActualizarUI();
+        function compartirAgendaWhatsApp() {
+            const nombre = document.getElementById('filtro-jugador-agenda') ? document.getElementById('filtro-jugador-agenda').value : '';
+            let texto = `🏓 *ROL DE PARTIDOS - ${torneoActivoObj ? torneoActivoObj.nombre : ''}* 🏓\n📍 *Sede:* ${torneoActivoObj && torneoActivoObj.lugar_evento ? torneoActivoObj.lugar_evento : 'Sede Principal'}\n${(torneoActivoObj && torneoActivoObj.fecha_evento ? `📅 *Fecha:* ${torneoActivoObj.fecha_evento}\n` : '')}\n`;
+            let lista = partidosCargadosGlobal;
+            if (nombre) { texto += `👤 *Agenda Individual:* ${nombre}\n\n`; lista = partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre) || (p.juez && typeof p.juez === 'string' && p.juez.includes(nombre))); } 
+            else { texto += `📋 *Rol General (Todos los partidos)*\n\n`; }
+            if(lista.length === 0) { alert("No hay partidos para enviar."); return; }
+
+            lista.forEach(p => {
+                let rolText = (nombre && p.juez && typeof p.juez === 'string' && p.juez.includes(nombre)) ? "⚖️ ARBITRA" : "🏓 JUEGA";
+                let n1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : '1° Gpo A'); 
+                let n2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : '2° Gpo B');
+                texto += `⏰ ${formatHoraSencilla(p.hora)} | Mesa ${p.mesa} [${rolText}]\n   ${n1} vs ${n2}\n   ⚖️ Juez: ${p.juez || 'Comité'}\n\n`;
+            });
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
         }
 
-        function ejecutarSerpiente(tamanoGrupo) {
-            const numGrupos = Math.ceil(jugadoresListos.length / tamanoGrupo);
-            gruposGlobal = Array.from({ length: numGrupos }, (_, i) => ({ nombre: String.fromCharCode(65 + i), jugadores: [] }));
-            let direccion = 1, indiceGrupo = 0;
-            for (let i = 0; i < jugadoresListos.length; i++) {
-                let jugador = jugadoresListos[i]; jugador.seedOriginal = i + 1;
-                gruposGlobal[indiceGrupo].jugadores.push(jugador);
-                indiceGrupo += direccion;
-                if (indiceGrupo === numGrupos) { direccion = -1; indiceGrupo = numGrupos - 1; } else if (indiceGrupo === -1) { direccion = 1; indiceGrupo = 0; }
-            }
-            dibujarGrupos(); 
-            simularJuecesYActualizarUI();
+        function exportarAgendaExcel() {
+            let csv = 'Hora,Mesa,Grupo/Ronda,Jugador 1,Jugador 2,Juez Asignado\n';
+            const nombre = document.getElementById('filtro-jugador-agenda') ? document.getElementById('filtro-jugador-agenda').value : '';
+            let lista = nombre ? partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre) || (p.juez && typeof p.juez === 'string' && p.juez.includes(nombre))) : partidosCargadosGlobal;
+
+            lista.forEach(p => {
+                let n1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : '1° Gpo A'); 
+                let n2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : '2° Gpo B');
+                let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre ? 'Gpo '+p.grupo_nombre : (p.ronda_fase||'Llave'));
+                csv += `"${formatHoraSencilla(p.hora)}","Mesa ${p.mesa}","${eqGrupo}","${n1}","${n2}","${p.juez || 'Comité'}"\n`;
+            });
+            const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))); 
+            link.setAttribute("download", `Rol_Partidos_${nombre || 'General'}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
         }
 
-        function ejecutarLiga(vueltas) {
-            jugadoresListos.forEach((j, i) => j.seedOriginal = i + 1);
-            gruposGlobal = [{ nombre: 'Único', jugadores: jugadoresListos, vueltas: vueltas }];
-            dibujarGrupos(); 
-            simularJuecesYActualizarUI();
-        }
-
-        function dibujarGrupos() {
-            const contenedor = document.getElementById('contenedor-grupos'); 
-            let htmlTotal = '';
-            gruposGlobal.forEach((grupo, idxGrupo) => {
-                let titleName = grupo.nombre === 'Único' ? 'Liga Única' : `Grupo ${grupo.nombre}`;
-                let html = `<div class="grupo-card ${clasesColoresGrupo[idxGrupo % clasesColoresGrupo.length]}"><div class="grupo-header">${titleName}</div>`;
-                grupo.jugadores.forEach((j) => {
-                    html += `<div class="jugador-item"><div class="jugador-info"><strong style="color:#ffffff;">${j.nombre}</strong><div><span class="tag-club">${j.club || 'Sin Club'}</span></div><span style="font-size:10px; color:#94a3b8;">${j.puntos_ranking || 0} pts (Seed #${j.seedOriginal})</span><select class="select-grupo" onchange="moverJugador(${j.id}, this.value)"><option value="${grupo.nombre}" selected>Mover a...</option>${gruposGlobal.filter(g => g.nombre !== grupo.nombre).map(g => `<option value="${g.nombre}">${g.nombre === 'Único' ? 'Liga Única' : 'Gpo '+g.nombre}</option>`).join('')}</select></div></div>`;
+        function reconstruirGruposDesdePartidosBD(partidosBD) {
+            const contenedor = document.getElementById('contenedor-grupos'); if (!contenedor) return; 
+            let mainHtml = '';
+            
+            gruposGlobal = []; 
+            
+            [...new Set(partidosBD.map(p => p.grupo_nombre).filter(Boolean))].sort().forEach((nombreGpo, idx) => {
+                let mapaJugadores = new Map();
+                partidosBD.filter(p => p.grupo_nombre === nombreGpo).forEach(p => {
+                    if (p.j1 && p.jugador1_id) mapaJugadores.set(p.jugador1_id, p.j1);
+                    if (p.j2 && p.jugador2_id) mapaJugadores.set(p.jugador2_id, p.j2);
                 });
-                htmlTotal += html + `</div>`;
-            });
-            contenedor.innerHTML = htmlTotal;
-            document.getElementById('btn-guardar-grupos').style.display = 'block';
-        }
-
-        function moverJugador(jugadorId, nuevoGrupoNombre) {
-            let jugador = null;
-            gruposGlobal.forEach(g => { let idx = g.jugadores.findIndex(j => j.id === jugadorId); if(idx !== -1) { jugador = g.jugadores[idx]; g.jugadores.splice(idx, 1); } });
-            let targetGroup = gruposGlobal.find(g => g.nombre === nuevoGrupoNombre);
-            if(targetGroup && jugador) targetGroup.jugadores.push(jugador);
-            dibujarGrupos(); simularJuecesYActualizarUI();
-        }
-
-        function algoritmoRoundRobin(jugadoresArr) {
-            if (!jugadoresArr || jugadoresArr.length === 0) return [];
-            let arr = [...jugadoresArr]; if(arr.length % 2 !== 0) arr.push(null);
-            let schedule = []; let fixed = arr[0]; let rotating = arr.slice(1);
-            for(let r = 0; r < arr.length - 1; r++) {
-                let currentRoundPlayers = [fixed, ...rotating]; let roundMatches = []; let resting = null;
-                for(let i=0; i < arr.length/2; i++) {
-                    let p1 = currentRoundPlayers[i]; let p2 = currentRoundPlayers[arr.length - 1 - i];
-                    if(p1 === null) resting = p2; else if(p2 === null) resting = p1; else roundMatches.push({j1: p1, j2: p2});
-                }
-                schedule.push({ matches: roundMatches, resting: resting }); rotating.unshift(rotating.pop());
-            }
-            return schedule;
-        }
-
-        function simularJuecesYActualizarUI() {
-            if(gruposGlobal.length === 0) return;
-            let numMesas = parseInt(document.getElementById('rr-num-mesas').value) || 2;
-            let scheds = {}; let maxRounds = 0;
-            
-            gruposGlobal.forEach(g => { 
-                let s = algoritmoRoundRobin(g.jugadores); 
-                let sFull = [];
-                let numVueltas = g.vueltas || 1;
-                for(let i=0; i<numVueltas; i++) {
-                    sFull.push(...JSON.parse(JSON.stringify(s)));
-                }
-                scheds[g.nombre] = sFull; 
-                if(sFull.length > maxRounds) maxRounds = sFull.length; 
-            });
-
-            let pendingMatches = [];
-            for(let r=0; r < maxRounds; r++) {
-                gruposGlobal.forEach(g => { if(scheds[g.nombre] && scheds[g.nombre][r]) scheds[g.nombre][r].matches.forEach(m => pendingMatches.push({ r: r, grupoNombre: g.nombre, j1: m.j1, j2: m.j2 })); });
-            }
-
-            let blockNeeds = {}; let currentBlock = 0;
-            while(pendingMatches.length > 0) {
-                let playersBusyInBlock = new Set(); let tableCounter = 0; let matchesAssignedInBlock = [];
-                for (let i = 0; i < pendingMatches.length; i++) {
-                    if (tableCounter >= numMesas) break;
-                    let match = pendingMatches[i];
-                    if ((match.j1 && playersBusyInBlock.has(match.j1.id)) || (match.j2 && playersBusyInBlock.has(match.j2.id))) continue; 
-                    if (match.j1) playersBusyInBlock.add(match.j1.id); if (match.j2) playersBusyInBlock.add(match.j2.id);
-                    matchesAssignedInBlock.push(match); tableCounter++; pendingMatches.splice(i, 1); i--;
-                }
-                if (matchesAssignedInBlock.length === 0 && pendingMatches.length > 0) matchesAssignedInBlock.push(pendingMatches.shift());
-                let categoryPlayersCount = 0; gruposGlobal.forEach(g => categoryPlayersCount += g.jugadores.length);
-                let neededExternal = matchesAssignedInBlock.length - (categoryPlayersCount - playersBusyInBlock.size);
-                if (neededExternal > 0) blockNeeds[currentBlock] = neededExternal;
-                currentBlock++;
-            }
-
-            maxJuecesFaltantesSistema = 0;
-            Object.values(blockNeeds).forEach(v => { if(v > maxJuecesFaltantesSistema) maxJuecesFaltantesSistema = v; });
-
-            const container = document.getElementById('contenedor-jueces-externos');
-            if (maxJuecesFaltantesSistema === 0) container.innerHTML = '<span style="color:#10b981; font-size:10px; font-weight:700;">✅ Los jugadores que descansan son suficientes para arbitrar. No se requieren jueces externos.</span>';
-            else {
-                let html = `<span style="color:#f87171; font-size:10px; font-weight:700; margin-bottom:8px; display:block;">⚠️ Faltan jugadores para arbitrar. Se requieren ${maxJuecesFaltantesSistema} Jueces Externos simultáneos. Asigna sus nombres:</span><div style="display:flex; gap:10px; flex-wrap:wrap;">`;
-                for(let i=0; i<maxJuecesFaltantesSistema; i++) html += `<input type="text" id="juez-ext-${i}" placeholder="Nombre Juez Externo ${i+1}" style="width:200px; padding:6px; font-size:10px; border-radius:6px; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.2);">`;
-                container.innerHTML = html + '</div>';
-            }
-        }
-
-        function recalcularRolPartidos() {
-            let scheds = {}; let maxRounds = 0; let refereeDutyCount = {};
-            gruposGlobal.forEach(g => {
-                g.jugadores.forEach(j => { if (j && j.id) refereeDutyCount[j.id] = 0; });
-                let s = algoritmoRoundRobin(g.jugadores); 
-                let sFull = [];
-                let numVueltas = g.vueltas || 1;
-                for(let i=0; i<numVueltas; i++) {
-                    sFull.push(...JSON.parse(JSON.stringify(s)));
-                }
-                scheds[g.nombre] = sFull; 
-                if(sFull.length > maxRounds) maxRounds = sFull.length;
-            });
-            
-            const mesaInicio = parseInt(document.getElementById('rr-mesa-inicio').value) || 1;
-            const numMesas = parseInt(document.getElementById('rr-num-mesas').value) || 2;
-            const duracionPartido = parseInt(document.getElementById('rr-duracion-partido').value) || 30;
-            const modoJuego = document.getElementById('rr-modo-juego').value || '3-5';
-
-            const duracionFinales = parseInt(document.getElementById('rr-duracion-finales').value) || 45;
-            const numMesasFinales = parseInt(document.getElementById('rr-mesas-finales').value) || 2;
-            
-            let externalNames = [];
-            for(let i=0; i<maxJuecesFaltantesSistema; i++) {
-                let jExtElement = document.getElementById(`juez-ext-${i}`);
-                externalNames.push(jExtElement ? jExtElement.value.trim() : `Juez Externo ${i+1}`);
-            }
-            
-            let pendingMatches = [];
-            for(let r=0; r < maxRounds; r++) {
-                gruposGlobal.forEach(g => { if(scheds[g.nombre] && scheds[g.nombre][r]) scheds[g.nombre][r].matches.forEach(m => pendingMatches.push({ r: r+1, grupoNombre: g.nombre, j1: m.j1, j2: m.j2, modoJuego })); });
-            }
-            
-            let currentTimeMins = timeToMinutes(document.getElementById('rr-hora-inicio').value);
-            let rawBreak = document.getElementById('rr-hora-break').value;
-            let minsBreak = rawBreak ? timeToMinutes(rawBreak) : null;
-            let breakApplied = false; partidosGeneradosRR = [];
-
-            while (pendingMatches.length > 0) {
-                if (minsBreak !== null && !breakApplied && currentTimeMins >= minsBreak) { 
-                    currentTimeMins += (parseInt(document.getElementById('rr-duracion-break').value) || 30); 
-                    breakApplied = true; 
-                }
                 
-                let blockHoraStr = minutesToTimeStr(currentTimeMins);
-                let playersBusyInBlock = new Set(); let tableCounter = 0; let externalRefCounter = 0; let matchesAssignedInBlock = [];
+                let titleName = nombreGpo === 'Único' ? 'Liga Única' : `Grupo ${nombreGpo}`;
+                let jugadoresOrdenados = Array.from(mapaJugadores.values()).sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
 
-                for (let i = 0; i < pendingMatches.length; i++) {
-                    if (tableCounter >= numMesas) break;
-                    let match = pendingMatches[i];
-                    if ((match.j1 && playersBusyInBlock.has(match.j1.id)) || (match.j2 && playersBusyInBlock.has(match.j2.id))) continue; 
-                    match.mesa = mesaInicio + tableCounter; match.hora = blockHoraStr;
-                    if (match.j1) playersBusyInBlock.add(match.j1.id); if (match.j2) playersBusyInBlock.add(match.j2.id);
-                    matchesAssignedInBlock.push(match); tableCounter++; pendingMatches.splice(i, 1); i--;
-                }
+                gruposGlobal.push({ nombre: nombreGpo, jugadores: jugadoresOrdenados });
 
-                if (matchesAssignedInBlock.length === 0 && pendingMatches.length > 0) { let m = pendingMatches.shift(); m.mesa = mesaInicio; m.hora = blockHoraStr; matchesAssignedInBlock.push(m); }
-
-                let categoryPlayers = []; gruposGlobal.forEach(g => { g.jugadores.forEach(j => { if (j && !playersBusyInBlock.has(j.id)) categoryPlayers.push(j); }); });
-                let usedRefsInBlock = new Set();
-                matchesAssignedInBlock.forEach(m => {
-                    let candidateRefs = categoryPlayers.filter(p => !usedRefsInBlock.has(p.id));
-                    if (candidateRefs.length > 0) {
-                        candidateRefs.sort((a, b) => (refereeDutyCount[a.id] || 0) - (refereeDutyCount[b.id] || 0));
-                        let chosenRef = candidateRefs[0]; m.juez = `${chosenRef.nombre} (Descansa)`;
-                        usedRefsInBlock.add(chosenRef.id); refereeDutyCount[chosenRef.id] = (refereeDutyCount[chosenRef.id] || 0) + 1;
-                    } else {
-                        m.juez = externalNames.length > 0 ? externalNames[externalRefCounter % externalNames.length] : 'Comité / Libre'; externalRefCounter++;
-                    }
-                    partidosGeneradosRR.push(m);
+                let html = `<div class="grupo-card ${clasesColoresGrupo[idx % clasesColoresGrupo.length]}"><div class="grupo-header">${titleName}</div>`;
+                jugadoresOrdenados.forEach((jObj, i) => { 
+                    html += `<div class="jugador-item"><div class="jugador-info"><strong style="color:#ffffff;">${jObj.nombre || 'Desconocido'}</strong><div><span class="tag-club">${jObj.club || 'Sin Club'}</span></div><span style="font-size:10px; color:#94a3b8;">${jObj.puntos_ranking || 0} pts (Seed #${i + 1})</span><select class="select-grupo" onchange="moverJugador(${jObj.id}, this.value)"><option value="${nombreGpo}" selected>Mover a...</option>${[...new Set(partidosBD.map(px => px.grupo_nombre).filter(Boolean))].filter(g => g !== nombreGpo).map(g => `<option value="${g}">${g === 'Único' ? 'Liga Única' : 'Gpo '+g}</option>`).join('')}</select></div></div>`; 
                 });
-                currentTimeMins += duracionPartido;
-            }
-
-            if (modoTorneoActual !== 'liga') {
-                let rondasLlaves = [];
-                llavesTienenCuartos = false;
-                
-                if (gruposGlobal.length > 2) {
-                    llavesTienenCuartos = true;
-                    rondasLlaves.push([
-                        { rondaFase: 'Cuartos 1', modoJuego, juez: 'Comité Oficial' },
-                        { rondaFase: 'Cuartos 2', modoJuego, juez: 'Comité Oficial' },
-                        { rondaFase: 'Cuartos 3', modoJuego, juez: 'Comité Oficial' },
-                        { rondaFase: 'Cuartos 4', modoJuego, juez: 'Comité Oficial' }
-                    ]);
-                    rondasLlaves.push([
-                        { rondaFase: 'Semifinal 1', modoJuego, juez: 'Comité Oficial' },
-                        { rondaFase: 'Semifinal 2', modoJuego, juez: 'Comité Oficial' }
-                    ]);
-                    rondasLlaves.push([
-                        { rondaFase: 'Gran Final', modoJuego, juez: 'Comité Oficial' }
-                    ]);
-                } else {
-                    rondasLlaves.push([
-                        { rondaFase: 'Semifinal 1', modoJuego, juez: 'Comité Oficial' },
-                        { rondaFase: 'Semifinal 2', modoJuego, juez: 'Comité Oficial' }
-                    ]);
-                    rondasLlaves.push([
-                        { rondaFase: 'Gran Final', modoJuego, juez: 'Comité Oficial' }
-                    ]);
-                }
-
-                rondasLlaves.forEach(ronda => {
-                    let matchesAsignadosRonda = 0;
-                    while(matchesAsignadosRonda < ronda.length) {
-                        if (minsBreak !== null && !breakApplied && currentTimeMins >= minsBreak) { 
-                            currentTimeMins += (parseInt(document.getElementById('rr-duracion-break').value) || 30); 
-                            breakApplied = true; 
-                        }
-                        
-                        let horaStr = minutesToTimeStr(currentTimeMins);
-                        let tableCounter = 0;
-                        while (tableCounter < numMesasFinales && matchesAsignadosRonda < ronda.length) {
-                            let m = ronda[matchesAsignadosRonda];
-                            m.mesa = mesaInicio + tableCounter;
-                            m.hora = horaStr;
-                            partidosGeneradosRR.push(m);
-                            matchesAsignadosRonda++;
-                            tableCounter++;
-                        }
-                        currentTimeMins += duracionFinales;
-                    }
-                });
-            }
+                mainHtml += html + `</div>`;
+            });
             
-            document.getElementById('seccion-partidos-rr').style.display = 'block';
-            dibujarTablaPartidosGenerados(partidosGeneradosRR);
+            contenedor.innerHTML = mainHtml;
         }
 
-        function dibujarTablaPartidosGenerados(lista) {
-            const tbody = document.getElementById('tabla-partidos-rr'); if(!tbody) return; 
-            let htmlTabla = '';
-            lista.forEach((p) => {
-                let juezTexto = p.juez || 'Comité / Libre';
-                let eqGrupo = p.grupoNombre === 'Único' ? 'Liga Única' : (p.grupoNombre ? 'Gpo ' + p.grupoNombre : (p.rondaFase || 'Llave'));
-                
-                let nomJ1 = p.j1 ? p.j1.nombre : (p.rondaFase ? getProyeccionNombre(p.rondaFase, true, llavesTienenCuartos) : 'Por definir');
-                let nomJ2 = p.j2 ? p.j2.nombre : (p.rondaFase ? getProyeccionNombre(p.rondaFase, false, llavesTienenCuartos) : 'Por definir');
-                
-                htmlTabla += `<tr><td><strong>⏰ ${p.hora}</strong></td><td><span class="badge-mesa">Mesa ${p.mesa}</span></td><td><span class="badge-grupo">${eqGrupo}</span></td><td><strong>${nomJ1}</strong></td><td style="text-align:center;">VS</td><td><strong>${nomJ2}</strong></td><td><span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span></td><td class="no-print"><small style="color:#fbbf24; font-weight:700;">Guarda en BD para habilitar arbitraje</small></td></tr>`;
-            });
-            tbody.innerHTML = htmlTabla;
+        async function rehacerSorteo() {
+            const idCat = document.getElementById('filtro-categoria').value;
+            if (!confirm("⚠️ ¿Deseas ELIMINAR el sorteo guardado de esta categoría y generar uno nuevo?")) return;
+            try {
+                await clienteSupabase.from('partidos').delete().eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID).or('grupo_nombre.neq.Flash,grupo_nombre.is.null');
+                await cargarEstadoCategoria();
+            } catch(e) { alert("Error al borrar: " + e.message); }
         }
 
         async function guardarGruposBD() {
