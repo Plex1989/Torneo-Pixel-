@@ -11,8 +11,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- LIBRERÍA PARA GENERAR IMÁGENES VIP -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <script>
         const isAuthLocal = localStorage.getItem('admin_autenticado') === 'true';
@@ -272,24 +270,12 @@
 
     <div class="main-content no-print">
         
-        <!-- BANNER TORNEO Y PIN DE ESPECTADOR -->
+        <!-- BANNER TORNEO -->
         <div class="panel-3d panel-cyan" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; padding: 20px 28px;">
-            <div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: center;">
-                <div>
-                    <span style="font-size: 9px; font-weight: 800; text-transform: uppercase; color:#a855f7; letter-spacing: 2px;">Torneo Activo en el Sistema</span>
-                    <h3 id="nombre-torneo-banner" style="margin: 4px 0 0 0; border: none; padding: 0; color:#ffffff; font-size:18px; letter-spacing: 1px;">Cargando...</h3>
-                </div>
-                
-                <!-- CAJA DE CONFIGURACIÓN DEL PIN DE ESPECTADOR -->
-                <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(251, 191, 36, 0.3); padding: 8px 12px; border-radius: 12px; display: flex; align-items: center; gap: 10px;">
-                    <div style="display: flex; flex-direction: column;">
-                        <span style="font-size: 8px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px;"><i class="fa-solid fa-lock mr-1"></i> PIN de Espectador</span>
-                        <input type="text" id="admin-pin-torneo" maxlength="8" class="input-tabla" style="width: 80px; padding: 4px 8px !important; font-family: monospace; font-size: 12px !important; margin-top: 4px; border-color: #fbbf24 !important; color: #fbbf24 !important; text-align: center;">
-                    </div>
-                    <button class="btn-console btn-gold" onclick="guardarPinTorneo()" style="padding: 6px 10px; font-size: 9px;">Guardar PIN</button>
-                </div>
+            <div>
+                <span style="font-size: 9px; font-weight: 800; text-transform: uppercase; color:#a855f7; letter-spacing: 2px;">Torneo Activo en el Sistema</span>
+                <h3 id="nombre-torneo-banner" style="margin: 4px 0 0 0; border: none; padding: 0; color:#ffffff; font-size:18px; letter-spacing: 1px;">Cargando...</h3>
             </div>
-
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
                 <button class="btn-console btn-ws-style" onclick="compartirLinkInscripcionWS()">📲 LINK INSCRIPCIÓN</button>
                 <button class="btn-console btn-purple" onclick="compartirLinkTransmisionWS()">📺 LINK TRANSMISIÓN (FANS)</button>
@@ -435,66 +421,6 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
             </table>
         </div>
 
-        <!-- MÓDULO NUEVO: GENERADOR DE ITINERARIOS (COMPARTIR POR WHATSAPP) -->
-        <div class="panel-3d panel-purple">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px; margin-bottom: 18px; flex-wrap: wrap; gap: 10px;">
-                <h2 style="border: none; margin: 0; padding: 0;"><i class="fa-solid fa-camera-retro mr-2"></i> Generador de Itinerarios Individuales</h2>
-            </div>
-            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px;">Selecciona un jugador para generar su tarjeta oficial de partidos y arbitraje. Se descargará como imagen lista para enviar por WhatsApp.</p>
-            
-            <div class="form-row" style="align-items: center;">
-                <select id="select-jugador-itinerario" class="input-tabla flex-1" style="max-width: 400px;">
-                    <option value="">-- Selecciona un jugador --</option>
-                </select>
-                <button class="btn-console btn-purple" onclick="generarImagenItinerario()">
-                    <i class="fa-solid fa-download mr-1"></i> Descargar Imagen VIP
-                </button>
-            </div>
-
-            <!-- TARJETA OCULTA QUE SE CONVERTIRÁ EN IMAGEN -->
-            <div style="position: absolute; left: -9999px; top: -9999px;">
-                <div id="plantilla-itinerario-vip" style="width: 800px; background: radial-gradient(circle at center, #111827 0%, #030712 100%); border: 4px solid #38bdf8; padding: 0; font-family: 'Sora', sans-serif; color: white; border-radius: 20px; overflow: hidden; position: relative;">
-                    <!-- Cabecera -->
-                    <div style="background: rgba(15, 23, 42, 0.9); padding: 25px 40px; border-bottom: 2px solid rgba(56, 189, 248, 0.5); display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-size: 12px; color: #38bdf8; font-weight: 900; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 5px;" id="it-torneo-nombre">Torneo Pixel</div>
-                            <div style="font-size: 38px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;" id="it-jugador-nombre">NOMBRE DEL JUGADOR</div>
-                            <div style="font-size: 16px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-top: 5px;" id="it-jugador-club">CLUB</div>
-                        </div>
-                        <div style="text-align: right; background: rgba(251, 191, 36, 0.1); border: 2px solid #fbbf24; padding: 15px 25px; border-radius: 16px; box-shadow: 0 0 30px rgba(251, 191, 36, 0.2);">
-                            <div style="font-size: 10px; color: #fbbf24; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">Rating Oficial</div>
-                            <div style="font-family: 'Orbitron', sans-serif; font-size: 42px; font-weight: 900; color: #fbbf24;" id="it-jugador-rating">0</div>
-                        </div>
-                    </div>
-                    
-                    <!-- Tabla -->
-                    <div style="padding: 30px 40px;">
-                        <div style="font-size: 14px; font-weight: 900; color: #cbd5e1; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-                            <i class="fa-regular fa-clock mr-2 text-cyan-400"></i> Horario de Competencia
-                        </div>
-                        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                            <thead>
-                                <tr style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">
-                                    <th style="padding: 12px 15px; text-align: left; border-top-left-radius: 8px; border-bottom-left-radius: 8px;">Hora</th>
-                                    <th style="padding: 12px 15px; text-align: left;">Mesa</th>
-                                    <th style="padding: 12px 15px; text-align: left;">Evento / Fase</th>
-                                    <th style="padding: 12px 15px; text-align: left;">Oponente</th>
-                                    <th style="padding: 12px 15px; text-align: center; border-top-right-radius: 8px; border-bottom-right-radius: 8px;">Rating</th>
-                                </tr>
-                            </thead>
-                            <tbody id="it-tabla-partidos">
-                                <!-- Se llena por JS -->
-                            </tbody>
-                        </table>
-                        <div style="margin-top: 25px; font-size: 11px; color: #64748b; font-weight: 600; text-align: center;">
-                            * Los horarios son aproximados. Favor de estar presente en su mesa 15 minutos antes. <br>
-                            Generado por Central de Torneos - Arbitraje Digital
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- BD JUGADORES Y RANKING -->
         <div class="panel-3d panel-purple">
             <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 14px; flex-wrap: wrap; gap: 12px;">
@@ -635,109 +561,6 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
     <div id="area-impresion-memoria" class="memoria-print-area"></div>
 
     <script>
-        const supabaseUrl = 'https://stytjtqshyupkyihurpd.supabase.co';
-        const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
-        const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-        const ORG_ID = localStorage.getItem('organizador_id') || 1;
-        let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
-        
-        let torneoActivoObj = null;
-        let todosLosJugadoresAdmin = [], todasLasCategoriasAdmin = [], todosLosClubsAdmin = [];
-        let programacionCategoriasNube = [];
-        let filtroEstadoMonitor = 'en_curso'; 
-        let categoriaFiltroAdmin = 'todas';
-        let categoriaResumenSelAdmin = null;
-        let partidosMonitoreo = [];
-        let reglasRankingList = [];
-        let dataMemoriaGlobal = null; 
-        let canalEspectadores = null;
-
-        let bonoPaseActivo = false;
-        let bonoPaseValor = 0;
-
-        const obtenerEstiloCategoria = (catId) => {
-            const paleta = [
-                { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.5)', text: '#fbbf24' },
-                { bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.5)', text: '#38bdf8' },
-                { bg: 'rgba(217, 70, 239, 0.15)', border: 'rgba(217, 70, 239, 0.5)', text: '#f0abfc' },
-                { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.5)', text: '#34d399' },
-                { bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.5)', text: '#c084fc' }
-            ];
-            return paleta[(catId || 0) % paleta.length];
-        };
-
-        const getApellido = (nombreCompleto) => {
-            if(!nombreCompleto) return "";
-            const partes = nombreCompleto.trim().split(" ");
-            return partes[partes.length - 1];
-        };
-
-        async function cargarDatosIniciales() {
-            try {
-                const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
-                if (torneoData) {
-                    torneoActivoObj = torneoData;
-                    
-                    document.getElementById('admin-pin-torneo').value = torneoData.pin_espectador || '';
-
-                    let infoExtra = [];
-                    if (torneoData.fecha_evento) infoExtra.push(`📅 ${torneoData.fecha_evento}`);
-                    if (torneoData.lugar_evento) infoExtra.push(`📍 ${torneoData.lugar_evento}`);
-                    let strExtra = infoExtra.length > 0 ? ` (${infoExtra.join(' - ')})` : '';
-                    document.getElementById('nombre-torneo-banner').innerText = `${torneoData.nombre}${strExtra}`;
-                } else {
-                    document.getElementById('nombre-torneo-banner').innerText = "Torneo Activo #" + idTorneoActivo;
-                }
-            } catch(e) { console.error("Error cargando torneo:", e); }
-
-            try {
-                const [resJug, resCat, resClubs, resProg, resReglas] = await Promise.allSettled([
-                    clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID).order('puntos_ranking', { ascending: false }),
-                    clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: false }),
-                    clienteSupabase.from('clubes').select('*').eq('organizador_id', ORG_ID).order('nombre', { ascending: true }),
-                    clienteSupabase.from('programacion_categorias').select('*').eq('torneo_id', idTorneoActivo),
-                    clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }) 
-                ]);
-
-                todosLosJugadoresAdmin = resJug.status === 'fulfilled' ? (resJug.value.data || []) : [];
-                todasLasCategoriasAdmin = resCat.status === 'fulfilled' ? (resCat.value.data || []) : [];
-                todosLosClubsAdmin = resClubs.status === 'fulfilled' ? (resClubs.value.data || []) : [];
-                programacionCategoriasNube = resProg.status === 'fulfilled' ? (resProg.value.data || []) : [];
-                reglasRankingList = resReglas.status === 'fulfilled' ? (resReglas.value.data || []) : [];
-            } catch(e) { console.error("Error en peticiones principales:", e); }
-
-            await safelyRunAsync(cargarInscripcionFlashView, 'tabla-inscripcion-flash');
-            await safelyRunAsync(poblarDropdownClubs, null);
-            await safelyRunAsync(dibujarTablaClubs, 'tabla-clubs');
-            await safelyRunAsync(filtrarYAutoSeleccionarAdmin, null);
-            await safelyRunAsync(generarRankingPorCategoriasHTMLPDF, null);
-            await safelyRunAsync(cargarCategoriasAdminView, 'tabla-categorias');
-            await safelyRunAsync(cargarReglasAdminView, 'tabla-reglas');
-            await safelyRunAsync(dibujarTablaProgramacionCategorias, 'tabla-programacion-categorias');
-            await safelyRunAsync(cargarInscritosEnVivo, 'tabla-inscritos-vivo');
-            await safelyRunAsync(cargarPendientes, 'tabla-pendientes');
-            await safelyRunAsync(cargarPendientesRanking, 'tabla-pendientes-ranking');
-            await safelyRunAsync(cargarBono, null);
-            await safelyRunAsync(cargarConvocatoria, null); 
-            await safelyRunAsync(poblarSelectItinerarios, null);
-
-            activarSuscripcionEspectadores();
-            activarSuscripcionRealtime();
-        }
-
-        async function safelyRunAsync(fn, tableId) {
-            try {
-                await fn();
-            } catch (e) {
-                console.error(`Error en ${fn.name}:`, e);
-                if (tableId) {
-                    const el = document.getElementById(tableId);
-                    if (el) el.innerHTML = `<tr><td colspan="10" class="mensaje-vacio" style="color:#ef4444; font-weight:bold;">⚠️ Error: ${e.message}</td></tr>`;
-                }
-            }
-        }
-
         // ================= FUNCIÓN GLOBAL PARA ACTUALIZAR DIVISIÓN Y HANDICAP =================
         async function actualizarDivHandicap(jugadorId, prefix) {
             const divNode = document.querySelector(`input[name="div_${prefix}_${jugadorId}"]:checked`);
@@ -812,148 +635,108 @@ El comité organizador se reserva el derecho de inscripciones fuera de los lími
 
         function compartirLinkTransmisionWS() {
             if (!torneoActivoObj) return alert("Cargando datos del torneo...");
-            
-            let extraInfo = "";
-            if (torneoActivoObj.pin_espectador && String(torneoActivoObj.pin_espectador).trim() !== '') {
-                extraInfo = `\n🔒 *PIN de Acceso VIP:* ${torneoActivoObj.pin_espectador}\n`;
-            }
-
             let url = window.location.origin + '/espectador.html?torneo=' + torneoActivoObj.id;
-            let texto = `📺 *¡Sigue el Torneo en Vivo!* 📺\n\n*Pixel Studio T.*\nTorneo: *${torneoActivoObj.nombre}*\n${extraInfo}\nSigue los marcadores y resultados en tiempo real aquí:\n👉 ${url}`;
+            let texto = `📺 *¡Sigue el Torneo en Vivo!* 📺\n\n*Pixel Studio T.*\nTorneo: *${torneoActivoObj.nombre}*\n\nSigue los marcadores y resultados en tiempo real aquí:\n👉 ${url}`;
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
         }
 
-        async function guardarPinTorneo() {
-            const inputPin = document.getElementById('admin-pin-torneo');
-            const nuevoPin = inputPin.value.trim();
-            
+        const supabaseUrl = 'https://stytjtqshyupkyihurpd.supabase.co';
+        const supabaseKey = 'sb_publishable_vwjEpT0qRQv_giJV-oqLaA_dkDDCcR-';
+        const clienteSupabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        const ORG_ID = localStorage.getItem('organizador_id') || 1;
+        let idTorneoActivo = localStorage.getItem('torneo_activo_id') || 1;
+        
+        let torneoActivoObj = null;
+        let todosLosJugadoresAdmin = [], todasLasCategoriasAdmin = [], todosLosClubsAdmin = [];
+        let programacionCategoriasNube = [];
+        let filtroEstadoMonitor = 'en_curso'; 
+        let categoriaFiltroAdmin = 'todas';
+        let categoriaResumenSelAdmin = null;
+        let partidosMonitoreo = [];
+        let reglasRankingList = [];
+        let dataMemoriaGlobal = null; 
+        let canalEspectadores = null;
+
+        let bonoPaseActivo = false;
+        let bonoPaseValor = 0;
+
+        const obtenerEstiloCategoria = (catId) => {
+            const paleta = [
+                { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.5)', text: '#fbbf24' },
+                { bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.5)', text: '#38bdf8' },
+                { bg: 'rgba(217, 70, 239, 0.15)', border: 'rgba(217, 70, 239, 0.5)', text: '#f0abfc' },
+                { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.5)', text: '#34d399' },
+                { bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.5)', text: '#c084fc' }
+            ];
+            return paleta[(catId || 0) % paleta.length];
+        };
+
+        const getApellido = (nombreCompleto) => {
+            if(!nombreCompleto) return "";
+            const partes = nombreCompleto.trim().split(" ");
+            return partes[partes.length - 1];
+        };
+
+        async function cargarDatosIniciales() {
             try {
-                const { error } = await clienteSupabase
-                    .from('torneos')
-                    .update({ pin_espectador: nuevoPin })
-                    .eq('id', idTorneoActivo);
-                
-                if (error) throw error;
-
-                if (torneoActivoObj) {
-                    torneoActivoObj.pin_espectador = nuevoPin;
-                }
-
-                alert("✅ PIN de Espectador actualizado correctamente.");
-            } catch (err) {
-                alert("❌ Error al guardar el PIN: " + err.message);
-            }
-        }
-
-        // ================= GENERADOR DE ITINERARIOS INDIVIDUALES =================
-        function poblarSelectItinerarios() {
-            const select = document.getElementById('select-jugador-itinerario');
-            if(!select) return;
-            select.innerHTML = '<option value="">-- Selecciona un jugador --</option>';
-            
-            let jugadores = [...todosLosJugadoresAdmin].sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
-            jugadores.forEach(j => {
-                let opt = document.createElement('option');
-                opt.value = j.id;
-                opt.textContent = `${j.nombre} (${j.club || 'S/C'})`;
-                opt.dataset.nombre = j.nombre;
-                opt.dataset.club = j.club || 'Sin Club';
-                opt.dataset.ranking = j.puntos_ranking || 0;
-                select.appendChild(opt);
-            });
-        }
-
-        async function generarImagenItinerario() {
-            const select = document.getElementById('select-jugador-itinerario');
-            const jId = select.value;
-            if (!jId) { alert("Por favor, selecciona un jugador de la lista."); return; }
-            
-            const btn = document.querySelector('button[onclick="generarImagenItinerario()"]');
-            const txtOriginal = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Generando...';
-            btn.disabled = true;
-
-            const opcion = select.options[select.selectedIndex];
-            const jNombre = opcion.dataset.nombre;
-            
-            document.getElementById('it-torneo-nombre').innerText = torneoActivoObj ? torneoActivoObj.nombre : 'Torneo Oficial';
-            document.getElementById('it-jugador-nombre').innerText = jNombre;
-            document.getElementById('it-jugador-club').innerText = opcion.dataset.club;
-            document.getElementById('it-jugador-rating').innerText = opcion.dataset.ranking;
-
-            let partidosJugador = partidosMonitoreo.filter(p => 
-                p.jugador1_id == jId || 
-                p.jugador2_id == jId || 
-                (p.juez && p.juez.toUpperCase() === jNombre.toUpperCase())
-            );
-
-            if (partidosJugador.length === 0) {
-                alert("Este jugador no tiene partidos ni arbitrajes programados en el sistema aún.");
-                btn.innerHTML = txtOriginal; btn.disabled = false;
-                return;
-            }
-
-            partidosJugador.sort((a, b) => timeStringToMinutes(a.hora) - timeStringToMinutes(b.hora));
-
-            const tbody = document.getElementById('it-tabla-partidos');
-            tbody.innerHTML = '';
-
-            partidosJugador.forEach((p, index) => {
-                const esArbitro = (p.juez && p.juez.toUpperCase() === jNombre.toUpperCase()) && p.jugador1_id != jId && p.jugador2_id != jId;
-                const esJ1 = p.jugador1_id == jId;
-                
-                let oponente = "";
-                let opRating = "";
-                let evento = p.categorias?.nombre || 'General';
-                let fase = p.grupo_nombre === 'Flash' ? 'Liga Continua' : (p.grupo_nombre ? (p.grupo_nombre === 'Único' ? 'Liga Única' : `Grupo ${p.grupo_nombre}`) : (p.ronda_fase || 'Eliminatoria'));
-                
-                let bgRow = index % 2 === 0 ? 'background: rgba(255,255,255,0.02);' : 'background: transparent;';
-                
-                if (esArbitro) {
-                    oponente = `<span style="color:#f43f5e; font-weight:900;"><i class="fa-solid fa-whistle mr-1"></i> ARBITRAJE</span>`;
-                    opRating = "-";
-                    bgRow = 'background: rgba(244, 63, 94, 0.1); border-left: 3px solid #f43f5e;';
+                const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).single();
+                if (torneoData) {
+                    torneoActivoObj = torneoData;
+                    let infoExtra = [];
+                    if (torneoData.fecha_evento) infoExtra.push(`📅 ${torneoData.fecha_evento}`);
+                    if (torneoData.lugar_evento) infoExtra.push(`📍 ${torneoData.lugar_evento}`);
+                    let strExtra = infoExtra.length > 0 ? ` (${infoExtra.join(' - ')})` : '';
+                    document.getElementById('nombre-torneo-banner').innerText = `${torneoData.nombre}${strExtra}`;
                 } else {
-                    let objRival = esJ1 ? p.j2 : p.j1;
-                    if (objRival) {
-                        oponente = `<span style="color:#ffffff; font-weight:800;">${objRival.nombre}</span> <span style="color:#94a3b8; font-size:10px; margin-left:5px;">(${objRival.club || 'S/C'})</span>`;
-                        opRating = `<span style="font-family:'Orbitron', sans-serif; color:#fbbf24; font-weight:800;">${objRival.puntos_ranking || 0}</span>`;
-                    } else {
-                        let nombreFaseRival = esJ1 ? (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir') : (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
-                        oponente = `<span style="color:#94a3b8; font-style:italic;">${nombreFaseRival}</span>`;
-                        opRating = "-";
-                    }
+                    document.getElementById('nombre-torneo-banner').innerText = "Torneo Activo #" + idTorneoActivo;
                 }
+            } catch(e) { console.error("Error cargando torneo:", e); }
 
-                tbody.innerHTML += `
-                    <tr style="${bgRow} border-bottom: 1px solid rgba(255,255,255,0.05);">
-                        <td style="padding: 14px 15px; font-weight: 800; color: #e2e8f0; font-size: 13px;">${p.hora || 'S/A'}</td>
-                        <td style="padding: 14px 15px; font-weight: 900; color: #38bdf8; font-size: 14px;">M-${p.mesa || 1}</td>
-                        <td style="padding: 14px 15px; color: #cbd5e1; font-size: 12px; font-weight: 700; text-transform: uppercase;">${evento}<br><span style="font-size:9px; color:#fbbf24;">${fase}</span></td>
-                        <td style="padding: 14px 15px; font-size: 13px;">${oponente}</td>
-                        <td style="padding: 14px 15px; text-align: center;">${opRating}</td>
-                    </tr>
-                `;
-            });
+            try {
+                const [resJug, resCat, resClubs, resProg, resReglas] = await Promise.allSettled([
+                    clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID).order('puntos_ranking', { ascending: false }),
+                    clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID).order('puntos_minimos', { ascending: false }),
+                    clienteSupabase.from('clubes').select('*').eq('organizador_id', ORG_ID).order('nombre', { ascending: true }),
+                    clienteSupabase.from('programacion_categorias').select('*').eq('torneo_id', idTorneoActivo),
+                    clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }) 
+                ]);
 
-            setTimeout(async () => {
-                try {
-                    const elemento = document.getElementById('plantilla-itinerario-vip');
-                    const opciones = { scale: 2, backgroundColor: '#0a0f1c', logging: false };
-                    const canvas = await html2canvas(elemento, opciones);
-                    const imagenDataUrl = canvas.toDataURL("image/png");
+                todosLosJugadoresAdmin = resJug.status === 'fulfilled' ? (resJug.value.data || []) : [];
+                todasLasCategoriasAdmin = resCat.status === 'fulfilled' ? (resCat.value.data || []) : [];
+                todosLosClubsAdmin = resClubs.status === 'fulfilled' ? (resClubs.value.data || []) : [];
+                programacionCategoriasNube = resProg.status === 'fulfilled' ? (resProg.value.data || []) : [];
+                reglasRankingList = resReglas.status === 'fulfilled' ? (resReglas.value.data || []) : [];
+            } catch(e) { console.error("Error en peticiones principales:", e); }
 
-                    const link = document.createElement('a');
-                    link.download = `Gafete_${jNombre.replace(/\s+/g, '_')}.png`;
-                    link.href = imagenDataUrl;
-                    link.click();
-                } catch (error) {
-                    console.error("Error generando imagen:", error);
-                    alert("Hubo un error al generar la imagen.");
-                } finally {
-                    btn.innerHTML = txtOriginal; btn.disabled = false;
+            await safelyRunAsync(cargarInscripcionFlashView, 'tabla-inscripcion-flash');
+            await safelyRunAsync(poblarDropdownClubs, null);
+            await safelyRunAsync(dibujarTablaClubs, 'tabla-clubs');
+            await safelyRunAsync(filtrarYAutoSeleccionarAdmin, null);
+            await safelyRunAsync(generarRankingPorCategoriasHTMLPDF, null);
+            await safelyRunAsync(cargarCategoriasAdminView, 'tabla-categorias');
+            await safelyRunAsync(cargarReglasAdminView, 'tabla-reglas');
+            await safelyRunAsync(dibujarTablaProgramacionCategorias, 'tabla-programacion-categorias');
+            await safelyRunAsync(cargarInscritosEnVivo, 'tabla-inscritos-vivo');
+            await safelyRunAsync(cargarPendientes, 'tabla-pendientes');
+            await safelyRunAsync(cargarPendientesRanking, 'tabla-pendientes-ranking');
+            await safelyRunAsync(cargarBono, null);
+            await safelyRunAsync(cargarConvocatoria, null); 
+
+            activarSuscripcionEspectadores();
+            activarSuscripcionRealtime();
+        }
+
+        async function safelyRunAsync(fn, tableId) {
+            try {
+                await fn();
+            } catch (e) {
+                console.error(`Error en ${fn.name}:`, e);
+                if (tableId) {
+                    const el = document.getElementById(tableId);
+                    if (el) el.innerHTML = `<tr><td colspan="10" class="mensaje-vacio" style="color:#ef4444; font-weight:bold;">⚠️ Error: ${e.message}</td></tr>`;
                 }
-            }, 300);
+            }
         }
 
         async function cargarConvocatoria() {
