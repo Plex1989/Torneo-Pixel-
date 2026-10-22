@@ -215,14 +215,27 @@
         .vip-gpo-name { font-size: 13px; font-weight: 800; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
         .vip-gpo-club { font-size: 10px; color: #94a3b8; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
 
-        /* Cronograma Específico (Bloques Horizontales) */
-        .vip-crono-block { display: flex; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 16px; overflow: hidden; align-items: stretch; }
-        .vip-crono-time { background: rgba(0,0,0,0.6); padding: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; min-width: 180px; border-right: 1px solid rgba(255,255,255,0.05); }
-        .vip-crono-time-txt { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900; }
-        .vip-crono-time-lbl { font-size: 10px; color: #64748b; font-weight: 800; margin: 4px 0; }
-        .vip-crono-details { padding: 20px 30px; display: flex; flex-direction: column; justify-content: center; flex: 1; }
-        .vip-crono-cat { font-size: 24px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
-        .vip-crono-fase { font-size: 14px; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+        /* NUEVO: Cronograma Gráfico Estilo Gantt */
+        #vip-gantt-container {
+            position: relative;
+            margin-top: 30px;
+            background: rgba(0,0,0,0.4);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        #vip-gantt-axis {
+            position: relative;
+            height: 35px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            margin-bottom: 15px;
+        }
+        #vip-gantt-tracks {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
 
     </style>
 </head>
@@ -389,7 +402,7 @@
                         <option value="">-- Todos los Jugadores --</option>
                     </select>
                     
-                    <!-- NUEVOS BOTONES DE IMÁGENES VIP -->
+                    <!-- BOTONES DE IMÁGENES VIP -->
                     <button type="button" class="btn-console" style="background:#111827; border-color:#f5a623; color:#f5a623;" onclick="generarGafeteImagen()">📸 Imagen Gafete VIP</button>
                     <button type="button" class="btn-console" style="background:#111827; border-color:#f5a623; color:#f5a623;" onclick="generarGruposImagen()">📸 Imagen Grupos</button>
                     <button type="button" class="btn-console" style="background:#111827; border-color:#f5a623; color:#f5a623;" onclick="generarCronogramaImagen()">📸 Cronograma Global</button>
@@ -458,20 +471,31 @@
             </div>
         </div>
 
-        <!-- PLANTILLA CRONOGRAMA GLOBAL (BLOQUES HORIZONTALES) -->
-        <div id="plantilla-cronograma" class="vip-gold-theme" style="display:none; width: 1080px; padding: 60px;">
+        <!-- PLANTILLA CRONOGRAMA GRÁFICA DE GANTT (VIP) -->
+        <div id="plantilla-cronograma" class="vip-gold-theme" style="display:none; width: 1200px; padding: 50px;">
             <div class="vip-glow"></div>
             <div class="vip-glow-2"></div>
             <div class="vip-content">
-                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:40px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 20px;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 20px;">
                     <div>
                         <div class="vip-pill" style="margin-bottom:10px;">PROGRAMACIÓN GLOBAL</div>
                         <div class="vip-title" style="font-size:48px;">CRONOGRAMA <span class="vip-title-gold">OFICIAL</span></div>
                     </div>
                 </div>
                 
-                <div id="vip-timeline-blocks" style="display:flex; flex-direction:column;">
-                    <!-- Blocks inyectados aquí -->
+                <div id="vip-gantt-container" style="position: relative; margin-top: 30px; background: rgba(0,0,0,0.4); border-radius: 16px; padding: 30px 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                    
+                    <!-- EJE DE TIEMPO (Ticks) -->
+                    <div id="vip-gantt-axis" style="display: flex; position: relative; height: 35px; border-bottom: 2px solid rgba(255,255,255,0.15); margin-bottom: 20px;">
+                        <!-- Ticks inyectados -->
+                    </div>
+                    
+                    <!-- PISTAS Y BARRAS -->
+                    <div id="vip-gantt-tracks" style="position: relative; display: flex; flex-direction: column; gap: 20px;">
+                        <!-- Grid Vertical inyectado detrás -->
+                        <!-- Tracks inyectados -->
+                    </div>
+
                 </div>
                 
                 <div id="vip-crono-torneo-name" style="margin-top:50px; text-align:center; font-size:14px; color:#64748b; font-weight:800; letter-spacing:3px; text-transform:uppercase;">
@@ -1419,10 +1443,12 @@
 
         async function generarCronogramaImagen() {
             const btn = document.querySelector('button[onclick="generarCronogramaImagen()"]');
-            const txtOr = btn.innerText; btn.innerText = "⏳ Generando..."; btn.disabled = true;
+            const txtOr = btn.innerText; 
+            btn.innerText = "⏳ Generando..."; 
+            btn.disabled = true;
 
             try {
-                // Buscamos TODOS los partidos del torneo para hacer el Cronograma Global de Bloques
+                // Buscamos TODOS los partidos del torneo en BD
                 const { data: allMatches } = await clienteSupabase.from('partidos')
                     .select('hora, categorias(nombre), grupo_nombre, ronda_fase')
                     .eq('torneo_id', idTorneoActivo)
@@ -1434,7 +1460,7 @@
                     return;
                 }
 
-                // Agrupar por "Categoría" y "Tipo de Fase"
+                // 1. Agrupar la información por Categoría + Fase
                 let blocksMap = new Map();
 
                 allMatches.forEach(p => {
@@ -1442,6 +1468,10 @@
                     let catName = p.categorias?.nombre || 'Categoría General';
                     let isGroup = p.grupo_nombre && p.grupo_nombre !== 'Flash';
                     let isLiga = p.grupo_nombre === 'Único';
+                    let isFlash = p.grupo_nombre === 'Flash';
+                    
+                    if(isFlash) return; // Flash no entra al cronograma tradicional
+
                     let faseType = isLiga ? 'LIGA ÚNICA' : (isGroup ? 'FASE DE GRUPOS' : 'FASE FINAL ELIMINATORIA');
                     
                     let key = `${catName}|${faseType}`;
@@ -1452,40 +1482,81 @@
                     blocksMap.get(key).times.push(timeToMinutes(p.hora));
                 });
 
-                // Ordenar por hora de inicio
+                // 2. Determinar los límites de tiempo de cada bloque y ordenarlos cronológicamente
                 let blocks = Array.from(blocksMap.values()).map(b => {
                     let minTime = Math.min(...b.times);
-                    // Le sumamos 30 mins a la última hora para simular cuándo termina ese bloque aprox.
-                    let maxTime = Math.max(...b.times) + 30; 
+                    let maxTime = Math.max(...b.times) + 30; // Simulamos +30mins al último partido de la fase
                     return { ...b, minTime, maxTime };
                 }).sort((a,b) => a.minTime - b.minTime);
 
-                document.getElementById('vip-crono-torneo-name').innerText = torneoActivoObj ? `${torneoActivoObj.nombre} • ${torneoActivoObj.fecha_evento || ''}` : 'TORNEO OFICIAL';
+                if(blocks.length === 0) {
+                    alert("No hay datos calculables para el cronograma.");
+                    btn.innerText = txtOr; btn.disabled = false;
+                    return;
+                }
+
+                // 3. Obtener el límite mínimo y máximo global del torneo
+                let absoluteMinTime = Math.min(...blocks.map(b => b.minTime));
+                let absoluteMaxTime = Math.max(...blocks.map(b => b.maxTime));
+
+                // Redondear para que el eje X se vea limpio (ej. arrancar en hora en punto)
+                let startAxis = Math.floor(absoluteMinTime / 60) * 60;
+                let endAxis = Math.ceil(absoluteMaxTime / 60) * 60;
+                let totalDuration = endAxis - startAxis;
+
+                if (totalDuration <= 0) totalDuration = 60; // Prevención de errores división por 0
+
+                // 4. Dibujar EJE X (Las horas en la parte superior)
+                let axisHtml = '';
+                let gridHtml = '';
+                let numTicks = Math.ceil(totalDuration / 60); // 1 marca por cada hora
                 
-                const timeline = document.getElementById('vip-timeline-blocks');
-                timeline.innerHTML = '';
+                for(let i=0; i<=numTicks; i++) {
+                    let tickTime = startAxis + (i * 60);
+                    let pct = (i * 60 / totalDuration) * 100;
+                    let timeStr = minutesToTimeStr(tickTime);
+                    
+                    axisHtml += `<div style="position:absolute; left:${pct}%; transform:translateX(-50%); font-size:12px; font-weight:800; color:#94a3b8; font-family:'Orbitron', sans-serif;">${timeStr}</div>`;
+                    gridHtml += `<div style="position:absolute; left:${pct}%; top:0; bottom:0; width:1px; background:rgba(255,255,255,0.05); z-index:1;"></div>`;
+                }
+
+                document.getElementById('vip-gantt-axis').innerHTML = axisHtml;
+
+                // 5. Dibujar PISTAS y BARRAS
+                let tracksHtml = '';
+                const colors = [
+                    { bg: 'rgba(56, 189, 248, 0.15)', border: '#38bdf8', glow: 'rgba(56,189,248,0.4)' }, // Cyan
+                    { bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b', glow: 'rgba(245,158,11,0.4)' }, // Gold
+                    { bg: 'rgba(168, 85, 247, 0.15)', border: '#a855f7', glow: 'rgba(168,85,247,0.4)' }, // Purple
+                    { bg: 'rgba(16, 185, 129, 0.15)', border: '#10b981', glow: 'rgba(16,185,129,0.4)' }, // Emerald
+                    { bg: 'rgba(244, 63, 94, 0.15)', border: '#f43f5e', glow: 'rgba(244,63,94,0.4)' }  // Rose
+                ];
                 
                 blocks.forEach((b, idx) => {
+                    let leftPct = ((b.minTime - startAxis) / totalDuration) * 100;
+                    let widthPct = ((b.maxTime - b.minTime) / totalDuration) * 100;
+                    let color = colors[idx % colors.length];
+                    
                     let startStr = minutesToTimeStr(b.minTime);
                     let endStr = minutesToTimeStr(b.maxTime);
-                    let colorBase = idx % 2 === 0 ? '#38bdf8' : '#a855f7'; // Alternar colores
                     
-                    timeline.innerHTML += `
-                        <div class="vip-crono-block" style="border-left-color: ${colorBase};">
-                            <div class="vip-crono-time">
-                                <div class="vip-crono-time-txt" style="color:${colorBase};">${startStr}</div>
-                                <div class="vip-crono-time-lbl">HASTA</div>
-                                <div class="vip-crono-time-txt" style="color:${colorBase};">${endStr}</div>
-                            </div>
-                            <div class="vip-crono-details">
-                                <div class="vip-crono-cat">${b.catName}</div>
-                                <div class="vip-crono-fase">${b.faseType}</div>
+                    tracksHtml += `
+                        <div style="position: relative; height: 65px; width: 100%; background: rgba(255,255,255,0.02); border-radius: 8px;">
+                            <!-- BARRA DE TIEMPO -->
+                            <div style="position: absolute; left: ${leftPct}%; width: ${widthPct}%; height: 100%; background: ${color.bg}; border: 1px solid ${color.border}; border-left: 4px solid ${color.border}; border-radius: 8px; box-shadow: 0 0 15px ${color.glow}; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; z-index: 10;">
+                                <div style="font-weight: 900; font-size: 13px; text-transform: uppercase; color: white; white-space: nowrap; text-shadow: 1px 1px 3px black;">${b.catName} - ${b.faseType}</div>
+                                <div style="font-weight: 800; font-size: 11px; color: #cbd5e1; margin-top: 2px;">${startStr} a ${endStr}</div>
                             </div>
                         </div>
                     `;
                 });
 
-                await renderAndDownload('plantilla-cronograma', `Cronograma_General.png`);
+                document.getElementById('vip-gantt-tracks').innerHTML = gridHtml + tracksHtml;
+
+                document.getElementById('vip-crono-torneo-name').innerText = torneoActivoObj ? `${torneoActivoObj.nombre} • ${torneoActivoObj.fecha_evento || ''}` : 'TORNEO OFICIAL';
+
+                // Usar html2canvas para generar la imagen
+                await renderAndDownload('plantilla-cronograma', `Cronograma_Grafico_General.png`);
 
             } catch(e) {
                 console.error(e);
