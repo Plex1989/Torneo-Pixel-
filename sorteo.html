@@ -35,6 +35,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap');
 
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 0; background-color: #04060a; color: #f8fafc; min-height: 100vh; position: relative; overflow-x: hidden; }
         
@@ -160,45 +161,67 @@
             td, th { border: 1px solid #999; padding: 6px; color: black !important; background: white !important; }
         }
 
-        /* ================= PLANTILLAS VIP PARA IMÁGENES ================= */
+        /* ================= PLANTILLAS VIP (DARK & GOLD) PARA IMÁGENES ================= */
         .export-container-hidden { position: absolute; left: -9999px; top: -9999px; }
         
-        .gafete-vip {
-            width: 800px;
-            background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
-            border: 4px solid #06b6d4;
-            border-radius: 24px;
-            padding: 40px;
-            color: white;
+        .vip-gold-theme {
+            width: 1080px; 
+            background: #0a0a0a;
+            color: #ffffff;
             font-family: 'Sora', sans-serif;
+            padding: 50px;
             position: relative;
             overflow: hidden;
+            border: 2px solid #1a1a1a;
         }
-        .gafete-vip::before {
-            content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(6,182,212,0.1) 0%, transparent 60%);
-            z-index: 0;
+        .vip-glow {
+            position: absolute; top: -20%; right: -10%; width: 600px; height: 600px;
+            background: #f5a623; filter: blur(200px); opacity: 0.15; z-index: 0; pointer-events:none;
         }
-        .gafete-header {
-            display: flex; justify-content: space-between; align-items: flex-end;
-            border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 20px; margin-bottom: 30px; position: relative; z-index: 1;
+        .vip-glow-2 {
+            position: absolute; bottom: -20%; left: -10%; width: 500px; height: 500px;
+            background: #f5a623; filter: blur(200px); opacity: 0.1; z-index: 0; pointer-events:none;
         }
-        .gafete-name { font-size: 42px; font-weight: 900; text-transform: uppercase; color: #ffffff; line-height: 1; text-shadow: 0 0 20px rgba(6,182,212,0.5); }
-        .gafete-club { font-size: 18px; color: #38bdf8; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; margin-top: 8px; }
-        .gafete-rank { text-align: right; }
-        .gafete-rank-pts { font-family: 'Orbitron', sans-serif; font-size: 48px; font-weight: 900; color: #fbbf24; line-height: 1; text-shadow: 0 0 20px rgba(245,158,11,0.5); }
-        .gafete-rank-lbl { font-size: 14px; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 2px; }
+        .vip-content { position: relative; z-index: 10; }
         
-        .gafete-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; position: relative; z-index: 1; }
-        .gafete-table th { background: rgba(6,182,212,0.2); color: #22d3ee; padding: 12px 20px; text-transform: uppercase; font-size: 12px; letter-spacing: 2px; text-align: left; border-radius: 8px; }
-        .gafete-table td { background: rgba(255,255,255,0.03); padding: 16px 20px; border: 1px solid rgba(255,255,255,0.05); font-size: 16px; font-weight: 700; color: #f8fafc; }
-        .gafete-table td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; color: #38bdf8; font-weight: 900; }
-        .gafete-table td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+        .vip-pill { display: inline-block; border: 1px solid rgba(245,166,35,0.5); color: #f5a623; padding: 6px 16px; border-radius: 99px; font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 20px; background: rgba(245,166,35,0.05); }
         
-        .row-juega td { border-left: 4px solid #34d399; }
-        .row-arbitra td { border-left: 4px solid #f87171; opacity: 0.9; }
+        .vip-title { font-size: 54px; font-weight: 900; line-height: 1.1; margin-bottom: 10px; text-transform: uppercase; }
+        .vip-title-gold { color: #f5a623; }
+        .vip-subtitle { font-size: 16px; font-weight: 800; color: #f5a623; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 30px; }
+
+        /* Gafete Específico */
+        .vip-stats-row { display: flex; gap: 20px; margin-top: 30px; }
+        .vip-stat-box { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; flex: 1; text-align: center; }
+        .vip-stat-box .val { font-size: 28px; font-weight: 900; color: #f5a623; font-family: 'Orbitron', sans-serif; }
+        .vip-stat-box .lbl { font-size: 11px; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px; }
+
+        .vip-table { width: 100%; border-collapse: separate; border-spacing: 0 8px; margin-top: 30px; }
+        .vip-table th { color: #f5a623; text-transform: uppercase; font-size: 11px; letter-spacing: 2px; padding: 12px 20px; text-align: left; border-bottom: 1px solid rgba(245,166,35,0.3); }
+        .vip-table td { background: rgba(255,255,255,0.03); padding: 16px 20px; font-size: 15px; font-weight: 700; border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .vip-table td:first-child { border-left: 1px solid rgba(255,255,255,0.05); border-top-left-radius: 12px; border-bottom-left-radius: 12px; color: #f5a623; font-weight: 900; }
+        .vip-table td:last-child { border-right: 1px solid rgba(255,255,255,0.05); border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+        .row-arbitra td { border-left: 4px solid #ef4444; opacity: 0.8; }
+        .row-juega td { border-left: 4px solid #10b981; }
         .badge-arbitra { background: rgba(239,68,68,0.2); color: #fca5a5; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 900; text-transform: uppercase; border: 1px solid rgba(239,68,68,0.4); }
-        .gafete-footer { margin-top: 30px; text-align: center; font-size: 12px; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; position: relative; z-index: 1; }
+
+        /* Grupos Grid Específico */
+        .vip-grupos-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; margin-top: 30px; }
+        .vip-gpo-card { background: rgba(0,0,0,0.5); border: 1px solid rgba(245,166,35,0.3); border-radius: 16px; padding: 20px; box-shadow: inset 0 0 20px rgba(245,166,35,0.05), 0 0 20px rgba(245,166,35,0.1); }
+        .vip-gpo-title { font-size: 20px; font-weight: 900; color: #f5a623; margin-bottom: 15px; text-align: center; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid rgba(245,166,35,0.2); padding-bottom: 10px; }
+        .vip-gpo-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px dashed rgba(255,255,255,0.1); }
+        .vip-gpo-item:last-child { border-bottom: none; }
+        .vip-gpo-name { font-size: 16px; font-weight: 800; color: #fff; text-transform: uppercase; }
+        .vip-gpo-club { font-size: 12px; color: #94a3b8; font-weight: 700; text-transform: uppercase; }
+
+        /* Cronograma Específico */
+        .vip-timeline { margin-top: 40px; display: flex; flex-direction: column; gap: 20px; }
+        .vip-time-row { display: flex; align-items: stretch; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; overflow: hidden; }
+        .vip-time-box { background: rgba(245,166,35,0.15); border-right: 2px solid #f5a623; padding: 25px; display: flex; align-items: center; justify-content: center; min-width: 150px; }
+        .vip-time-txt { font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 900; color: #f5a623; text-shadow: 0 0 10px rgba(245,166,35,0.5); }
+        .vip-event-box { padding: 25px; display: flex; align-items: center; flex: 1; }
+        .vip-event-txt { font-size: 22px; font-weight: 800; color: #fff; text-transform: uppercase; letter-spacing: 1px; }
+
     </style>
 </head>
 <body>
@@ -363,7 +386,11 @@
                     <select id="filtro-jugador-agenda" onchange="filtrarPartidosPorJugador()" style="padding:8px 12px; font-size:11px; max-width:200px;">
                         <option value="">-- Todos los Jugadores --</option>
                     </select>
-                    <button type="button" class="btn-console" style="background:#0284c7; border-color:#38bdf8; color:white;" onclick="generarGafeteImagen()">📸 Imagen Gafete VIP</button>
+                    
+                    <!-- NUEVOS BOTONES DE IMÁGENES VIP -->
+                    <button type="button" class="btn-console" style="background:#111827; border-color:#f5a623; color:#f5a623;" onclick="generarGafeteImagen()">📸 Imagen Gafete VIP</button>
+                    <button type="button" class="btn-console" style="background:#111827; border-color:#f5a623; color:#f5a623;" onclick="generarGruposImagen()">📸 Imagen Grupos</button>
+                    <button type="button" class="btn-console" style="background:#111827; border-color:#f5a623; color:#f5a623;" onclick="generarCronogramaImagen()">📸 Cronograma</button>
                     
                     <button type="button" class="btn-console btn-ws-style" onclick="compartirAgendaWhatsApp()">📲 WhatsApp</button>
                     <button type="button" class="btn-console" onclick="imprimirAgenda()">📄 PDF</button>
@@ -387,34 +414,65 @@
 
     <!-- PLANTILLAS OCULTAS PARA GENERACIÓN DE IMÁGENES -->
     <div class="export-container-hidden">
-        <div id="plantilla-gafete" class="gafete-vip">
-            <div class="gafete-header">
-                <div>
-                    <div id="gafete-nombre" class="gafete-name">JUGADOR MUESTRA</div>
-                    <div id="gafete-club" class="gafete-club">CLUB MUESTRA</div>
+        
+        <!-- PLANTILLA GAFETE -->
+        <div id="plantilla-gafete" class="vip-gold-theme">
+            <div class="vip-glow"></div>
+            <div class="vip-glow-2"></div>
+            <div class="vip-content">
+                <div id="gafete-pill" class="vip-pill">CATEGORÍA</div>
+                <div id="gafete-nombre" class="vip-title">NOMBRE <span class="vip-title-gold">JUGADOR</span></div>
+                <div id="gafete-club" class="vip-subtitle">CLUB • ATLETA OFICIAL</div>
+                
+                <div class="vip-stats-row">
+                    <div class="vip-stat-box"><div id="gafete-pts" class="val">0</div><div class="lbl">Ranking Nac.</div></div>
+                    <div class="vip-stat-box"><div id="gafete-pj" class="val">0</div><div class="lbl">Partidos</div></div>
+                    <div class="vip-stat-box"><div id="gafete-mesa" class="val">M-1</div><div class="lbl">Mesa Base</div></div>
+                    <div class="vip-stat-box"><div id="gafete-rol" class="val">JUEGA</div><div class="lbl">Estatus Inicial</div></div>
                 </div>
-                <div class="gafete-rank">
-                    <div class="gafete-rank-lbl">Ranking Oficial</div>
-                    <div id="gafete-puntos" class="gafete-rank-pts">1000</div>
-                </div>
-            </div>
-            <table class="gafete-table">
-                <thead>
-                    <tr>
-                        <th>Hora</th>
-                        <th>Mesa</th>
-                        <th>Fase / Grupo</th>
-                        <th>Oponente / Acción</th>
-                    </tr>
-                </thead>
-                <tbody id="gafete-body">
-                    <!-- Filas dinámicas -->
-                </tbody>
-            </table>
-            <div id="gafete-torneo-nombre" class="gafete-footer">
-                TORNEO HALCONES 2026 • PIXEL STUDIO ARBITRAJE
+
+                <table class="vip-table">
+                    <thead><tr><th>Hora</th><th>Mesa</th><th>Fase</th><th>Oponente / Asignación</th></tr></thead>
+                    <tbody id="gafete-body"></tbody>
+                </table>
+                <div id="gafete-torneo-nombre" style="margin-top:40px; text-align:center; font-size:11px; color:#64748b; font-weight:800; letter-spacing:2px; text-transform:uppercase;">TORNEO OFICIAL</div>
             </div>
         </div>
+
+        <!-- PLANTILLA GRUPOS -->
+        <div id="plantilla-grupos" class="vip-gold-theme">
+            <div class="vip-glow"></div>
+            <div class="vip-glow-2"></div>
+            <div class="vip-content">
+                <div class="vip-pill">SORTEO OFICIAL</div>
+                <div class="vip-title">FASE DE <span class="vip-title-gold">GRUPOS</span></div>
+                <div id="vip-grupos-cat" class="vip-subtitle">CATEGORÍA</div>
+                
+                <div id="vip-grupos-grid" class="vip-grupos-grid">
+                    <!-- Grupos inyectados -->
+                </div>
+                
+                <div id="vip-grupos-torneo" style="margin-top:40px; text-align:center; font-size:11px; color:#64748b; font-weight:800; letter-spacing:2px; text-transform:uppercase;">TORNEO OFICIAL</div>
+            </div>
+        </div>
+
+        <!-- PLANTILLA CRONOGRAMA -->
+        <div id="plantilla-cronograma" class="vip-gold-theme">
+            <div class="vip-glow"></div>
+            <div class="vip-glow-2"></div>
+            <div class="vip-content">
+                <div class="vip-pill">HORARIOS DE COMPETENCIA</div>
+                <div class="vip-title">CRONOGRAMA <span class="vip-title-gold">OFICIAL</span></div>
+                <div id="vip-crono-cat" class="vip-subtitle">CATEGORÍA</div>
+                
+                <div id="vip-timeline" class="vip-timeline">
+                    <!-- Cronograma inyectado -->
+                </div>
+                
+                <div id="vip-crono-torneo" style="margin-top:40px; text-align:center; font-size:11px; color:#64748b; font-weight:800; letter-spacing:2px; text-transform:uppercase;">TORNEO OFICIAL</div>
+            </div>
+        </div>
+
     </div>
 
     <script>
@@ -440,7 +498,7 @@
         let historialFlashGlobal = []; 
         let idJugadorPendienteDiv = null; 
         let draggedId = null; 
-        let llavesTienenCuartos = false; // Variable global para saber si hubo cuartos al generar proyección
+        let llavesTienenCuartos = false; 
 
         const clasesColoresGrupo = ['gpo-cyan', 'gpo-purple', 'gpo-emerald', 'gpo-amber'];
 
@@ -454,11 +512,9 @@
             { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)', text: '#000', badge: '#06b6d4' }   
         ];
 
-        // Mapeo inteligente de proyección de Nombres para Fase de Llaves
         function getProyeccionNombre(rondaFase, isJ1, hasCuartos) {
             if (!rondaFase) return 'Por definir';
             const rf = String(rondaFase).toLowerCase();
-            
             if (rf.includes('cuartos')) {
                 if (rf.includes('1')) return isJ1 ? '1° Gpo A' : '2° Gpo C';
                 if (rf.includes('2')) return isJ1 ? '1° Gpo B' : '2° Gpo D';
@@ -475,25 +531,18 @@
                 }
             }
             if (rf.includes('final')) return isJ1 ? 'Gana Semi 1' : 'Gana Semi 2';
-            
             return isJ1 ? `${rondaFase} J1` : `${rondaFase} J2`;
         }
 
-        // ==============================================================
-        // PARSER DE TIEMPOS BLINDADO (SOLUCIONA EL BUG DE LAS 12:00 AM)
-        // ==============================================================
         function timeToMinutes(timeStr) { 
             if (!timeStr) return 540; 
             let cleanStr = String(timeStr).trim().toLowerCase();
             let match = cleanStr.match(/^(\d+):(\d+)/);
             if (!match) return 540;
-            
             let hrs = parseInt(match[1], 10);
             let mins = parseInt(match[2], 10);
-            
             if (cleanStr.includes('p') && hrs < 12) hrs += 12;
             if (cleanStr.includes('a') && hrs === 12) hrs = 0;
-            
             return hrs * 60 + mins; 
         }
 
@@ -510,7 +559,6 @@
 
         function cambiarModoTorneo(modo) {
             modoTorneoActual = modo;
-            
             document.getElementById('btn-toggle-rr').classList.remove('active');
             document.getElementById('btn-toggle-liga').classList.remove('active-liga');
             document.getElementById('btn-toggle-flash').classList.remove('active-flash');
@@ -531,7 +579,6 @@
 
         async function inicializarSorteo() {
             try {
-                // Cargar listado global de jugadores para acceder a sus rankings en el Gafete VIP
                 const resJug = await clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID);
                 if (resJug.data) todosLosJugadoresAdmin = resJug.data;
 
@@ -1007,7 +1054,6 @@
             let breakApplied = false; partidosGeneradosRR = [];
 
             while (pendingMatches.length > 0) {
-                // VERIFICACIÓN DEL BREAK PARA FASE DE GRUPOS
                 if (minsBreak !== null && !breakApplied && currentTimeMins >= minsBreak) { 
                     currentTimeMins += (parseInt(document.getElementById('rr-duracion-break').value) || 30); 
                     breakApplied = true; 
@@ -1075,8 +1121,6 @@
                 rondasLlaves.forEach(ronda => {
                     let matchesAsignadosRonda = 0;
                     while(matchesAsignadosRonda < ronda.length) {
-                        
-                        // FIX DEL BREAK: Se verifica y aplica TAMBIÉN durante las llaves de eliminación directa.
                         if (minsBreak !== null && !breakApplied && currentTimeMins >= minsBreak) { 
                             currentTimeMins += (parseInt(document.getElementById('rr-duracion-break').value) || 30); 
                             breakApplied = true; 
@@ -1112,7 +1156,6 @@
                 let esJ1 = filtroActual && p.j1 && p.j1.nombre === filtroActual; let esJ2 = filtroActual && p.j2 && p.j2.nombre === filtroActual;
                 let juezBadge = esJuez ? `<span style="background: #ef4444; color: #ffffff; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 1px; box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); display:inline-block;"><i class="fa-solid fa-gavel"></i> ¡TE TOCA ARBITRAR!</span>` : `<span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span>`;
                 
-                // Mapeo inteligente con los nombres proyectados para llaves guardadas en BD
                 let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Llave'));
                 let nomJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : 'Por definir');
                 let nomJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : 'Por definir');
@@ -1129,7 +1172,6 @@
                 let juezTexto = p.juez || 'Comité / Libre';
                 let eqGrupo = p.grupoNombre === 'Único' ? 'Liga Única' : (p.grupoNombre ? 'Gpo ' + p.grupoNombre : (p.rondaFase || 'Llave'));
                 
-                // Mapeo inteligente con los nombres proyectados para llaves recién generadas
                 let nomJ1 = p.j1 ? p.j1.nombre : (p.rondaFase ? getProyeccionNombre(p.rondaFase, true, llavesTienenCuartos) : 'Por definir');
                 let nomJ2 = p.j2 ? p.j2.nombre : (p.rondaFase ? getProyeccionNombre(p.rondaFase, false, llavesTienenCuartos) : 'Por definir');
                 
@@ -1264,94 +1306,149 @@
         // MÓDULO VIP: GENERACIÓN DE IMÁGENES PROFESIONALES (GAFETES Y CRONOGRAMAS)
         // ============================================================================
 
+        async function renderAndDownload(elementId, filename) {
+            const plantilla = document.getElementById(elementId);
+            try {
+                const canvas = await html2canvas(plantilla, {
+                    scale: 2, // Alta resolución
+                    backgroundColor: '#0a0a0a',
+                    logging: false
+                });
+                const imgData = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = filename;
+                link.href = imgData;
+                link.click();
+            } catch (err) {
+                alert("Hubo un error al generar la imagen. Intenta de nuevo.");
+                console.error(err);
+            }
+        }
+
         async function generarGafeteImagen() {
             const nombreJugador = document.getElementById('filtro-jugador-agenda').value;
-            
-            if (!nombreJugador) {
-                alert("Para generar un Gafete VIP, primero selecciona el nombre de un jugador en la lista desplegable (-- Todos los Jugadores --).");
-                return;
-            }
+            if (!nombreJugador) return alert("Para generar un Gafete VIP, primero selecciona el nombre de un jugador en la lista desplegable (-- Todos los Jugadores --).");
 
-            // Filtrar los partidos donde juega o arbitra
-            let partidosJugador = partidosCargadosGlobal.filter(p => 
-                (p.j1 && p.j1.nombre === nombreJugador) || 
-                (p.j2 && p.j2.nombre === nombreJugador) || 
-                (p.juez && typeof p.juez === 'string' && p.juez.includes(nombreJugador))
-            );
+            let partidosJugador = partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombreJugador) || (p.j2 && p.j2.nombre === nombreJugador) || (p.juez && typeof p.juez === 'string' && p.juez.includes(nombreJugador)));
+            if (partidosJugador.length === 0) return alert("Este jugador no tiene partidos ni arbitrajes asignados en esta categoría.");
 
-            if (partidosJugador.length === 0) {
-                alert("Este jugador no tiene partidos ni arbitrajes asignados en esta categoría.");
-                return;
-            }
-
-            // Buscar datos del jugador
             let jugadorData = todosLosJugadoresAdmin.find(j => j.nombre === nombreJugador);
-            
-            // Poblar plantilla
-            document.getElementById('gafete-nombre').innerText = nombreJugador;
+            const catSelect = document.getElementById('filtro-categoria');
+            const catName = catSelect.options[catSelect.selectedIndex].text;
+
+            document.getElementById('gafete-pill').innerText = catName;
+            document.getElementById('gafete-nombre').innerHTML = nombreJugador;
             document.getElementById('gafete-club').innerText = jugadorData ? (jugadorData.club || 'Sin Club') : 'Atleta';
-            document.getElementById('gafete-puntos').innerText = jugadorData ? (jugadorData.puntos_ranking || 0) : '0';
+            document.getElementById('gafete-pts').innerText = jugadorData ? (jugadorData.puntos_ranking || 0) : '0';
+            document.getElementById('gafete-pj').innerText = partidosJugador.length;
+            
+            // Calculo Mesa Inicial y Estatus (Juega/Arbitra)
+            let primerP = partidosJugador[0];
+            document.getElementById('gafete-mesa').innerText = primerP ? `M-${primerP.mesa}` : '-';
+            let primerEsJuez = primerP && typeof primerP.juez === 'string' && primerP.juez.includes(nombreJugador);
+            document.getElementById('gafete-rol').innerText = primerEsJuez ? 'ARBITRA' : 'JUEGA';
+
             document.getElementById('gafete-torneo-nombre').innerText = torneoActivoObj ? `${torneoActivoObj.nombre} • ${torneoActivoObj.fecha_evento || ''}` : 'TORNEO OFICIAL';
 
-            const tbody = document.getElementById('gafete-body');
-            tbody.innerHTML = '';
-
+            const tbody = document.getElementById('gafete-body'); tbody.innerHTML = '';
             partidosJugador.forEach(p => {
                 let esJuez = p.juez && typeof p.juez === 'string' && p.juez.includes(nombreJugador);
-                
                 let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre ? 'Gpo '+p.grupo_nombre : (p.ronda_fase||'Llave'));
                 let oponente = '';
-                
                 if (esJuez) {
                     let n1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : 'J1'); 
                     let n2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : 'J2');
                     oponente = `<span class="badge-arbitra">ARBITRAR: ${n1} vs ${n2}</span>`;
                 } else {
                     let esJ1 = p.j1 && p.j1.nombre === nombreJugador;
-                    oponente = esJ1 
-                        ? (p.j2 ? p.j2.nombre : getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos)) 
-                        : (p.j1 ? p.j1.nombre : getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos));
+                    oponente = esJ1 ? (p.j2 ? p.j2.nombre : getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos)) : (p.j1 ? p.j1.nombre : getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos));
                 }
+                tbody.innerHTML += `<tr class="${esJuez ? 'row-arbitra' : 'row-juega'}"><td>${p.hora || '09:00 AM'}</td><td>Mesa ${p.mesa}</td><td>${eqGrupo}</td><td>${oponente}</td></tr>`;
+            });
 
-                tbody.innerHTML += `
-                    <tr class="${esJuez ? 'row-arbitra' : 'row-juega'}">
-                        <td>${p.hora || '09:00 AM'}</td>
-                        <td>Mesa ${p.mesa}</td>
-                        <td>${eqGrupo}</td>
-                        <td>${oponente}</td>
-                    </tr>
+            const btn = document.querySelector('button[onclick="generarGafeteImagen()"]');
+            const txtOr = btn.innerText; btn.innerText = "⏳ Generando..."; btn.disabled = true;
+            await renderAndDownload('plantilla-gafete', `Gafete_${nombreJugador.replace(/\s+/g, '_')}.png`);
+            btn.innerText = txtOr; btn.disabled = false;
+        }
+
+        async function generarGruposImagen() {
+            if(gruposGlobal.length === 0) return alert("No hay grupos generados. Ejecuta el sorteo primero o carga una categoría existente.");
+            
+            const catSelect = document.getElementById('filtro-categoria');
+            const catName = catSelect.options[catSelect.selectedIndex].text;
+            
+            document.getElementById('vip-grupos-cat').innerText = catName;
+            document.getElementById('vip-grupos-torneo').innerText = torneoActivoObj ? `${torneoActivoObj.nombre} • ${torneoActivoObj.fecha_evento || ''}` : 'TORNEO OFICIAL';
+            
+            const grid = document.getElementById('vip-grupos-grid');
+            grid.innerHTML = '';
+            
+            gruposGlobal.forEach(g => {
+                let html = `<div class="vip-gpo-card"><div class="vip-gpo-title">${g.nombre === 'Único' ? 'Liga Única' : 'Grupo ' + g.nombre}</div>`;
+                g.jugadores.forEach((j, idx) => {
+                    html += `<div class="vip-gpo-item"><div class="vip-gpo-name">${idx+1}. ${j.nombre}</div><div class="vip-gpo-club">${j.club || 'S/C'}</div></div>`;
+                });
+                html += `</div>`;
+                grid.innerHTML += html;
+            });
+
+            const btn = document.querySelector('button[onclick="generarGruposImagen()"]');
+            const txtOr = btn.innerText; btn.innerText = "⏳ Generando..."; btn.disabled = true;
+            await renderAndDownload('plantilla-grupos', `Grupos_${catName}.png`);
+            btn.innerText = txtOr; btn.disabled = false;
+        }
+
+        async function generarCronogramaImagen() {
+            let lista = partidosCargadosGlobal.length > 0 ? partidosCargadosGlobal : partidosGeneradosRR;
+            if(lista.length === 0) return alert("No hay partidos en el rol. Calcula los tiempos o carga una categoría.");
+            
+            const catSelect = document.getElementById('filtro-categoria');
+            const catName = catSelect.options[catSelect.selectedIndex].text;
+            
+            document.getElementById('vip-crono-cat').innerText = catName;
+            document.getElementById('vip-crono-torneo').innerText = torneoActivoObj ? `${torneoActivoObj.nombre} • ${torneoActivoObj.fecha_evento || ''}` : 'TORNEO OFICIAL';
+            
+            let horarioMap = new Map();
+            lista.forEach(p => {
+                let hora = p.hora || '09:00 AM';
+                let fase = 'Partido';
+                if(p.grupo_nombre && p.grupo_nombre !== 'Único' && p.grupo_nombre !== 'Flash') fase = 'Fase de Grupos';
+                else if (p.grupo_nombre === 'Único') fase = 'Liga Única';
+                else if (p.ronda_fase) {
+                    let rf = p.ronda_fase.toLowerCase();
+                    if(rf.includes('cuarto')) fase = 'Cuartos de Final';
+                    else if(rf.includes('semi')) fase = 'Semifinales';
+                    else if(rf.includes('final')) fase = 'Gran Final';
+                    else fase = 'Eliminatoria';
+                }
+                if(!horarioMap.has(hora)) horarioMap.set(hora, new Set());
+                horarioMap.get(hora).add(fase);
+            });
+
+            let sortedTimes = Array.from(horarioMap.keys()).sort((a,b) => timeToMinutes(a) - timeToMinutes(b));
+            
+            const timeline = document.getElementById('vip-timeline');
+            timeline.innerHTML = '';
+            
+            sortedTimes.forEach(hora => {
+                let fasesArr = Array.from(horarioMap.get(hora));
+                let faseTxt = fasesArr.join(' / ');
+                let hhmm = hora.replace(' AM','').replace(' PM','');
+                let ampm = hora.includes('PM') ? 'PM' : 'AM';
+                
+                timeline.innerHTML += `
+                    <div class="vip-time-row">
+                        <div class="vip-time-box"><div class="vip-time-txt">${hhmm}</div><div style="font-size:12px; color:#f5a623; margin-left:6px; font-weight:900;">${ampm}</div></div>
+                        <div class="vip-event-box"><div class="vip-event-txt">${faseTxt}</div></div>
+                    </div>
                 `;
             });
 
-            // Usar html2canvas para generar la imagen
-            const plantilla = document.getElementById('plantilla-gafete');
-            
-            // Aviso de carga
-            const btn = document.querySelector('button[onclick="generarGafeteImagen()"]');
-            const textoOriginal = btn.innerText;
-            btn.innerText = "⏳ Generando Imagen...";
-            btn.disabled = true;
-
-            try {
-                const canvas = await html2canvas(plantilla, {
-                    scale: 2, // Alta resolución
-                    backgroundColor: '#020617',
-                    logging: false
-                });
-
-                // Descargar imagen
-                const imgData = canvas.toDataURL('image/png');
-                const link = document.createElement('a');
-                link.download = `Gafete_VIP_${nombreJugador.replace(/\s+/g, '_')}.png`;
-                link.href = imgData;
-                link.click();
-            } catch (err) {
-                alert("Hubo un error al generar la imagen. Intenta de nuevo.");
-                console.error(err);
-            } finally {
-                btn.innerText = textoOriginal;
-                btn.disabled = false;
-            }
+            const btn = document.querySelector('button[onclick="generarCronogramaImagen()"]');
+            const txtOr = btn.innerText; btn.innerText = "⏳ Generando..."; btn.disabled = true;
+            await renderAndDownload('plantilla-cronograma', `Cronograma_${catName}.png`);
+            btn.innerText = txtOr; btn.disabled = false;
         }
 
         inicializarSorteo();
