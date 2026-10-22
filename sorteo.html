@@ -184,7 +184,6 @@
                 </div>
                 <div style="display: flex; gap: 10px; background: rgba(0,0,0,0.5); padding: 6px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.05);">
                     <button type="button" id="btn-toggle-rr" class="btn-mode-toggle active" onclick="cambiarModoTorneo('normal')">🎲 Modo Grupos</button>
-                    <!-- BOTÓN PARA MODO LIGA -->
                     <button type="button" id="btn-toggle-liga" class="btn-mode-toggle" onclick="cambiarModoTorneo('liga')">🏆 Modo Liga (RR Puro)</button>
                     <button type="button" id="btn-toggle-flash" class="btn-mode-toggle" onclick="cambiarModoTorneo('flash')">⚡ Modo Flash</button>
                 </div>
@@ -481,6 +480,7 @@
         function timeToMinutes(timeStr) { 
             if (!timeStr) return 540; // 09:00 default
             let cleanStr = String(timeStr).trim().toLowerCase();
+            // Soporta "14:00" o "14:00 PM"
             let match = cleanStr.match(/^(\d+):(\d+)/);
             if (!match) return 540;
             
@@ -582,12 +582,19 @@
 
                     const { data: partidosBD, error } = await clienteSupabase
                         .from('partidos')
-                        .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking), categorias(id, nombre)')
+                        .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking)')
                         .eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID)
                         .or('grupo_nombre.neq.Flash,grupo_nombre.is.null') 
                         .order('id', { ascending: true });
 
                     if (error) throw new Error(error.message);
+
+                    // PARA LAS FOTOS: GUARDAMOS EL NOMBRE DE LA CATEGORIA DIRECTAMENTE EN LOS PARTIDOS
+                    const selectCatElement = document.getElementById('filtro-categoria');
+                    const catText = selectCatElement.options[selectCatElement.selectedIndex].text;
+                    if (partidosBD) {
+                        partidosBD.forEach(p => p.categoria_nombre_dinamico = catText);
+                    }
 
                     if (partidosBD && partidosBD.length > 0) {
                         partidosCargadosGlobal = partidosBD;
@@ -737,7 +744,7 @@
             html += `</tr></thead><tbody>`;
 
             tiempos.forEach(t => {
-                html += `<tr><td style="padding: 15px; font-weight: 800; font-size: 13px; color: #e2e8f0; background: rgba(255,255,255,0.02); border-right: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">${formatHoraSencilla(t)}</td>`;
+                html += `<tr><td style="padding: 15px; font-weight: 800; font-size: 13px; color: #e2e8f0; background: rgba(255,255,255,0.02); border-right: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">${t}</td>`;
                 
                 mesas.forEach(m => {
                     let match = partidosCargadosGlobal.find(p => p.hora === t && p.mesa === m);
@@ -832,7 +839,7 @@
                 let oponente = "";
                 let opRating = "";
                 let opClub = "";
-                let evento = p.categorias?.nombre || 'General';
+                let evento = p.categoria_nombre_dinamico || 'General';
                 let bgRow = index % 2 === 0 ? 'background: #f0f9ff;' : 'background: #ffffff;';
                 
                 if (esArbitro) {
