@@ -110,6 +110,10 @@
         table { width: 100%; border-collapse: separate; border-spacing: 0 6px; margin-top: 10px; font-size: 12px; }
         th { color: #94a3b8; text-transform: uppercase; font-size: 9px; font-weight: 800; letter-spacing: 1.5px; padding: 0 12px 8px 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); text-align: left; position: sticky; top: 0; background: #0f172a; z-index: 10; }
         td { padding: 12px 16px; background: rgba(15, 23, 42, 0.6); border-top: 1px solid rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02); color: #ffffff; transition: all 0.3s ease; }
+        td:first-child { border-left: 1px solid rgba(255,255,255,0.02); border-top-left-radius: 10px; border-bottom-left-radius: 10px; }
+        td:last-child { border-right: 1px solid rgba(255,255,255,0.02); border-top-right-radius: 10px; border-bottom-right-radius: 10px; }
+        tr { transition: all 0.25s ease; }
+        tr:not(.tr-header):hover td { background: rgba(6, 182, 212, 0.16) !important; border-color: rgba(6, 182, 212, 0.45); }
 
         .badge-mesa { background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(16,185,129,0.3); }
         .badge-grupo { background: rgba(6, 182, 212, 0.15); color: #38bdf8; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(6,182,212,0.3); }
@@ -155,35 +159,6 @@
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .modal-card { background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; width: 100%; max-width: 400px; padding: 24px; color: white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); text-align: center; }
         
-        /* ESTILOS DE IMPRESIÓN OFICIAL PARA PDFS */
-        @media print {
-            body * { visibility: hidden; }
-            body { background: white !important; padding: 0; margin: 0; }
-            
-            #impresion-container, #impresion-container * { visibility: visible; }
-            #impresion-container { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; font-family: 'Arial', sans-serif !important; background: white !important; color: black !important; }
-            
-            .pdf-titulo-torneo { text-align: center; font-size: 24px; font-weight: bold; margin-bottom: 20px; text-transform: uppercase; color: #1e3a8a !important; }
-            
-            /* Estilos PDF Grupos */
-            .pdf-grupos-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-            .pdf-grupo-table { width: 100%; border-collapse: collapse; border: 2px solid #000; margin-bottom: 15px; page-break-inside: avoid; }
-            .pdf-grupo-header { background-color: #d1d5db !important; -webkit-print-color-adjust: exact; padding: 8px; font-weight: bold; font-size: 12px; border-bottom: 2px solid #000; text-transform: uppercase; }
-            .pdf-grupo-table th { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; padding: 6px; font-size: 10px; border-bottom: 1px solid #000; color: #000 !important; }
-            .pdf-grupo-table td { padding: 6px; font-size: 11px; border-bottom: 1px solid #999; color: #000 !important; background: transparent !important; }
-            
-            /* Estilos PDF Cronograma */
-            .pdf-crono-table { width: 100%; border-collapse: collapse; font-size: 10px; border: 2px solid #000; page-break-inside: avoid; }
-            .pdf-crono-table th { background-color: #1e3a8a !important; color: white !important; -webkit-print-color-adjust: exact; padding: 8px; border: 1px solid #000; }
-            .pdf-crono-table td { border: 1px solid #999; padding: 6px; text-align: center; font-weight: bold; }
-            .pdf-crono-hora { background-color: #e2e8f0 !important; -webkit-print-color-adjust: exact; font-size: 12px; }
-            
-            .crono-color-1 { background-color: #fbbf24 !important; -webkit-print-color-adjust: exact; }
-            .crono-color-2 { background-color: #38bdf8 !important; -webkit-print-color-adjust: exact; }
-            .crono-color-3 { background-color: #d946ef !important; -webkit-print-color-adjust: exact; }
-            .crono-color-4 { background-color: #34d399 !important; -webkit-print-color-adjust: exact; }
-            .crono-color-5 { background-color: #f43f5e !important; -webkit-print-color-adjust: exact; }
-        }
     </style>
 </head>
 <body>
@@ -342,13 +317,13 @@
         </div>
 
         <div class="panel-3d panel-purple" id="seccion-partidos-rr" style="display: none;">
-            <div class="no-print" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 15px; flex-wrap:wrap; gap:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 15px; flex-wrap:wrap; gap:12px;">
                 <h2 style="border:none; padding:0; margin:0;">📋 Rol Oficial de Partidos Guardado</h2>
                 <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                     <button type="button" class="btn-console btn-ws-style" onclick="compartirAgendaWhatsApp()">📲 Compartir WhatsApp</button>
-                    <!-- NUEVOS BOTONES DE PDF -->
-                    <button type="button" class="btn-console" onclick="imprimirPDFGrupos()" style="background:#475569; color:#fff; border-color:#94a3b8;">📄 PDF Grupos</button>
-                    <button type="button" class="btn-console" onclick="imprimirPDFCronograma()" style="background:#2563eb; color:#fff; border-color:#60a5fa;">📄 PDF Cronograma</button>
+                    <!-- NUEVOS BOTONES VIP DE FOTOGRAFÍAS -->
+                    <button type="button" class="btn-console" onclick="descargarGruposImagen()" style="background:rgba(255,255,255,0.1); color:#fff; border-color:#fff;"><i class="fa-solid fa-camera mr-1"></i> Imagen Grupos</button>
+                    <button type="button" class="btn-console" onclick="descargarCronogramaImagen()" style="background:rgba(56, 189, 248,0.2); color:#38bdf8; border-color:#38bdf8;"><i class="fa-solid fa-camera mr-1"></i> Cronograma VIP</button>
                     
                     <button type="button" class="btn-console btn-green" onclick="exportarAgendaExcel()">📊 Excel</button>
                     <select id="filtro-jugador-agenda" onchange="filtrarPartidosPorJugador()" style="padding:8px 12px; font-size:11px; max-width:200px;">
@@ -356,7 +331,7 @@
                     </select>
                     <!-- BOTÓN PARA LA IMAGEN VIP DE ITINERARIO INDIVIDUAL -->
                     <button type="button" id="btn-descargar-itinerario" class="btn-console btn-purple" onclick="descargarItinerarioImagen()" style="display:none; padding:8px 12px; font-size:11px;">
-                        📸 Gafete VIP
+                        <i class="fa-solid fa-camera mr-1"></i> Gafete VIP
                     </button>
                 </div>
             </div>
@@ -364,7 +339,7 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Hora</th><th>Mesa</th><th>Grupo / Ronda</th><th>Jugador 1</th><th style="text-align:center;">VS</th><th>Jugador 2</th><th>⚖️ Juez Asignado</th><th class="no-print" style="width: 200px;">Estatus / Acciones</th>
+                        <th>Hora</th><th>Mesa</th><th>Grupo / Ronda</th><th>Jugador 1</th><th style="text-align:center;">VS</th><th>Jugador 2</th><th>⚖️ Juez Asignado</th><th style="width: 200px;">Estatus / Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="tabla-partidos-rr">
@@ -373,58 +348,80 @@
             </table>
         </div>
         
-        <!-- TARJETA OCULTA QUE SE CONVERTIRÁ EN IMAGEN (GAFETE VIP - DISEÑO CLARO/AZUL/BLANCO) -->
-        <div style="position: absolute; left: -9999px; top: -9999px;" class="no-print">
-            <div id="plantilla-itinerario-vip" style="width: 800px; background: #ffffff; padding: 0; font-family: 'Montserrat', sans-serif; color: #000; border: 2px solid #1e3a8a; position: relative;">
-                <!-- Banner Superior -->
-                <div style="background: #ffffff; display: flex; align-items: center; justify-content: space-between; padding: 15px 30px;">
-                    <div style="font-weight: 900; font-size: 24px; color: #1e3a8a; font-style: italic;">
-                        <i class="fa-solid fa-table-tennis-paddle-ball mr-2"></i> TORNEO PIXEL
+        <!-- CONTENEDORES OCULTOS PARA GENERAR LAS IMÁGENES VIP EN SEGUNDO PLANO -->
+        <div style="position: absolute; left: -9999px; top: -9999px; width: 1200px;">
+            
+            <!-- 1. GAFETE INDIVIDUAL VIP -->
+            <div id="plantilla-itinerario-vip" style="width: 800px; background: #0f172a; padding: 0; font-family: 'Sora', sans-serif; color: #fff; border: 4px solid #38bdf8; border-radius: 20px; overflow: hidden; position: relative;">
+                <div style="background: rgba(15, 23, 42, 0.9); padding: 25px 40px; border-bottom: 2px solid rgba(56, 189, 248, 0.5); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-size: 12px; color: #38bdf8; font-weight: 900; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 5px;" id="it-torneo-nombre">Torneo Pixel</div>
+                        <div style="font-size: 38px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;" id="it-jugador-nombre">JUGADOR</div>
+                        <div style="font-size: 16px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-top: 5px;" id="it-jugador-club">CLUB</div>
                     </div>
-                    <div style="font-weight: 900; font-size: 32px; color: #1e3a8a; font-style: italic; letter-spacing: -1px; text-transform: uppercase;" id="it-torneo-nombre">
-                        TORNEO HALCONES 2026
+                    <div style="text-align: right; background: rgba(251, 191, 36, 0.1); border: 2px solid #fbbf24; padding: 15px 25px; border-radius: 16px; box-shadow: 0 0 30px rgba(251, 191, 36, 0.2);">
+                        <div style="font-size: 10px; color: #fbbf24; font-weight: 900; letter-spacing: 2px; text-transform: uppercase;">Rating Oficial</div>
+                        <div style="font-family: 'Orbitron', sans-serif; font-size: 42px; font-weight: 900; color: #fbbf24;" id="it-jugador-rating">0</div>
                     </div>
                 </div>
-                <!-- Franja Azul -->
-                <div style="background: #1e3a8a; color: white; text-align: center; font-size: 20px; font-weight: 700; padding: 8px 0; font-style: italic; text-transform: uppercase; letter-spacing: 2px;">
-                    Horario de competencia
-                </div>
-                <!-- Player Info -->
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 30px; background: #ffffff; border-bottom: 4px solid #3b82f6;">
-                    <div style="font-size: 32px; font-weight: 900; color: #000000; text-transform: uppercase;">
-                        <span id="it-jugador-nombre">CARLOS ANDRADE</span> <span style="font-size: 24px; color: #1e3a8a;" id="it-jugador-club">(CMA)</span>
+                <div style="padding: 30px 40px;">
+                    <div style="font-size: 14px; font-weight: 900; color: #cbd5e1; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+                        <i class="fa-regular fa-clock mr-2 text-cyan-400"></i> Horario de Competencia
                     </div>
-                    <div style="font-size: 38px; font-weight: 900; color: #b45309;" id="it-jugador-rating">1,090</div>
-                </div>
-                
-                <!-- Tabla -->
-                <table style="width: 100%; border-collapse: collapse; text-align: center;">
-                    <thead>
-                        <tr style="background: #3b82f6; color: #ffffff; font-size: 13px; font-weight: 700; font-style: italic;">
-                            <th style="padding: 6px; border: none; text-align: center;">HORA</th>
-                            <th style="padding: 6px; border: none; text-align: center;">MESA</th>
-                            <th style="padding: 6px; border: none; text-align: center;">EVENTO</th>
-                            <th style="padding: 6px; border: none; text-align: center;">CLUB</th>
-                            <th style="padding: 6px; border: none; text-align: left;">OPONENTE</th>
-                            <th style="padding: 6px; border: none; text-align: center;">RATING</th>
-                        </tr>
-                    </thead>
-                    <tbody id="it-tabla-partidos" style="font-size: 14px; font-weight: 600; color: #1e3a8a;">
-                        <!-- Se llena por JS con filas blancas #fff y celestes #f0f9ff -->
-                    </tbody>
-                </table>
-                
-                <!-- Footer -->
-                <div style="background: #3b82f6; color: #fbbf24; font-size: 16px; font-weight: 700; padding: 15px 30px; font-style: italic;">
-                    *Los horarios son aproximados<br>
-                    *Para etapas finales favor de consultar el programa general
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; border: none;">
+                        <thead>
+                            <tr style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;">
+                                <th style="padding: 12px 15px; text-align: left; background:transparent; color:#38bdf8; border:none;">Hora</th>
+                                <th style="padding: 12px 15px; text-align: left; background:transparent; color:#38bdf8; border:none;">Mesa</th>
+                                <th style="padding: 12px 15px; text-align: left; background:transparent; color:#38bdf8; border:none;">Evento / Fase</th>
+                                <th style="padding: 12px 15px; text-align: left; background:transparent; color:#38bdf8; border:none;">Oponente</th>
+                                <th style="padding: 12px 15px; text-align: center; background:transparent; color:#38bdf8; border:none;">Rating</th>
+                            </tr>
+                        </thead>
+                        <tbody id="it-tabla-partidos">
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 25px; font-size: 11px; color: #64748b; font-weight: 600; text-align: center;">
+                        * Los horarios son aproximados. Favor de estar presente en su mesa 15 minutos antes. <br>
+                        Generado por Central de Torneos - Arbitraje Digital
+                    </div>
                 </div>
             </div>
+
+            <!-- 2. CUADRO DE GRUPOS VIP -->
+            <div id="plantilla-grupos-vip" style="width: 1200px; background: #0b1120; padding: 40px; font-family: 'Sora', sans-serif; color: #fff;">
+                <div style="text-align: center; margin-bottom: 40px; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 20px;">
+                    <h1 style="font-size: 42px; font-weight: 900; color: #fbbf24; text-transform: uppercase; letter-spacing: 2px; margin: 0; text-shadow: 0 0 20px rgba(251,191,36,0.3);" id="img-grupos-torneo">TORNEO PIXEL</h1>
+                    <h2 style="font-size: 24px; color: #38bdf8; font-weight: 700; margin: 10px 0 0 0; text-transform: uppercase; letter-spacing: 4px;" id="img-grupos-cat">CATEGORÍA</h2>
+                    <p style="color: #94a3b8; font-size: 14px; margin-top: 5px; font-weight: 600;">Sorteo Oficial de Fase de Grupos</p>
+                </div>
+                <div id="img-grupos-grid" style="display: flex; flex-wrap: wrap; gap: 20px; justify-content: center;">
+                    <!-- Se llena con JS -->
+                </div>
+            </div>
+
+            <!-- 3. CRONOGRAMA VIP (GRÁFICA DE BARRAS) -->
+            <div id="plantilla-cronograma-vip" style="width: 1200px; background: #0f172a; padding: 40px; font-family: 'Sora', sans-serif; color: #fff;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="font-size: 38px; font-weight: 900; color: #fff; text-transform: uppercase; letter-spacing: 2px; margin: 0;" id="img-crono-torneo">TORNEO PIXEL</h1>
+                    <h2 style="font-size: 20px; color: #34d399; font-weight: 700; margin: 10px 0 0 0; text-transform: uppercase; letter-spacing: 4px;" id="img-crono-cat">CRONOGRAMA DE ACTIVIDADES</h2>
+                </div>
+                <div style="background: rgba(0,0,0,0.5); border-radius: 16px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                    <table style="width: 100%; border-collapse: collapse; text-align: center;" id="img-crono-table">
+                        <!-- Se llena con JS -->
+                    </table>
+                </div>
+                <div style="margin-top: 20px; display: flex; justify-content: center; gap: 15px;">
+                    <div style="display:flex; align-items:center; gap:6px;"><span style="display:block; width:16px; height:16px; background:#f59e0b; border-radius:4px;"></span><span style="font-size:12px; color:#94a3b8;">Fase de Grupos</span></div>
+                    <div style="display:flex; align-items:center; gap:6px;"><span style="display:block; width:16px; height:16px; background:#10b981; border-radius:4px;"></span><span style="font-size:12px; color:#94a3b8;">Cuartos de Final</span></div>
+                    <div style="display:flex; align-items:center; gap:6px;"><span style="display:block; width:16px; height:16px; background:#8b5cf6; border-radius:4px;"></span><span style="font-size:12px; color:#94a3b8;">Semifinales</span></div>
+                    <div style="display:flex; align-items:center; gap:6px;"><span style="display:block; width:16px; height:16px; background:#ef4444; border-radius:4px;"></span><span style="font-size:12px; color:#94a3b8;">Gran Final</span></div>
+                    <div style="display:flex; align-items:center; gap:6px;"><span style="display:block; width:16px; height:16px; background:#38bdf8; border-radius:4px;"></span><span style="font-size:12px; color:#94a3b8;">Llaves Generales</span></div>
+                </div>
+            </div>
+
         </div>
     </div> <!-- End Main Content -->
-
-    <!-- CONTENEDOR OCULTO PARA IMPRESIÓN PDF (GRUPOS Y CRONOGRAMA) -->
-    <div id="impresion-container"></div>
 
     <script>
         const supabaseUrl = 'https://stytjtqshyupkyihurpd.supabase.co';
@@ -486,9 +483,11 @@
             return isJ1 ? `${rondaFase} J1` : `${rondaFase} J2`;
         }
 
+        // ================= PARSEO CORRECTO DE 24 HORAS =================
         function timeToMinutes(timeStr) { 
-            if (!timeStr) return 540; 
+            if (!timeStr) return 540; // 09:00 default
             let cleanStr = String(timeStr).trim().toLowerCase();
+            // Soporta "14:00" o "14:00 PM"
             let match = cleanStr.match(/^(\d+):(\d+)/);
             if (!match) return 540;
             
@@ -501,18 +500,12 @@
             return hrs * 60 + mins; 
         }
 
-        // ================= CAMBIO A FORMATO 24 HORAS =================
         function minutesToTimeStr(m) { 
             let hrs = Math.floor(m / 60) % 24; 
             let mins = m % 60; 
             let hrsStr = hrs < 10 ? '0' + hrs : hrs; 
             let minsStr = mins < 10 ? '0' + mins : mins; 
             return `${hrsStr}:${minsStr}`; 
-        }
-
-        function formatHoraSencilla(horaInput) {
-            if(!horaInput) return '09:00';
-            return horaInput;
         }
 
         function quitarAcentos(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : ""; }
@@ -602,7 +595,6 @@
                     .eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID).eq('estatus_pago', 'Pagado');
                 
                 contador.innerText = count || 0;
-                // FIX: filter(Boolean) evita problemas si un jugador fue borrado
                 jugadoresListos = inscripcionesData ? inscripcionesData.map(ins => ins.jugadores).filter(Boolean).sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0)) : [];
 
                 if (modoTorneoActual === 'flash') {
@@ -620,9 +612,7 @@
                         .or('grupo_nombre.neq.Flash,grupo_nombre.is.null') 
                         .order('id', { ascending: true });
 
-                    if (error) {
-                        console.error("Error al cargar partidos de la BD:", error);
-                    }
+                    if (error) console.error("Error al cargar partidos de la BD:", error);
 
                     if (partidosBD && partidosBD.length > 0) {
                         partidosCargadosGlobal = partidosBD;
@@ -659,27 +649,27 @@
             }
         }
 
-        // ================= IMPRESIÓN DE PDFS (GRUPOS Y CRONOGRAMA) =================
-        function imprimirPDFGrupos() {
+        // ================= IMPRESIÓN FOTOGRÁFICA VIP (GRUPOS Y CRONOGRAMA) =================
+        async function descargarGruposImagen() {
             if(gruposGlobal.length === 0) {
-                alert("No hay grupos generados en pantalla. Dale a 'Generar Acomodo' primero o selecciona una categoría ya guardada.");
+                alert("No hay grupos generados. Dale a 'Generar Acomodo' primero o selecciona una categoría guardada.");
                 return;
             }
 
             const select = document.getElementById('filtro-categoria');
             const catNombre = select.options[select.selectedIndex].text;
-            const container = document.getElementById('impresion-container');
+            
+            document.getElementById('img-grupos-torneo').innerText = torneoActivoObj ? torneoActivoObj.nombre : 'TORNEO OFICIAL';
+            document.getElementById('img-grupos-cat').innerText = catNombre;
 
-            let html = `
-                <div class="pdf-titulo-torneo">
-                    ${torneoActivoObj ? torneoActivoObj.nombre : 'TORNEO OFICIAL'}<br>
-                    <span style="font-size: 16px; color: #475569;">${catNombre} - ETAPA DE GRUPOS</span>
-                </div>
-                <div class="pdf-grupos-grid">
-            `;
+            const grid = document.getElementById('img-grupos-grid');
+            let html = '';
 
-            gruposGlobal.forEach(g => {
-                let title = g.nombre === 'Único' ? 'Liga Única' : `GRUPO ${g.nombre.padStart(2, '0')}`;
+            const borderColors = ['#0ea5e9', '#8b5cf6', '#10b981', '#f59e0b', '#f43f5e'];
+
+            gruposGlobal.forEach((g, idx) => {
+                let color = borderColors[idx % borderColors.length];
+                let title = g.nombre === 'Único' ? 'LIGA ÚNICA' : `GRUPO ${g.nombre}`;
                 
                 let mesasText = "TBD";
                 let matchGrupo = partidosCargadosGlobal.find(p => p.grupo_nombre === g.nombre);
@@ -690,48 +680,58 @@
                 }
 
                 html += `
-                    <table class="pdf-grupo-table">
-                        <thead class="pdf-grupo-header">
-                            <tr>
-                                <th colspan="3" style="text-align: left; font-size: 12px; color: #000 !important; background: #d1d5db !important; padding: 8px;">${title} | MESA: ${mesasText}</th>
-                            </tr>
-                            <tr style="background: #f3f4f6 !important;">
-                                <th style="width: 30px; text-align: center;">N°</th>
-                                <th style="text-align: left;">NOMBRE</th>
-                                <th style="text-align: center;">CLUB</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <div style="background: rgba(30, 41, 59, 0.8); border-top: 5px solid ${color}; border-radius: 16px; width: 350px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                        <div style="background: rgba(0,0,0,0.4); padding: 15px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <div style="font-weight: 900; font-size: 16px; color: ${color}; letter-spacing: 2px;">${title}</div>
+                            <div style="font-size: 10px; color: #94a3b8; font-weight: 700; margin-top: 4px;">MESA: ${mesasText}</div>
+                        </div>
+                        <div style="padding: 10px;">
                 `;
 
                 g.jugadores.forEach((j, i) => {
                     html += `
-                        <tr>
-                            <td style="text-align: center; font-weight: bold;">${i+1}</td>
-                            <td style="font-weight: bold; text-transform: uppercase;">${j.nombre}</td>
-                            <td style="text-align: center; color: #475569;">${j.club || ''}</td>
-                        </tr>
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="color: ${color}; font-weight: 900; font-size: 12px; width: 15px;">${i+1}</span>
+                                <div>
+                                    <div style="font-weight: 800; font-size: 13px; color: #f8fafc; text-transform: uppercase;">${j.nombre}</div>
+                                    <div style="font-size: 10px; color: #94a3b8; font-weight: 600;">${j.club || 'SIN CLUB'}</div>
+                                </div>
+                            </div>
+                        </div>
                     `;
                 });
 
-                html += `</tbody></table>`;
+                html += `</div></div>`;
             });
 
-            html += `</div>`;
-            container.innerHTML = html;
-            window.print();
-            container.innerHTML = '';
+            grid.innerHTML = html;
+
+            try {
+                const elemento = document.getElementById('plantilla-grupos-vip');
+                const opciones = { scale: 2, backgroundColor: '#0b1120', logging: false };
+                const canvas = await html2canvas(elemento, opciones);
+                const link = document.createElement('a');
+                link.download = `Grupos_${catNombre.replace(/\s+/g, '_')}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            } catch (error) {
+                console.error("Error generando imagen de grupos:", error);
+                alert("Hubo un error al generar la imagen.");
+            }
         }
 
-        function imprimirPDFCronograma() {
+        async function descargarCronogramaImagen() {
             if(partidosCargadosGlobal.length === 0) {
                 alert("No hay partidos programados. Por favor guarda el acomodo primero.");
                 return;
             }
 
-            const container = document.getElementById('impresion-container');
             const select = document.getElementById('filtro-categoria');
             const catNombre = select.options[select.selectedIndex].text;
+            
+            document.getElementById('img-crono-torneo').innerText = torneoActivoObj ? torneoActivoObj.nombre : 'TORNEO OFICIAL';
+            document.getElementById('img-crono-cat').innerText = "PROGRAMACIÓN - " + catNombre;
 
             let tiemposSet = new Set();
             let mesasSet = new Set();
@@ -745,252 +745,162 @@
             let mesas = Array.from(mesasSet).sort((a,b) => a - b);
 
             let html = `
-                <div class="pdf-titulo-torneo" style="text-align: center; margin-bottom: 20px;">
-                    ${torneoActivoObj ? torneoActivoObj.nombre : 'PROGRAMACIÓN DEL TORNEO'}<br>
-                    <span style="font-size: 14px; color: #475569;">Cronograma de Partidos - ${catNombre}</span>
-                </div>
-                <table class="pdf-crono-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 80px;">HORA</th>
+                <thead>
+                    <tr style="background: rgba(0,0,0,0.6); color: #94a3b8; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">
+                        <th style="padding: 15px; border-right: 1px solid rgba(255,255,255,0.05); width: 80px;">Hora</th>
             `;
 
             mesas.forEach(m => {
-                html += `<th>MESA ${m}</th>`;
+                html += `<th style="padding: 15px; border-right: 1px solid rgba(255,255,255,0.05);">MESA ${m}</th>`;
             });
 
             html += `</tr></thead><tbody>`;
 
             tiempos.forEach(t => {
-                html += `<tr><td class="pdf-crono-hora">${t}</td>`;
+                html += `<tr><td style="padding: 15px; font-weight: 800; font-size: 13px; color: #e2e8f0; background: rgba(255,255,255,0.02); border-right: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">${t}</td>`;
                 
                 mesas.forEach(m => {
                     let match = partidosCargadosGlobal.find(p => p.hora === t && p.mesa === m);
                     if(match) {
-                        let textCell = match.grupo_nombre === 'Único' ? 'Liga Única' : (match.grupo_nombre ? `Gpo ${match.grupo_nombre}` : (match.ronda_fase || 'Llave'));
+                        let textCell = match.grupo_nombre === 'Único' ? 'LIGA ÚNICA' : (match.grupo_nombre ? `GRUPO ${match.grupo_nombre}` : (match.ronda_fase || 'LLAVE').toUpperCase());
                         let isLlave = !match.grupo_nombre;
                         
-                        let colorClass = '';
+                        let bgColor = '';
+                        let txtColor = '#000000';
                         if(isLlave) {
-                            if(match.ronda_fase && match.ronda_fase.toLowerCase().includes('final')) colorClass = 'crono-color-1'; 
-                            else colorClass = 'crono-color-2'; 
+                            if(match.ronda_fase && match.ronda_fase.toLowerCase().includes('final') && !match.ronda_fase.toLowerCase().includes('semi')) {
+                                bgColor = '#ef4444'; txtColor = '#ffffff'; // Final: Rojo
+                            } else if (match.ronda_fase && match.ronda_fase.toLowerCase().includes('semi')) {
+                                bgColor = '#8b5cf6'; txtColor = '#ffffff'; // Semi: Morado
+                            } else if (match.ronda_fase && match.ronda_fase.toLowerCase().includes('cuarto')) {
+                                bgColor = '#10b981'; // Cuartos: Verde
+                            } else {
+                                bgColor = '#38bdf8'; // Llave general: Azul
+                            }
                         } else {
-                            let numGrupo = match.grupo_nombre.charCodeAt(0) % 4; 
-                            if(numGrupo === 0) colorClass = 'crono-color-4';
-                            else if(numGrupo === 1) colorClass = 'crono-color-5';
-                            else if(numGrupo === 2) colorClass = 'crono-color-2';
-                            else colorClass = 'crono-color-3';
+                            bgColor = '#f59e0b'; // Grupos: Naranja
                         }
 
-                        html += `<td class="${colorClass}" style="color:#000;">${textCell}</td>`;
+                        html += `<td style="padding: 15px; font-weight: 800; font-size: 11px; background: ${bgColor}; color: ${txtColor}; border: 1px solid rgba(255,255,255,0.1); border-radius: 4px;">${textCell}</td>`;
                     } else {
-                        html += `<td></td>`;
+                        html += `<td style="border-right: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);"></td>`;
                     }
                 });
 
                 html += `</tr>`;
             });
 
-            html += `</tbody></table>`;
-            container.innerHTML = html;
-            window.print();
-            container.innerHTML = '';
-        }
-        // ================= FIN FUNCIONES PDF =================
-
-
-        async function reiniciarLigaFlash() {
-            const idCat = document.getElementById('filtro-categoria').value;
-            if (!idCat || !confirm("⚠️ ATENCIÓN: ¿Estás seguro de reiniciar la Liga Flash? Se borrarán todos los partidos.")) return;
-            try {
-                await clienteSupabase.from('partidos').delete().eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID).eq('grupo_nombre', 'Flash');
-                localStorage.removeItem(`flash_queue_${ORG_ID}_${idTorneoActivo}`);
-                seleccionFlash = [];
-                alert("✅ Liga Flash reiniciada.");
-                await cargarDatosFlash(idCat);
-            } catch (err) { alert("Error al reiniciar: " + err.message); }
-        }
-
-        async function cargarDatosFlash(idCat) {
-            try {
-                const { data: partidosFlash } = await clienteSupabase.from('partidos').select('*, j1:jugador1_id(id, nombre), j2:jugador2_id(id, nombre)')
-                    .eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID).eq('grupo_nombre', 'Flash');
-
-                let todosFlash = partidosFlash || [];
-                partidosFlashActivos = todosFlash.filter(p => p.estado === 'en_curso').sort((a, b) => (a.mesa || 0) - (b.mesa || 0));
-                historialFlashGlobal = todosFlash.filter(p => p.estado === 'finalizado');
-
-                jugadoresListos.forEach(j => {
-                    let misPartidos = todosFlash.filter(p => p.estado === 'finalizado' && (p.jugador1_id === j.id || p.jugador2_id === j.id));
-                    misPartidos.sort((a,b) => a.id - b.id); 
-                    j.pjFlash = misPartidos.length;
-                    
-                    let rachaReal = 0; let mesaRacha = null;
-                    for (let p of misPartidos) {
-                        if (p.ganador_id === j.id) { rachaReal++; mesaRacha = p.mesa; if (rachaReal >= 5) { rachaReal = 0; mesaRacha = null; } } 
-                        else { rachaReal = 0; mesaRacha = null; }
-                    }
-                    j.racha = rachaReal; j.lastMesa = mesaRacha; j.lastMatchId = misPartidos.length > 0 ? misPartidos[misPartidos.length - 1].id : 0;
-                    j.isPlaying = partidosFlashActivos.some(p => p.jugador1_id === j.id || p.jugador2_id === j.id);
-                });
-
-                dibujarGridJugadoresFlash(); dibujarSetupFlash(); dibujarPartidosActivosFlash();
-            } catch (e) { console.error("Error en Flash:", e); }
-        }
-
-        function filtrarSorteoFlash() { dibujarGridJugadoresFlash(); }
-
-        function handleDragStart(e, id) { draggedId = id; e.dataTransfer.effectAllowed = 'move'; e.target.style.opacity = '0.4'; }
-        function handleDragOver(e) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
-        function handleDrop(e, targetId) {
-            e.preventDefault();
-            const flashContainer = e.target.closest('.flash-btn-jugador');
-            if(flashContainer) flashContainer.style.opacity = '1';
-            
-            if (draggedId && draggedId !== targetId) {
-                const lsKey = `flash_queue_${ORG_ID}_${idTorneoActivo}`;
-                let savedQueue = JSON.parse(localStorage.getItem(lsKey) || "[]");
-                let fromIndex = savedQueue.indexOf(draggedId); let toIndex = savedQueue.indexOf(targetId);
-                if (fromIndex > -1 && toIndex > -1) {
-                    savedQueue.splice(fromIndex, 1); savedQueue.splice(toIndex, 0, draggedId);
-                    localStorage.setItem(lsKey, JSON.stringify(savedQueue));
-                    dibujarGridJugadoresFlash(); 
-                }
-            }
-        }
-        function handleDragEnd(e) { e.target.style.opacity = '1'; draggedId = null; }
-
-        function dibujarGridJugadoresFlash() {
-            const wrapper = document.getElementById('flash-wrapper-jugadores'); wrapper.innerHTML = '';
-            if (jugadoresListos.length === 0) { wrapper.innerHTML = '<div class="mensaje-vacio">No hay jugadores pagados en esta categoría.</div>'; return; }
-
-            const inputClean = quitarAcentos(document.getElementById('buscador-flash-sorteo').value.toLowerCase());
-            let reyes = []; let retadores = []; let ocupados = [];
-
-            jugadoresListos.forEach(j => {
-                let nombreClean = quitarAcentos(j.nombre.toLowerCase());
-                if (!nombreClean.includes(inputClean)) return; 
-                if (j.isPlaying) { j.partidoActivo = partidosFlashActivos.find(p => p.jugador1_id === j.id || p.jugador2_id === j.id); ocupados.push(j); } 
-                else { if (j.racha > 0 && j.racha < 5) reyes.push(j); else retadores.push(j); }
-            });
-
-            reyes.sort((a, b) => b.lastMatchId - a.lastMatchId);
-            const lsKey = `flash_queue_${ORG_ID}_${idTorneoActivo}`; let savedQueue = JSON.parse(localStorage.getItem(lsKey) || "[]");
-            retadores.sort((a, b) => {
-                let idxA = savedQueue.indexOf(a.id); let idxB = savedQueue.indexOf(b.id);
-                if (idxA !== -1 && idxB !== -1) return idxA - idxB; if (idxA !== -1) return -1; if (idxB !== -1) return 1;
-                if (a.pjFlash === 0 && b.pjFlash > 0) return -1; if (b.pjFlash === 0 && a.pjFlash > 0) return 1; if (a.pjFlash === 0 && b.pjFlash === 0) return a.id - b.id;
-                return a.lastMatchId - b.lastMatchId; 
-            });
-            localStorage.setItem(lsKey, JSON.stringify(retadores.map(r => r.id)));
-
-            let html = '';
-            if (reyes.length > 0) {
-                html += `<div style="font-size:11px; font-weight:900; color:#fbbf24; margin-bottom:12px; text-transform:uppercase; border-bottom:1px solid rgba(245,158,11,0.3); padding-bottom:6px;">👑 Reyes en Mesa</div><div class="flash-grid" style="margin-bottom:25px;">`;
-                reyes.forEach(j => {
-                    let divStr = localStorage.getItem(`flash_div_${ORG_ID}_${j.id}`);
-                    let divBadge = divStr === '1' ? `<span class="div-tag-1">Div 1</span>` : (divStr === '2' ? `<span class="div-tag-2">Div 2</span>` : `<span style="color:#64748b; font-style:italic; font-weight:800; font-size:9px;">Sin Div</span>`);
-                    let isSelected = seleccionFlash.some(sel => sel.id === j.id);
-                    let classSel = isSelected ? 'selected' : '';
-                    html += `<button type="button" class="flash-btn-jugador ${classSel}" style="border-color:#fbbf24; background:rgba(245,158,11,0.1); padding-left:12px;" onclick="toggleSeleccionFlash(${j.id})"><div class="nombre">${j.nombre}</div><div class="stats" style="margin-top:2px;">${divBadge}<span style="background:#fbbf24; color:#000; font-size:8px; padding:2px 4px; border-radius:4px; font-weight:900;">👑 RACHA: ${j.racha}</span></div></button>`;
-                });
-                html += `</div>`;
-            }
-
-            html += `<div style="font-size:11px; font-weight:900; color:#34d399; margin-bottom:12px; text-transform:uppercase; border-bottom:1px solid rgba(52,211,153,0.3); padding-bottom:6px;">🟢 Próximos en Fila (Retadores)</div><div class="flash-grid" style="margin-bottom:25px;">`;
-            if (retadores.length === 0) { html += `<div style="grid-column: 1/-1; font-size:10px; color:#64748b; font-style:italic;">No hay jugadores esperando en fila.</div>`; } 
-            else {
-                retadores.forEach((j, idx) => {
-                    let divStr = localStorage.getItem(`flash_div_${ORG_ID}_${j.id}`);
-                    let divBadge = divStr === '1' ? `<span class="div-tag-1">Div 1</span>` : (divStr === '2' ? `<span class="div-tag-2">Div 2</span>` : `<span style="color:#64748b; font-style:italic; font-weight:800; font-size:9px;">Sin Div</span>`);
-                    let classSel = seleccionFlash.some(sel => sel.id === j.id) ? 'selected' : '';
-                    html += `
-                        <button type="button" class="flash-btn-jugador ${classSel}" draggable="true" ondragstart="handleDragStart(event, ${j.id})" ondragover="handleDragOver(event)" ondrop="handleDrop(event, ${j.id})" ondragend="handleDragEnd(event)" onclick="toggleSeleccionFlash(${j.id})">
-                            <i class="fa-solid fa-grip-vertical grip-handle"></i><div style="position:absolute; top:-6px; right:-6px; background:#10b981; color:#000; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:10px; border:2px solid #04060a; pointer-events:none;">${idx+1}</div>
-                            <div class="nombre">${j.nombre}</div><div class="stats" style="margin-top:2px;">${divBadge}<span style="color:#38bdf8;">PJ: ${j.pjFlash}</span></div>
-                        </button>
-                    `;
-                });
-            }
-            html += `</div>`;
-            wrapper.innerHTML = html;
-        }
-
-        function toggleSeleccionFlash(id) {
-            if (partidosFlashActivos.some(p => p.jugador1_id === id || p.jugador2_id === id)) { alert("⚠️ Este jugador ya está disputando un partido en este momento."); return; }
-            let jugadorObj = jugadoresListos.find(j => j.id === id);
-            let idx = seleccionFlash.findIndex(sel => sel.id === id);
-            if (idx > -1) { seleccionFlash.splice(idx, 1); dibujarGridJugadoresFlash(); dibujarSetupFlash(); return; }
-
-            if (!localStorage.getItem(`flash_div_${ORG_ID}_${id}`)) {
-                idJugadorPendienteDiv = id; document.getElementById('modal-div-nombre').innerText = jugadorObj.nombre; document.getElementById('modal-division').style.display = 'flex'; return;
-            }
-            if (seleccionFlash.length >= 2) seleccionFlash.shift();
-            seleccionFlash.push(jugadorObj);
-            if (jugadorObj.racha > 0 && jugadorObj.racha < 5 && jugadorObj.lastMesa) document.getElementById('flash-mesa-input').value = jugadorObj.lastMesa;
-            dibujarGridJugadoresFlash(); dibujarSetupFlash();
-        }
-
-        function guardarDivisionModal(divNumber) {
-            if (idJugadorPendienteDiv) {
-                localStorage.setItem(`flash_div_${ORG_ID}_${idJugadorPendienteDiv}`, divNumber);
-                let jugadorObj = jugadoresListos.find(j => j.id === idJugadorPendienteDiv);
-                if (seleccionFlash.length >= 2) seleccionFlash.shift(); seleccionFlash.push(jugadorObj);
-                idJugadorPendienteDiv = null; cerrarModalDivision(); dibujarGridJugadoresFlash(); dibujarSetupFlash();
-            }
-        }
-        function cerrarModalDivision() { document.getElementById('modal-division').style.display = 'none'; idJugadorPendienteDiv = null; }
-
-        function dibujarSetupFlash() {
-            const slot1 = document.getElementById('flash-slot-1'); const slot2 = document.getElementById('flash-slot-2');
-            let p1 = seleccionFlash[0]; let p2 = seleccionFlash[1];
-
-            if (p1) { let d1 = localStorage.getItem(`flash_div_${ORG_ID}_${p1.id}`); slot1.innerHTML = `<span style="color:#fff; font-size:13px;">${p1.nombre}</span><br><span style="color:${d1 === '1' ? '#f43f5e' : '#eab308'}; font-size:9px; font-weight:800;">División ${d1}</span>`; } else slot1.innerHTML = `Selecciona Jugador 1`;
-            if (p2) { let d2 = localStorage.getItem(`flash_div_${ORG_ID}_${p2.id}`); slot2.innerHTML = `<span style="color:#fff; font-size:13px;">${p2.nombre}</span><br><span style="color:${d2 === '1' ? '#f43f5e' : '#eab308'}; font-size:9px; font-weight:800;">División ${d2}</span>`; } else slot2.innerHTML = `Selecciona Jugador 2`;
-            document.getElementById('btn-flash-iniciar').disabled = seleccionFlash.length !== 2;
-        }
-
-        async function iniciarPartidoFlash() {
-            if (seleccionFlash.length !== 2) return;
-            const btn = document.getElementById('btn-flash-iniciar');
-            const mesaVal = parseInt(document.getElementById('flash-mesa-input').value) || 1;
-            const idCat = document.getElementById('filtro-categoria').value;
-            
-            if (partidosFlashActivos.some(p => p.mesa === mesaVal)) { alert(`⚠️ MESA OCUPADA\n\nLa Mesa ${mesaVal} ya tiene un partido en curso.`); return; }
-
-            let p1 = seleccionFlash[0]; let p2 = seleccionFlash[1];
-            btn.disabled = true; btn.innerText = "⏳ Iniciando...";
+            html += `</tbody>`;
+            document.getElementById('img-crono-table').innerHTML = html;
 
             try {
-                await clienteSupabase.from('partidos').insert([{
-                    torneo_id: parseInt(idTorneoActivo), categoria_id: parseInt(idCat), organizador_id: ORG_ID,
-                    grupo_nombre: 'Flash', ronda_fase: `Liga Continua (Div ${localStorage.getItem(`flash_div_${ORG_ID}_${p1.id}`)} vs Div ${localStorage.getItem(`flash_div_${ORG_ID}_${p2.id}`)})`,
-                    mesa: mesaVal, modo_juego: '2-3', jugador1_id: p1.id, jugador2_id: p2.id, juez: 'Autogestionado', estado: 'en_curso'
-                }]);
-                seleccionFlash = []; await cargarDatosFlash(idCat);
-            } catch(e) { alert("Error al iniciar partido: " + e.message); } finally { btn.innerText = "Enviar a la Mesa"; }
+                const elemento = document.getElementById('plantilla-cronograma-vip');
+                const opciones = { scale: 2, backgroundColor: '#0f172a', logging: false };
+                const canvas = await html2canvas(elemento, opciones);
+                const link = document.createElement('a');
+                link.download = `Cronograma_${catNombre.replace(/\s+/g, '_')}.png`;
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            } catch (error) {
+                console.error("Error generando cronograma:", error);
+                alert("Hubo un error al generar la imagen.");
+            }
         }
+        // ================= FIN FUNCIONES IMÁGENES =================
 
-        function dibujarPartidosActivosFlash() {
-            const container = document.getElementById('flash-partidos-activos'); container.innerHTML = '';
-            if (partidosFlashActivos.length === 0) { container.innerHTML = '<div class="mensaje-vacio">No hay partidos activos en este momento.</div>'; return; }
+
+        async function descargarItinerarioImagen() {
+            const select = document.getElementById('filtro-jugador-agenda');
+            const jNombre = select.value;
+            if (!jNombre) { alert("Por favor, selecciona un jugador del menú desplegable primero."); return; }
             
-            partidosFlashActivos.forEach(p => {
-                let colorIdx = (p.mesa || 1) - 1; let colorSet = coloresMesasFlash[colorIdx % coloresMesasFlash.length];
-                let n1 = p.j1 ? p.j1.nombre : 'J1'; let n2 = p.j2 ? p.j2.nombre : 'J2';
+            const btn = document.getElementById('btn-descargar-itinerario');
+            const txtOriginal = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Generando...';
+            btn.disabled = true;
+
+            let jClub = 'Sin Club';
+            let jRating = 0;
+            
+            let partidosJugador = partidosCargadosGlobal.filter(p => 
+                (p.j1 && p.j1.nombre === jNombre) || 
+                (p.j2 && p.j2.nombre === jNombre) || 
+                (p.juez && typeof p.juez === 'string' && p.juez.includes(jNombre))
+            );
+
+            let matchJugando = partidosJugador.find(p => (p.j1 && p.j1.nombre === jNombre) || (p.j2 && p.j2.nombre === jNombre));
+            if (matchJugando) {
+                let jData = (matchJugando.j1 && matchJugando.j1.nombre === jNombre) ? matchJugando.j1 : matchJugando.j2;
+                jClub = jData.club || 'Sin Club';
+                jRating = jData.puntos_ranking || 0;
+            }
+
+            document.getElementById('it-torneo-nombre').innerText = torneoActivoObj ? torneoActivoObj.nombre : 'TORNEO OFICIAL';
+            document.getElementById('it-jugador-nombre').innerText = jNombre;
+            document.getElementById('it-jugador-club').innerText = jClub;
+            document.getElementById('it-jugador-rating').innerText = jRating;
+
+            const tbody = document.getElementById('it-tabla-partidos');
+            tbody.innerHTML = '';
+
+            partidosJugador.sort((a, b) => timeToMinutes(a.hora) - timeToMinutes(b.hora));
+
+            partidosJugador.forEach((p, index) => {
+                const esArbitro = p.juez && typeof p.juez === 'string' && p.juez.includes(jNombre);
+                const esJ1 = p.j1 && p.j1.nombre === jNombre;
                 
-                container.innerHTML += `
-                    <div class="flash-mesa-card" style="border-left: 4px solid ${colorSet.border};">
-                        <div style="flex:1;">
-                            <span style="font-size:10px; font-weight:900; color:${colorSet.badge}; text-transform:uppercase;">Mesa ${p.mesa}</span>
-                            <div style="margin-top:4px;"><span style="color:#fff; font-size:12px; font-weight:800;">${n1}</span><span class="vs text-fuchsia-400">VS</span><span style="color:#fff; font-size:12px; font-weight:800;">${n2}</span></div>
-                        </div>
-                        <div style="display:flex; gap:6px;">
-                            <a href="juez.html?partido=${p.id}" target="_blank" class="btn-console" style="padding:6px 12px; font-size:9px; border-color:#fbbf24; color:#fbbf24; background:rgba(245,158,11,0.1);">🏓 Juez</a>
-                        </div>
-                    </div>
+                let oponente = "";
+                let opRating = "";
+                let opClub = "";
+                let evento = p.categorias?.nombre || 'General';
+                let bgRow = index % 2 === 0 ? 'background: rgba(255,255,255,0.02);' : 'background: transparent;';
+                
+                if (esArbitro) {
+                    oponente = `<span style="color:#ef4444; font-weight:900;">ARBITRAJE</span>`;
+                    opRating = "-";
+                    bgRow = 'background: rgba(244, 63, 94, 0.1); border-left: 3px solid #f43f5e;';
+                } else {
+                    let objRival = esJ1 ? p.j2 : p.j1;
+                    if (objRival) {
+                        oponente = objRival.nombre;
+                        opClub = objRival.club || '';
+                        opRating = objRival.puntos_ranking || 0;
+                    } else {
+                        oponente = esJ1 ? (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : 'Por definir') : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : 'Por definir');
+                        opRating = "-";
+                    }
+                }
+
+                tbody.innerHTML += `
+                    <tr style="${bgRow} border-bottom: 1px solid rgba(255,255,255,0.05);">
+                        <td style="padding: 14px 15px; font-weight: 800; color: #e2e8f0; font-size: 13px;">${p.hora || 'S/A'}</td>
+                        <td style="padding: 14px 15px; font-weight: 900; color: #38bdf8; font-size: 14px;">M-${p.mesa || 1}</td>
+                        <td style="padding: 14px 15px; color: #cbd5e1; font-size: 12px; font-weight: 700; text-transform: uppercase;">${evento}</td>
+                        <td style="padding: 14px 15px; font-size: 13px;">${oponente} <span style="font-size:10px; color:#94a3b8; margin-left:4px;">${opClub}</span></td>
+                        <td style="padding: 14px 15px; text-align: center; color:#fbbf24; font-family:'Orbitron', sans-serif; font-weight:800;">${opRating}</td>
+                    </tr>
                 `;
             });
+
+            setTimeout(async () => {
+                try {
+                    const elemento = document.getElementById('plantilla-itinerario-vip');
+                    const opciones = { scale: 2, backgroundColor: '#0f172a', logging: false };
+                    const canvas = await html2canvas(elemento, opciones);
+                    const imagenDataUrl = canvas.toDataURL("image/png");
+
+                    const link = document.createElement('a');
+                    link.download = `Gafete_${jNombre.replace(/\s+/g, '_')}.png`;
+                    link.href = imagenDataUrl;
+                    link.click();
+                } catch (error) {
+                    console.error("Error generando imagen:", error);
+                    alert("Hubo un error al generar la imagen.");
+                } finally {
+                    btn.innerHTML = txtOriginal; 
+                    btn.disabled = false;
+                }
+            }, 300);
         }
 
         async function prepararSorteo() {
@@ -1041,7 +951,6 @@
                 let titleName = grupo.nombre === 'Único' ? 'Liga Única' : `Grupo ${grupo.nombre}`;
                 let html = `<div class="grupo-card ${clasesColoresGrupo[idxGrupo % clasesColoresGrupo.length]}"><div class="grupo-header">${titleName}</div>`;
                 grupo.jugadores.forEach((j) => {
-                    // FIX ERROR APLICADO AQUÍ (Cambiado j.id por jObj.id para el caso de uso manual en Sorteo Nuevo)
                     html += `<div class="jugador-item"><div class="jugador-info"><strong style="color:#ffffff;">${j.nombre}</strong><div><span class="tag-club">${j.club || 'Sin Club'}</span></div><span style="font-size:10px; color:#94a3b8;">${j.puntos_ranking || 0} pts (Seed #${j.seedOriginal})</span><select class="select-grupo" onchange="moverJugador(${j.id}, this.value)"><option value="${grupo.nombre}" selected>Mover a...</option>${gruposGlobal.filter(g => g.nombre !== grupo.nombre).map(g => `<option value="${g.nombre}">${g.nombre === 'Único' ? 'Liga Única' : 'Gpo '+g.nombre}</option>`).join('')}</select></div></div>`;
                 });
                 htmlTotal += html + `</div>`;
@@ -1253,26 +1162,6 @@
             dibujarTablaPartidosGenerados(partidosGeneradosRR);
         }
 
-        function dibujarTablaPartidosBD(partidosBD) {
-            const tbody = document.getElementById('tabla-partidos-rr'); if (!tbody) return; 
-            const filtroActual = document.getElementById('filtro-jugador-agenda') ? document.getElementById('filtro-jugador-agenda').value : '';
-            let htmlTabla = '';
-
-            partidosBD.forEach(p => {
-                let juezTexto = p.juez || 'Comité / Libre';
-                let esJuez = filtroActual && typeof juezTexto === 'string' && juezTexto.includes(filtroActual);
-                let esJ1 = filtroActual && p.j1 && p.j1.nombre === filtroActual; let esJ2 = filtroActual && p.j2 && p.j2.nombre === filtroActual;
-                let juezBadge = esJuez ? `<span style="background: #ef4444; color: #ffffff; padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 800; letter-spacing: 1px; box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); display:inline-block;"><i class="fa-solid fa-gavel"></i> ¡TE TOCA ARBITRAR!</span>` : `<span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span>`;
-                
-                let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Llave'));
-                let nomJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : 'Por definir');
-                let nomJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : 'Por definir');
-
-                htmlTabla += `<tr style="${esJuez ? 'background: rgba(239, 68, 68, 0.1);' : ''}"><td><strong>⏰ ${formatHoraSencilla(p.hora)}</strong></td><td><span class="badge-mesa">Mesa ${p.mesa || 1}</span></td><td><span class="badge-grupo">${eqGrupo}</span></td><td><strong style="${esJ1 ? 'color:#38bdf8; font-size:14px;' : ''}">${nomJ1}</strong></td><td style="text-align:center;">VS</td><td><strong style="${esJ2 ? 'color:#38bdf8; font-size:14px;' : ''}">${nomJ2}</strong></td><td>${juezBadge}</td><td class="no-print"><div style="display:flex; gap:6px; flex-wrap:wrap;"><a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 8px; font-size:9px; text-decoration:none;">🏓 Juez</a><a href="espectador.html?partido=${p.id}" class="btn-console btn-purple" style="padding:4px 8px; font-size:9px; text-decoration:none;">👁 Ver</a></div></td></tr>`;
-            });
-            tbody.innerHTML = htmlTabla;
-        }
-
         function dibujarTablaPartidosGenerados(lista) {
             const tbody = document.getElementById('tabla-partidos-rr'); if(!tbody) return; 
             let htmlTabla = '';
@@ -1283,196 +1172,9 @@
                 let nomJ1 = p.j1 ? p.j1.nombre : (p.rondaFase ? getProyeccionNombre(p.rondaFase, true, llavesTienenCuartos) : 'Por definir');
                 let nomJ2 = p.j2 ? p.j2.nombre : (p.rondaFase ? getProyeccionNombre(p.rondaFase, false, llavesTienenCuartos) : 'Por definir');
                 
-                htmlTabla += `<tr><td><strong>⏰ ${formatHoraSencilla(p.hora)}</strong></td><td><span class="badge-mesa">Mesa ${p.mesa}</span></td><td><span class="badge-grupo">${eqGrupo}</span></td><td><strong>${nomJ1}</strong></td><td style="text-align:center;">VS</td><td><strong>${nomJ2}</strong></td><td><span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span></td><td class="no-print"><small style="color:#fbbf24; font-weight:700;">Guarda en BD para habilitar arbitraje</small></td></tr>`;
+                htmlTabla += `<tr><td><strong>⏰ ${p.hora}</strong></td><td><span class="badge-mesa">Mesa ${p.mesa}</span></td><td><span class="badge-grupo">${eqGrupo}</span></td><td><strong>${nomJ1}</strong></td><td style="text-align:center;">VS</td><td><strong>${nomJ2}</strong></td><td><span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span></td><td class="no-print"><small style="color:#fbbf24; font-weight:700;">Guarda en BD para habilitar arbitraje</small></td></tr>`;
             });
             tbody.innerHTML = htmlTabla;
-        }
-
-        function poblarDropdownAgenda(partidos) {
-            const select = document.getElementById('filtro-jugador-agenda'); if (!select) return; 
-            let html = '<option value="">-- Todos los Jugadores --</option>';
-            let jugadoresSet = new Set();
-            partidos.forEach(p => { if (p.j1 && p.j1.nombre) jugadoresSet.add(p.j1.nombre); if (p.j2 && p.j2.nombre) jugadoresSet.add(p.j2.nombre); });
-            [...jugadoresSet].sort().forEach(nombre => html += `<option value="${nombre}">${nombre}</option>`);
-            select.innerHTML = html;
-        }
-
-        function filtrarPartidosPorJugador() {
-            const nombre = document.getElementById('filtro-jugador-agenda') ? document.getElementById('filtro-jugador-agenda').value : '';
-            const btnImg = document.getElementById('btn-descargar-itinerario');
-            
-            if (!nombre) { 
-                if (btnImg) btnImg.style.display = 'none';
-                dibujarTablaPartidosBD(partidosCargadosGlobal); 
-                return; 
-            }
-            if (btnImg) btnImg.style.display = 'inline-flex';
-            dibujarTablaPartidosBD(partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre) || (p.juez && typeof p.juez === 'string' && p.juez.includes(nombre))));
-        }
-
-        // ================= FUNCIÓN PARA GENERAR GAFETE EN IMAGEN DESDE SORTEO =================
-        async function descargarItinerarioImagen() {
-            const select = document.getElementById('filtro-jugador-agenda');
-            const jNombre = select.value;
-            if (!jNombre) { alert("Por favor, selecciona un jugador del menú desplegable primero."); return; }
-            
-            const btn = document.getElementById('btn-descargar-itinerario');
-            const txtOriginal = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Generando...';
-            btn.disabled = true;
-
-            let jClub = 'Sin Club';
-            let jRating = 0;
-            
-            let partidosJugador = partidosCargadosGlobal.filter(p => 
-                (p.j1 && p.j1.nombre === jNombre) || 
-                (p.j2 && p.j2.nombre === jNombre) || 
-                (p.juez && typeof p.juez === 'string' && p.juez.includes(jNombre))
-            );
-
-            let matchJugando = partidosJugador.find(p => (p.j1 && p.j1.nombre === jNombre) || (p.j2 && p.j2.nombre === jNombre));
-            if (matchJugando) {
-                let jData = (matchJugando.j1 && matchJugando.j1.nombre === jNombre) ? matchJugando.j1 : matchJugando.j2;
-                jClub = jData.club || 'Sin Club';
-                jRating = jData.puntos_ranking || 0;
-            }
-
-            document.getElementById('it-torneo-nombre').innerText = torneoActivoObj ? torneoActivoObj.nombre : 'TORNEO OFICIAL';
-            document.getElementById('it-jugador-nombre').innerText = jNombre;
-            document.getElementById('it-jugador-club').innerText = jClub;
-            document.getElementById('it-jugador-rating').innerText = jRating;
-
-            const tbody = document.getElementById('it-tabla-partidos');
-            tbody.innerHTML = '';
-
-            partidosJugador.sort((a, b) => timeToMinutes(a.hora) - timeToMinutes(b.hora));
-
-            partidosJugador.forEach((p, index) => {
-                const esArbitro = p.juez && typeof p.juez === 'string' && p.juez.includes(jNombre);
-                const esJ1 = p.j1 && p.j1.nombre === jNombre;
-                
-                let oponente = "";
-                let opRating = "";
-                let opClub = "";
-                let evento = p.categorias?.nombre || 'General';
-                let bgRow = index % 2 === 0 ? 'background: #f0f9ff;' : 'background: #ffffff;';
-                
-                if (esArbitro) {
-                    oponente = `<span style="color:#ef4444; font-weight:900;">ARBITRAJE</span>`;
-                    opRating = "-";
-                } else {
-                    let objRival = esJ1 ? p.j2 : p.j1;
-                    if (objRival) {
-                        oponente = objRival.nombre;
-                        opClub = objRival.club || '';
-                        opRating = objRival.puntos_ranking || 0;
-                    } else {
-                        oponente = esJ1 ? (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : 'Por definir') : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : 'Por definir');
-                        opRating = "-";
-                    }
-                }
-
-                tbody.innerHTML += `
-                    <tr style="${bgRow} border-bottom: 1px solid #e2e8f0; height: 40px;">
-                        <td style="padding: 10px; font-weight: 700; color:#0f172a;">${formatHoraSencilla(p.hora)}</td>
-                        <td style="padding: 10px; font-weight: 900; color:#1e3a8a;">M-${(p.mesa || 1).toString().padStart(2, '0')}</td>
-                        <td style="padding: 10px; font-weight: 700;">${evento.toUpperCase()}</td>
-                        <td style="padding: 10px; color:#3b82f6; font-weight: 700;">${opClub}</td>
-                        <td style="padding: 10px; text-align: left; font-weight: 800; color:#000;">${oponente}</td>
-                        <td style="padding: 10px; font-weight: 800; color:#b45309;">${opRating}</td>
-                    </tr>
-                `;
-            });
-
-            setTimeout(async () => {
-                try {
-                    const elemento = document.getElementById('plantilla-itinerario-vip');
-                    const opciones = { scale: 2, backgroundColor: '#ffffff', logging: false };
-                    const canvas = await html2canvas(elemento, opciones);
-                    const imagenDataUrl = canvas.toDataURL("image/png");
-
-                    const link = document.createElement('a');
-                    link.download = `Gafete_${jNombre.replace(/\s+/g, '_')}.png`;
-                    link.href = imagenDataUrl;
-                    link.click();
-                } catch (error) {
-                    console.error("Error generando imagen:", error);
-                    alert("Hubo un error al generar la imagen.");
-                } finally {
-                    btn.innerHTML = txtOriginal; 
-                    btn.disabled = false;
-                }
-            }, 300);
-        }
-
-        function compartirAgendaWhatsApp() {
-            const nombre = document.getElementById('filtro-jugador-agenda') ? document.getElementById('filtro-jugador-agenda').value : '';
-            let texto = `🏓 *ROL DE PARTIDOS - ${torneoActivoObj ? torneoActivoObj.nombre : ''}* 🏓\n📍 *Sede:* ${torneoActivoObj && torneoActivoObj.lugar_evento ? torneoActivoObj.lugar_evento : 'Sede Principal'}\n${(torneoActivoObj && torneoActivoObj.fecha_evento ? `📅 *Fecha:* ${torneoActivoObj.fecha_evento}\n` : '')}\n`;
-            let lista = partidosCargadosGlobal;
-            if (nombre) { texto += `👤 *Agenda Individual:* ${nombre}\n\n`; lista = partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre) || (p.juez && typeof p.juez === 'string' && p.juez.includes(nombre))); } 
-            else { texto += `📋 *Rol General (Todos los partidos)*\n\n`; }
-            if(lista.length === 0) { alert("No hay partidos para enviar."); return; }
-
-            lista.forEach(p => {
-                let rolText = (nombre && p.juez && typeof p.juez === 'string' && p.juez.includes(nombre)) ? "⚖️ ARBITRA" : "🏓 JUEGA";
-                let n1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : '1° Gpo A'); 
-                let n2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : '2° Gpo B');
-                texto += `⏰ ${formatHoraSencilla(p.hora)} | Mesa ${p.mesa} [${rolText}]\n   ${n1} vs ${n2}\n   ⚖️ Juez: ${p.juez || 'Comité'}\n\n`;
-            });
-            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
-        }
-
-        function exportarAgendaExcel() {
-            let csv = 'Hora,Mesa,Grupo/Ronda,Jugador 1,Jugador 2,Juez Asignado\n';
-            const nombre = document.getElementById('filtro-jugador-agenda') ? document.getElementById('filtro-jugador-agenda').value : '';
-            let lista = nombre ? partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre) || (p.juez && typeof p.juez === 'string' && p.juez.includes(nombre))) : partidosCargadosGlobal;
-
-            lista.forEach(p => {
-                let n1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : '1° Gpo A'); 
-                let n2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : '2° Gpo B');
-                let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre ? 'Gpo '+p.grupo_nombre : (p.ronda_fase||'Llave'));
-                csv += `"${formatHoraSencilla(p.hora)}","Mesa ${p.mesa}","${eqGrupo}","${n1}","${n2}","${p.juez || 'Comité'}"\n`;
-            });
-            const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))); 
-            link.setAttribute("download", `Rol_Partidos_${nombre || 'General'}.csv`);
-            document.body.appendChild(link); link.click(); document.body.removeChild(link);
-        }
-
-        function reconstruirGruposDesdePartidosBD(partidosBD) {
-            const contenedor = document.getElementById('contenedor-grupos'); if (!contenedor) return; 
-            let mainHtml = '';
-            
-            gruposGlobal = []; 
-            
-            [...new Set(partidosBD.map(p => p.grupo_nombre).filter(Boolean))].sort().forEach((nombreGpo, idx) => {
-                let mapaJugadores = new Map();
-                partidosBD.filter(p => p.grupo_nombre === nombreGpo).forEach(p => {
-                    if (p.j1 && p.jugador1_id) mapaJugadores.set(p.jugador1_id, p.j1);
-                    if (p.j2 && p.jugador2_id) mapaJugadores.set(p.jugador2_id, p.j2);
-                });
-                
-                let titleName = nombreGpo === 'Único' ? 'Liga Única' : `Grupo ${nombreGpo}`;
-                let jugadoresOrdenados = Array.from(mapaJugadores.values()).sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
-
-                gruposGlobal.push({ nombre: nombreGpo, jugadores: jugadoresOrdenados });
-
-                let html = `<div class="grupo-card ${clasesColoresGrupo[idx % clasesColoresGrupo.length]}"><div class="grupo-header">${titleName}</div>`;
-                jugadoresOrdenados.forEach((jObj, i) => { 
-                    html += `<div class="jugador-item"><div class="jugador-info"><strong style="color:#ffffff;">${jObj.nombre || 'Desconocido'}</strong><div><span class="tag-club">${jObj.club || 'Sin Club'}</span></div><span style="font-size:10px; color:#94a3b8;">${jObj.puntos_ranking || 0} pts (Seed #${i + 1})</span><select class="select-grupo" onchange="moverJugador(${jObj.id}, this.value)"><option value="${nombreGpo}" selected>Mover a...</option>${[...new Set(partidosBD.map(px => px.grupo_nombre).filter(Boolean))].filter(g => g !== nombreGpo).map(g => `<option value="${g}">${g === 'Único' ? 'Liga Única' : 'Gpo '+g}</option>`).join('')}</select></div></div>`; 
-                });
-                mainHtml += html + `</div>`;
-            });
-            
-            contenedor.innerHTML = mainHtml;
-        }
-
-        async function rehacerSorteo() {
-            const idCat = document.getElementById('filtro-categoria').value;
-            if (!confirm("⚠️ ¿Deseas ELIMINAR el sorteo guardado de esta categoría y generar uno nuevo?")) return;
-            try {
-                await clienteSupabase.from('partidos').delete().eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID).or('grupo_nombre.neq.Flash,grupo_nombre.is.null');
-                await cargarEstadoCategoria();
-            } catch(e) { alert("Error al borrar: " + e.message); }
         }
 
         async function guardarGruposBD() {
@@ -1504,7 +1206,7 @@
                 const req3 = await clienteSupabase.from('partidos').insert(partidosInsertar);
                 if (req3.error) throw new Error("Fallo al insertar los partidos nuevos: " + req3.error.message);
 
-                alert("✅ ¡Partidos y PIN guardados con éxito en la Base de Datos!");
+                alert("✅ ¡Partidos guardados con éxito en la Base de Datos!");
                 localStorage.setItem('categoria_guardada_reciente', idCategoria);
                 window.location.reload(); 
             } catch (error) { 
