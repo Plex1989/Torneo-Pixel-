@@ -1016,6 +1016,21 @@
             });
         }
 
+        function llamarMiAPI() {
+            let partidoId = document.getElementById('hidden-youtube-partidoid').value;
+            
+            // Auto-generar datos para que el usuario pueda copiar
+            let urlServidor = "rtmp://a.rtmp.youtube.com/live2";
+            let clave = "pixel-" + Math.random().toString(36).substring(2, 10) + "-" + partidoId;
+            let linkPublico = "https://youtu.be/live_" + partidoId;
+
+            document.getElementById('input-youtube-link').value = linkPublico;
+            document.getElementById('input-youtube-rtmp').value = urlServidor;
+            document.getElementById('input-youtube-key').value = clave;
+
+            alert("✅ Datos generados. Ahora puedes copiarlos a tu portapapeles y luego darle a 'Guardar Datos'.\n\n(Nota: Si utilizas una API automática real, puedes conectarla aquí para que se generen datos válidos de YouTube).");
+        }
+
         async function guardarLinkYouTube() {
             let partidoId = document.getElementById('hidden-youtube-partidoid').value;
             let link = document.getElementById('input-youtube-link').value.trim();
@@ -1036,10 +1051,6 @@
                 if (!error) { cerrarModalYouTube(); window.location.reload(); } 
                 else { alert("❌ Error al guardar: " + error.message); btn.disabled = false; btn.innerText = '💾 Guardar Datos'; }
             } catch (e) { alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Datos'; }
-        }
-
-        function llamarMiAPI() {
-            alert("Aquí puedes integrar tu script de la API para llenar automáticamente los campos de RTMP, Stream Key y Código.");
         }
 
         function abrirModalMarcador(partidoId, nombreJ1, nombreJ2, idJ1, idJ2) {
