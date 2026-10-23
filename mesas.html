@@ -54,9 +54,11 @@
 
         .grid-espectador { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; max-width: 1300px; margin: auto; }
 
+        /* Tarjeta Base Grupos */
         .card-mesa { background: rgba(18, 18, 22, 0.7); backdrop-filter: blur(25px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.05); border-bottom: 3px solid rgba(255, 255, 255, 0.1); padding: 22px; position: relative; transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
         .card-mesa:hover { border-color: rgba(56, 189, 248, 0.3); box-shadow: 0 12px 35px rgba(56, 189, 248, 0.1); transform: translateY(-3px); }
         
+        /* Tarjeta VIP Llaves (Fase Final) */
         .card-mesa-llave { border-bottom: 3px solid #fbbf24 !important; background: linear-gradient(180deg, rgba(251, 191, 36, 0.04) 0%, rgba(18, 18, 22, 0.8) 100%) !important; box-shadow: 0 8px 25px -5px rgba(251, 191, 36, 0.12) !important; border-top: 1px solid rgba(251, 191, 36, 0.15) !important; border-left: 1px solid rgba(251, 191, 36, 0.15) !important; border-right: 1px solid rgba(251, 191, 36, 0.15) !important; }
         .card-mesa-llave:hover { border-color: rgba(251, 191, 36, 0.4) !important; box-shadow: 0 12px 35px rgba(251, 191, 36, 0.2) !important; transform: translateY(-3px); }
         
@@ -89,6 +91,7 @@
 
         .sets-badge { font-size: 11px; font-weight: 900; color: #64748b; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 8px; margin-left: 10px; border: 1px solid rgba(255,255,255,0.02); }
 
+        /* Botones Acción */
         .grid-botones-mesa { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
         .btn-mesa-action { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 12px; padding: 12px 10px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; text-decoration: none; }
         .btn-mesa-action:hover:not(:disabled) { background: rgba(255,255,255,0.1); color: #fff; }
@@ -390,27 +393,15 @@
             });
         }
 
-        // ================= MOTOR MAESTRO LINEAL DE TORNEO (CERO RECURSIÓN) =================
         function resolverCuadroTorneoTotal() {
             let datos = { porCategoria: {}, mapaProyecciones: {} };
             let ganadoresFase = {};
-            let groupStatus = {}; 
 
             todosLosPartidos.forEach(m => {
                 if (m.grupo_nombre === 'Flash') return;
                 let cat = m.categorias?.nombre || 'General';
                 if (!datos.porCategoria[cat]) datos.porCategoria[cat] = { grupos: {}, jugadores: {} };
                 if (!ganadoresFase[cat]) ganadoresFase[cat] = {};
-                if (!groupStatus[cat]) groupStatus[cat] = {};
-
-                if (m.grupo_nombre && m.grupo_nombre !== 'Único' && m.grupo_nombre !== 'Flash') {
-                    let gpo = m.grupo_nombre;
-                    if (!groupStatus[cat][gpo]) groupStatus[cat][gpo] = { total: 0, finished: 0 };
-                    groupStatus[cat][gpo].total++;
-                    if (String(m.estado).toLowerCase() === 'finalizado') {
-                        groupStatus[cat][gpo].finished++;
-                    }
-                }
             });
 
             let rankingEnVivoTracker = {}; 
@@ -482,7 +473,7 @@
                 }
             });
 
-            // Extraer líderes de grupos SIN candados. Proyección 100% en vivo
+            // Extraer líderes de grupos SIN RESTRICCIONES (Proyección 100% En Vivo)
             Object.keys(datos.porCategoria).forEach(cat => {
                 let gCat = datos.porCategoria[cat].grupos;
                 ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach(g => {
@@ -646,7 +637,7 @@
                         jugador2_id: j2Id
                     }).eq('id', partidoId);
                 }
-                window.open(`juez.html?partido=${partidoId}`, '_blank');
+                window.location.href = `juez.html?partido=${partidoId}`;
             } catch (e) {
                 alert('Error al enlazar partido: ' + e.message);
             } finally {
@@ -869,7 +860,6 @@
                     if (!nomJ1 || nomJ1.includes('Por definir')) nomJ1 = getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos);
                     if (!nomJ2 || nomJ2.includes('Por definir')) nomJ2 = getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos);
 
-                    // AHORA PERMITIMOS QUE DIGA BYE Y MUESTRE EL MARCADOR MANUAL PARA AVANZAR
                     let idDinamicoJ1 = proyJ1.id;
                     let idDinamicoJ2 = proyJ2.id;
                     
