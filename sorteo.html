@@ -89,6 +89,7 @@
         .btn-mode-toggle.active { background: rgba(6, 182, 212, 0.15); border-color: #06b6d4; color: #38bdf8; box-shadow: 0 0 15px rgba(6, 182, 212, 0.3); }
         .btn-mode-toggle.active-liga { background: rgba(16, 185, 129, 0.15); border-color: #10b981; color: #34d399; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3); }
         .btn-mode-toggle.active-flash { background: rgba(245, 158, 11, 0.15); border-color: #f59e0b; color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.3); }
+        .btn-mode-toggle.active-rr-flash { background: rgba(236, 72, 153, 0.15); border-color: #ec4899; color: #f472b6; box-shadow: 0 0 15px rgba(236, 72, 153, 0.3); }
 
         .grupos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-top: 20px; }
         .grupo-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; overflow: hidden; transition: all 0.3s ease; }
@@ -102,6 +103,7 @@
         .jugador-item { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.03); font-size: 12px; display: flex; justify-content: space-between; align-items: center; }
         .jugador-info { flex: 1; }
         .tag-club { background: rgba(0,0,0,0.3); color: #f5a623; border: 1px solid rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; font-weight: 700; font-size: 9px; display: inline-block; margin-top: 3px; }
+        .tag-div { background: rgba(236, 72, 153, 0.2); color: #f472b6; border: 1px solid rgba(236, 72, 153, 0.4); padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 9px; display: inline-block; margin-top: 3px; margin-left: 4px; }
         .select-grupo { background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.2); color: #fff; border-radius: 6px; font-size: 10px; padding: 4px; margin-top: 5px; outline: none; display: block; width: 100%; }
 
         table { width: 100%; border-collapse: separate; border-spacing: 0 6px; margin-top: 10px; font-size: 12px; }
@@ -111,6 +113,7 @@
         .badge-mesa { background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(16,185,129,0.3); }
         .badge-grupo { background: rgba(6, 182, 212, 0.15); color: #38bdf8; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(6,182,212,0.3); }
         .badge-llave { background: rgba(245, 158, 11, 0.15); color: #fbbf24; padding: 3px 8px; border-radius: 6px; font-weight: 800; font-size: 9px; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .badge-handicap { color: #fbbf24; font-size: 10px; font-weight: 800; margin-left: 6px; }
 
         .mensaje-vacio { text-align: center; color: #475569; font-style: italic; background: transparent !important; border: none !important; }
 
@@ -265,7 +268,9 @@
                     <button type="button" id="btn-toggle-rr" class="btn-mode-toggle active" onclick="cambiarModoTorneo('normal')">🎲 Modo Grupos</button>
                     <!-- BOTÓN PARA MODO LIGA -->
                     <button type="button" id="btn-toggle-liga" class="btn-mode-toggle" onclick="cambiarModoTorneo('liga')">🏆 Modo Liga (RR Puro)</button>
-                    <button type="button" id="btn-toggle-flash" class="btn-mode-toggle" onclick="cambiarModoTorneo('flash')">⚡ Modo Flash</button>
+                    <!-- NUEVO BOTON RR FLASH -->
+                    <button type="button" id="btn-toggle-rr-flash" class="btn-mode-toggle" onclick="cambiarModoTorneo('rr_flash')">🎾 RR Flash (C1, C2, C3)</button>
+                    <button type="button" id="btn-toggle-flash" class="btn-mode-toggle" onclick="cambiarModoTorneo('flash')">⚡ Modo Flash Continua</button>
                 </div>
             </div>
             
@@ -341,7 +346,7 @@
                 </div>
             </div>
 
-            <!-- MODO NORMAL Y LIGA (RR PURO) -->
+            <!-- MODO NORMAL Y LIGA (RR PURO) Y RR FLASH -->
             <div id="panel-config-horarios" style="display: none; background: rgba(15,23,42,0.5); border: 1px solid rgba(255,255,255,0.06); padding: 18px; border-radius: 14px; margin-top: 15px;">
                 <h3 style="margin-top:0; font-size:12px; color:#ffffff;">⚙️ Asignación de Mesas y Horarios para esta Categoría</h3>
                 
@@ -533,6 +538,20 @@
         function getProyeccionNombre(rondaFase, isJ1, hasCuartos) {
             if (!rondaFase) return 'Por definir';
             const rf = String(rondaFase).toLowerCase();
+            
+            // RR Flash Especial (C1, C2, C3)
+            if (rf.includes('semi 1 (c1)')) return isJ1 ? '1° Gpo A (C1)' : '2° Gpo B (C1)';
+            if (rf.includes('semi 2 (c1)')) return isJ1 ? '1° Gpo B (C1)' : '2° Gpo A (C1)';
+            if (rf.includes('final (c1)')) return isJ1 ? 'Gana Semi 1 (C1)' : 'Gana Semi 2 (C1)';
+            
+            if (rf.includes('semi 1 (c2)')) return isJ1 ? '1° Gpo A (C2)' : '2° Gpo B (C2)';
+            if (rf.includes('semi 2 (c2)')) return isJ1 ? '1° Gpo B (C2)' : '2° Gpo A (C2)';
+            if (rf.includes('final (c2)')) return isJ1 ? 'Gana Semi 1 (C2)' : 'Gana Semi 2 (C2)';
+            
+            if (rf.includes('semi 1 (c3)')) return isJ1 ? '1° Gpo A (C3)' : '2° Gpo B (C3)';
+            if (rf.includes('semi 2 (c3)')) return isJ1 ? '1° Gpo B (C3)' : '2° Gpo A (C3)';
+            if (rf.includes('final (c3)')) return isJ1 ? 'Gana Semi 1 (C3)' : 'Gana Semi 2 (C3)';
+
             if (rf.includes('cuartos')) {
                 if (rf.includes('1')) return isJ1 ? '1° Gpo A' : '2° Gpo C';
                 if (rf.includes('2')) return isJ1 ? '1° Gpo B' : '2° Gpo D';
@@ -580,6 +599,7 @@
             document.getElementById('btn-toggle-rr').classList.remove('active');
             document.getElementById('btn-toggle-liga').classList.remove('active-liga');
             document.getElementById('btn-toggle-flash').classList.remove('active-flash');
+            document.getElementById('btn-toggle-rr-flash').classList.remove('active-rr-flash');
 
             if (modo === 'normal') {
                 document.getElementById('btn-toggle-rr').classList.add('active');
@@ -589,10 +609,26 @@
                 document.getElementById('btn-toggle-liga').classList.add('active-liga');
                 document.getElementById('tamano-grupo').style.display = 'none';
                 document.getElementById('rr-vueltas').style.display = 'block';
-            } else {
+            } else if (modo === 'flash') {
                 document.getElementById('btn-toggle-flash').classList.add('active-flash');
+            } else if (modo === 'rr_flash') {
+                document.getElementById('btn-toggle-rr-flash').classList.add('active-rr-flash');
+                document.getElementById('tamano-grupo').style.display = 'none';
+                document.getElementById('rr-vueltas').style.display = 'none';
             }
             cargarEstadoCategoria();
+        }
+
+        function getHandicap(div1, div2) {
+            let d1 = div1 || 3; let d2 = div2 || 3;
+            if(d1 == d2) return { h1: 0, h2: 0 };
+            if(d1 == 1 && d2 == 2) return { h1: 0, h2: 3 };
+            if(d1 == 2 && d2 == 1) return { h1: 3, h2: 0 };
+            if(d1 == 1 && d2 == 3) return { h1: 0, h2: 6 };
+            if(d1 == 3 && d2 == 1) return { h1: 6, h2: 0 };
+            if(d1 == 2 && d2 == 3) return { h1: 0, h2: 3 };
+            if(d1 == 3 && d2 == 2) return { h1: 3, h2: 0 };
+            return { h1: 0, h2: 0 };
         }
 
         async function inicializarSorteo() {
@@ -659,7 +695,7 @@
                 }
 
                 const { data: inscripcionesData, count } = await clienteSupabase.from('inscripciones')
-                    .select('jugadores ( id, nombre, puntos_ranking, club )', { count: 'exact' })
+                    .select('jugadores ( id, nombre, puntos_ranking, club, division )', { count: 'exact' })
                     .eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID).eq('estatus_pago', 'Pagado');
                 
                 contador.innerText = count || 0;
@@ -681,7 +717,7 @@
 
                     const { data: partidosBD, error } = await clienteSupabase
                         .from('partidos')
-                        .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking), j2:jugador2_id(id, nombre, club, puntos_ranking)')
+                        .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking, division), j2:jugador2_id(id, nombre, club, puntos_ranking, division)')
                         .eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID)
                         .or('grupo_nombre.neq.Flash,grupo_nombre.is.null') 
                         .order('id', { ascending: true });
@@ -693,7 +729,14 @@
                         let hasLlaves = partidosBD.some(p => p.ronda_fase && (p.ronda_fase.toLowerCase().includes('semi') || p.ronda_fase.toLowerCase().includes('final') || p.ronda_fase.toLowerCase().includes('cuarto')));
                         llavesTienenCuartos = partidosBD.some(p => String(p.ronda_fase).toLowerCase().includes('cuartos'));
 
-                        if (!hasLlaves && partidosBD.some(p => p.grupo_nombre === 'Único')) {
+                        if (partidosBD.some(p => String(p.ronda_fase).includes('(C1)'))) {
+                            modoTorneoActual = 'rr_flash';
+                            document.getElementById('btn-toggle-rr').classList.remove('active');
+                            document.getElementById('btn-toggle-rr-flash').classList.add('active-rr-flash');
+                            document.getElementById('tamano-grupo').style.display = 'none';
+                            document.getElementById('rr-vueltas').style.display = 'none';
+                            bloqueLlaves.style.display = 'flex';
+                        } else if (!hasLlaves && partidosBD.some(p => p.grupo_nombre === 'Único')) {
                             modoTorneoActual = 'liga';
                             document.getElementById('btn-toggle-rr').classList.remove('active');
                             document.getElementById('btn-toggle-liga').classList.add('active-liga');
@@ -704,7 +747,7 @@
                             bloqueLlaves.style.display = 'flex';
                         }
 
-                        // RECONSTRUYE LOS GRUPOS PARA LA IMAGEN DE GRUPOS VIP (CON SEED FIJO)
+                        // RECONSTRUYE LOS GRUPOS PARA LA IMAGEN DE GRUPOS VIP
                         reconstruirGruposDesdePartidosBD(partidosBD);
                         poblarDropdownAgenda(partidosBD);
                         seccionPartidos.style.display = 'block';
@@ -914,7 +957,7 @@
         async function prepararSorteo() {
             const idCategoria = document.getElementById('filtro-categoria').value;
             if (!idCategoria) { alert("Selecciona una categoría."); return; }
-            const { data } = await clienteSupabase.from('inscripciones').select(`jugadores ( id, nombre, puntos_ranking, club )`).eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID).eq('estatus_pago', 'Pagado');
+            const { data } = await clienteSupabase.from('inscripciones').select(`jugadores ( id, nombre, puntos_ranking, club, division )`).eq('categoria_id', idCategoria).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID).eq('estatus_pago', 'Pagado');
             if (!data || data.length === 0) { alert("No hay jugadores pagados en esta categoría."); return; }
             
             jugadoresListos = data.map(ins => ins.jugadores).sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
@@ -922,12 +965,38 @@
             if (modoTorneoActual === 'liga') {
                 const vueltas = parseInt(document.getElementById('rr-vueltas').value) || 1;
                 ejecutarLiga(vueltas);
+            } else if (modoTorneoActual === 'rr_flash') {
+                ejecutarRRFlash();
             } else {
                 ejecutarSerpiente(parseInt(document.getElementById('tamano-grupo').value));
             }
             
             document.getElementById('panel-config-horarios').style.display = 'block'; 
             document.getElementById('bloque-llaves-config').style.display = modoTorneoActual === 'liga' ? 'none' : 'flex';
+            simularJuecesYActualizarUI();
+        }
+
+        function ejecutarRRFlash() {
+            gruposGlobal = [{ nombre: 'A', jugadores: [] }, { nombre: 'B', jugadores: [] }];
+            
+            let c1 = jugadoresListos.filter(j => j.division == 1).sort((a,b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
+            let c2 = jugadoresListos.filter(j => j.division == 2).sort((a,b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
+            let c3 = jugadoresListos.filter(j => j.division == 3 || !j.division).sort((a,b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
+            
+            let dir = 1; let idx = 0;
+            const distribute = (arr) => {
+                arr.forEach(j => {
+                    gruposGlobal[idx].jugadores.push(j);
+                    idx += dir;
+                    if(idx === 2) { dir = -1; idx = 1; }
+                    else if(idx === -1) { dir = 1; idx = 0; }
+                });
+            };
+            
+            distribute(c1); distribute(c2); distribute(c3);
+            
+            jugadoresListos.forEach((j, i) => j.seedOriginal = i + 1);
+            dibujarGrupos(); 
             simularJuecesYActualizarUI();
         }
 
@@ -959,7 +1028,11 @@
                 let titleName = grupo.nombre === 'Único' ? 'Liga Única' : `Grupo ${grupo.nombre}`;
                 let html = `<div class="grupo-card ${clasesColoresGrupo[idxGrupo % clasesColoresGrupo.length]}"><div class="grupo-header">${titleName}</div>`;
                 grupo.jugadores.forEach((j) => {
-                    html += `<div class="jugador-item"><div class="jugador-info"><strong style="color:#ffffff;">${j.nombre}</strong><div><span class="tag-club">${j.club || 'Sin Club'}</span></div><span style="font-size:10px; color:#94a3b8;">${j.puntos_ranking || 0} pts (Seed #${j.seedOriginal})</span><select class="select-grupo" onchange="moverJugador(${j.id}, this.value)"><option value="${grupo.nombre}" selected>Mover a...</option>${gruposGlobal.filter(g => g.nombre !== grupo.nombre).map(g => `<option value="${g.nombre}">${g.nombre === 'Único' ? 'Liga Única' : 'Gpo '+g.nombre}</option>`).join('')}</select></div></div>`;
+                    let tagDiv = '';
+                    if (modoTorneoActual === 'rr_flash') {
+                        tagDiv = ` <span class="tag-div">C${j.division || 3}</span>`;
+                    }
+                    html += `<div class="jugador-item"><div class="jugador-info"><strong style="color:#ffffff;">${j.nombre}</strong>${tagDiv}<div><span class="tag-club">${j.club || 'Sin Club'}</span></div><span style="font-size:10px; color:#94a3b8;">${j.puntos_ranking || 0} pts (Seed #${j.seedOriginal})</span><select class="select-grupo" onchange="moverJugador(${j.id}, this.value)"><option value="${grupo.nombre}" selected>Mover a...</option>${gruposGlobal.filter(g => g.nombre !== grupo.nombre).map(g => `<option value="${g.nombre}">${g.nombre === 'Único' ? 'Liga Única' : 'Gpo '+g.nombre}</option>`).join('')}</select></div></div>`;
                 });
                 htmlTotal += html + `</div>`;
             });
@@ -1114,7 +1187,48 @@
                 currentTimeMins += duracionPartido;
             }
 
-            if (modoTorneoActual !== 'liga') {
+            if (modoTorneoActual === 'rr_flash') {
+                let rondasLlaves = [
+                    [
+                        { rondaFase: 'Semi 1 (C1)', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Semi 2 (C1)', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Semi 1 (C2)', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Semi 2 (C2)', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Semi 1 (C3)', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Semi 2 (C3)', modoJuego, juez: 'Comité Oficial' }
+                    ],
+                    [
+                        { rondaFase: 'Final (C1)', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Final (C2)', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Final (C3)', modoJuego, juez: 'Comité Oficial' }
+                    ]
+                ];
+
+                rondasLlaves.forEach(ronda => {
+                    let matchesAsignadosRonda = 0;
+                    while(matchesAsignadosRonda < ronda.length) {
+                        if (minsBreak !== null && !breakApplied && currentTimeMins >= minsBreak) { 
+                            currentTimeMins += (parseInt(document.getElementById('rr-duracion-break').value) || 30); breakApplied = true; 
+                        }
+                        let horaStr = minutesToTimeStr(currentTimeMins);
+                        let tableCounter = 0;
+                        while (tableCounter < numMesasFinales && matchesAsignadosRonda < ronda.length) {
+                            let m = ronda[matchesAsignadosRonda]; m.mesa = mesaInicio + tableCounter; m.hora = horaStr;
+                            partidosGeneradosRR.push(m); matchesAsignadosRonda++; tableCounter++;
+                        }
+                        currentTimeMins += duracionFinales;
+                    }
+                });
+
+                // INYECCIÓN DE HÁNDICAP PARA RR FLASH
+                partidosGeneradosRR.forEach(m => {
+                    if (m.j1 && m.j2) {
+                        let div1 = m.j1.division || 3; let div2 = m.j2.division || 3;
+                        let hc = getHandicap(div1, div2); m.pts_j1 = hc.h1; m.pts_j2 = hc.h2;
+                    }
+                });
+
+            } else if (modoTorneoActual !== 'liga') {
                 let rondasLlaves = [];
                 llavesTienenCuartos = false;
                 
@@ -1185,7 +1299,11 @@
                 let nomJ1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : 'Por definir');
                 let nomJ2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : 'Por definir');
 
-                htmlTabla += `<tr style="${esJuez ? 'background: rgba(239, 68, 68, 0.1);' : ''}"><td><strong>⏰ ${p.hora || '09:00 AM'}</strong></td><td><span class="badge-mesa">Mesa ${p.mesa || 1}</span></td><td><span class="badge-grupo">${eqGrupo}</span></td><td><strong style="${esJ1 ? 'color:#38bdf8; font-size:14px;' : ''}">${nomJ1}</strong></td><td style="text-align:center;">VS</td><td><strong style="${esJ2 ? 'color:#38bdf8; font-size:14px;' : ''}">${nomJ2}</strong></td><td>${juezBadge}</td><td class="no-print"><div style="display:flex; gap:6px; flex-wrap:wrap;"><a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 8px; font-size:9px; text-decoration:none;">🏓 Juez</a><a href="espectador.html?partido=${p.id}" class="btn-console btn-purple" style="padding:4px 8px; font-size:9px; text-decoration:none;">👁 Ver</a></div></td></tr>`;
+                // Handicap Visual Info
+                let hd1 = p.puntos_j1 ? `<span class="badge-handicap">(+${p.puntos_j1})</span>` : '';
+                let hd2 = p.puntos_j2 ? `<span class="badge-handicap">(+${p.puntos_j2})</span>` : '';
+
+                htmlTabla += `<tr style="${esJuez ? 'background: rgba(239, 68, 68, 0.1);' : ''}"><td><strong>⏰ ${p.hora || '09:00 AM'}</strong></td><td><span class="badge-mesa">Mesa ${p.mesa || 1}</span></td><td><span class="badge-grupo">${eqGrupo}</span></td><td><strong style="${esJ1 ? 'color:#38bdf8; font-size:14px;' : ''}">${nomJ1}</strong>${hd1}</td><td style="text-align:center;">VS</td><td><strong style="${esJ2 ? 'color:#38bdf8; font-size:14px;' : ''}">${nomJ2}</strong>${hd2}</td><td>${juezBadge}</td><td class="no-print"><div style="display:flex; gap:6px; flex-wrap:wrap;"><a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 8px; font-size:9px; text-decoration:none;">🏓 Juez</a><a href="espectador.html?partido=${p.id}" class="btn-console btn-purple" style="padding:4px 8px; font-size:9px; text-decoration:none;">👁 Ver</a></div></td></tr>`;
             });
             tbody.innerHTML = htmlTabla;
         }
@@ -1200,7 +1318,10 @@
                 let nomJ1 = p.j1 ? p.j1.nombre : (p.rondaFase ? getProyeccionNombre(p.rondaFase, true, llavesTienenCuartos) : 'Por definir');
                 let nomJ2 = p.j2 ? p.j2.nombre : (p.rondaFase ? getProyeccionNombre(p.rondaFase, false, llavesTienenCuartos) : 'Por definir');
                 
-                htmlTabla += `<tr><td><strong>⏰ ${p.hora}</strong></td><td><span class="badge-mesa">Mesa ${p.mesa}</span></td><td><span class="badge-grupo">${eqGrupo}</span></td><td><strong>${nomJ1}</strong></td><td style="text-align:center;">VS</td><td><strong>${nomJ2}</strong></td><td><span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span></td><td class="no-print"><small style="color:#fbbf24; font-weight:700;">Guarda en BD para habilitar arbitraje</small></td></tr>`;
+                let hd1 = p.pts_j1 ? `<span class="badge-handicap">(+${p.pts_j1})</span>` : '';
+                let hd2 = p.pts_j2 ? `<span class="badge-handicap">(+${p.pts_j2})</span>` : '';
+
+                htmlTabla += `<tr><td><strong>⏰ ${p.hora}</strong></td><td><span class="badge-mesa">Mesa ${p.mesa}</span></td><td><span class="badge-grupo">${eqGrupo}</span></td><td><strong>${nomJ1}</strong>${hd1}</td><td style="text-align:center;">VS</td><td><strong>${nomJ2}</strong>${hd2}</td><td><span style="color:#a855f7; font-size:10px; font-weight:700;"><i class="fa-solid fa-gavel"></i> ${juezTexto}</span></td><td class="no-print"><small style="color:#fbbf24; font-weight:700;">Guarda en BD para habilitar arbitraje</small></td></tr>`;
             });
             tbody.innerHTML = htmlTabla;
         }
@@ -1260,7 +1381,6 @@
             let mainHtml = '';
             gruposGlobal = []; 
 
-            // Para mapear los Rankings necesitamos extraer todos los jugadores de los partidos
             let todosLosJugadoresDeLaFase = new Map();
             partidosBD.forEach(p => {
                 if (p.j1 && p.jugador1_id) todosLosJugadoresDeLaFase.set(p.jugador1_id, p.j1);
@@ -1269,21 +1389,17 @@
             
             let jugadoresOrdenadosGlobal = Array.from(todosLosJugadoresDeLaFase.values());
             
-            // Recuperar rankings reales desde la base global (todosLosJugadoresAdmin) para mayor seguridad
             jugadoresOrdenadosGlobal.forEach(jObj => {
                 let jReal = todosLosJugadoresAdmin.find(tj => tj.id === jObj.id);
                 if(jReal) jObj.puntos_ranking = jReal.puntos_ranking;
             });
             
-            // Ordenamos la lista principal de forma descendente por Puntos para calcular el Seed Master
             jugadoresOrdenadosGlobal.sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
             
-            // Les asignamos el Seed que les corresponde
             jugadoresOrdenadosGlobal.forEach((jObj, idx) => {
                 jObj.seedOriginal = idx + 1;
             });
 
-            // Ahora sí agruparlos visualmente
             [...new Set(partidosBD.map(p => p.grupo_nombre).filter(Boolean))].sort().forEach((nombreGpo, idx) => {
                 let mapaJugadoresDelGrupo = new Map();
                 partidosBD.filter(p => p.grupo_nombre === nombreGpo).forEach(p => {
@@ -1325,7 +1441,6 @@
             btn.disabled = true; btn.innerText = "Guardando en Supabase...";
 
             try {
-                // Guardar preferencias de break
                 let breakVal = document.getElementById('rr-hora-break').value;
                 let breakDur = document.getElementById('rr-duracion-break').value;
                 localStorage.setItem(`break_val_${ORG_ID}_${idCategoria}`, breakVal);
@@ -1344,7 +1459,8 @@
                 let partidosInsertar = partidosGeneradosRR.map(p => ({
                     torneo_id: parseInt(idTorneoActivo), categoria_id: parseInt(idCategoria), organizador_id: ORG_ID,
                     grupo_nombre: p.grupoNombre || null, ronda_fase: p.rondaFase || `Ronda ${p.r}`, mesa: p.mesa || 1, hora: p.hora || '09:00 AM', modo_juego: p.modoJuego || '3-5',
-                    jugador1_id: p.j1 ? p.j1.id : null, jugador2_id: p.j2 ? p.j2.id : null, juez: p.juez || 'Comité', estado: 'pendiente'
+                    jugador1_id: p.j1 ? p.j1.id : null, jugador2_id: p.j2 ? p.j2.id : null, juez: p.juez || 'Comité', estado: 'pendiente',
+                    puntos_j1: p.pts_j1 || 0, puntos_j2: p.pts_j2 || 0
                 }));
 
                 const req3 = await clienteSupabase.from('partidos').insert(partidosInsertar);
@@ -1366,10 +1482,7 @@
 
         async function renderAndDownload(elementId, filename) {
             const container = document.getElementById(elementId);
-            
-            // Forzamos visibilidad momentánea para renderizar correctamente
             container.style.display = 'block';
-            
             try {
                 const canvas = await html2canvas(container, {
                     scale: 2, 
@@ -1386,7 +1499,6 @@
                 alert("Hubo un error al generar la imagen. Intenta de nuevo.");
                 console.error(err);
             } finally {
-                // Volvemos a ocultar
                 container.style.display = 'none';
             }
         }
@@ -1476,16 +1588,18 @@
         }
 
         async function generarCronogramaImagen() {
+            let idCat = document.getElementById('filtro-categoria').value;
+            let breakVal = document.getElementById('rr-hora-break').value || localStorage.getItem(`break_val_${ORG_ID}_${idCat}`);
+            let breakDur = parseInt(document.getElementById('rr-duracion-break').value || localStorage.getItem(`break_dur_${ORG_ID}_${idCat}`)) || 30;
+
             const btn = document.querySelector('button[onclick="generarCronogramaImagen()"]');
             const txtOr = btn.innerText; 
             btn.innerText = "⏳ Generando..."; 
             btn.disabled = true;
 
             try {
-                // 1. Buscamos la fecha configurada para las categorías
                 const { data: progData } = await clienteSupabase.from('programacion_categorias').select('categoria_id, fecha').eq('torneo_id', idTorneoActivo);
 
-                // 2. Buscamos TODOS los partidos del torneo en BD
                 const { data: allMatches } = await clienteSupabase.from('partidos')
                     .select('hora, categoria_id, categorias(nombre), grupo_nombre, ronda_fase')
                     .eq('torneo_id', idTorneoActivo)
@@ -1497,7 +1611,6 @@
                     return;
                 }
 
-                // 3. Agrupar la información por Categoría + Fase + Fecha
                 let blocksMap = new Map();
                 let fechasDisponibles = new Set();
 
@@ -1525,7 +1638,6 @@
                     blocksMap.get(key).times.push(timeToMinutes(p.hora));
                 });
 
-                // Lógica Multi-Días
                 let fechasArray = Array.from(fechasDisponibles).sort();
                 let fechaFiltro = fechasArray[0];
 
@@ -1552,19 +1664,13 @@
                     }
                 }
 
-                // 4. Determinar los límites de tiempo de cada bloque y ordenarlos cronológicamente
                 let blocks = Array.from(blocksMap.values())
                     .filter(b => b.fecha === fechaFiltro)
                     .map(b => {
                         let minTime = Math.min(...b.times);
-                        let maxTime = Math.max(...b.times) + 30; // Simulamos +30mins al último partido de la fase
+                        let maxTime = Math.max(...b.times) + 30; 
                         return { ...b, minTime, maxTime, isBreak: false };
                     }).sort((a,b) => a.minTime - b.minTime);
-
-                // 5. Inyectar Bloque de BREAK si está configurado
-                let idCat = document.getElementById('filtro-categoria').value;
-                let breakVal = document.getElementById('rr-hora-break').value || localStorage.getItem(`break_val_${ORG_ID}_${idCat}`);
-                let breakDur = parseInt(document.getElementById('rr-duracion-break').value || localStorage.getItem(`break_dur_${ORG_ID}_${idCat}`)) || 30;
 
                 if (!breakVal) {
                     let ask = prompt(`Cronograma del día: ${fechaFiltro}\nSi hubo un receso (Break), ingresa la hora de inicio (Ej. 13:00 o 01:00 PM). Deja en blanco si no hubo:`);
@@ -1594,18 +1700,15 @@
                     return;
                 }
 
-                // 6. Obtener el límite mínimo y máximo global del torneo
                 let absoluteMinTime = Math.min(...blocks.map(b => b.minTime));
                 let absoluteMaxTime = Math.max(...blocks.map(b => b.maxTime));
 
-                // Redondear para que el eje X se vea limpio
                 let startAxis = Math.floor(absoluteMinTime / 60) * 60;
                 let endAxis = Math.ceil(absoluteMaxTime / 60) * 60;
                 let totalDuration = endAxis - startAxis;
 
                 if (totalDuration <= 0) totalDuration = 60;
 
-                // 7. Dibujar EJE X (Las horas)
                 let axisHtml = '';
                 let gridHtml = '';
                 let numTicks = Math.ceil(totalDuration / 60);
@@ -1621,16 +1724,15 @@
 
                 document.getElementById('vip-gantt-axis').innerHTML = axisHtml;
 
-                // 8. Dibujar PISTAS y BARRAS
                 let tracksHtml = '';
                 let breaksHtml = '';
                 
                 const colors = [
-                    { bg: 'rgba(56, 189, 248, 0.15)', border: '#38bdf8', glow: 'rgba(56,189,248,0.4)' }, // Cyan
-                    { bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b', glow: 'rgba(245,158,11,0.4)' }, // Gold
-                    { bg: 'rgba(168, 85, 247, 0.15)', border: '#a855f7', glow: 'rgba(168,85,247,0.4)' }, // Purple
-                    { bg: 'rgba(16, 185, 129, 0.15)', border: '#10b981', glow: 'rgba(16,185,129,0.4)' }, // Emerald
-                    { bg: 'rgba(244, 63, 94, 0.15)', border: '#f43f5e', glow: 'rgba(244,63,94,0.4)' }  // Rose
+                    { bg: 'rgba(56, 189, 248, 0.15)', border: '#38bdf8', glow: 'rgba(56,189,248,0.4)' }, 
+                    { bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b', glow: 'rgba(245,158,11,0.4)' }, 
+                    { bg: 'rgba(168, 85, 247, 0.15)', border: '#a855f7', glow: 'rgba(168,85,247,0.4)' }, 
+                    { bg: 'rgba(16, 185, 129, 0.15)', border: '#10b981', glow: 'rgba(16,185,129,0.4)' }, 
+                    { bg: 'rgba(244, 63, 94, 0.15)', border: '#f43f5e', glow: 'rgba(244,63,94,0.4)' }  
                 ];
                 
                 let colorIdx = 0;
@@ -1669,8 +1771,7 @@
 
                 document.getElementById('vip-gantt-tracks').innerHTML = gridHtml + tracksHtml + breaksHtml;
 
-                let nombreTorneoVisual = torneoActivoObj ? torneoActivoObj.nombre : 'TORNEO OFICIAL';
-                document.getElementById('vip-crono-torneo-name').innerText = `${nombreTorneoVisual} • ${fechaFiltro}`;
+                document.getElementById('vip-crono-torneo-name').innerText = torneoActivoObj ? `${torneoActivoObj.nombre} • ${fechaFiltro}` : `TORNEO OFICIAL • ${fechaFiltro}`;
 
                 await renderAndDownload('plantilla-cronograma', `Cronograma_${fechaFiltro}.png`);
 
