@@ -6,12 +6,12 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <title>Central de Mesas - Arbitraje Digital</title>
+    <title>Central de Mesas - Arbitraje Digital VIP</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@400;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
@@ -27,216 +27,278 @@
         }
     </script>
     <style>
-        body { font-family: 'Sora', sans-serif; margin: 0; padding: 15px; background-color: #04060a; color: #f8fafc; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
+        /* ========================================================
+           PALETA PREMIUM VIP: DARK & GOLD
+           ======================================================== */
+        body { font-family: 'Sora', sans-serif; margin: 0; padding: 15px; background-color: #0a0a0c; color: #f8fafc; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
+        .font-digital { font-family: 'Orbitron', sans-serif; }
         
-        body::before { content: ""; position: fixed; top: -10%; left: -10%; width: 500px; height: 500px; background: #06b6d4; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
-        body::after { content: ""; position: fixed; bottom: 5%; right: -10%; width: 600px; height: 600px; background: #8b5cf6; border-radius: 50%; filter: blur(150px); opacity: 0.12; pointer-events: none; z-index: -1; }
+        body::before { content: ""; position: fixed; top: -15%; left: -10%; width: 600px; height: 600px; background: #fbbf24; border-radius: 50%; filter: blur(200px); opacity: 0.08; pointer-events: none; z-index: -1; }
+        body::after { content: ""; position: fixed; bottom: -10%; right: -10%; width: 700px; height: 700px; background: #06b6d4; border-radius: 50%; filter: blur(200px); opacity: 0.06; pointer-events: none; z-index: -1; }
 
-        .header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px; }
-        .header h1 { font-size: 20px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #fff; margin: 0; }
+        .header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; }
+        .header h1 { font-size: 20px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #ffffff; margin: 0; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
 
-        .scrolling-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: none; -ms-overflow-style: none; }
+        .scrolling-bar { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 12px; scrollbar-width: none; -ms-overflow-style: none; }
         .scrolling-bar::-webkit-scrollbar { display: none; }
 
-        .btn-filter-pill { background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; padding: 8px 16px; border-radius: 9999px; font-size: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; transition: all 0.2s ease; }
-        .btn-filter-pill.active { background: #06b6d4; color: #000000; border-color: #38bdf8; box-shadow: 0 0 15px rgba(6, 182, 212, 0.5); }
-        .btn-filter-pill.active-flash { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.5); }
-        .btn-filter-pill.active-resumen { background: #10b981; color: #000000 !important; border-color: #34d399; box-shadow: 0 0 15px rgba(16, 185, 129, 0.5); } 
+        .btn-filter-pill { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; padding: 10px 20px; border-radius: 9999px; font-size: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; transition: all 0.3s ease; letter-spacing: 1px; }
+        .btn-filter-pill:hover { background: rgba(255, 255, 255, 0.08); color: #ffffff; }
+        .btn-filter-pill.active { background: #fbbf24; color: #000000; border-color: #fbbf24; box-shadow: 0 0 20px rgba(251, 191, 36, 0.4); }
+        .btn-filter-pill.active-flash { background: #f59e0b; color: #000000; border-color: #f5a623; box-shadow: 0 0 20px rgba(245, 166, 35, 0.4); }
+        .btn-filter-pill.active-resumen { background: #eab308; color: #000000; border-color: #eab308; box-shadow: 0 0 20px rgba(234, 179, 8, 0.4); } 
         
-        .btn-cat-pill { background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3); color: #fbbf24; }
-        .btn-cat-pill.active { background: #f59e0b; color: #000000; border-color: #fbbf24; box-shadow: 0 0 15px rgba(245, 158, 11, 0.6); }
+        .btn-cat-pill { background: rgba(251, 191, 36, 0.05); border: 1px solid rgba(251, 191, 36, 0.2); color: #fbbf24; }
+        .btn-cat-pill:hover { background: rgba(251, 191, 36, 0.1); color: #fcd34d; }
+        .btn-cat-pill.active { background: #fbbf24; color: #000000; border-color: #fbbf24; box-shadow: 0 0 20px rgba(251, 191, 36, 0.5); }
 
-        .grid-espectador { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; max-width: 1200px; margin: auto; }
+        .grid-espectador { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; max-width: 1300px; margin: auto; }
 
-        .card-mesa { background: rgba(10, 15, 26, 0.7); backdrop-filter: blur(20px); border-radius: 20px; padding: 18px; position: relative; transition: all 0.3s ease; }
-        .card-mesa-grupo { border-top: 4px solid #0e7490; border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); }
-        .card-mesa-grupo:hover { border-color: rgba(6,182,212,0.4); transform: translateY(-2px); }
+        .card-mesa { background: rgba(18, 18, 22, 0.7); backdrop-filter: blur(25px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.05); border-bottom: 3px solid rgba(255, 255, 255, 0.1); padding: 22px; position: relative; transition: all 0.3s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+        .card-mesa:hover { border-color: rgba(56, 189, 248, 0.3); box-shadow: 0 12px 35px rgba(56, 189, 248, 0.1); transform: translateY(-3px); }
         
-        .card-mesa-llave { border-top: 4px solid #fbbf24 !important; background: linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, rgba(15, 23, 42, 0.75) 100%) !important; box-shadow: 0 8px 25px -5px rgba(245, 158, 11, 0.12) !important; border-left: 1px solid rgba(245,158,11,0.2) !important; border-right: 1px solid rgba(245,158,11,0.2) !important; border-bottom: 1px solid rgba(245,158,11,0.2) !important; }
-        .card-mesa-llave:hover { border-color: rgba(245,158,11,0.4) !important; box-shadow: 0 12px 30px -5px rgba(245,158,11,0.22) !important; transform: translateY(-3px); }
+        .card-mesa-llave { border-bottom: 3px solid #fbbf24 !important; background: linear-gradient(180deg, rgba(251, 191, 36, 0.04) 0%, rgba(18, 18, 22, 0.8) 100%) !important; box-shadow: 0 8px 25px -5px rgba(251, 191, 36, 0.12) !important; border-top: 1px solid rgba(251, 191, 36, 0.15) !important; border-left: 1px solid rgba(251, 191, 36, 0.15) !important; border-right: 1px solid rgba(251, 191, 36, 0.15) !important; }
+        .card-mesa-llave:hover { border-color: rgba(251, 191, 36, 0.4) !important; box-shadow: 0 12px 35px rgba(251, 191, 36, 0.2) !important; transform: translateY(-3px); }
         
-        .card-mesa.vivo { border-top-color: #34d399 !important; box-shadow: 0 0 25px rgba(52, 211, 153, 0.15) !important; }
-        .card-mesa.finalizado { border-top-color: #64748b !important; opacity: 0.85; }
+        .card-mesa.vivo { border-bottom-color: #34d399 !important; box-shadow: 0 0 25px rgba(52, 211, 153, 0.15) !important; border-top: 1px solid rgba(52, 211, 153, 0.2) !important; }
+        .card-mesa.finalizado { border-bottom-color: #475569 !important; opacity: 0.8; filter: grayscale(15%); }
 
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-        .mesa-title { font-size: 12px; font-weight: 800; color: #38bdf8; letter-spacing: 1px; }
-        .mesa-title-llave { font-size: 12px; font-weight: 900; color: #fbbf24; letter-spacing: 1px; text-shadow: 0 0 8px rgba(251,191,36,0.3); }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; }
+        .mesa-title { font-size: 13px; font-weight: 900; color: #38bdf8; letter-spacing: 2px; }
+        .mesa-title-llave { font-size: 13px; font-weight: 900; color: #fbbf24; letter-spacing: 2px; text-shadow: 0 0 10px rgba(251,191,36,0.3); }
 
-        .cat-badge { font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 6px; text-transform: uppercase; }
+        .cat-badge { font-size: 9px; font-weight: 800; padding: 4px 10px; border-radius: 6px; text-transform: uppercase; letter-spacing: 1px; }
 
-        .badge-estado { padding: 3px 8px; border-radius: 9999px; font-weight: 800; font-size: 9px; text-transform: uppercase; }
-        .est-pendiente { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; }
-        .est-curso { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; }
-        .est-fin { background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2); color: #94a3b8; }
+        .badge-estado { padding: 4px 10px; border-radius: 9999px; font-weight: 900; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; }
+        .est-pendiente { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #94a3b8; }
+        .est-curso { background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.4); color: #fbbf24; box-shadow: 0 0 10px rgba(251, 191, 36, 0.3); animation: pulse-border 2s infinite; }
+        .est-fin { background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); color: #64748b; }
 
-        .score-container { background: rgba(0,0,0,0.4); border-radius: 14px; padding: 12px 16px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.03); }
-        .card-mesa-llave .score-container { background: rgba(0,0,0,0.5); border: 1px solid rgba(251,191,36,0.15); }
+        @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(251, 191, 36, 0); } 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); } }
 
-        .jugador-box { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; }
-        .jugador-nombre { font-size: 13px; font-weight: 800; color: #ffffff; cursor: pointer; transition: color 0.2s; }
-        .jugador-nombre:hover { color: #38bdf8; }
-        .score-big { font-family: 'Orbitron', sans-serif; font-size: 24px; font-weight: 900; color: #06b6d4; }
-        .card-mesa-llave .score-big { color: #fbbf24; text-shadow: 0 0 10px rgba(251,191,36,0.25); }
-        .score-big.p2 { color: #d946ef; }
-        .sets-badge { font-size: 10px; font-weight: 800; color: #94a3b8; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 6px; margin-left: 6px; }
+        .score-container { background: rgba(0,0,0,0.5); border-radius: 16px; padding: 16px 20px; margin-bottom: 16px; border: 1px inset rgba(255,255,255,0.02); }
+        .card-mesa-llave .score-container { border: 1px solid rgba(251,191,36,0.1); }
 
-        .btn-arbitrar { padding: 12px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; border-radius: 12px; font-weight: 800; font-size: 10px; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; text-align:center; text-decoration:none; display:inline-block; }
-        .btn-arbitrar:hover { background: #f59e0b; color: #000000; box-shadow: 0 0 20px rgba(245, 158, 11, 0.6); }
-        .btn-reabrir { background: rgba(148, 163, 184, 0.1) !important; border: 1px solid rgba(148, 163, 184, 0.4) !important; color: #94a3b8 !important; }
-        .btn-reabrir:hover { background: rgba(148, 163, 184, 0.2) !important; color: #ffffff !important; box-shadow: none !important; }
-
-        .btn-console { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 12px; color: #f1f5f9; font-size: 11px; font-weight: 800; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; }
-        .input-tabla { background: rgba(0, 0, 0, 0.5) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 8px !important; color: #ffffff !important; font-size: 11px !important; outline: none !important; transition: all 0.2s !important; }
+        .jugador-box { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
+        .jugador-nombre { font-size: 14px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; transition: color 0.2s; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .jugador-nombre:hover { color: #fbbf24; cursor: pointer; }
         
-        .header-hora { grid-column: 1 / -1; font-size: 12px; color: #38bdf8; font-weight: 800; text-transform: uppercase; border-bottom: 1px solid rgba(56, 189, 248, 0.3); padding-bottom: 6px; margin-top: 15px; margin-bottom: 5px; letter-spacing: 1.5px; }
-        .mensaje-vacio { text-align: center; color: #475569; font-style: italic; grid-column: 1/-1; padding: 40px; }
+        .score-big { font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 900; color: #ffffff; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
+        .card-mesa-llave .score-big { color: #fbbf24; text-shadow: 0 0 15px rgba(251,191,36,0.3); }
+        .score-big.p2 { color: #fbbf24; }
+
+        .sets-badge { font-size: 11px; font-weight: 900; color: #64748b; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 8px; margin-left: 10px; border: 1px solid rgba(255,255,255,0.02); }
+
+        /* Botones Acción */
+        .grid-botones-mesa { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
+        .btn-mesa-action { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 12px; padding: 12px 10px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; text-decoration: none; }
+        .btn-mesa-action:hover:not(:disabled) { background: rgba(255,255,255,0.1); color: #fff; }
+        
+        .btn-mesa-arbitrar { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); color: #34d399; }
+        .btn-mesa-arbitrar:hover:not(:disabled) { background: #10b981; color: #000; box-shadow: 0 0 20px rgba(16,185,129,0.4); }
+        .btn-mesa-arbitrar.reabrir { background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3); color: #fbbf24; }
+        .btn-mesa-arbitrar.reabrir:hover:not(:disabled) { background: #fbbf24; color: #000; box-shadow: 0 0 20px rgba(245,158,11,0.4); }
+
+        .btn-mesa-qr { background: rgba(56, 189, 248, 0.05); border-color: rgba(56, 189, 248, 0.2); color: #7dd3fc; }
+        .btn-mesa-qr:hover:not(:disabled) { border-color: #38bdf8; color: #fff; }
+        
+        .btn-mesa-marcador { background: rgba(168, 85, 247, 0.05); border-color: rgba(168, 85, 247, 0.2); color: #c084fc; }
+        .btn-mesa-marcador:hover:not(:disabled) { border-color: #a855f7; color: #fff; }
+        
+        .btn-mesa-yt { background: rgba(239, 68, 68, 0.05); border-color: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .btn-mesa-yt:hover:not(:disabled) { border-color: #ef4444; color: #fff; }
+
+        .btn-disabled { opacity: 0.4; cursor: not-allowed !important; filter: grayscale(100%); }
+
+        .header-hora { grid-column: 1 / -1; font-size: 13px; color: #fbbf24; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid rgba(251, 191, 36, 0.2); padding-bottom: 8px; margin-top: 25px; margin-bottom: 10px; letter-spacing: 2px; display: flex; align-items: center; }
+        .header-hora::before { content: ""; display: inline-block; width: 6px; height: 6px; background: #fbbf24; border-radius: 50%; margin-right: 10px; box-shadow: 0 0 8px #fbbf24; }
+        
+        .mensaje-vacio { text-align: center; color: #64748b; font-style: italic; font-weight: 600; grid-column: 1/-1; padding: 60px 20px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.05); }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .modal-card { background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; width: 100%; max-width: 680px; padding: 24px; color: white; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        .modal-card { background: rgba(18, 18, 22, 0.95); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; width: 100%; max-width: 680px; padding: 30px; color: white; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8); backdrop-filter: blur(20px); }
+        .input-tabla { background: rgba(0, 0, 0, 0.6) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 12px !important; color: #ffffff !important; font-size: 13px !important; outline: none !important; transition: all 0.3s !important; }
+        .input-tabla:focus { border-color: #fbbf24 !important; box-shadow: 0 0 10px rgba(251,191,36,0.2) !important; }
     </style>
 </head>
 <body>
 
     <!-- MODAL QR DE TRANSMISIÓN MEJORADO CON LINK VISIBLE -->
     <div id="modal-qr" class="modal-overlay" style="display: none;">
-        <div class="modal-card" style="max-width: 380px; padding: 30px; border: 2px solid #3b82f6; text-align: center;">
-            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:15px;">
-                <h3 style="color: #3b82f6; font-size: 16px; font-weight: 900; text-transform: uppercase; margin: 0;"><i class="fa-solid fa-qrcode mr-2"></i> Transmitir Partido</h3>
-                <button onclick="cerrarModalQR()" style="background:transparent; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">✕</button>
+        <div class="modal-card" style="max-width: 380px; border: 1px solid rgba(56, 189, 248, 0.3); border-top: 4px solid #38bdf8; text-align: center;">
+            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:20px;">
+                <h3 style="color: #38bdf8; font-size: 16px; font-weight: 900; text-transform: uppercase; margin: 0; letter-spacing: 1px;"><i class="fa-solid fa-qrcode mr-2"></i> Transmitir Partido</h3>
+                <button onclick="cerrarModalQR()" style="background:transparent; border:none; color:#94a3b8; font-size:18px; cursor:pointer; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">✕</button>
             </div>
-            <p style="font-size: 11px; color: #cbd5e1; margin-bottom: 10px; line-height: 1.5;">Este es el link del Overlay para Prism Live Studio. Cópialo o escanea el QR.</p>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 15px; line-height: 1.5;">Este es el link del Overlay para Prism Live Studio. Cópialo o escanea el QR.</p>
             
-            <input type="text" id="link-overlay-visible" class="input-tabla" readonly style="width: 100%; margin-bottom: 15px; padding: 10px; text-align: center; color: #38bdf8; cursor: text;" onclick="this.select()">
+            <input type="text" id="link-overlay-visible" class="input-tabla" readonly style="width: 100%; margin-bottom: 20px; padding: 12px; text-align: center; color: #38bdf8; font-weight: 800; cursor: text;" onclick="this.select()">
 
-            <div style="display: flex; justify-content: center; margin-bottom: 20px; background: white; padding: 15px; border-radius: 12px;">
-                <div id="qrcode-container"></div>
+            <div style="display: flex; justify-content: center; margin-bottom: 25px; background: rgba(255,255,255,0.05); padding: 20px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
+                <div id="qrcode-container" style="background: white; padding: 10px; border-radius: 8px;"></div>
             </div>
-            <button onclick="copiarAlPortapapelesOverlay()" class="btn-console" style="width:100%; background:rgba(59,130,246,0.15); color:#60a5fa; border-color:#3b82f6;">
-                <i class="fa-regular fa-copy"></i> Copiar Link al Portapapeles
+            <button onclick="copiarAlPortapapelesOverlay()" class="btn-filter-pill" style="width:100%; background:rgba(56,189,248,0.15); color:#7dd3fc; border-color:rgba(56,189,248,0.3); padding: 14px; font-size: 11px;">
+                <i class="fa-regular fa-copy mr-2"></i> Copiar Link
             </button>
         </div>
     </div>
 
     <!-- MODAL EXPEDIENTE (MEMORIA TÉCNICA OFICIAL) -->
     <div id="modal-jugador-admin" class="modal-overlay" style="display: none;">
-        <div class="modal-card">
-            <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; margin-bottom: 16px;">
+        <div class="modal-card" style="border-top: 4px solid #fbbf24;">
+            <div style="display: flex; justify-content: space-between; align-items: start; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 16px; margin-bottom: 20px;">
                 <div>
-                    <h3 id="modal-jugador-nombre" style="margin: 0; color: #38bdf8; font-size: 16px; font-weight: 800; text-transform: uppercase;"></h3>
-                    <span id="modal-jugador-club" style="font-size: 10px; color: #94a3b8; font-weight: 700;"></span>
+                    <h3 id="modal-jugador-nombre" style="margin: 0; color: #fbbf24; font-size: 18px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px;"></h3>
+                    <span id="modal-jugador-club" style="font-size: 11px; color: #94a3b8; font-weight: 800; text-transform: uppercase;"></span>
                 </div>
-                <button onclick="cerrarModalJugadorAdmin()" style="background: rgba(255,255,255,0.1); border: none; color: white; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-weight: 800;">✕</button>
+                <button onclick="cerrarModalJugadorAdmin()" style="background: rgba(255,255,255,0.05); border: none; color: #94a3b8; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-weight: 800; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.1)'; this.style.color='#fff'" onmouseout="this.style.background='rgba(255,255,255,0.05)'; this.style.color='#94a3b8'">✕</button>
             </div>
             
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: rgba(0,0,0,0.3); padding: 12px 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: rgba(0,0,0,0.5); padding: 16px 20px; border-radius: 16px; border: 1px inset rgba(255,255,255,0.02);">
                 <div>
-                    <div style="font-size: 10px; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">Auditoría de Puntuación</div>
-                    <span id="modal-jugador-variacion" style="font-size: 12px; font-weight: 700; color: #cbd5e1;"></span>
+                    <div style="font-size: 10px; color: #94a3b8; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px;">Auditoría de Puntuación</div>
+                    <span id="modal-jugador-variacion" style="font-size: 13px; font-weight: 800; color: #cbd5e1;"></span>
                 </div>
                 <div style="text-align: right;">
-                    <div style="font-size: 9px; color:#fbbf24; font-weight:800; text-transform:uppercase;">Ranking Actual</div>
-                    <div id="modal-jugador-ranking-header" style="font-size: 22px; font-family: 'Orbitron', sans-serif; font-weight: 900; color: #fbbf24;"></div>
+                    <div style="font-size: 9px; color:#fbbf24; font-weight:900; text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;">Ranking Actual</div>
+                    <div id="modal-jugador-ranking-header" style="font-size: 26px; font-family: 'Orbitron', sans-serif; font-weight: 900; color: #fbbf24; text-shadow: 0 0 15px rgba(251,191,36,0.3);"></div>
                 </div>
             </div>
 
             <div id="modal-jugador-partidos-list">
                 <div class="mensaje-vacio">Cargando expediente...</div>
             </div>
-            <button onclick="cerrarModalJugadorAdmin()" style="width: 100%; justify-content: center; margin-top: 20px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; padding: 12px; border-radius: 9999px; font-weight: 800; font-size: 11px; text-transform: uppercase; cursor: pointer;">Cerrar Expediente</button>
+            <button onclick="cerrarModalJugadorAdmin()" class="btn-filter-pill" style="width: 100%; margin-top: 25px; background: rgba(255, 255, 255, 0.05); color: #cbd5e1; padding: 14px; font-size: 11px;">Cerrar Expediente</button>
         </div>
     </div>
 
     <!-- MODAL MARCADOR MANUAL -->
     <div id="modal-marcador" class="modal-overlay" style="display: none;">
-        <div class="modal-card" style="max-width: 400px; padding: 30px; border: 2px solid #a855f7;">
-            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:20px;">
-                <h3 style="color: #a855f7; font-size: 16px; font-weight: 900; text-transform: uppercase; margin: 0;">📝 Asignar Marcador</h3>
-                <button onclick="cerrarModalMarcador()" style="background:transparent; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">✕</button>
+        <div class="modal-card" style="max-width: 400px; padding: 30px; border: 1px solid rgba(168, 85, 247, 0.3); border-top: 4px solid #a855f7;">
+            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:25px;">
+                <h3 style="color: #c084fc; font-size: 16px; font-weight: 900; text-transform: uppercase; margin: 0; letter-spacing: 1px;"><i class="fa-solid fa-pen-to-square mr-2"></i> Asignar Marcador</h3>
+                <button onclick="cerrarModalMarcadorModal()" style="background:transparent; border:none; color:#94a3b8; font-size:18px; cursor:pointer; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">✕</button>
             </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 25px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 30px; background: rgba(0,0,0,0.4); padding: 20px; border-radius: 16px;">
                 <div style="flex: 1; text-align: center;">
-                    <label id="lbl-marcador-j1" style="display: block; font-size: 11px; color: #38bdf8; font-weight: 800; margin-bottom: 8px; min-height: 28px; line-height:1.2;"></label>
-                    <input type="number" id="input-sets-j1" class="input-tabla" style="width: 100%; text-align: center; font-size: 30px !important; font-family:'Orbitron',sans-serif; font-weight: 900; padding: 15px !important; background:rgba(0,0,0,0.8)!important;" min="0" max="7">
+                    <label id="lbl-marcador-j1" style="display: block; font-size: 11px; color: #fff; font-weight: 800; margin-bottom: 12px; min-height: 28px; line-height:1.2;"></label>
+                    <input type="number" id="input-sets-j1" class="input-tabla" style="width: 100%; text-align: center; font-size: 36px !important; font-family:'Orbitron',sans-serif; font-weight: 900; padding: 15px !important;" min="0" max="7">
                 </div>
-                <div style="font-size: 16px; font-weight: 900; color: #64748b;">VS</div>
+                <div style="font-size: 18px; font-weight: 900; color: #64748b; margin-top: 20px;">VS</div>
                 <div style="flex: 1; text-align: center;">
-                    <label id="lbl-marcador-j2" style="display: block; font-size: 11px; color: #d946ef; font-weight: 800; margin-bottom: 8px; min-height: 28px; line-height:1.2;"></label>
-                    <input type="number" id="input-sets-j2" class="input-tabla" style="width: 100%; text-align: center; font-size: 30px !important; font-family:'Orbitron',sans-serif; font-weight: 900; padding: 15px !important; background:rgba(0,0,0,0.8)!important;" min="0" max="7">
+                    <label id="lbl-marcador-j2" style="display: block; font-size: 11px; color: #fbbf24; font-weight: 800; margin-bottom: 12px; min-height: 28px; line-height:1.2;"></label>
+                    <input type="number" id="input-sets-j2" class="input-tabla" style="width: 100%; text-align: center; font-size: 36px !important; font-family:'Orbitron',sans-serif; font-weight: 900; padding: 15px !important;" min="0" max="7">
                 </div>
             </div>
             <input type="hidden" id="hidden-marcador-partidoid">
             <input type="hidden" id="hidden-marcador-j1id">
             <input type="hidden" id="hidden-marcador-j2id">
             
-            <button id="btn-guardar-marcador" onclick="guardarMarcadorManual()" class="btn-console" style="width: 100%; justify-content: center; background: #a855f7; color: white; border-color: #c084fc; padding: 14px; font-size: 13px;">💾 Guardar Resultado</button>
+            <button id="btn-guardar-marcador" onclick="guardarMarcadorManual()" class="btn-filter-pill" style="width: 100%; background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.4); padding: 14px; font-size: 12px;">💾 Guardar Resultado</button>
         </div>
     </div>
 
-    <!-- MODAL LINK YOUTUBE -->
+    <!-- MODAL LINK YOUTUBE / API AVANZADO -->
     <div id="modal-youtube" class="modal-overlay" style="display: none;">
-        <div class="modal-card" style="max-width: 400px; padding: 30px; border: 2px solid #ef4444;">
+        <div class="modal-card" style="max-width: 450px; padding: 30px; border: 1px solid rgba(239, 68, 68, 0.3); border-top: 4px solid #ef4444;">
             <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:20px;">
-                <h3 style="color: #ef4444; font-size: 16px; font-weight: 900; text-transform: uppercase; margin: 0;"><i class="fa-brands fa-youtube"></i> Transmisión / VOD</h3>
-                <button onclick="cerrarModalYouTube()" style="background:transparent; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">✕</button>
+                <h3 style="color: #f87171; font-size: 16px; font-weight: 900; text-transform: uppercase; margin: 0; letter-spacing: 1px;"><i class="fa-solid fa-satellite-dish mr-2"></i> Transmisión API / VOD</h3>
+                <button onclick="cerrarModalYouTube()" style="background:transparent; border:none; color:#94a3b8; font-size:18px; cursor:pointer; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">✕</button>
             </div>
-            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 20px; text-align: left;">Pega aquí el enlace del directo de YouTube para los espectadores.</p>
-            <input type="text" id="input-youtube-link" class="input-tabla" style="width: 100%; padding: 12px !important; margin-bottom: 20px;" placeholder="Ej. https://youtu.be/abcd123">
+            
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 20px; text-align: left; line-height: 1.5;">Configura los datos de tu transmisión. El link es para el espectador, la URL y Clave son para tu software (PRISM/OBS).</p>
+            
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-size: 10px; color: #f87171; font-weight: 800; text-transform: uppercase;">1. Link Público / ID (Espectadores)</label>
+                <div style="display: flex; gap: 8px; margin-top: 5px;">
+                    <input type="text" id="input-youtube-link" class="input-tabla" style="width: 100%; padding: 12px !important;" placeholder="Ej. https://youtu.be/abcd123">
+                    <button onclick="copiarDato(this, 'input-youtube-link')" class="btn-filter-pill" style="padding: 0 15px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #cbd5e1; border-color: rgba(255,255,255,0.1);" title="Copiar"><i class="fa-regular fa-copy"></i></button>
+                </div>
+            </div>
+
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-size: 10px; color: #38bdf8; font-weight: 800; text-transform: uppercase;">2. URL del Servidor (RTMP)</label>
+                <div style="display: flex; gap: 8px; margin-top: 5px;">
+                    <input type="text" id="input-youtube-rtmp" class="input-tabla" style="width: 100%; padding: 12px !important;" placeholder="Ej. rtmp://a.rtmp.youtube.com/live2">
+                    <button onclick="copiarDato(this, 'input-youtube-rtmp')" class="btn-filter-pill" style="padding: 0 15px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #cbd5e1; border-color: rgba(255,255,255,0.1);" title="Copiar"><i class="fa-regular fa-copy"></i></button>
+                </div>
+            </div>
+
+            <div style="text-align: left; margin-bottom: 25px;">
+                <label style="font-size: 10px; color: #fbbf24; font-weight: 800; text-transform: uppercase;">3. Clave de Transmisión (Stream Key)</label>
+                <div style="display: flex; gap: 8px; margin-top: 5px;">
+                    <input type="password" id="input-youtube-key" class="input-tabla" style="width: 100%; padding: 12px !important;" placeholder="****-****-****-****">
+                    <button onclick="copiarDato(this, 'input-youtube-key')" class="btn-filter-pill" style="padding: 0 15px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #cbd5e1; border-color: rgba(255,255,255,0.1);" title="Copiar"><i class="fa-regular fa-copy"></i></button>
+                </div>
+            </div>
+
             <input type="hidden" id="hidden-youtube-partidoid">
-            <button id="btn-guardar-youtube" onclick="guardarLinkYouTube()" class="btn-console" style="width: 100%; justify-content: center; background: #ef4444; color: white; border-color: #f87171; padding: 14px; font-size: 13px;">💾 Guardar Enlace</button>
+            
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-generar-api" onclick="llamarMiAPI()" class="btn-filter-pill" style="flex: 1; background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border-color: rgba(56, 189, 248, 0.4); padding: 14px; font-size: 11px;"><i class="fa-solid fa-bolt mr-2"></i> Generar</button>
+                <button id="btn-guardar-youtube" onclick="guardarLinkYouTube()" class="btn-filter-pill" style="flex: 2; background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.4); padding: 14px; font-size: 11px;">💾 Guardar Datos</button>
+            </div>
+            
+            <p style="font-size: 9px; color: #64748b; margin-top: 15px; text-align: left; font-style: italic;">*Asegúrate de que las columnas "rtmp_url" y "stream_key" existan en tu tabla "partidos" de Supabase.</p>
         </div>
     </div>
 
+    <!-- HEADER GENERAL VIP -->
     <div class="header no-print">
-        <p style="color:#06b6d4; font-weight:800; font-size:10px; text-transform:uppercase; margin:0 0 4px 0;">Portal de Arbitraje Oficial</p>
-        <div class="flex justify-center items-center gap-4 flex-wrap">
+        <div style="display: inline-block; background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); color: #38bdf8; font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 6px 16px; border-radius: 9999px; letter-spacing: 3px; margin-bottom: 12px; box-shadow: 0 0 15px rgba(6, 182, 212, 0.1);">
+            <i class="fa-solid fa-gavel mr-2"></i> PORTAL DE ARBITRAJE OFICIAL
+        </div>
+        <div class="flex justify-center items-center gap-4 flex-wrap mt-2">
             <h1 id="nombre-torneo" class="m-0">CENTRAL DE MESAS</h1>
-            <div id="badge-espectadores" class="hidden bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest items-center gap-1">
+            <div id="badge-espectadores" class="hidden bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest items-center gap-2 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
                 <i class="fa-solid fa-eye animate-pulse"></i> <span id="contador-espectadores">0</span>
             </div>
-            <button onclick="compartirLinkMesas()" class="bg-green-500/20 text-green-400 border border-green-500/50 hover:bg-green-500 hover:text-black px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors shadow-[0_0_15px_rgba(34,197,94,0.3)]">
-                <i class="fa-brands fa-whatsapp mr-1"></i> Invitar Jueces
+            <button onclick="compartirLinkMesas()" class="bg-green-500/10 text-green-400 border border-green-500/40 hover:bg-green-500 hover:text-black px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-colors shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+                <i class="fa-brands fa-whatsapp mr-1 text-sm"></i> Invitar Jueces
             </button>
         </div>
         
-        <nav class="flex justify-center gap-3 mt-5 flex-wrap">
-            <a href="#" onclick="window.location.href='admin.html?torneo=' + idTorneoActivo; return false;" class="bg-slate-800 hover:bg-slate-700 text-zinc-300 border border-white/10 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-md no-underline flex items-center"><i class="fa-solid fa-user-shield mr-1"></i> Administrador</a>
-            <a href="#" onclick="abrirVistaInteligente('sorteo'); return false;" class="bg-slate-800 hover:bg-slate-700 text-zinc-300 border border-white/10 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-md no-underline flex items-center"><i class="fa-solid fa-sitemap mr-1"></i> Sorteo y Rol</a>
-            <a href="#" class="bg-cyan-900/40 text-cyan-400 border border-cyan-500/50 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(6,182,212,0.4)] no-underline flex items-center"><i class="fa-solid fa-table-tennis-paddle-ball mr-1"></i> Mesas</a>
-            <a href="#" onclick="enfocarPestanaEspectador(); return false;" class="bg-slate-800 hover:bg-slate-700 text-zinc-300 border border-white/10 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-md no-underline flex items-center"><i class="fa-solid fa-eye mr-1"></i> Espectador</a>
+        <nav class="flex justify-center gap-3 mt-6 flex-wrap">
+            <a href="#" onclick="window.location.href='admin.html?torneo=' + idTorneoActivo; return false;" class="btn-filter-pill no-underline flex items-center" style="padding: 10px 18px;"><i class="fa-solid fa-user-shield mr-2"></i> Admin</a>
+            <a href="#" onclick="abrirVistaInteligente('sorteo'); return false;" class="btn-filter-pill no-underline flex items-center" style="padding: 10px 18px;"><i class="fa-solid fa-sitemap mr-2"></i> Sorteos</a>
+            <a href="#" class="btn-filter-pill active no-underline flex items-center" style="padding: 10px 18px;"><i class="fa-solid fa-table-tennis-paddle-ball mr-2"></i> Mesas</a>
+            <a href="#" onclick="enfocarPestanaEspectador(); return false;" class="btn-filter-pill no-underline flex items-center" style="padding: 10px 18px;"><i class="fa-solid fa-eye mr-2"></i> Público</a>
         </nav>
     </div>
 
-    <!-- FILTROS -->
-    <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">🎯 Filtrar por Modalidad:</div>
+    <!-- FILTROS SEPARADOS POR MODALIDAD -->
+    <div style="font-size:10px; font-weight:900; color:#cbd5e1; text-transform:uppercase; margin-bottom:8px; letter-spacing:2px; display:flex; align-items:center;"><i class="fa-solid fa-gamepad mr-2 text-cyan-500"></i> Modalidad</div>
     <div class="scrolling-bar" id="bar-modalidad">
         <button class="btn-filter-pill active" onclick="filtrarModalidad('todas', this)">Todas</button>
         <button class="btn-filter-pill" onclick="filtrarModalidad('grupos', this)">🎲 Grupos</button>
-        <button class="btn-filter-pill" onclick="filtrarModalidad('round_robin', this)">🔄 Round Robin (Liga)</button>
+        <button class="btn-filter-pill" onclick="filtrarModalidad('round_robin', this)">🔄 Liga Única</button>
         <button class="btn-filter-pill" onclick="filtrarModalidad('llaves', this)">🏆 Fase Final</button>
-        <button class="btn-filter-pill" style="color:#fbbf24; border-color:rgba(245,158,11,0.5);" onclick="filtrarModalidad('flash', this)">⚡ Liga Flash</button>
+        <button class="btn-filter-pill" style="color:#fbbf24; border-color:rgba(251,191,36,0.3);" onclick="filtrarModalidad('flash', this)">⚡ Liga Flash</button>
     </div>
 
-    <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">🏆 Filtrar por Categoría:</div>
-    <div class="scrolling-bar" id="bar-categorias">
+    <div style="font-size:10px; font-weight:900; color:#cbd5e1; text-transform:uppercase; margin-bottom:8px; letter-spacing:2px; display:flex; align-items:center; margin-top:5px;"><i class="fa-solid fa-layer-group mr-2 text-cyan-500"></i> Categoría</div>
+    <div class="scrolling-bar no-print" id="bar-categorias">
         <button class="btn-filter-pill btn-cat-pill active" onclick="filtrarCategoria('todas')">Todas las Categorías</button>
     </div>
 
-    <div style="font-size:9px; font-weight:800; color:#94a3b8; text-transform:uppercase; margin-bottom:6px; letter-spacing:1px;">📌 Estado de Juego / Vista:</div>
-    <div class="scrolling-bar">
-        <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Todos</button>
-        <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')" style="color:#10b981; border-color:rgba(16,185,129,0.5);">📊 Estadísticas</button>
-        <button class="btn-filter-pill" id="tab-ranking" onclick="filtrarEstado('ranking')" style="border-color:#a855f7; color:#c084fc;">🏆 Ranking</button>
+    <div style="font-size:10px; font-weight:900; color:#cbd5e1; text-transform:uppercase; margin-bottom:8px; letter-spacing:2px; display:flex; align-items:center; margin-top:5px;"><i class="fa-solid fa-eye mr-2 text-cyan-500"></i> Vista de Datos</div>
+    <div class="scrolling-bar no-print">
+        <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Cartelera Completa</button>
         <button class="btn-filter-pill" id="tab-vivo" onclick="filtrarEstado('en_curso')">🔴 En Vivo</button>
-        <button class="btn-filter-pill" id="tab-pendientes" onclick="filtrarEstado('pendiente')">⏳ Pendientes</button>
-        <button class="btn-filter-pill" id="tab-finalizados" onclick="filtrarEstado('finalizado')">🏁 Finalizados</button>
+        <button class="btn-filter-pill" id="tab-pendientes" onclick="filtrarEstado('pendiente')">⏳ Por Jugar</button>
+        <button class="btn-filter-pill" id="tab-finalizados" onclick="filtrarEstado('finalizado')">🏁 Resultados</button>
+        <div style="width:1px; background:rgba(255,255,255,0.1); margin: 0 5px;"></div>
+        <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')" style="color:#10b981; border-color:rgba(16,185,129,0.3);">📊 Estadísticas</button>
+        <button class="btn-filter-pill" id="tab-ranking" onclick="filtrarEstado('ranking')" style="color:#a855f7; border-color:rgba(168,85,247,0.3);">🏆 Ranking Local</button>
     </div>
 
-    <div class="scrolling-bar" id="bar-mesas">
+    <div style="font-size:10px; font-weight:900; color:#cbd5e1; text-transform:uppercase; margin-bottom:8px; letter-spacing:2px; display:flex; align-items:center; margin-top:5px;"><i class="fa-solid fa-table mr-2 text-cyan-500"></i> Asignación de Mesa</div>
+    <div class="scrolling-bar no-print" id="bar-mesas">
         <button class="btn-filter-pill active" onclick="filtrarMesa('todas')">Todas las Mesas</button>
     </div>
 
     <div class="grid-espectador" id="contenedor-partidos">
-        <div class="mensaje-vacio">Cargando marcadores en vivo...</div>
+        <div class="mensaje-vacio"><i class="fa-solid fa-spinner fa-spin text-cyan-500 text-2xl mb-3 block"></i> Conectando con las mesas...</div>
     </div>
 
     <script>
@@ -259,7 +321,6 @@
         let mesaFiltro = 'todas';
         let estadoFiltro = 'todos';
         let categoriaFiltro = 'todas';
-        let urlOverlayActualModal = '';
         let llavesTienenCuartos = false; 
 
         function abrirVistaInteligente(destino) { window.location.href = destino + ".html?torneo=" + idTorneoActivo; }
@@ -276,18 +337,27 @@
         }
 
         const obtenerEstiloCategoria = (catId) => {
-            const paleta = [{ bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.5)', text: '#fbbf24' }, { bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.5)', text: '#38bdf8' }, { bg: 'rgba(217, 70, 239, 0.15)', border: 'rgba(217, 70, 239, 0.5)', text: '#f0abfc' }, { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.5)', text: '#34d399' }];
+            const paleta = [ 
+                { bg: 'rgba(251, 191, 36, 0.1)', border: 'rgba(251, 191, 36, 0.3)', text: '#fbbf24' }, 
+                { bg: 'rgba(255, 255, 255, 0.05)', border: 'rgba(255, 255, 255, 0.1)', text: '#ffffff' }, 
+                { bg: 'rgba(244, 63, 94, 0.1)', border: 'rgba(244, 63, 94, 0.3)', text: '#f43f5e' }, 
+                { bg: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.3)', text: '#34d399' } 
+            ];
             return paleta[(catId || 0) % paleta.length];
         };
 
         const obtenerColorGrupo = (texto) => {
-            if (!texto) return { color: '#94a3b8', bg: 'rgba(148,163,184,0.15)', border: 'rgba(148,163,184,0.4)' };
-            let str = String(texto).toUpperCase();
-            if (str.includes('A')) return { color: '#06b6d4', bg: 'rgba(6,182,212,0.15)', border: 'rgba(6,182,212,0.4)' }; 
-            if (str.includes('B')) return { color: '#a855f7', bg: 'rgba(168,85,247,0.15)', border: 'rgba(168,85,247,0.4)' }; 
-            if (str.includes('C')) return { color: '#10b981', bg: 'rgba(16,185,129,0.15)', border: 'rgba(16,185,129,0.4)' }; 
-            if (str.includes('D')) return { color: '#f59e0b', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)' }; 
-            return { color: '#cbd5e1', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' }; 
+            if (!texto) return { color: '#94a3b8', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' };
+            let str = String(texto).toUpperCase(); let letra = '';
+            if (str.includes('GPO A') || str.includes('GRUPO A') || str.includes('(A)')) letra = 'A'; else if (str.includes('GPO B') || str.includes('GRUPO B') || str.includes('(B)')) letra = 'B'; else if (str.includes('GPO C') || str.includes('GRUPO C') || str.includes('(C)')) letra = 'C'; else if (str.includes('GPO D') || str.includes('GRUPO D') || str.includes('(D)')) letra = 'D'; else if (str.includes('GPO E') || str.includes('GRUPO E') || str.includes('(E)')) letra = 'E'; else if (str.includes('GPO F') || str.includes('GRUPO F') || str.includes('(F)')) letra = 'F';
+            
+            switch(letra) { 
+                case 'A': return { color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.1)', border: 'rgba(56, 189, 248, 0.3)' }; 
+                case 'B': return { color: '#a855f7', bg: 'rgba(168, 85, 247, 0.1)', border: 'rgba(168, 85, 247, 0.3)' }; 
+                case 'C': return { color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.3)' }; 
+                case 'D': return { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.3)' }; 
+                default: return { color: '#94a3b8', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' }; 
+            }
         };
 
         function calcularImpacto(ptsA, ptsB) {
@@ -325,7 +395,7 @@
         function resolverCuadroTorneoTotal() {
             let datos = { porCategoria: {}, mapaProyecciones: {} };
             let ganadoresFase = {};
-            let groupStatus = {}; // <--- NUEVO TRACKER para saber si el grupo ya concluyó 100%
+            let groupStatus = {}; 
 
             todosLosPartidos.forEach(m => {
                 if (m.grupo_nombre === 'Flash') return;
@@ -416,7 +486,6 @@
                 let gCat = datos.porCategoria[cat].grupos;
                 ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach(g => {
                     
-                    // Solo si el grupo YA ESTÁ 100% FINALIZADO se extraen los líderes a las llaves
                     let isGroupFinished = false;
                     if (groupStatus[cat] && groupStatus[cat][g]) {
                         isGroupFinished = (groupStatus[cat][g].total > 0 && groupStatus[cat][g].total === groupStatus[cat][g].finished);
@@ -431,11 +500,9 @@
                             return b.rankIni - a.rankIni;
                         });
                         
-                        // Standars (Categoría Abierta / Por defecto)
                         ganadoresFase[cat][`1_GPO_${g}`] = arr[0] ? { id: arr[0].id, nombre: arr[0].nombre } : { nombre: `1° Gpo ${g}`, id: null };
                         ganadoresFase[cat][`2_GPO_${g}`] = arr[1] ? { id: arr[1].id, nombre: arr[1].nombre } : { nombre: `2° Gpo ${g}`, id: null };
 
-                        // Para el RR Flash (Filtros por División C1, C2, C3)
                         let c1 = arr.filter(x => x.div == 1);
                         let c2 = arr.filter(x => x.div == 2);
                         let c3 = arr.filter(x => x.div == 3);
@@ -526,7 +593,6 @@
                 else resolverLlave([m], 'final', 'GANA_SEMI_1', 'GANA_SEMI_2', 'GANA_FINAL');
             });
 
-            // Exportar expediente a global para el clic
             jugadoresMemoriaExpedientes = {};
             Object.keys(datos.porCategoria).forEach(cat => {
                 Object.values(datos.porCategoria[cat].jugadores).forEach(j => {
@@ -535,6 +601,43 @@
             });
 
             return datos;
+        }
+
+        // MAQUETADO DE NOMBRES INTELIGENTES PARA EL FRONTEND Y TARJETAS
+        function getProyeccionNombre(rondaFase, isJ1, hasCuartos) {
+            if (!rondaFase) return 'Por definir';
+            const rf = String(rondaFase).toLowerCase();
+            
+            // RR Flash Especial (C1, C2, C3)
+            if (rf.includes('semi 1 (c1)')) return isJ1 ? '1° Gpo A (C1)' : '2° Gpo B (C1)';
+            if (rf.includes('semi 2 (c1)')) return isJ1 ? '1° Gpo B (C1)' : '2° Gpo A (C1)';
+            if (rf.includes('final (c1)')) return isJ1 ? 'Gana Semi 1 (C1)' : 'Gana Semi 2 (C1)';
+            
+            if (rf.includes('semi 1 (c2)')) return isJ1 ? '1° Gpo A (C2)' : '2° Gpo B (C2)';
+            if (rf.includes('semi 2 (c2)')) return isJ1 ? '1° Gpo B (C2)' : '2° Gpo A (C2)';
+            if (rf.includes('final (c2)')) return isJ1 ? 'Gana Semi 1 (C2)' : 'Gana Semi 2 (C2)';
+            
+            if (rf.includes('semi 1 (c3)')) return isJ1 ? '1° Gpo A (C3)' : '2° Gpo B (C3)';
+            if (rf.includes('semi 2 (c3)')) return isJ1 ? '1° Gpo B (C3)' : '2° Gpo A (C3)';
+            if (rf.includes('final (c3)')) return isJ1 ? 'Gana Semi 1 (C3)' : 'Gana Semi 2 (C3)';
+
+            if (rf.includes('cuartos')) {
+                if (rf.includes('1')) return isJ1 ? '1° Gpo A' : '2° Gpo C';
+                if (rf.includes('2')) return isJ1 ? '1° Gpo B' : '2° Gpo D';
+                if (rf.includes('3')) return isJ1 ? '1° Gpo C' : '2° Gpo A';
+                if (rf.includes('4')) return isJ1 ? '1° Gpo D' : '2° Gpo B';
+            }
+            if (rf.includes('semi')) {
+                if (hasCuartos) {
+                    if (rf.includes('1')) return isJ1 ? 'Gana Cuartos 1' : 'Gana Cuartos 2';
+                    if (rf.includes('2')) return isJ1 ? 'Gana Cuartos 3' : 'Gana Cuartos 4';
+                } else {
+                    if (rf.includes('1')) return isJ1 ? '1° Gpo A' : '2° Gpo B';
+                    if (rf.includes('2')) return isJ1 ? '1° Gpo B' : '2° Gpo A';
+                }
+            }
+            if (rf.includes('final')) return isJ1 ? 'Gana Semi 1' : 'Gana Semi 2';
+            return isJ1 ? `${rondaFase} J1` : `${rondaFase} J2`;
         }
 
         async function irAJuez(partidoId, j1Id, j2Id) {
@@ -558,7 +661,7 @@
             } catch (e) {
                 alert('Error al enlazar partido: ' + e.message);
             } finally {
-                if(btn) { btn.innerHTML = '🏓 Juez'; btn.style.opacity = '1'; }
+                if(btn) { btn.innerHTML = '<i class="fa-solid fa-gavel"></i> Arbitrar'; btn.style.opacity = '1'; }
             }
         }
 
@@ -635,17 +738,17 @@
         function renderTablaGeneralDiv(jugadores, colorHex, titulo, isFlash = false) {
             if (jugadores.length === 0) return '';
             let html = `
-                <div style="margin-bottom:15px; background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:15px; border-top: 3px solid ${colorHex};">
-                    <span style="font-weight:900; font-size:13px; color:${colorHex}; text-transform:uppercase; display:block; margin-bottom:10px;">${titulo}</span>
+                <div style="margin-bottom:20px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:16px; padding:18px; border-left: 4px solid ${colorHex};">
+                    <span style="font-weight:900; font-size:14px; color:${colorHex}; text-transform:uppercase; display:block; margin-bottom:15px; letter-spacing: 1px;">${titulo}</span>
                     <div style="overflow-x:auto;">
                         <table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left; min-width: 850px;">
                             <thead>
-                                <tr style="font-size:9px; color:#94a3b8; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);">
-                                    <th style="padding:6px;">Pos</th><th style="padding:6px;">Jugador</th><th style="padding:6px; text-align:center;">PJ</th>
-                                    <th style="padding:6px; text-align:center;">PG</th><th style="padding:6px; text-align:center;">PP</th>
-                                    <th style="padding:6px; text-align:center;">% Efec</th><th style="padding:6px; text-align:center;">Sets (G - P)</th>
-                                    <th style="padding:6px; text-align:center; color:#fbbf24;">Pts</th><th style="padding:6px; text-align:center;">R. Ant</th>
-                                    <th style="padding:6px; text-align:center;">+/-</th><th style="padding:6px; text-align:center; color:#38bdf8;">R. Act</th>
+                                <tr style="font-size:10px; color:#cbd5e1; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);">
+                                    <th style="padding:10px;">Pos</th><th style="padding:10px;">Jugador</th><th style="padding:10px; text-align:center;">PJ</th>
+                                    <th style="padding:10px; text-align:center;">PG</th><th style="padding:10px; text-align:center;">PP</th>
+                                    <th style="padding:10px; text-align:center;">% Efec</th><th style="padding:10px; text-align:center;">Sets (G - P)</th>
+                                    <th style="padding:10px; text-align:center; color:#fbbf24;">Pts</th><th style="padding:10px; text-align:center;">R. Ini</th>
+                                    <th style="padding:10px; text-align:center;">+/-</th><th style="padding:10px; text-align:center; color:#fbbf24;">R. Act</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -653,27 +756,29 @@
             jugadores.forEach((j, idx) => {
                 let efectividad = j.pj > 0 ? Math.round((j.pg / j.pj) * 100) : 0;
                 let opacity = (isFlash && j.pj < 5) ? '0.5' : '1';
-                let qualBadge = (isFlash && j.pj < 5) ? '<span style="font-size:8px; background:rgba(239,68,68,0.2); color:#f87171; padding:2px 4px; border-radius:4px; margin-left:6px;">Faltan PJ</span>' : '';
+                let qualBadge = (isFlash && j.pj < 5) ? '<span style="font-size:9px; background:rgba(239,68,68,0.2); color:#f87171; padding:3px 6px; border-radius:6px; margin-left:8px; font-weight:800;">Faltan PJ</span>' : '';
                 let rankTrophy = '';
-                if (!isFlash || (isFlash && j.pj >= 5)) { if(idx === 0) rankTrophy = '🥇'; else if (idx === 1) rankTrophy = '🥈'; else if (idx === 2) rankTrophy = '🥉'; else rankTrophy = `#${idx + 1}`; } else { rankTrophy = '-'; }
+                if (!isFlash || (isFlash && j.pj >= 5)) { if(idx === 0) rankTrophy = '🥇'; else if (idx === 1) rankTrophy = '🥈'; else if (idx === 2) rankTrophy = '🥉'; else rankTrophy = `<span style="color:#94a3b8;">${idx + 1}</span>`; } else { rankTrophy = '-'; }
                 let rankDifStr = j.rankImpact > 0 ? `+${j.rankImpact}` : j.rankImpact; let rankDifColor = j.rankImpact > 0 ? '#10b981' : (j.rankImpact < 0 ? '#ef4444' : '#94a3b8');
-                let rankAct = j.rankIni + j.rankImpact; let gpoInfo = (!isFlash && j.gpo) ? `<span style="font-size:9px; color:#a855f7; font-weight:800; border:1px solid #a855f7; padding:2px 6px; border-radius:4px; margin-left:6px;">GPO ${j.gpo}</span>` : '';
-                let dif = j.setsG - j.setsP; let difStr = dif >= 0 ? '+' + dif : dif; let colorDif = dif >= 0 ? '#38bdf8' : '#f87171';
+                let rankAct = j.rankIni + j.rankImpact; let gpoInfo = (!isFlash && j.gpo && j.gpo !== 'Llaves') ? `<span style="font-size:9px; color:#fbbf24; font-weight:800; border:1px solid rgba(251, 191, 36, 0.4); background:rgba(251, 191, 36, 0.1); padding:3px 6px; border-radius:6px; margin-left:8px;">GPO ${j.gpo}</span>` : '';
+                
+                let setsG = j.setsG !== undefined ? j.setsG : j.setsGanados; let setsP = j.setsP !== undefined ? j.setsP : j.setsPerdidos;
+                let dif = setsG - setsP; let difStr = dif >= 0 ? '+' + dif : dif; let colorDif = dif >= 0 ? '#fbbf24' : '#f87171';
 
                 html += `
-                    <tr class="tr-header cursor-pointer" style="border-bottom:1px solid rgba(255,255,255,0.04); opacity: ${opacity}; transition:all 0.2s ease;" onclick="abrirModalJugadorAdmin(${j.id})" onmouseover="this.style.backgroundColor='rgba(6,182,212,0.15)'" onmouseout="this.style.backgroundColor='transparent'">
-                        <td style="padding:8px 6px; font-weight:800; color:#64748b; font-size:14px;">${rankTrophy}</td>
-                        <td style="padding:8px 6px;">
-                            <strong style="color:#ffffff; font-size:12px; display:inline-block;" class="hover:text-cyan-400 transition-colors">
+                    <tr class="tr-header cursor-pointer" style="border-bottom:1px solid rgba(255,255,255,0.03); opacity: ${opacity}; transition:all 0.2s ease;" onclick="abrirModalJugadorAdmin(${j.id})" onmouseover="this.style.backgroundColor='rgba(255,255,255,0.03)'" onmouseout="this.style.backgroundColor='transparent'">
+                        <td style="padding:12px 10px; font-weight:900; font-size:15px;">${rankTrophy}</td>
+                        <td style="padding:12px 10px;">
+                            <strong style="color:#ffffff; font-size:13px; display:inline-block; letter-spacing:0.5px;" class="hover:text-amber-400 transition-colors">
                                 ${j.nombre}
                             </strong> ${qualBadge} ${gpoInfo}
-                            <span style="font-size:9px; color:#64748b; font-weight:700; display:block;">${j.club || 'Sin Club'}</span>
+                            <span style="font-size:10px; color:#94a3b8; font-weight:600; display:block; margin-top:2px;">${j.club || 'Sin Club'}</span>
                         </td>
-                        <td style="padding:8px 6px; text-align:center; font-weight:700; color:#94a3b8;">${j.pj}</td><td style="padding:8px 6px; text-align:center; font-weight:700; color:#34d399;">${j.pg}</td>
-                        <td style="padding:8px 6px; text-align:center; font-weight:700; color:#f87171;">${j.pp}</td><td style="padding:8px 6px; text-align:center; font-weight:900; color:#fbbf24;">${efectividad}%</td>
-                        <td style="padding:8px 6px; text-align:center;"><span style="color:#34d399; font-weight:800;">${j.setsG}</span><span style="color:#64748b; margin:0 2px;">:</span><span style="color:#f87171; font-weight:800;">${j.setsP}</span><span style="font-size:10px; font-weight:800; color:${colorDif}; margin-left:4px;">(${difStr})</span></td>
-                        <td style="padding:8px 6px; text-align:center; font-weight:900; color:#fbbf24; font-size:14px;">${j.pts}</td><td style="padding:8px 6px; text-align:center; font-weight:700; color:#94a3b8; font-family:'Orbitron', sans-serif;">${j.rankIni}</td>
-                        <td style="padding:8px 6px; text-align:center; font-weight:800; color:${rankDifColor};">${rankDifStr}</td><td style="padding:8px 6px; text-align:center; font-weight:900; color:#38bdf8; font-family:'Orbitron', sans-serif;">${rankAct}</td>
+                        <td style="padding:12px 10px; text-align:center; font-weight:800; color:#cbd5e1;">${j.pj}</td><td style="padding:12px 10px; text-align:center; font-weight:800; color:#10b981;">${j.pg}</td>
+                        <td style="padding:12px 10px; text-align:center; font-weight:800; color:#f43f5e;">${j.pp}</td><td style="padding:12px 10px; text-align:center; font-weight:900; color:#fbbf24;">${efectividad}%</td>
+                        <td style="padding:12px 10px; text-align:center;"><span style="color:#10b981; font-weight:900;">${setsG}</span><span style="color:#64748b; margin:0 4px;">:</span><span style="color:#f43f5e; font-weight:900;">${setsP}</span><span style="font-size:11px; font-weight:800; color:${colorDif}; margin-left:6px;">(${difStr})</span></td>
+                        <td style="padding:12px 10px; text-align:center; font-weight:900; color:#fbbf24; font-size:16px;">${j.pts}</td><td style="padding:12px 10px; text-align:center; font-weight:700; color:#94a3b8; font-family:'Orbitron', sans-serif;">${j.rankIni}</td>
+                        <td style="padding:12px 10px; text-align:center; font-weight:900; color:${rankDifColor};">${rankDifStr}</td><td style="padding:12px 10px; text-align:center; font-weight:900; color:#ffffff; font-family:'Orbitron', sans-serif; font-size:14px; text-shadow:0 0 10px rgba(255,255,255,0.3);">${rankAct}</td>
                     </tr>
                 `;
             });
@@ -682,8 +787,7 @@
         }
 
         function dibujarEstadisticas(container) {
-            const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean));
-            let catsList = [...categoriasSet];
+            let catsList = [...new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean))];
             if (categoriaFiltro !== 'todas') catsList = catsList.filter(c => c === categoriaFiltro);
 
             if (catsList.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay información de estadísticas para mostrar.</div>`; return; }
@@ -695,10 +799,10 @@
                 if (todosJugadoresCat.length === 0) return;
 
                 htmlContent += `
-                    <div style="background:rgba(10,15,26,0.85); border:1px solid rgba(255,255,255,0.1); border-radius:20px; padding:22px; margin-bottom:25px; backdrop-filter:blur(15px);">
-                        <div style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px; margin-bottom:15px; text-align:center;">
-                            <span style="font-size:14px; font-weight:800; color:#38bdf8; text-transform:uppercase; letter-spacing:1.5px;">🏆 Estadísticas: ${catNombre}</span>
-                            <span style="font-size:10px; color:#94a3b8; display:block; margin-top:6px;">Tabla General por Divisiones (Grupos + Eliminatorias Totales)</span>
+                    <div style="background:rgba(18, 18, 22, 0.8); border:1px solid rgba(251, 191, 36, 0.2); border-radius:24px; padding:30px; margin-bottom:30px; backdrop-filter:blur(20px); box-shadow: 0 15px 35px rgba(0,0,0,0.5);">
+                        <div style="border-bottom:1px solid rgba(251, 191, 36, 0.2); padding-bottom:15px; margin-bottom:20px; text-align:center;">
+                            <span style="font-size:16px; font-weight:900; color:#fbbf24; text-transform:uppercase; letter-spacing:2px; text-shadow: 0 0 15px rgba(251, 191, 36, 0.3);">🏆 ESTADÍSTICAS OFICIALES: ${catNombre}</span>
+                            <span style="font-size:11px; color:#94a3b8; display:block; margin-top:8px; text-transform:uppercase; letter-spacing: 1px;">Tabla General por Divisiones</span>
                         </div>
                 `;
                 
@@ -711,12 +815,12 @@
                 let isFlash = modalidadFiltro === 'flash';
 
                 if (div1.length > 0 || div2.length > 0 || div3.length > 0) {
-                    htmlContent += renderTablaGeneralDiv(div1, '#f43f5e', '🏆 DIVISIÓN 1', isFlash); 
-                    htmlContent += renderTablaGeneralDiv(div2, '#eab308', '🏆 DIVISIÓN 2', isFlash);
-                    htmlContent += renderTablaGeneralDiv(div3, '#3b82f6', '🏆 DIVISIÓN 3', isFlash); 
-                    if (sinDiv.length > 0) htmlContent += renderTablaGeneralDiv(sinDiv, '#94a3b8', 'Jugadores sin división registrada', isFlash);
+                    htmlContent += renderTablaGeneralDiv(div1, '#fbbf24', '🏆 DIVISIÓN 1 (ORO)', isFlash); 
+                    htmlContent += renderTablaGeneralDiv(div2, '#cbd5e1', '🏆 DIVISIÓN 2 (PLATA)', isFlash); 
+                    htmlContent += renderTablaGeneralDiv(div3, '#d97706', '🏆 DIVISIÓN 3 (BRONCE)', isFlash); 
+                    if (sinDiv.length > 0) htmlContent += renderTablaGeneralDiv(sinDiv, '#64748b', 'Jugadores sin división registrada', isFlash); 
                 } else { 
-                    htmlContent += renderTablaGeneralDiv(todosJugadoresCat, '#94a3b8', 'Resultados Generales', isFlash); 
+                    htmlContent += renderTablaGeneralDiv(todosJugadoresCat, '#fbbf24', 'Resultados Generales', isFlash); 
                 }
                 htmlContent += `</div>`;
             });
@@ -726,10 +830,11 @@
         function dibujarPantalla() {
             const container = document.getElementById('contenedor-partidos');
 
-            // RESOLVEMOS TODO EL CUADRO DE FORMA LINEAL Y RÁPIDA
+            // RESOLVEMOS TODO EL CUADRO
             datosGeneralesCuadro = resolverCuadroTorneoTotal();
 
             if (estadoFiltro === 'resumen') { container.style.display = 'block'; dibujarEstadisticas(container); return; }
+            if (estadoFiltro === 'ranking') { container.style.display = 'block'; container.innerHTML = `<div class="mensaje-vacio">La vista de ranking en vivo ahora solo está disponible en el Portal Público (Espectador) para mejor rendimiento de la mesa del Juez.</div>`; return; }
 
             container.style.display = 'grid';
             let filtrados = [...todosLosPartidos];
@@ -750,7 +855,7 @@
 
             let htmlContent = '';
             horasOrdenadas.forEach(hora => {
-                htmlContent += `<div class="header-hora">⏰ ${hora}</div>`;
+                htmlContent += `<div class="header-hora"><i class="fa-regular fa-clock mr-2"></i> ${hora}</div>`;
                 gruposPorHora[hora].forEach(p => {
                     let est = String(p.estado || '').toLowerCase();
                     let isFin = est === 'finalizado'; let isVivo = est === 'en_curso';
@@ -764,54 +869,48 @@
                     if (isVivo) cardClassStyle += ' vivo';
                     if (isFin) cardClassStyle += ' finalizado';
 
-                    let badgeEst = isVivo ? '<span class="badge-estado est-curso">🔴 En Vivo</span>' : (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
+                    let badgeEst = isVivo ? '<span class="badge-estado est-curso"><i class="fa-solid fa-circle text-[6px] align-middle mr-1"></i> EN VIVO</span>' : (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
                     
                     let proyJ1 = datosGeneralesCuadro.mapaProyecciones[`${p.id}_j1`] || (p.j1 ? { nombre: p.j1.nombre, id: p.j1.id } : { nombre: 'Por definir', id: null });
                     let proyJ2 = datosGeneralesCuadro.mapaProyecciones[`${p.id}_j2`] || (p.j2 ? { nombre: p.j2.nombre, id: p.j2.id } : { nombre: 'Por definir', id: null });
                     
-                    // FALLBACK: Si no hay proyección definida, busca qué debe decir según las reglas
                     let nomJ1 = proyJ1.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : proyJ1.nombre;
                     let nomJ2 = proyJ2.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : proyJ2.nombre;
                     
-                    // Evitar nombres vacíos que rompan UI si BD devuelve vacío en lugar de 'Por definir'
                     if (!nomJ1 || nomJ1 === 'Por definir') nomJ1 = getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos);
                     if (!nomJ2 || nomJ2 === 'Por definir') nomJ2 = getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos);
 
-                    // Reemplazo visual de BYE si no se encuentra rival en un escenario predecible
                     if (nomJ1.includes('Por definir') || nomJ1.includes('undefined')) nomJ1 = 'BYE (Faltan Jugadores)';
                     if (nomJ2.includes('Por definir') || nomJ2.includes('undefined')) nomJ2 = 'BYE (Faltan Jugadores)';
 
                     let idDinamicoJ1 = proyJ1.id;
                     let idDinamicoJ2 = proyJ2.id;
                     
-                    let iconJ1 = (isFin && p.ganador_id == (p.jugador1_id || idDinamicoJ1)) ? '🏆 ' : '';
-                    let iconJ2 = (isFin && p.ganador_id == (p.jugador2_id || idDinamicoJ2)) ? '🏆 ' : '';
+                    let iconJ1 = (isFin && p.ganador_id == (p.jugador1_id || idDinamicoJ1)) ? '<i class="fa-solid fa-crown text-amber-400 mr-2 text-sm drop-shadow-md"></i>' : '';
+                    let iconJ2 = (isFin && p.ganador_id == (p.jugador2_id || idDinamicoJ2)) ? '<i class="fa-solid fa-crown text-amber-400 mr-2 text-sm drop-shadow-md"></i>' : '';
 
                     let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
                     let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre === 'Flash' ? '⚡ Liga Flash' : (p.ronda_fase || 'Eliminatoria Directa'));
                     let cGpo = obtenerColorGrupo(p.grupo_nombre || p.ronda_fase);
-                    if (p.grupo_nombre === 'Flash') cGpo = { color: '#fbbf24', bg: 'rgba(245,158,11,0.15)', border: 'rgba(245,158,11,0.4)' };
+                    if (p.grupo_nombre === 'Flash') cGpo = { color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.1)', border: 'rgba(251, 191, 36, 0.3)' };
 
                     let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : '';
                     let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
                     if (isVivo) { score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`; score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`; }
 
-                    let btnYoutube = (isFin || isVivo) ? `
-                        <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(239,68,68,0.15); border-color:#ef4444; color:#f87171;" onclick="abrirModalYouTube(${p.id}, '${p.video_url || ''}')">
-                            ${p.video_url ? '<i class="fa-brands fa-youtube"></i> Editar Enlace' : '<i class="fa-brands fa-youtube"></i> Añadir YouTube'}
-                        </button>
-                    ` : `
-                        <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.1); color:#64748b; cursor:not-allowed;" onclick="alert('Inicia el partido primero para poder añadir un enlace en directo de YouTube.')">
-                            <i class="fa-solid fa-lock"></i> Link YouTube
+                    let btnYoutube = `
+                        <button class="btn-mesa-action btn-mesa-yt" onclick="abrirModalYouTube(${p.id}, '${p.video_url || ''}', '${p.rtmp_url || ''}', '${p.stream_key || ''}')">
+                            ${p.video_url ? '<i class="fa-brands fa-youtube"></i> Editar Datos Trans.' : '<i class="fa-brands fa-youtube"></i> Añadir API/YouTube'}
                         </button>
                     `;
 
-                    // Lógica para bloquear Arbitraje si faltan jugadores en la llave
                     let puedeArbitrar = (idDinamicoJ1 && idDinamicoJ2);
                     let onClickJuez = puedeArbitrar ? `irAJuez(${p.id}, ${idDinamicoJ1}, ${idDinamicoJ2})` : `alert('⚠️ Faltan partidos por concluir en la fase anterior para definir a los jugadores.')`;
-                    let arbitrarStyle = puedeArbitrar ? '' : 'opacity: 0.5; cursor: not-allowed;';
-                    let onClickMarcador = puedeArbitrar ? `abrirModalMarcador(${p.id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(nomJ2).replace(/'/g, "\\'")}', ${idDinamicoJ1}, ${idDinamicoJ2})` : `alert('⚠️ Faltan partidos por concluir en la fase anterior para definir a los jugadores.')`;
+                    let cssDisabled = puedeArbitrar ? '' : 'btn-disabled';
 
+                    // ==========================================
+                    // EL ARREGLO: Ya no inyectamos texto directo en el onclick, solo el ID.
+                    // ==========================================
                     htmlContent += `
                         <div class="${cardClassStyle}">
                             <div class="top-bar">
@@ -821,25 +920,28 @@
                                 </div>
                                 ${badgeEst}
                             </div>
-                            <div style="margin-bottom:12px; display: flex; gap: 8px; flex-wrap: wrap;">
+                            
+                            <div style="margin-bottom:15px; display: flex; gap: 8px; flex-wrap: wrap;">
                                 <span class="cat-badge" style="color:${catStyle.text}; background:${catStyle.bg}; border:1px solid ${catStyle.border};">🏆 ${p.categorias ? p.categorias.nombre : 'Categoría'}</span>
-                                <span class="cat-badge" style="${!isLlave ? `color:${cGpo.color}; background:${cGpo.bg}; border:1px solid ${cGpo.border};` : 'background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3);'}">📍 ${eqGrupo}</span>
-                            </div>
-                            <div class="score-container">
-                                <div class="jugador-box"><div style="cursor:pointer;" onclick="abrirModalJugadorAdmin(${p.jugador1_id || idDinamicoJ1})"><span class="jugador-nombre">${iconJ1}${nomJ1}</span></div><div style="display:flex; align-items:center;">${score1}</div></div>
-                                <div class="jugador-box" style="border-top:1px solid rgba(255,255,255,0.05); margin-top:6px; padding-top:10px;"><div style="cursor:pointer;" onclick="abrirModalJugadorAdmin(${p.jugador2_id || idDinamicoJ2})"><span class="jugador-nombre">${iconJ2}${nomJ2}</span></div><div style="display:flex; align-items:center;">${score2}</div></div>
+                                <span class="cat-badge" style="${!isLlave ? `color:${cGpo.color}; background:${cGpo.bg}; border:1px solid ${cGpo.border};` : 'background: rgba(251, 191, 36, 0.1); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3);'}">📍 ${eqGrupo}</span>
                             </div>
                             
-                            <div style="display:flex; gap:10px; flex-wrap: wrap;">
-                                <button id="btn-arbitrar-${p.id}" class="btn-arbitrar ${isFin ? 'btn-reabrir' : ''}" style="flex:1; min-width: 120px; ${arbitrarStyle}" onclick="${onClickJuez}">
-                                    ${isFin ? '🏁 REABRIR PARTIDO' : '🏓 Arbitrar'}
+                            <div class="score-container">
+                                <div class="jugador-box"><div style="cursor:pointer;" onclick="abrirModalJugadorAdmin(${p.jugador1_id || idDinamicoJ1})"><span class="jugador-nombre">${iconJ1}${nomJ1}</span></div><div style="display:flex; align-items:center;">${score1}</div></div>
+                                <div style="height:1px; background:rgba(255,255,255,0.05); margin: 6px 0;"></div>
+                                <div class="jugador-box"><div style="cursor:pointer;" onclick="abrirModalJugadorAdmin(${p.jugador2_id || idDinamicoJ2})"><span class="jugador-nombre">${iconJ2}${nomJ2}</span></div><div style="display:flex; align-items:center;">${score2}</div></div>
+                            </div>
+                            
+                            <div class="grid-botones-mesa">
+                                <button id="btn-arbitrar-${p.id}" class="btn-mesa-action btn-mesa-arbitrar ${isFin ? 'reabrir' : ''} ${cssDisabled}" onclick="${onClickJuez}">
+                                    ${isFin ? '🏁 REABRIR PARTIDO' : '<i class="fa-solid fa-gavel"></i> Arbitrar'}
                                 </button>
                                 
-                                <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(59,130,246,0.15); border-color:#3b82f6; color:#60a5fa;" onclick="abrirModalTransmision(${p.id})">
+                                <button class="btn-mesa-action btn-mesa-qr" onclick="abrirModalTransmision(${p.id})">
                                     <i class="fa-solid fa-qrcode"></i> Transmitir
                                 </button>
                                 
-                                <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(168,85,247,0.15); border-color:#a855f7; color:#c084fc; ${arbitrarStyle}" onclick="${onClickMarcador}">
+                                <button class="btn-mesa-action btn-mesa-marcador ${cssDisabled}" onclick="abrirModalMarcador(${p.id})">
                                     📝 Marcador
                                 </button>
                                 
@@ -852,35 +954,156 @@
             container.innerHTML = htmlContent;
         }
 
-        function abrirModalYouTube(partidoId, urlActual) {
+        // ================= Funciones de Modales (QR, Youtube, Marcador) ================= //
+
+        function abrirModalTransmision(id) {
+            let container = document.getElementById("qrcode-container");
+            container.innerHTML = "";
+            
+            let p = todosLosPartidos.find(x => x.id === id);
+            let n1 = 'Jugador 1', n2 = 'Jugador 2', c1 = '', c2 = '';
+
+            if (p) {
+                let proyJ1 = datosGeneralesCuadro.mapaProyecciones[`${p.id}_j1`] || (p.j1 ? { nombre: p.j1.nombre } : { nombre: 'Por definir' });
+                let proyJ2 = datosGeneralesCuadro.mapaProyecciones[`${p.id}_j2`] || (p.j2 ? { nombre: p.j2.nombre } : { nombre: 'Por definir' });
+                
+                n1 = proyJ1.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : proyJ1.nombre;
+                n2 = proyJ2.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : proyJ2.nombre;
+                
+                if (!n1 || n1.includes('Por definir')) n1 = 'Por definir';
+                if (!n2 || n2.includes('Por definir')) n2 = 'Por definir';
+
+                c1 = p.j1?.club || '';
+                c2 = p.j2?.club || '';
+            }
+
+            let urlCompleta = `${window.location.origin}/overlay.html?partido=${id}&n1=${encodeURIComponent(n1)}&n2=${encodeURIComponent(n2)}&c1=${encodeURIComponent(c1)}&c2=${encodeURIComponent(c2)}`;
+            
+            document.getElementById('link-overlay-visible').value = urlCompleta;
+            new QRCode(container, { text: urlCompleta, width: 160, height: 160 });
+            document.getElementById('modal-qr').style.display = 'flex';
+        }
+        
+        function cerrarModalQR() { document.getElementById('modal-qr').style.display = 'none'; }
+        
+        function copiarAlPortapapelesOverlay() {
+            var copyText = document.getElementById("link-overlay-visible");
+            copyText.select(); copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value).then(() => { alert("¡Link de Overlay copiado al portapapeles!"); });
+        }
+
+        function abrirModalYouTube(partidoId, urlActual, rtmpActual, keyActual) {
             document.getElementById('hidden-youtube-partidoid').value = partidoId;
             document.getElementById('input-youtube-link').value = (urlActual && urlActual !== 'null' && urlActual !== 'undefined') ? urlActual : '';
+            document.getElementById('input-youtube-rtmp').value = (rtmpActual && rtmpActual !== 'null' && rtmpActual !== 'undefined') ? rtmpActual : '';
+            document.getElementById('input-youtube-key').value = (keyActual && keyActual !== 'null' && keyActual !== 'undefined') ? keyActual : '';
             document.getElementById('modal-youtube').style.display = 'flex';
         }
 
         function cerrarModalYouTube() { document.getElementById('modal-youtube').style.display = 'none'; }
 
+        function copiarDato(btnElement, inputId) {
+            let inputEl = document.getElementById(inputId);
+            if (!inputEl.value) {
+                alert("No hay ningún dato para copiar en este campo.");
+                return;
+            }
+            let isPassword = inputEl.type === 'password';
+            if (isPassword) inputEl.type = 'text';
+
+            navigator.clipboard.writeText(inputEl.value).then(() => {
+                if (isPassword) inputEl.type = 'password';
+                let iconOriginal = btnElement.innerHTML;
+                btnElement.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i>';
+                setTimeout(() => { btnElement.innerHTML = iconOriginal; }, 1500);
+            }).catch(err => {
+                inputEl.select(); inputEl.setSelectionRange(0, 99999); document.execCommand("copy");
+                if (isPassword) inputEl.type = 'password';
+                let iconOriginal = btnElement.innerHTML;
+                btnElement.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i>';
+                setTimeout(() => { btnElement.innerHTML = iconOriginal; }, 1500);
+            });
+        }
+
+        async function llamarMiAPI() {
+            let partidoId = document.getElementById('hidden-youtube-partidoid').value;
+            const btn = document.getElementById('btn-generar-api');
+            
+            // ========================================================
+            // ¡IMPORTANTE! PON AQUÍ EL LINK DE TU API O WEBHOOK
+            // ASEGÚRATE DE MANTENER LAS COMILLAS SIMPLES A LOS LADOS.
+            // ========================================================
+            const miUrlAPI = 'URL_DE_TU_API_O_WEBHOOK'; 
+            
+            if (miUrlAPI === 'URL_DE_TU_API_O_WEBHOOK' || miUrlAPI === '') {
+                alert("⚠️ Aún no has puesto la URL de tu API en el código.\n\nAbre mesas.html, busca 'URL_DE_TU_API_O_WEBHOOK' y cámbialo por tu enlace real.");
+                return;
+            }
+
+            btn.disabled = true; 
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-2"></i> Generando...';
+            
+            try {
+                const response = await fetch(miUrlAPI, { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ partido_id: partidoId })
+                });
+
+                if (!response.ok) throw new Error('Error al comunicar con la API de YouTube');
+
+                const data = await response.json();
+
+                document.getElementById('input-youtube-link').value = data.link_publico || data.url || data.video_url || '';
+                document.getElementById('input-youtube-rtmp').value = data.rtmp || data.rtmp_url || "rtmp://a.rtmp.youtube.com/live2";
+                document.getElementById('input-youtube-key').value = data.clave || data.stream_key || '';
+
+                alert("✅ Transmisión generada automáticamente en YouTube.\n\nRevisa que los datos estén correctos y dale a 'Guardar Datos'.");
+            } catch (e) {
+                alert("❌ Error de API: " + e.message + "\n\nAsegúrate de haber escrito correctamente el link de la API en el código.");
+            } finally {
+                btn.disabled = false; 
+                btn.innerHTML = '<i class="fa-solid fa-bolt mr-2"></i> Generar';
+            }
+        }
+
         async function guardarLinkYouTube() {
             let partidoId = document.getElementById('hidden-youtube-partidoid').value;
             let link = document.getElementById('input-youtube-link').value.trim();
-            const btn = document.getElementById('btn-guardar-youtube');
+            let rtmp = document.getElementById('input-youtube-rtmp').value.trim();
+            let key = document.getElementById('input-youtube-key').value.trim();
             
+            const btn = document.getElementById('btn-guardar-youtube');
             btn.disabled = true; btn.innerText = '⏳ Guardando...';
             
             try {
-                const { error } = await clienteSupabase.from('partidos').update({ video_url: link }).eq('id', partidoId);
+                const { error } = await clienteSupabase.from('partidos').update({ 
+                    video_url: link,
+                    rtmp_url: rtmp,
+                    stream_key: key
+                }).eq('id', partidoId);
+                
                 if (!error) { cerrarModalYouTube(); window.location.reload(); } 
-                else { alert("❌ Error al guardar el enlace: " + error.message); btn.disabled = false; btn.innerText = '💾 Guardar Enlace'; }
-            } catch (e) { alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Enlace'; }
+                else { alert("❌ Error al guardar: " + error.message); btn.disabled = false; btn.innerText = '💾 Guardar Datos'; }
+            } catch (e) { alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Datos'; }
         }
 
-        function abrirModalMarcador(partidoId, nombreJ1, nombreJ2, idJ1, idJ2) {
-            document.getElementById('hidden-marcador-partidoid').value = partidoId;
-            document.getElementById('hidden-marcador-j1id').value = idJ1;
-            document.getElementById('hidden-marcador-j2id').value = idJ2;
+        function abrirModalMarcador(partidoId) {
+            const p = todosLosPartidos.find(x => x.id === partidoId);
+            if(!p) return;
             
-            document.getElementById('lbl-marcador-j1').innerText = nombreJ1; 
-            document.getElementById('lbl-marcador-j2').innerText = nombreJ2;
+            let proyJ1 = datosGeneralesCuadro.mapaProyecciones[`${p.id}_j1`] || (p.j1 ? { nombre: p.j1.nombre, id: p.j1.id } : { nombre: 'Por definir', id: null });
+            let proyJ2 = datosGeneralesCuadro.mapaProyecciones[`${p.id}_j2`] || (p.j2 ? { nombre: p.j2.nombre, id: p.j2.id } : { nombre: 'Por definir', id: null });
+            
+            let nomJ1 = proyJ1.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : proyJ1.nombre;
+            let nomJ2 = proyJ2.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : proyJ2.nombre;
+
+            document.getElementById('hidden-marcador-partidoid').value = p.id;
+            document.getElementById('hidden-marcador-j1id').value = proyJ1.id;
+            document.getElementById('hidden-marcador-j2id').value = proyJ2.id;
+            
+            document.getElementById('lbl-marcador-j1').innerText = nomJ1; 
+            document.getElementById('lbl-marcador-j2').innerText = nomJ2;
             
             document.getElementById('input-sets-j1').value = ''; document.getElementById('input-sets-j2').value = '';
             document.getElementById('modal-marcador').style.display = 'flex';
@@ -899,7 +1122,7 @@
             if (isNaN(setsJ1) || isNaN(setsJ2)) return;
             
             const btn = document.getElementById('btn-guardar-marcador');
-            if (setsJ1 === setsJ2) { btn.innerText = "❌ Empate no válido"; setTimeout(() => { btn.innerText = "💾 Guardar Manualmente"; }, 2000); return; }
+            if (setsJ1 === setsJ2) { btn.innerText = "❌ Empate no válido"; setTimeout(() => { btn.innerText = "💾 Guardar Resultado"; }, 2000); return; }
             
             btn.disabled = true; btn.innerText = '⏳ Guardando...';
             
@@ -916,10 +1139,10 @@
                 if (!error) { 
                     cerrarModalMarcador(); window.location.reload(); 
                 } else { 
-                    alert("❌ Error: " + error.message); btn.disabled = false; btn.innerText = '💾 Guardar Manualmente'; 
+                    alert("❌ Error: " + error.message); btn.disabled = false; btn.innerText = '💾 Guardar Resultado'; 
                 }
             } catch (e) { 
-                alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Manualmente'; 
+                alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Resultado'; 
             }
         }
 
