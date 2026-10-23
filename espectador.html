@@ -61,11 +61,9 @@
 
         @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(251, 191, 36, 0); } 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); } }
 
-        /* Contenedor de Marcador Interior */
         .score-container { background: rgba(0,0,0,0.5); border-radius: 16px; padding: 16px 20px; margin-bottom: 15px; border: 1px inset rgba(255,255,255,0.02); }
         .jugador-box { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
         .jugador-nombre { font-size: 14px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; transition: color 0.2s; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .jugador-nombre:hover { color: #fbbf24; }
         
         .score-big { font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 900; color: #ffffff; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
         .score-big.p2 { color: #fbbf24; text-shadow: 0 0 15px rgba(251, 191, 36, 0.3); }
@@ -75,12 +73,9 @@
         .header-hora { grid-column: 1 / -1; font-size: 13px; color: #fbbf24; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid rgba(251, 191, 36, 0.2); padding-bottom: 8px; margin-top: 25px; margin-bottom: 10px; letter-spacing: 2px; display: flex; align-items: center; }
         .header-hora::before { content: ""; display: inline-block; width: 6px; height: 6px; background: #fbbf24; border-radius: 50%; margin-right: 10px; box-shadow: 0 0 8px #fbbf24; }
         
-        .seccion-llaves-footer { grid-column: 1 / -1; margin-top: 30px; background: rgba(15, 15, 18, 0.85); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 24px; padding: 30px; backdrop-filter: blur(20px); box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
-        
         .mensaje-vacio { text-align: center; color: #64748b; font-style: italic; font-weight: 600; grid-column: 1/-1; padding: 60px 20px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.05); }
 
-        /* Botones de Acción en Tarjeta */
-        .btn-action-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 12px; padding: 12px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; text-align: center; text-decoration: none; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-action-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 12px; padding: 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; text-align: center; text-decoration: none; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
         .btn-action-card:hover { background: rgba(255,255,255,0.1); color: #fff; }
         .btn-live-yt { background: rgba(220, 38, 38, 0.15); border-color: rgba(220, 38, 38, 0.4); color: #ef4444; }
         .btn-live-yt:hover { background: #dc2626; color: white; box-shadow: 0 0 20px rgba(220, 38, 38, 0.5); }
@@ -133,7 +128,7 @@
         </div>
     </div>
 
-    <!-- MODAL PANTALLA COMPLETA PARTIDO ESPECTADOR (DISEÑO VIP) -->
+    <!-- MODAL PANTALLA COMPLETA PARTIDO ESPECTADOR -->
     <div id="modal-fullscreen-partido" class="fixed inset-0 z-[100] p-4 md:p-8 flex-col justify-between overflow-y-auto no-print" style="display: none;">
         
         <!-- Top Bar FS -->
@@ -194,9 +189,7 @@
         <!-- Bottom Bar FS -->
         <div class="shrink-0 flex flex-col gap-3">
             <div id="fs-proyeccion-box" class="hidden bg-amber-500/10 border border-amber-500/30 text-amber-400 p-4 rounded-2xl text-center text-xs font-bold tracking-wide"></div>
-            
             <div id="fs-video-btn-container" class="hidden w-full max-w-md mx-auto mb-2"></div>
-
             <div class="bg-black/40 p-4 rounded-3xl border border-white/5 flex justify-center items-center gap-4 flex-wrap backdrop-blur-md min-h-[60px]">
                 <span class="text-[11px] font-black text-zinc-500 uppercase tracking-widest">HISTORIAL DE SETS:</span>
                 <div id="fs-list-sets" class="flex gap-2 flex-wrap"></div>
@@ -204,14 +197,14 @@
         </div>
     </div>
 
-    <!-- HEADER GENERAL VIP -->
+    <!-- HEADER GENERAL -->
     <div class="header no-print">
         <div class="header-tag"><i class="fa-solid fa-satellite-dish mr-2 animate-pulse"></i> SEÑAL EN DIRECTO</div>
         <h1 id="torneo-nombre-header">CENTRAL DEL ESPECTADOR</h1>
         <p style="color:#94a3b8; font-size: 11px; font-weight: 600; margin-top: 8px; letter-spacing: 1px;">Sigue los marcadores y estadísticas en tiempo real.</p>
     </div>
 
-    <!-- FILTROS SEPARADOS POR MODALIDAD -->
+    <!-- FILTROS POR MODALIDAD -->
     <div style="font-size:10px; font-weight:900; color:#cbd5e1; text-transform:uppercase; margin-bottom:8px; letter-spacing:2px; display:flex; align-items:center;"><i class="fa-solid fa-gamepad mr-2 text-amber-500"></i> Modalidad</div>
     <div class="scrolling-bar" id="bar-modalidad">
         <button class="btn-filter-pill active" onclick="filtrarModalidad('todas', this)">Todas</button>
@@ -221,24 +214,22 @@
         <button class="btn-filter-pill" style="color:#fbbf24; border-color:rgba(251,191,36,0.3);" onclick="filtrarModalidad('flash', this)">⚡ Liga Flash</button>
     </div>
 
+    <!-- FILTROS POR CATEGORÍA -->
     <div style="font-size:10px; font-weight:900; color:#cbd5e1; text-transform:uppercase; margin-bottom:8px; letter-spacing:2px; display:flex; align-items:center; margin-top:5px;"><i class="fa-solid fa-layer-group mr-2 text-amber-500"></i> Categoría</div>
     <div class="scrolling-bar no-print" id="bar-categorias">
         <button class="btn-filter-pill btn-cat-pill active" onclick="filtrarCategoria('todas')">Todas las Categorías</button>
     </div>
 
+    <!-- VISTA DE DATOS (AQUÍ ESTÁ EL BOTÓN DE ESTADÍSTICAS MOVIDO Y RENOMBRADO) -->
     <div style="font-size:10px; font-weight:900; color:#cbd5e1; text-transform:uppercase; margin-bottom:8px; letter-spacing:2px; display:flex; align-items:center; margin-top:5px;"><i class="fa-solid fa-eye mr-2 text-amber-500"></i> Vista de Datos</div>
     <div class="scrolling-bar no-print">
         <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Cartelera Completa</button>
+        <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')" style="color:#10b981; border-color:rgba(16,185,129,0.3);">📊 Estadísticas</button>
         <button class="btn-filter-pill" id="tab-vivo" onclick="filtrarEstado('en_curso')">🔴 Jugándose Ahora</button>
         <button class="btn-filter-pill" id="tab-pendientes" onclick="filtrarEstado('pendiente')">⏳ Por Jugar</button>
         <button class="btn-filter-pill" id="tab-finalizados" onclick="filtrarEstado('finalizado')">🏁 Resultados</button>
         <div style="width:1px; background:rgba(255,255,255,0.1); margin: 0 5px;"></div>
-        <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')" style="color:#fbbf24; border-color:rgba(251,191,36,0.3);">📊 Posiciones Generales</button>
         <button class="btn-filter-pill" id="tab-ranking" onclick="filtrarEstado('ranking')" style="color:#fbbf24; border-color:rgba(251,191,36,0.3);">🏆 Ranking Oficial</button>
-    </div>
-
-    <div class="scrolling-bar no-print hidden" id="bar-mesas">
-        <button class="btn-filter-pill active" onclick="filtrarMesa('todas')">Todas las Mesas</button>
     </div>
 
     <div class="grid-espectador" id="contenedor-espectador">
@@ -368,6 +359,17 @@
             return { j1G: favoritoEsJ1 ? ptsGanaFav : ptsGanaRet, j1P: favoritoEsJ1 ? ptsPierdeFav : ptsPierdeRet, j2G: favoritoEsJ1 ? ptsGanaRet : ptsGanaFav, j2P: favoritoEsJ1 ? ptsPierdeRet : ptsPierdeFav };
         }
 
+        function ordenarJugadoresITTF(lista) {
+            return [...lista].sort((a, b) => {
+                if (b.pts !== a.pts) return b.pts - a.pts;
+                const sG_a = a.setsG; const sP_a = a.setsP; const sG_b = b.setsG; const sP_b = b.setsP;
+                const rSetA = sG_a / (sP_a || 0.0001); const rSetB = sG_b / (sP_b || 0.0001);
+                if (Math.abs(rSetB - rSetA) > 0.0001) return rSetB - rSetA;
+                if (b.pg !== a.pg) return b.pg - a.pg;
+                return b.rankIni - a.rankIni; 
+            });
+        }
+
         function resolverCuadroTorneoTotal() {
             let datos = { porCategoria: {}, mapaProyecciones: {} };
             let ganadoresFase = {};
@@ -405,9 +407,12 @@
             };
 
             const procesarPartidoFinalizado = (m, p1, p2, cat, faseLabel) => {
-                let j1 = datos.porCategoria[cat].jugadores[p1.id];
-                let j2 = datos.porCategoria[cat].jugadores[p2.id];
-                if (!j1 || !j2) return;
+                let j1 = p1.id ? datos.porCategoria[cat].jugadores[p1.id] : null;
+                let j2 = p2.id ? datos.porCategoria[cat].jugadores[p2.id] : null;
+                
+                if (!j1 && !j2) return { nombre: 'Por definir', id: null };
+                if (j1 && !j2) return p1;
+                if (j2 && !j1) return p2;
 
                 let s1 = m.sets_j1 || m.puntos_j1 || 0;
                 let s2 = m.sets_j2 || m.puntos_j2 || 0;
@@ -437,7 +442,6 @@
                 return ganoJ1 ? p1 : p2;
             };
 
-            // GRUPOS
             let gruposMatches = todosLosPartidos.filter(m => m.grupo_nombre && m.grupo_nombre !== 'Flash');
             gruposMatches.forEach(m => {
                 let cat = m.categorias?.nombre || 'General';
@@ -457,17 +461,12 @@
                 }
             });
 
-            // Extraer líderes de grupos
+            // Extraer líderes de grupos SIN RESTRICCIONES (Proyección 100% En Vivo)
             Object.keys(datos.porCategoria).forEach(cat => {
                 let gCat = datos.porCategoria[cat].grupos;
                 ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach(g => {
                     
-                    let isGroupFinished = false;
-                    if (groupStatus[cat] && groupStatus[cat][g]) {
-                        isGroupFinished = (groupStatus[cat][g].total > 0 && groupStatus[cat][g].total === groupStatus[cat][g].finished);
-                    }
-
-                    if (gCat[g] && isGroupFinished) {
+                    if (gCat[g] && Object.keys(gCat[g]).length > 0) {
                         let arr = Object.values(gCat[g]).sort((a,b) => {
                             if (b.pts !== a.pts) return b.pts - a.pts;
                             let rA = a.setsG / (a.setsP || 0.0001); let rB = b.setsG / (b.setsP || 0.0001);
@@ -476,31 +475,31 @@
                             return b.rankIni - a.rankIni;
                         });
                         
-                        ganadoresFase[cat][`1_GPO_${g}`] = arr[0] ? { id: arr[0].id, nombre: arr[0].nombre } : { nombre: `1° Gpo ${g}`, id: null };
-                        ganadoresFase[cat][`2_GPO_${g}`] = arr[1] ? { id: arr[1].id, nombre: arr[1].nombre } : { nombre: `2° Gpo ${g}`, id: null };
+                        ganadoresFase[cat][`1_GPO_${g}`] = arr[0] ? { id: arr[0].id, nombre: arr[0].nombre } : { nombre: `BYE (Sin Rival)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}`] = arr[1] ? { id: arr[1].id, nombre: arr[1].nombre } : { nombre: `BYE (Sin Rival)`, id: null };
 
-                        let c1 = arr.filter(x => x.div == 1);
-                        let c2 = arr.filter(x => x.div == 2);
-                        let c3 = arr.filter(x => x.div == 3);
+                        let c1 = arr.filter(x => String(x.div) === '1');
+                        let c2 = arr.filter(x => String(x.div) === '2');
+                        let c3 = arr.filter(x => String(x.div) === '3');
 
-                        ganadoresFase[cat][`1_GPO_${g}_C1`] = c1[0] ? { id: c1[0].id, nombre: c1[0].nombre } : { nombre: `1° Gpo ${g} (C1)`, id: null };
-                        ganadoresFase[cat][`2_GPO_${g}_C1`] = c1[1] ? { id: c1[1].id, nombre: c1[1].nombre } : { nombre: `2° Gpo ${g} (C1)`, id: null };
+                        ganadoresFase[cat][`1_GPO_${g}_C1`] = c1[0] ? { id: c1[0].id, nombre: c1[0].nombre } : { nombre: `BYE (Sin Rival)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C1`] = c1[1] ? { id: c1[1].id, nombre: c1[1].nombre } : { nombre: `BYE (Sin Rival)`, id: null };
                         
-                        ganadoresFase[cat][`1_GPO_${g}_C2`] = c2[0] ? { id: c2[0].id, nombre: c2[0].nombre } : { nombre: `1° Gpo ${g} (C2)`, id: null };
-                        ganadoresFase[cat][`2_GPO_${g}_C2`] = c2[1] ? { id: c2[1].id, nombre: c2[1].nombre } : { nombre: `2° Gpo ${g} (C2)`, id: null };
+                        ganadoresFase[cat][`1_GPO_${g}_C2`] = c2[0] ? { id: c2[0].id, nombre: c2[0].nombre } : { nombre: `BYE (Sin Rival)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C2`] = c2[1] ? { id: c2[1].id, nombre: c2[1].nombre } : { nombre: `BYE (Sin Rival)`, id: null };
                         
-                        ganadoresFase[cat][`1_GPO_${g}_C3`] = c3[0] ? { id: c3[0].id, nombre: c3[0].nombre } : { nombre: `1° Gpo ${g} (C3)`, id: null };
-                        ganadoresFase[cat][`2_GPO_${g}_C3`] = c3[1] ? { id: c3[1].id, nombre: c3[1].nombre } : { nombre: `2° Gpo ${g} (C3)`, id: null };
+                        ganadoresFase[cat][`1_GPO_${g}_C3`] = c3[0] ? { id: c3[0].id, nombre: c3[0].nombre } : { nombre: `BYE (Sin Rival)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C3`] = c3[1] ? { id: c3[1].id, nombre: c3[1].nombre } : { nombre: `BYE (Sin Rival)`, id: null };
 
                     } else {
-                        ganadoresFase[cat][`1_GPO_${g}`] = { nombre: `1° Gpo ${g}`, id: null };
-                        ganadoresFase[cat][`2_GPO_${g}`] = { nombre: `2° Gpo ${g}`, id: null };
-                        ganadoresFase[cat][`1_GPO_${g}_C1`] = { nombre: `1° Gpo ${g} (C1)`, id: null };
-                        ganadoresFase[cat][`2_GPO_${g}_C1`] = { nombre: `2° Gpo ${g} (C1)`, id: null };
-                        ganadoresFase[cat][`1_GPO_${g}_C2`] = { nombre: `1° Gpo ${g} (C2)`, id: null };
-                        ganadoresFase[cat][`2_GPO_${g}_C2`] = { nombre: `2° Gpo ${g} (C2)`, id: null };
-                        ganadoresFase[cat][`1_GPO_${g}_C3`] = { nombre: `1° Gpo ${g} (C3)`, id: null };
-                        ganadoresFase[cat][`2_GPO_${g}_C3`] = { nombre: `2° Gpo ${g} (C3)`, id: null };
+                        ganadoresFase[cat][`1_GPO_${g}`] = { nombre: `BYE (Sin Rival)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}`] = { nombre: `BYE (Sin Rival)`, id: null };
+                        ganadoresFase[cat][`1_GPO_${g}_C1`] = { nombre: `BYE (Sin Rival)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C1`] = { nombre: `BYE (Sin Rival)`, id: null };
+                        ganadoresFase[cat][`1_GPO_${g}_C2`] = { nombre: `BYE (Sin Rival)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C2`] = { nombre: `BYE (Sin Rival)`, id: null };
+                        ganadoresFase[cat][`1_GPO_${g}_C3`] = { nombre: `BYE (Sin Rival)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C3`] = { nombre: `BYE (Sin Rival)`, id: null };
                     }
                 });
             });
@@ -516,8 +515,9 @@
                         datos.mapaProyecciones[`${m.id}_j1`] = p1;
                         datos.mapaProyecciones[`${m.id}_j2`] = p2;
                         
-                        if (String(m.estado).toLowerCase() === 'finalizado' && p1.id && p2.id) {
-                            registrarJugador(p1, cat); registrarJugador(p2, cat);
+                        if (String(m.estado).toLowerCase() === 'finalizado' && (p1.id || p2.id)) {
+                            if (p1.id) registrarJugador(p1, cat); 
+                            if (p2.id) registrarJugador(p2, cat);
                             let ganador = procesarPartidoFinalizado(m, p1, p2, cat, m.ronda_fase || 'Eliminatoria');
                             ganadoresFase[cat][tagGanador] = ganador;
                         } else {
@@ -531,13 +531,11 @@
             let semis = todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('semi'));
             let finales = todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('final') && !String(m.ronda_fase).toLowerCase().includes('semi'));
 
-            // CUARTOS
             resolverLlave(cuartos, '1', '1_GPO_A', '2_GPO_C', 'GANA_CUARTOS_1');
             resolverLlave(cuartos, '2', '1_GPO_B', '2_GPO_D', 'GANA_CUARTOS_2');
             resolverLlave(cuartos, '3', '1_GPO_C', '2_GPO_A', 'GANA_CUARTOS_3');
             resolverLlave(cuartos, '4', '1_GPO_D', '2_GPO_B', 'GANA_CUARTOS_4');
 
-            // SEMIS
             semis.forEach(m => {
                 let cat = m.categorias?.nombre || 'General';
                 let rf = String(m.ronda_fase).toLowerCase();
@@ -557,7 +555,6 @@
                 }
             });
 
-            // FINAL
             finales.forEach(m => {
                 let rf = String(m.ronda_fase).toLowerCase();
                 if (rf.includes('(c1)')) resolverLlave([m], 'final', 'GANA_SEMI_1_C1', 'GANA_SEMI_2_C1', 'GANA_FINAL_C1');
@@ -675,9 +672,10 @@
             let nomJ1 = proyJ1.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : proyJ1.nombre;
             let nomJ2 = proyJ2.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : proyJ2.nombre;
             
-            if (!nomJ1 || nomJ1 === 'Por definir') nomJ1 = getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos);
-            if (!nomJ2 || nomJ2 === 'Por definir') nomJ2 = getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos);
+            if (!nomJ1 || nomJ1.includes('Por definir')) nomJ1 = getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos);
+            if (!nomJ2 || nomJ2.includes('Por definir')) nomJ2 = getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos);
 
+            // Respetar la inyección visual del "BYE" si viene del cálculo de proyecciones
             if (nomJ1.includes('Por definir') || nomJ1.includes('undefined')) nomJ1 = 'BYE (Faltan Jugadores)';
             if (nomJ2.includes('Por definir') || nomJ2.includes('undefined')) nomJ2 = 'BYE (Faltan Jugadores)';
 
@@ -727,8 +725,8 @@
             }
 
             let iconWin1 = document.getElementById('fs-winner-icon1'); let iconWin2 = document.getElementById('fs-winner-icon2');
-            if (isFin && p.ganador_id === p.jugador1_id) { iconWin1.classList.remove('hidden'); iconWin2.classList.add('hidden'); }
-            else if (isFin && p.ganador_id === p.jugador2_id) { iconWin2.classList.remove('hidden'); iconWin1.classList.add('hidden'); }
+            if (isFin && p.ganador_id === p.jugador1_id && p.ganador_id !== null) { iconWin1.classList.remove('hidden'); iconWin2.classList.add('hidden'); }
+            else if (isFin && p.ganador_id === p.jugador2_id && p.ganador_id !== null) { iconWin2.classList.remove('hidden'); iconWin1.classList.add('hidden'); }
             else { iconWin1.classList.add('hidden'); iconWin2.classList.add('hidden'); }
 
             let scoreText = `${p.puntos_j1 || 0} a ${p.puntos_j2 || 0}`;
@@ -763,7 +761,7 @@
 
             const estLimpio = String(p.estado || '').trim().toLowerCase(); const esFin = estLimpio === 'finalizado';
             let scoreText = esFin ? `${p.sets_j1} - ${p.sets_j2} (Sets)` : `${p.puntos_j1 || 0} - ${p.puntos_j2 || 0} (Puntos)`;
-            let texto = `🏓 *¡Sigue este partido en Vivo!*\n\n*${nom1}* vs *${nom2}*\nMarcador: ${scoreText}\nMesa: ${p.mesa || 1}\n\n👉 Míralo aquí en tiempo real:\n${url}`;
+            let texto = `🏓 *¡Sigue este partido!*\n\n*${nom1}* vs *${nom2}*\nMarcador: ${scoreText}\nMesa: ${p.mesa || 1}\n\n👉 Míralo aquí:\n${url}`;
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
         }
 
@@ -826,16 +824,21 @@
             html += `</tbody></table></div></div>`; return html;
         }
 
-        function dibujarResumenYLlaves(container) {
+        function dibujarEstadisticas(container) {
             let catsList = [...new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean))];
             if (categoriaFiltro !== 'todas') catsList = catsList.filter(c => c === categoriaFiltro);
-            if (catsList.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay información de grupos o llaves para mostrar en este momento.</div>`; return; }
+            if (catsList.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay información de estadísticas para mostrar.</div>`; return; }
 
             let htmlContent = '';
             catsList.forEach(catNombre => {
                 const gruposCat = datosGeneralesCuadro?.porCategoria[catNombre]?.grupos || {};
-                if (Object.keys(gruposCat).length === 0) { const llavesFlash = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase); if(llavesFlash.length === 0) return; }
                 
+                // Si la categoría solo tiene modalidad flash, nos la saltamos en este resumen
+                if (Object.keys(gruposCat).length === 0) {
+                    const llavesFlash = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase);
+                    if(llavesFlash.length === 0) return;
+                }
+
                 htmlContent += `<div style="background:rgba(18, 18, 22, 0.8); border:1px solid rgba(251, 191, 36, 0.2); border-radius:24px; padding:30px; margin-bottom:30px; backdrop-filter:blur(20px); box-shadow: 0 15px 35px rgba(0,0,0,0.5);"><div style="border-bottom:1px solid rgba(251, 191, 36, 0.2); padding-bottom:15px; margin-bottom:20px; text-align:center;"><span style="font-size:16px; font-weight:900; color:#fbbf24; text-transform:uppercase; letter-spacing:2px; text-shadow: 0 0 15px rgba(251, 191, 36, 0.3);">🏆 ESTADÍSTICAS OFICIALES: ${catNombre}</span><span style="font-size:11px; color:#94a3b8; display:block; margin-top:8px; text-transform:uppercase; letter-spacing: 1px;">Tabla General por Divisiones</span></div>`;
                 
                 let todosJugadoresCatMap = new Map(); 
@@ -855,41 +858,6 @@
                 htmlContent += `</div>`;
             });
             container.innerHTML = htmlContent;
-        }
-
-        function dibujarEstadisticasFlash(container) {
-            let partidosFlash = todosLosPartidos.filter(p => p.grupo_nombre === 'Flash');
-            if (categoriaFiltro !== 'todas') partidosFlash = partidosFlash.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
-            if (partidosFlash.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay datos registrados en la Modalidad Flash bajo este filtro.</div>`; return; }
-
-            let stats = {};
-            partidosFlash.forEach(m => {
-                let estLimpio = String(m.estado || '').trim().toLowerCase();
-                [m.j1, m.j2].forEach(j => {
-                    if (j && j.id && !stats[j.id]) {
-                        let jData = todosLosJugadores.find(x => x.id === j.id); let rankIni = jData ? (jData.puntos_ranking_ant || jData.puntos_ranking || 0) : (j.puntos_ranking || 0); let div = jData ? (jData.division || 1) : (j.division || 1);
-                        stats[j.id] = { id: j.id, nombre: j.nombre, club: j.club, div: div, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, rankIni: rankIni, rankImpact: 0 };
-                    }
-                });
-                if (estLimpio === 'finalizado' && m.j1 && m.j2) {
-                    if (stats[m.j1.id] && stats[m.j2.id]) {
-                        let j1 = stats[m.j1.id]; let j2 = stats[m.j2.id];
-                        j1.pj++; j2.pj++; j1.setsG += (m.sets_j1 || 0); j1.setsP += (m.sets_j2 || 0); j2.setsG += (m.sets_j2 || 0); j2.setsP += (m.sets_j1 || 0);
-                        let r1 = j1.rankIni + j1.rankImpact; let r2 = j2.rankIni + j2.rankImpact; let impacto = calcularImpacto(r1, r2);
-                        if (m.ganador_id === m.jugador1_id) { j1.pg++; j2.pp++; j1.pts += 2; j2.pts += 1; j1.rankImpact += impacto.j1G; j2.rankImpact += impacto.j2P; }
-                        else if (m.ganador_id === m.jugador2_id) { j2.pg++; j1.pp++; j2.pts += 2; j1.pts += 1; j2.rankImpact += impacto.j2G; j1.rankImpact += impacto.j1P; }
-                    }
-                }
-            });
-
-            let jugadoresArr = Object.values(stats);
-            if (jugadoresArr.length === 0) { container.innerHTML = `<div class="mensaje-vacio">Aún no hay partidos finalizados en la Liga Flash.</div>`; return; }
-            jugadoresArr = ordenarJugadoresITTF(jugadoresArr);
-
-            let div1 = jugadoresArr.filter(j => String(j.div) === '1'); let div2 = jugadoresArr.filter(j => String(j.div) === '2'); let div3 = jugadoresArr.filter(j => String(j.div) === '3'); let sinDiv = jugadoresArr.filter(j => !['1','2','3'].includes(String(j.div)));
-            let html = `<div style="background:rgba(18, 18, 22, 0.8); border:1px solid rgba(251, 191, 36, 0.2); border-radius:24px; padding:30px; margin-bottom:30px; backdrop-filter:blur(20px); box-shadow: 0 15px 35px rgba(0,0,0,0.5);"><div style="text-align:center; margin-bottom:25px;"><span style="font-size:16px; color:#fbbf24; font-weight:900; text-transform:uppercase; letter-spacing:2px; display:block; text-shadow: 0 0 15px rgba(251, 191, 36, 0.3);">⚡ CLASIFICACIÓN LIGA FLASH</span><span style="font-size:11px; color:#94a3b8; display:block; margin-top:8px; text-transform:uppercase; letter-spacing:1px;">Ordenados por Efectividad (Mínimo 5 partidos para clasificar)</span></div>`;
-            html += renderTablaGeneralDiv(div1, '#fbbf24', '🏆 DIVISIÓN 1 (ORO)', true); html += renderTablaGeneralDiv(div2, '#cbd5e1', '🏆 DIVISIÓN 2 (PLATA)', true); html += renderTablaGeneralDiv(div3, '#d97706', '🏆 DIVISIÓN 3 (BRONCE)', true); if (sinDiv.length > 0) { html += renderTablaGeneralDiv(sinDiv, '#64748b', 'Jugadores sin división', true); }
-            html += `</div>`; container.innerHTML = html;
         }
 
         function dibujarRankingGlobal(container, finMatches) {
@@ -925,9 +893,8 @@
 
             datosGeneralesCuadro = resolverCuadroTorneoTotal();
 
-            if (estadoFiltro === 'resumen') { container.style.display = 'block'; dibujarResumenYLlaves(container); return; }
+            if (estadoFiltro === 'resumen') { container.style.display = 'block'; dibujarEstadisticas(container); return; }
             if (estadoFiltro === 'ranking') { container.style.display = 'block'; const finMatches = todosLosPartidos.filter(p => String(p.estado || '').toLowerCase() === 'finalizado'); dibujarRankingGlobal(container, finMatches); return; }
-            if (estadoFiltro === 'flash') { container.style.display = 'block'; dibujarEstadisticasFlash(container); return; }
 
             container.style.display = 'grid';
             let filtrados = [...todosLosPartidos];
@@ -953,8 +920,8 @@
                 gruposPorHora[hora].forEach(p => {
                     let est = String(p.estado || '').toLowerCase(); let isFin = est === 'finalizado'; let isVivo = est === 'en_curso';
                     let badgeEst = isVivo ? '<span class="badge-estado est-curso"><i class="fa-solid fa-circle text-[6px] align-middle mr-1"></i> EN VIVO</span>' : (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
-                    let iconJ1 = (isFin && p.ganador_id === p.jugador1_id) ? '<i class="fa-solid fa-crown text-amber-400 mr-2 text-sm drop-shadow-md"></i>' : ''; 
-                    let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '<i class="fa-solid fa-crown text-amber-400 mr-2 text-sm drop-shadow-md"></i>' : '';
+                    let iconJ1 = (isFin && p.ganador_id === p.jugador1_id && p.ganador_id !== null) ? '<i class="fa-solid fa-crown text-amber-400 mr-2 text-sm drop-shadow-md"></i>' : ''; 
+                    let iconJ2 = (isFin && p.ganador_id === p.jugador2_id && p.ganador_id !== null) ? '<i class="fa-solid fa-crown text-amber-400 mr-2 text-sm drop-shadow-md"></i>' : '';
 
                     let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
                     let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre === 'Flash' ? 'Liga Flash' : (p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Eliminatoria Directa')));
@@ -968,18 +935,14 @@
                     let nomJ1 = proyJ1.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : proyJ1.nombre;
                     let nomJ2 = proyJ2.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : proyJ2.nombre;
                     
-                    if (!nomJ1 || nomJ1 === 'Por definir') nomJ1 = getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos);
-                    if (!nomJ2 || nomJ2 === 'Por definir') nomJ2 = getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos);
-
-                    if (nomJ1.includes('Por definir') || nomJ1.includes('undefined')) nomJ1 = 'BYE (Faltan Jugadores)';
-                    if (nomJ2.includes('Por definir') || nomJ2.includes('undefined')) nomJ2 = 'BYE (Faltan Jugadores)';
+                    if (!nomJ1 || nomJ1.includes('Por definir')) nomJ1 = getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos);
+                    if (!nomJ2 || nomJ2.includes('Por definir')) nomJ2 = getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos);
 
                     let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : ''; let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
                     if (isVivo) { score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`; score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`; }
 
                     let cardClass = isVivo ? 'vivo' : (isFin ? 'finalizado' : '');
                     
-                    // BOTÓN YOUTUBE PARA ESPECTADORES - CORREGIDO
                     let btnVideo = '';
                     if (p.video_url) {
                         if (isFin) {
