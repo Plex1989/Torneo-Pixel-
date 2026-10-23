@@ -284,6 +284,8 @@
         let reglasRankingList = [];
         let todasLasCategorias = [];
         let todosLosJugadoresAdmin = [];
+        let mapaRankingOficial = new Map();
+        let jugadoresMemoriaExpedientes = {}; 
         let datosGeneralesCuadro = null; 
         
         let modalidadFiltro = 'todas';
@@ -635,7 +637,7 @@
             } catch (e) {
                 alert('Error al enlazar partido: ' + e.message);
             } finally {
-                if(btn) { btn.innerHTML = '<i class="fa-solid fa-gavel"></i> Juez'; btn.style.opacity = '1'; }
+                if(btn) { btn.innerHTML = '<i class="fa-solid fa-gavel"></i> Arbitrar'; btn.style.opacity = '1'; }
             }
         }
 
@@ -644,6 +646,7 @@
                 const resJug = await clienteSupabase.from('jugadores').select('*').eq('organizador_id', orgId);
                 if (resJug.data) {
                     todosLosJugadoresAdmin = resJug.data;
+                    todosLosJugadoresAdmin.forEach(j => mapaRankingOficial.set(j.id, j));
                 }
 
                 const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).eq('organizador_id', orgId).single();
@@ -871,13 +874,10 @@
                     let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
                     if (isVivo) { score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`; score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`; }
 
-                    let btnYoutube = (isFin || isVivo) ? `
+                    // Se eliminó la restricción de `puedeArbitrar` o de si ha iniciado el partido
+                    let btnYoutube = `
                         <button class="btn-mesa-action btn-mesa-yt" onclick="abrirModalYouTube(${p.id}, '${p.video_url || ''}')">
                             ${p.video_url ? '<i class="fa-brands fa-youtube"></i> Editar Link YT' : '<i class="fa-brands fa-youtube"></i> Añadir YouTube'}
-                        </button>
-                    ` : `
-                        <button class="btn-mesa-action btn-disabled" onclick="alert('Inicia el partido primero para poder añadir un enlace en directo de YouTube.')">
-                            <i class="fa-solid fa-lock"></i> Link YT
                         </button>
                     `;
 
