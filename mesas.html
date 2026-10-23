@@ -52,8 +52,20 @@
         .card-mesa-grupo { border-top: 4px solid #0e7490; border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); }
         .card-mesa-grupo:hover { border-color: rgba(6,182,212,0.4); transform: translateY(-2px); }
         
-        .card-mesa-llave { border-top: 4px solid #fbbf24 !important; background: linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, rgba(15, 23, 42, 0.75) 100%) !important; box-shadow: 0 8px 25px -5px rgba(245, 158, 11, 0.12) !important; border-left: 1px solid rgba(245,158,11,0.2) !important; border-right: 1px solid rgba(245,158,11,0.2) !important; border-bottom: 1px solid rgba(245,158,11,0.2) !important; }
-        .card-mesa-llave:hover { border-color: rgba(245,158,11,0.4) !important; box-shadow: 0 12px 30px -5px rgba(245,158,11,0.22) !important; transform: translateY(-3px); }
+        /* DISEÑO SUTIL VIP PARA FASE FINAL */
+        .card-mesa-llave { 
+            border-top: 4px solid #fbbf24 !important; 
+            background: linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, rgba(15, 23, 42, 0.75) 100%) !important; 
+            box-shadow: 0 8px 25px -5px rgba(245, 158, 11, 0.12) !important; 
+            border-left: 1px solid rgba(245,158,11,0.2) !important;
+            border-right: 1px solid rgba(245,158,11,0.2) !important;
+            border-bottom: 1px solid rgba(245,158,11,0.2) !important;
+        }
+        .card-mesa-llave:hover {
+            border-color: rgba(245,158,11,0.4) !important; 
+            box-shadow: 0 12px 30px -5px rgba(245,158,11,0.22) !important; 
+            transform: translateY(-3px);
+        }
         
         .card-mesa.vivo { border-top-color: #34d399 !important; box-shadow: 0 0 25px rgba(52, 211, 153, 0.15) !important; }
         .card-mesa.finalizado { border-top-color: #64748b !important; opacity: 0.85; }
@@ -251,8 +263,6 @@
         let reglasRankingList = [];
         let todasLasCategorias = [];
         let todosLosJugadoresAdmin = [];
-        let mapaRankingOficial = new Map();
-        let jugadoresMemoriaExpedientes = {}; 
         let datosGeneralesCuadro = null; 
         
         let modalidadFiltro = 'todas';
@@ -480,9 +490,10 @@
             semis.forEach(m => {
                 let cat = m.categorias?.nombre || 'General';
                 let rf = String(m.ronda_fase).toLowerCase();
+                
+                // Mapeo super estricto buscando las palabras exactas
                 let isSemi1 = rf.includes('semi 1') || rf.match(/\b1\b/);
 
-                // FIX: Separar Semis de C1, C2, C3 sin que choquen con la general
                 if (rf.includes('(c1)')) {
                     resolverLlave([m], isSemi1 ? 'semi 1' : 'semi 2', isSemi1 ? '1_GPO_A_C1' : '1_GPO_B_C1', isSemi1 ? '2_GPO_B_C1' : '2_GPO_A_C1', isSemi1 ? 'GANA_SEMI_1_C1' : 'GANA_SEMI_2_C1');
                 } else if (rf.includes('(c2)')) {
@@ -506,33 +517,59 @@
                 else resolverLlave([m], 'final', 'GANA_SEMI_1', 'GANA_SEMI_2', 'GANA_FINAL');
             });
 
-            // Exportar expediente a global para el clic
-            jugadoresMemoriaExpedientes = {};
-            Object.keys(datos.porCategoria).forEach(cat => {
-                Object.values(datos.porCategoria[cat].jugadores).forEach(j => {
-                    jugadoresMemoriaExpedientes[j.id] = j;
-                });
-            });
-
             return datos;
+        }
+
+        // MAQUETADO DE NOMBRES INTELIGENTES PARA EL FRONTEND Y TARJETAS
+        function getProyeccionNombre(rondaFase, isJ1, hasCuartos) {
+            if (!rondaFase) return 'Por definir';
+            const rf = String(rondaFase).toLowerCase();
+            
+            // RR Flash Especial (C1, C2, C3)
+            if (rf.includes('semi 1 (c1)')) return isJ1 ? '1° Gpo A (C1)' : '2° Gpo B (C1)';
+            if (rf.includes('semi 2 (c1)')) return isJ1 ? '1° Gpo B (C1)' : '2° Gpo A (C1)';
+            if (rf.includes('final (c1)')) return isJ1 ? 'Gana Semi 1 (C1)' : 'Gana Semi 2 (C1)';
+            
+            if (rf.includes('semi 1 (c2)')) return isJ1 ? '1° Gpo A (C2)' : '2° Gpo B (C2)';
+            if (rf.includes('semi 2 (c2)')) return isJ1 ? '1° Gpo B (C2)' : '2° Gpo A (C2)';
+            if (rf.includes('final (c2)')) return isJ1 ? 'Gana Semi 1 (C2)' : 'Gana Semi 2 (C2)';
+            
+            if (rf.includes('semi 1 (c3)')) return isJ1 ? '1° Gpo A (C3)' : '2° Gpo B (C3)';
+            if (rf.includes('semi 2 (c3)')) return isJ1 ? '1° Gpo B (C3)' : '2° Gpo A (C3)';
+            if (rf.includes('final (c3)')) return isJ1 ? 'Gana Semi 1 (C3)' : 'Gana Semi 2 (C3)';
+
+            if (rf.includes('cuartos')) {
+                if (rf.includes('1')) return isJ1 ? '1° Gpo A' : '2° Gpo C';
+                if (rf.includes('2')) return isJ1 ? '1° Gpo B' : '2° Gpo D';
+                if (rf.includes('3')) return isJ1 ? '1° Gpo C' : '2° Gpo A';
+                if (rf.includes('4')) return isJ1 ? '1° Gpo D' : '2° Gpo B';
+            }
+            if (rf.includes('semi')) {
+                if (hasCuartos) {
+                    if (rf.includes('1')) return isJ1 ? 'Gana Cuartos 1' : 'Gana Cuartos 2';
+                    if (rf.includes('2')) return isJ1 ? 'Gana Cuartos 3' : 'Gana Cuartos 4';
+                } else {
+                    if (rf.includes('1')) return isJ1 ? '1° Gpo A' : '2° Gpo B';
+                    if (rf.includes('2')) return isJ1 ? '1° Gpo B' : '2° Gpo A';
+                }
+            }
+            if (rf.includes('final')) return isJ1 ? 'Gana Semi 1' : 'Gana Semi 2';
+            return isJ1 ? `${rondaFase} J1` : `${rondaFase} J2`;
         }
 
         async function inicializar() {
             try {
-                const [resReglas, resTorneo, resCat, resJugadores] = await Promise.allSettled([
-                    clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', orgId).order('diferencia_min', { ascending: true }),
-                    clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).eq('organizador_id', orgId).single(),
-                    clienteSupabase.from('categorias').select('*').eq('organizador_id', orgId),
-                    clienteSupabase.from('jugadores').select('id, nombre, club, division, puntos_ranking, puntos_ranking_ant').eq('organizador_id', orgId)
-                ]);
+                const resJug = await clienteSupabase.from('jugadores').select('*').eq('organizador_id', orgId);
+                if (resJug.data) todosLosJugadoresAdmin = resJug.data;
 
-                if (resTorneo.status === 'fulfilled' && resTorneo.value.data) document.getElementById('nombre-torneo').innerText = resTorneo.value.data.nombre;
-                if (resReglas.status === 'fulfilled') reglasRankingList = resReglas.value.data || [];
-                if (resCat.status === 'fulfilled') todasLasCategorias = resCat.value.data || [];
-                if (resJugadores.status === 'fulfilled') {
-                    todosLosJugadoresAdmin = resJugadores.value.data || [];
-                    todosLosJugadoresAdmin.forEach(j => mapaRankingOficial.set(j.id, j));
-                }
+                const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).eq('organizador_id', orgId).single();
+                if (torneoData) document.getElementById('nombre-torneo').innerText = torneoData.nombre;
+
+                const { data: catData } = await clienteSupabase.from('categorias').select('*').eq('organizador_id', orgId);
+                if (catData) todasLasCategorias = catData;
+
+                const { data: reglasData } = await clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', orgId).order('diferencia_min', { ascending: true });
+                if (reglasData) reglasRankingList = reglasData;
 
                 await cargarPartidos();
                 clienteSupabase.channel('mesas-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => { cargarPartidos(); }).subscribe();
@@ -713,6 +750,8 @@
                     let rfStr = String(p.ronda_fase || '').toLowerCase();
                     let isLlave = rfStr.includes('cuarto') || rfStr.includes('semi') || rfStr.includes('final') || rfStr.includes('octavo');
 
+                    llavesTienenCuartos = todosLosPartidos.some(x => String(x.ronda_fase).toLowerCase().includes('cuartos'));
+
                     let cardClassStyle = isLlave ? 'card-mesa card-mesa-llave' : 'card-mesa card-mesa-grupo';
                     if (isVivo) cardClassStyle += ' vivo';
                     if (isFin) cardClassStyle += ' finalizado';
@@ -722,8 +761,20 @@
                     let proyJ1 = datosGeneralesCuadro.mapaProyecciones[`${p.id}_j1`] || (p.j1 ? { nombre: p.j1.nombre, id: p.j1.id } : { nombre: 'Por definir', id: null });
                     let proyJ2 = datosGeneralesCuadro.mapaProyecciones[`${p.id}_j2`] || (p.j2 ? { nombre: p.j2.nombre, id: p.j2.id } : { nombre: 'Por definir', id: null });
                     
-                    let nomJ1 = proyJ1.nombre; let idDinamicoJ1 = proyJ1.id;
-                    let nomJ2 = proyJ2.nombre; let idDinamicoJ2 = proyJ2.id;
+                    // FALLBACK: Si no hay proyección definida, busca qué debe decir según las reglas
+                    let nomJ1 = proyJ1.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : proyJ1.nombre;
+                    let nomJ2 = proyJ2.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : proyJ2.nombre;
+                    
+                    // Evitar nombres vacíos que rompan UI si BD devuelve vacío en lugar de 'Por definir'
+                    if (!nomJ1 || nomJ1 === 'Por definir') nomJ1 = getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos);
+                    if (!nomJ2 || nomJ2 === 'Por definir') nomJ2 = getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos);
+
+                    // Reemplazo visual de BYE si no se encuentra rival en un escenario predecible
+                    if (nomJ1.includes('Por definir') || nomJ1.includes('undefined')) nomJ1 = 'BYE (Faltan Jugadores)';
+                    if (nomJ2.includes('Por definir') || nomJ2.includes('undefined')) nomJ2 = 'BYE (Faltan Jugadores)';
+
+                    let idDinamicoJ1 = proyJ1.id;
+                    let idDinamicoJ2 = proyJ2.id;
                     
                     let iconJ1 = (isFin && p.ganador_id == (p.jugador1_id || idDinamicoJ1)) ? '🏆 ' : '';
                     let iconJ2 = (isFin && p.ganador_id == (p.jugador2_id || idDinamicoJ2)) ? '🏆 ' : '';
