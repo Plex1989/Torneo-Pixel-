@@ -52,19 +52,8 @@
         .card-mesa-grupo { border-top: 4px solid #0e7490; border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); }
         .card-mesa-grupo:hover { border-color: rgba(6,182,212,0.4); transform: translateY(-2px); }
         
-        .card-mesa-llave { 
-            border-top: 4px solid #fbbf24 !important; 
-            background: linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, rgba(15, 23, 42, 0.75) 100%) !important; 
-            box-shadow: 0 8px 25px -5px rgba(245, 158, 11, 0.12) !important; 
-            border-left: 1px solid rgba(245,158,11,0.2) !important;
-            border-right: 1px solid rgba(245,158,11,0.2) !important;
-            border-bottom: 1px solid rgba(245,158,11,0.2) !important;
-        }
-        .card-mesa-llave:hover {
-            border-color: rgba(245,158,11,0.4) !important; 
-            box-shadow: 0 12px 30px -5px rgba(245,158,11,0.22) !important; 
-            transform: translateY(-3px);
-        }
+        .card-mesa-llave { border-top: 4px solid #fbbf24 !important; background: linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, rgba(15, 23, 42, 0.75) 100%) !important; box-shadow: 0 8px 25px -5px rgba(245, 158, 11, 0.12) !important; border-left: 1px solid rgba(245,158,11,0.2) !important; border-right: 1px solid rgba(245,158,11,0.2) !important; border-bottom: 1px solid rgba(245,158,11,0.2) !important; }
+        .card-mesa-llave:hover { border-color: rgba(245,158,11,0.4) !important; box-shadow: 0 12px 30px -5px rgba(245,158,11,0.22) !important; transform: translateY(-3px); }
         
         .card-mesa.vivo { border-top-color: #34d399 !important; box-shadow: 0 0 25px rgba(52, 211, 153, 0.15) !important; }
         .card-mesa.finalizado { border-top-color: #64748b !important; opacity: 0.85; }
@@ -104,11 +93,6 @@
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
         .modal-card { background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 20px; width: 100%; max-width: 680px; padding: 24px; color: white; max-height: 85vh; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-
-        .btn-copy-chip { background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; padding: 6px 12px; border-radius: 8px; font-size: 10px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; transition: all 0.2s; white-space: nowrap; flex-shrink: 0; }
-        .btn-copy-chip:hover { background: #38bdf8; color: #000; }
-        .btn-copy-chip.chip-gold { background: rgba(251, 191, 36, 0.15); border-color: rgba(251, 191, 36, 0.4); color: #fbbf24; }
-        .btn-copy-chip.chip-gold:hover { background: #fbbf24; color: #000; }
     </style>
 </head>
 <body>
@@ -188,81 +172,17 @@
         </div>
     </div>
 
-    <!-- MODAL LINK Y TRANSMISIÓN AUTOMÁTICA YOUTUBE CON BOTONES DE COPIA -->
+    <!-- MODAL LINK YOUTUBE -->
     <div id="modal-youtube" class="modal-overlay" style="display: none;">
-        <div class="modal-card" style="max-width: 460px; padding: 24px; border: 2px solid #ef4444;">
-            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:16px;">
-                <h3 style="color: #ef4444; font-size: 16px; font-weight: 900; text-transform: uppercase; margin: 0;"><i class="fa-brands fa-youtube mr-2"></i> Transmisión YouTube</h3>
+        <div class="modal-card" style="max-width: 400px; padding: 30px; border: 2px solid #ef4444;">
+            <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:20px;">
+                <h3 style="color: #ef4444; font-size: 16px; font-weight: 900; text-transform: uppercase; margin: 0;"><i class="fa-brands fa-youtube"></i> Transmisión / VOD</h3>
                 <button onclick="cerrarModalYouTube()" style="background:transparent; border:none; color:#94a3b8; font-size:18px; cursor:pointer;">✕</button>
             </div>
-
-            <!-- BOTÓN AUTOMÁTICO VINCULADO CON EDGE FUNCTION -->
-            <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 14px; padding: 16px; margin-bottom: 18px; text-align: center;">
-                <div style="font-size: 11px; font-weight: 800; color: #f87171; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">
-                    <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Automatización en la Nube
-                </div>
-                <p style="font-size: 11px; color: #cbd5e1; margin-bottom: 12px; line-height: 1.4;">
-                    Crea la transmisión en YouTube y obtén los accesos para PRISM Live Studio.
-                </p>
-                <button id="btn-crear-stream-auto" onclick="generarStreamYouTubeAutomatico()" class="btn-console" style="width: 100%; justify-content: center; background: #dc2626; color: white; border-color: #ef4444; padding: 12px; font-size: 11px; font-weight: 800; box-shadow: 0 0 15px rgba(239, 68, 68, 0.35);">
-                    <i class="fa-brands fa-youtube mr-1"></i> Crear Stream en YouTube Ahora
-                </button>
-
-                <!-- CAJA DE CLAVES Y ACCESOS RTMP CON BOTONES DE COPIAR CON UN CLIC -->
-                <div id="caja-detalles-stream" style="display: none; margin-top: 15px; text-align: left; background: rgba(0,0,0,0.7); padding: 14px; border-radius: 12px; border: 1px solid rgba(52, 211, 153, 0.35);">
-                    <div style="color: #34d399; font-weight: 800; font-size: 11px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-                        <i class="fa-solid fa-circle-check"></i> ¡Transmisión Creada en YouTube!
-                    </div>
-
-                    <!-- CAMPO 1: URL RTMP -->
-                    <div style="margin-bottom: 10px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                            <label style="font-size: 10px; color: #94a3b8; font-weight: 800; text-transform: uppercase;">1. URL RTMP (Servidor):</label>
-                            <button id="btn-copiar-rtmp" class="btn-copy-chip" onclick="copiarDatoDirecto('input-rtmp-copiable', this)">
-                                <i class="fa-regular fa-copy"></i> Copiar URL
-                            </button>
-                        </div>
-                        <input type="text" id="input-rtmp-copiable" class="input-tabla" readonly style="width: 100%; padding: 8px 10px !important; color: #38bdf8 !important; font-family: monospace; font-size: 11px !important;" onclick="this.select()">
-                    </div>
-
-                    <!-- CAMPO 2: STREAM KEY -->
-                    <div style="margin-bottom: 12px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                            <label style="font-size: 10px; color: #94a3b8; font-weight: 800; text-transform: uppercase;">2. Clave de Emisión (Stream Key):</label>
-                            <button id="btn-copiar-key" class="btn-copy-chip chip-gold" onclick="copiarDatoDirecto('input-streamkey-copiable', this)">
-                                <i class="fa-regular fa-copy"></i> Copiar Clave
-                            </button>
-                        </div>
-                        <input type="text" id="input-streamkey-copiable" class="input-tabla" readonly style="width: 100%; padding: 8px 10px !important; color: #fbbf24 !important; font-family: monospace; font-size: 11px !important;" onclick="this.select()">
-                    </div>
-
-                    <!-- BOTÓN COPIAR AMBOS (TEXTO COMPLETO) -->
-                    <button id="btn-copiar-ambos" onclick="copiarAmbosDatos(this)" class="btn-console" style="width: 100%; justify-content: center; background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.2); color: #cbd5e1; padding: 8px; font-size: 10px;">
-                        <i class="fa-solid fa-list-check mr-1"></i> Copiar Ambos (Texto para WhatsApp o Notas)
-                    </button>
-                </div>
-            </div>
-
-            <!-- EDICIÓN MANUAL / ENLACE DIRECTO -->
-            <div style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                    <p style="font-size: 11px; color: #94a3b8; margin: 0; text-align: left;">Enlace del video en vivo:</p>
-                    <button id="btn-copiar-link-yt" class="btn-copy-chip" onclick="copiarDatoDirecto('input-youtube-link', this)" style="padding: 4px 8px; font-size: 9px;">
-                        <i class="fa-regular fa-copy"></i> Copiar Link
-                    </button>
-                </div>
-                <input type="text" id="input-youtube-link" class="input-tabla" style="width: 100%; padding: 10px !important; margin-bottom: 15px;" placeholder="Ej. https://youtu.be/abcd123">
-                <input type="hidden" id="hidden-youtube-partidoid">
-                
-                <div style="display: flex; gap: 10px;">
-                    <button id="btn-guardar-youtube" onclick="guardarLinkYouTube()" class="btn-console" style="flex: 1; justify-content: center; background: rgba(255, 255, 255, 0.08); color: white; border-color: rgba(255, 255, 255, 0.2); padding: 12px; font-size: 11px;">
-                        💾 Guardar Enlace
-                    </button>
-                    <button id="btn-abrir-youtube" onclick="abrirEnlaceDirecto()" class="btn-console" style="background: rgba(239,68,68,0.2); color: #f87171; border-color: #ef4444; padding: 12px; font-size: 11px; display: none;">
-                        <i class="fa-solid fa-arrow-up-right-from-square mr-1"></i> Ver en YouTube
-                    </button>
-                </div>
-            </div>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 20px; text-align: left;">Pega aquí el enlace del directo de YouTube para los espectadores.</p>
+            <input type="text" id="input-youtube-link" class="input-tabla" style="width: 100%; padding: 12px !important; margin-bottom: 20px;" placeholder="Ej. https://youtu.be/abcd123">
+            <input type="hidden" id="hidden-youtube-partidoid">
+            <button id="btn-guardar-youtube" onclick="guardarLinkYouTube()" class="btn-console" style="width: 100%; justify-content: center; background: #ef4444; color: white; border-color: #f87171; padding: 14px; font-size: 13px;">💾 Guardar Enlace</button>
         </div>
     </div>
 
@@ -353,90 +273,6 @@
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
         }
 
-        // ================= HELPERS UNIVERSALES DE COPIA CON UN TOQUE =================
-        function copiarTextoUniversal(texto, btnElement, feedbackMsg = "¡Copiado!") {
-            if (!texto) return;
-            
-            const tempInput = document.createElement("input");
-            tempInput.value = texto;
-            tempInput.style.position = "fixed";
-            tempInput.style.opacity = "0";
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            tempInput.setSelectionRange(0, 99999);
-
-            try {
-                if (navigator.clipboard && window.isSecureContext) {
-                    navigator.clipboard.writeText(texto);
-                } else {
-                    document.execCommand('copy');
-                }
-                
-                if (btnElement) {
-                    const originalHtml = btnElement.innerHTML;
-                    btnElement.innerHTML = `<i class="fa-solid fa-check"></i> ${feedbackMsg}`;
-                    btnElement.style.background = "#10b981";
-                    btnElement.style.borderColor = "#34d399";
-                    btnElement.style.color = "#000000";
-                    setTimeout(() => {
-                        btnElement.innerHTML = originalHtml;
-                        btnElement.style.background = "";
-                        btnElement.style.borderColor = "";
-                        btnElement.style.color = "";
-                    }, 1800);
-                }
-            } catch (err) {
-                console.error("Error copiando texto:", err);
-            } finally {
-                document.body.removeChild(tempInput);
-            }
-        }
-
-        function copiarDatoDirecto(inputId, btnElement) {
-            const input = document.getElementById(inputId);
-            if (input && input.value) {
-                copiarTextoUniversal(input.value.trim(), btnElement, "¡Copiado!");
-            }
-        }
-
-        function copiarAmbosDatos(btnElement) {
-            const rtmp = document.getElementById('input-rtmp-copiable').value.trim();
-            const key = document.getElementById('input-streamkey-copiable').value.trim();
-            const linkYt = document.getElementById('input-youtube-link').value.trim();
-            
-            if (!rtmp && !key) return;
-
-            const bloqueTexto = `📡 DATOS DE TRANSMISIÓN:\n\n🌐 URL RTMP: ${rtmp}\n🔑 Clave: ${key}\n\n▶️ Enlace en vivo: ${linkYt}`;
-            copiarTextoUniversal(bloqueTexto, btnElement, "¡Ambos Copiados!");
-        }
-
-        // ================= OVERLAY Y QR =================
-        function abrirModalTransmision(partidoId) {
-            const urlOverlay = `${window.location.origin}/overlay.html?partido=${partidoId}`;
-            urlOverlayActualModal = urlOverlay;
-            document.getElementById('link-overlay-visible').value = urlOverlay;
-            const qrContainer = document.getElementById('qrcode-container');
-            qrContainer.innerHTML = '';
-            if (window.QRCode) {
-                new QRCode(qrContainer, {
-                    text: urlOverlay,
-                    width: 160,
-                    height: 160
-                });
-            }
-            document.getElementById('modal-qr').style.display = 'flex';
-        }
-
-        function cerrarModalQR() {
-            document.getElementById('modal-qr').style.display = 'none';
-        }
-
-        function copiarAlPortapapelesOverlay() {
-            const input = document.getElementById('link-overlay-visible');
-            copiarTextoUniversal(input.value, null);
-            alert("📋 Link de Overlay copiado al portapapeles.");
-        }
-
         const obtenerEstiloCategoria = (catId) => {
             const paleta = [{ bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.5)', text: '#fbbf24' }, { bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.5)', text: '#38bdf8' }, { bg: 'rgba(217, 70, 239, 0.15)', border: 'rgba(217, 70, 239, 0.5)', text: '#f0abfc' }, { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.5)', text: '#34d399' }];
             return paleta[(catId || 0) % paleta.length];
@@ -483,7 +319,7 @@
             });
         }
 
-        // ================= MOTOR MAESTRO LINEAL DE TORNEO =================
+        // ================= MOTOR MAESTRO LINEAL DE TORNEO (CERO RECURSIÓN) =================
         function resolverCuadroTorneoTotal() {
             let datos = { porCategoria: {}, mapaProyecciones: {} };
             let ganadoresFase = {};
@@ -504,7 +340,7 @@
                 if (!jCat[pObj.id]) {
                     let jData = todosLosJugadoresAdmin.find(x => x.id == pObj.id);
                     let rankIni = jData ? (jData.puntos_ranking_ant ?? jData.puntos_ranking ?? 0) : 0;
-                    let div = jData ? (jData.division || 1) : 1;
+                    let div = jData ? (jData.division || 3) : 3;
                     jCat[pObj.id] = { id: pObj.id, nombre: pObj.nombre, club: jData?.club || 'Sin Club', div: div, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, rankIni: rankIni, rankImpact: 0, gpo: null, historial: [] };
                 }
             };
@@ -562,7 +398,7 @@
                 }
             });
 
-            // Extraer líderes de grupos
+            // Extraer líderes de grupos (Con y sin división para ambos formatos)
             Object.keys(datos.porCategoria).forEach(cat => {
                 let gCat = datos.porCategoria[cat].grupos;
                 ['A', 'B', 'C', 'D'].forEach(g => {
@@ -574,11 +410,34 @@
                             if (b.pg !== a.pg) return b.pg - a.pg;
                             return b.rankIni - a.rankIni;
                         });
+                        
+                        // Standars (Categoría Abierta / Por defecto)
                         ganadoresFase[cat][`1_GPO_${g}`] = arr[0] ? { id: arr[0].id, nombre: arr[0].nombre } : { nombre: `1° Gpo ${g}`, id: null };
                         ganadoresFase[cat][`2_GPO_${g}`] = arr[1] ? { id: arr[1].id, nombre: arr[1].nombre } : { nombre: `2° Gpo ${g}`, id: null };
+
+                        // Para el RR Flash (Filtros por División C1, C2, C3)
+                        let c1 = arr.filter(x => x.div == 1);
+                        let c2 = arr.filter(x => x.div == 2);
+                        let c3 = arr.filter(x => x.div == 3);
+
+                        ganadoresFase[cat][`1_GPO_${g}_C1`] = c1[0] ? { id: c1[0].id, nombre: c1[0].nombre } : { nombre: `1° Gpo ${g} (C1)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C1`] = c1[1] ? { id: c1[1].id, nombre: c1[1].nombre } : { nombre: `2° Gpo ${g} (C1)`, id: null };
+                        
+                        ganadoresFase[cat][`1_GPO_${g}_C2`] = c2[0] ? { id: c2[0].id, nombre: c2[0].nombre } : { nombre: `1° Gpo ${g} (C2)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C2`] = c2[1] ? { id: c2[1].id, nombre: c2[1].nombre } : { nombre: `2° Gpo ${g} (C2)`, id: null };
+                        
+                        ganadoresFase[cat][`1_GPO_${g}_C3`] = c3[0] ? { id: c3[0].id, nombre: c3[0].nombre } : { nombre: `1° Gpo ${g} (C3)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C3`] = c3[1] ? { id: c3[1].id, nombre: c3[1].nombre } : { nombre: `2° Gpo ${g} (C3)`, id: null };
+
                     } else {
                         ganadoresFase[cat][`1_GPO_${g}`] = { nombre: `1° Gpo ${g}`, id: null };
                         ganadoresFase[cat][`2_GPO_${g}`] = { nombre: `2° Gpo ${g}`, id: null };
+                        ganadoresFase[cat][`1_GPO_${g}_C1`] = { nombre: `1° Gpo ${g} (C1)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C1`] = { nombre: `2° Gpo ${g} (C1)`, id: null };
+                        ganadoresFase[cat][`1_GPO_${g}_C2`] = { nombre: `1° Gpo ${g} (C2)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C2`] = { nombre: `2° Gpo ${g} (C2)`, id: null };
+                        ganadoresFase[cat][`1_GPO_${g}_C3`] = { nombre: `1° Gpo ${g} (C3)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C3`] = { nombre: `2° Gpo ${g} (C3)`, id: null };
                     }
                 });
             });
@@ -618,19 +477,33 @@
             // SEMIS
             semis.forEach(m => {
                 let cat = m.categorias?.nombre || 'General';
-                let hasCuartos = cuartos.some(x => (x.categorias?.nombre || 'General') === cat);
                 let rf = String(m.ronda_fase).toLowerCase();
-                
-                let p1Def = hasCuartos ? (rf.includes('1') ? 'GANA_CUARTOS_1' : 'GANA_CUARTOS_3') : (rf.includes('1') ? '1_GPO_A' : '1_GPO_B');
-                let p2Def = hasCuartos ? (rf.includes('1') ? 'GANA_CUARTOS_2' : 'GANA_CUARTOS_4') : (rf.includes('1') ? '2_GPO_B' : '2_GPO_A');
-                let tagG = rf.includes('1') ? 'GANA_SEMI_1' : 'GANA_SEMI_2';
-                
-                resolverLlave([m], rf.includes('1') ? '1' : '2', p1Def, p2Def, tagG);
+                let isSemi1 = rf.includes('1');
+
+                if (rf.includes('(c1)')) {
+                    resolverLlave([m], isSemi1 ? 'semi 1' : 'semi 2', isSemi1 ? '1_GPO_A_C1' : '1_GPO_B_C1', isSemi1 ? '2_GPO_B_C1' : '2_GPO_A_C1', isSemi1 ? 'GANA_SEMI_1_C1' : 'GANA_SEMI_2_C1');
+                } else if (rf.includes('(c2)')) {
+                    resolverLlave([m], isSemi1 ? 'semi 1' : 'semi 2', isSemi1 ? '1_GPO_A_C2' : '1_GPO_B_C2', isSemi1 ? '2_GPO_B_C2' : '2_GPO_A_C2', isSemi1 ? 'GANA_SEMI_1_C2' : 'GANA_SEMI_2_C2');
+                } else if (rf.includes('(c3)')) {
+                    resolverLlave([m], isSemi1 ? 'semi 1' : 'semi 2', isSemi1 ? '1_GPO_A_C3' : '1_GPO_B_C3', isSemi1 ? '2_GPO_B_C3' : '2_GPO_A_C3', isSemi1 ? 'GANA_SEMI_1_C3' : 'GANA_SEMI_2_C3');
+                } else {
+                    let hasCuartos = cuartos.some(x => (x.categorias?.nombre || 'General') === cat);
+                    let p1Def = hasCuartos ? (isSemi1 ? 'GANA_CUARTOS_1' : 'GANA_CUARTOS_3') : (isSemi1 ? '1_GPO_A' : '1_GPO_B');
+                    let p2Def = hasCuartos ? (isSemi1 ? 'GANA_CUARTOS_2' : 'GANA_CUARTOS_4') : (isSemi1 ? '2_GPO_B' : '2_GPO_A');
+                    resolverLlave([m], isSemi1 ? '1' : '2', p1Def, p2Def, isSemi1 ? 'GANA_SEMI_1' : 'GANA_SEMI_2');
+                }
             });
 
             // FINAL
-            resolverLlave(finales, 'final', 'GANA_SEMI_1', 'GANA_SEMI_2', 'GANA_FINAL');
+            finales.forEach(m => {
+                let rf = String(m.ronda_fase).toLowerCase();
+                if (rf.includes('(c1)')) resolverLlave([m], 'final', 'GANA_SEMI_1_C1', 'GANA_SEMI_2_C1', 'GANA_FINAL_C1');
+                else if (rf.includes('(c2)')) resolverLlave([m], 'final', 'GANA_SEMI_1_C2', 'GANA_SEMI_2_C2', 'GANA_FINAL_C2');
+                else if (rf.includes('(c3)')) resolverLlave([m], 'final', 'GANA_SEMI_1_C3', 'GANA_SEMI_2_C3', 'GANA_FINAL_C3');
+                else resolverLlave([m], 'final', 'GANA_SEMI_1', 'GANA_SEMI_2', 'GANA_FINAL');
+            });
 
+            // Exportar expediente a global para el clic
             jugadoresMemoriaExpedientes = {};
             Object.keys(datos.porCategoria).forEach(cat => {
                 Object.values(datos.porCategoria[cat].jugadores).forEach(j => {
@@ -653,7 +526,10 @@
                 if (resTorneo.status === 'fulfilled' && resTorneo.value.data) document.getElementById('nombre-torneo').innerText = resTorneo.value.data.nombre;
                 if (resReglas.status === 'fulfilled') reglasRankingList = resReglas.value.data || [];
                 if (resCat.status === 'fulfilled') todasLasCategorias = resCat.value.data || [];
-                if (resJugadores.status === 'fulfilled') todosLosJugadoresAdmin = resJugadores.value.data || [];
+                if (resJugadores.status === 'fulfilled') {
+                    todosLosJugadoresAdmin = resJugadores.value.data || [];
+                    todosLosJugadoresAdmin.forEach(j => mapaRankingOficial.set(j.id, j));
+                }
 
                 await cargarPartidos();
                 clienteSupabase.channel('mesas-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => { cargarPartidos(); }).subscribe();
@@ -801,6 +677,8 @@
 
         function dibujarPantalla() {
             const container = document.getElementById('contenedor-partidos');
+
+            // RESOLVEMOS TODO EL CUADRO DE FORMA LINEAL Y RÁPIDA
             datosGeneralesCuadro = resolverCuadroTorneoTotal();
 
             if (estadoFiltro === 'resumen') { container.style.display = 'block'; dibujarEstadisticas(container); return; }
@@ -856,10 +734,13 @@
                     let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
                     if (isVivo) { score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`; score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`; }
 
-                    let tieneVideo = p.video_url && p.video_url !== 'null' && p.video_url !== 'undefined';
-                    let btnYoutube = `
-                        <button class="btn-arbitrar" style="flex:1; min-width: 120px; ${tieneVideo ? 'background:rgba(239,68,68,0.25); border-color:#ef4444; color:#ffffff;' : 'background:rgba(239,68,68,0.12); border-color:#ef4444; color:#f87171;'}" onclick="abrirModalYouTube(${p.id}, '${tieneVideo ? p.video_url : ''}')">
-                            ${tieneVideo ? '<i class="fa-brands fa-youtube text-red-500 mr-1"></i> YouTube Activo' : '<i class="fa-brands fa-youtube mr-1"></i> Crear / Link YT'}
+                    let btnYoutube = (isFin || isVivo) ? `
+                        <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(239,68,68,0.15); border-color:#ef4444; color:#f87171;" onclick="abrirModalYouTube(${p.id}, '${p.video_url || ''}')">
+                            ${p.video_url ? '<i class="fa-brands fa-youtube"></i> Editar Enlace' : '<i class="fa-brands fa-youtube"></i> Añadir YouTube'}
+                        </button>
+                    ` : `
+                        <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(255,255,255,0.05); border-color:rgba(255,255,255,0.1); color:#64748b; cursor:not-allowed;" onclick="alert('Inicia el partido primero para poder añadir un enlace en directo de YouTube.')">
+                            <i class="fa-solid fa-lock"></i> Link YouTube
                         </button>
                     `;
 
@@ -903,103 +784,13 @@
             container.innerHTML = htmlContent;
         }
 
-        // ================= GESTIÓN DE TRANSMISIÓN YOUTUBE =================
         function abrirModalYouTube(partidoId, urlActual) {
             document.getElementById('hidden-youtube-partidoid').value = partidoId;
-            const cleanUrl = (urlActual && urlActual !== 'null' && urlActual !== 'undefined') ? urlActual : '';
-            document.getElementById('input-youtube-link').value = cleanUrl;
-            
-            // Restablecer campos
-            document.getElementById('caja-detalles-stream').style.display = 'none';
-            document.getElementById('input-rtmp-copiable').value = '';
-            document.getElementById('input-streamkey-copiable').value = '';
-            
-            const btnAuto = document.getElementById('btn-crear-stream-auto');
-            btnAuto.disabled = false;
-            btnAuto.innerHTML = '<i class="fa-brands fa-youtube mr-1"></i> Crear Stream en YouTube Ahora';
-            btnAuto.style.background = '#dc2626';
-            btnAuto.style.borderColor = '#ef4444';
-
-            const btnAbrir = document.getElementById('btn-abrir-youtube');
-            if (btnAbrir) {
-                btnAbrir.style.display = cleanUrl ? 'inline-flex' : 'none';
-            }
-
+            document.getElementById('input-youtube-link').value = (urlActual && urlActual !== 'null' && urlActual !== 'undefined') ? urlActual : '';
             document.getElementById('modal-youtube').style.display = 'flex';
         }
 
-        function cerrarModalYouTube() { 
-            document.getElementById('modal-youtube').style.display = 'none'; 
-        }
-
-        function abrirEnlaceDirecto() {
-            const link = document.getElementById('input-youtube-link').value.trim();
-            if (link) window.open(link, '_blank');
-        }
-
-        async function generarStreamYouTubeAutomatico() {
-            const partidoId = document.getElementById('hidden-youtube-partidoid').value;
-            if (!partidoId) return;
-
-            const btnAuto = document.getElementById('btn-crear-stream-auto');
-            const p = todosLosPartidos.find(x => x.id == partidoId);
-            
-            let proy1 = datosGeneralesCuadro?.mapaProyecciones?.[`${partidoId}_j1`]?.nombre;
-            let proy2 = datosGeneralesCuadro?.mapaProyecciones?.[`${partidoId}_j2`]?.nombre;
-            let nom1 = proy1 || p?.j1?.nombre || 'Jugador 1';
-            let nom2 = proy2 || p?.j2?.nombre || 'Jugador 2';
-            let numMesa = p?.mesa || 1;
-            let cat = p?.categorias?.nombre || 'General';
-            let fase = p?.grupo_nombre ? (p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre === 'Flash' ? 'Liga Flash' : `Grupo ${p.grupo_nombre}`)) : (p?.ronda_fase || 'Eliminatoria');
-
-            let tituloStream = `Mesa ${numMesa}: ${nom1} vs ${nom2} | ${fase} (${cat}) - Torneo Pixel`;
-
-            btnAuto.disabled = true;
-            btnAuto.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Conectando con YouTube...';
-
-            try {
-                const { data, error } = await clienteSupabase.functions.invoke('crear-stream-youtube', {
-                    body: { titulo: tituloStream }
-                });
-
-                if (error) throw error;
-                if (!data || !data.videoUrl) throw new Error(data?.error || "No se recibió la URL de la transmisión de YouTube.");
-
-                const { videoUrl, rtmpUrl, streamKey } = data;
-
-                // Guardar enlace en base de datos
-                const { error: dbError } = await clienteSupabase
-                    .from('partidos')
-                    .update({ video_url: videoUrl })
-                    .eq('id', partidoId);
-
-                if (dbError) throw dbError;
-
-                // Cargar datos en los inputs copiables
-                document.getElementById('input-youtube-link').value = videoUrl;
-                document.getElementById('input-rtmp-copiable').value = rtmpUrl || 'rtmp://a.rtmp.youtube.com/live2';
-                document.getElementById('input-streamkey-copiable').value = streamKey || '';
-                document.getElementById('caja-detalles-stream').style.display = 'block';
-
-                btnAuto.innerHTML = '<i class="fa-solid fa-check mr-1"></i> ¡Stream Creado Exitosamente!';
-                btnAuto.style.background = '#10b981';
-                btnAuto.style.borderColor = '#34d399';
-
-                const btnAbrir = document.getElementById('btn-abrir-youtube');
-                if (btnAbrir) btnAbrir.style.display = 'inline-flex';
-
-                if (p) p.video_url = videoUrl;
-                dibujarPantalla();
-
-            } catch (err) {
-                console.error("Error al crear stream en YouTube:", err);
-                alert("❌ Error al crear transmisión: " + (err.message || err));
-                btnAuto.disabled = false;
-                btnAuto.innerHTML = '<i class="fa-brands fa-youtube mr-1"></i> Reintentar Creación Automática';
-                btnAuto.style.background = '#dc2626';
-                btnAuto.style.borderColor = '#ef4444';
-            }
-        }
+        function cerrarModalYouTube() { document.getElementById('modal-youtube').style.display = 'none'; }
 
         async function guardarLinkYouTube() {
             let partidoId = document.getElementById('hidden-youtube-partidoid').value;
@@ -1010,22 +801,11 @@
             
             try {
                 const { error } = await clienteSupabase.from('partidos').update({ video_url: link }).eq('id', partidoId);
-                if (!error) {
-                    let p = todosLosPartidos.find(x => x.id == partidoId);
-                    if (p) p.video_url = link;
-                    cerrarModalYouTube();
-                    dibujarPantalla();
-                } else {
-                    alert("❌ Error al guardar el enlace: " + error.message);
-                    btn.disabled = false; btn.innerText = '💾 Guardar Enlace';
-                }
-            } catch (e) {
-                alert("❌ Error: " + e.message);
-                btn.disabled = false; btn.innerText = '💾 Guardar Enlace';
-            }
+                if (!error) { cerrarModalYouTube(); window.location.reload(); } 
+                else { alert("❌ Error al guardar el enlace: " + error.message); btn.disabled = false; btn.innerText = '💾 Guardar Enlace'; }
+            } catch (e) { alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Enlace'; }
         }
 
-        // ================= MARCADOR MANUAL =================
         function abrirModalMarcador(partidoId, nombreJ1, nombreJ2, idJ1, idJ2) {
             document.getElementById('hidden-marcador-partidoid').value = partidoId;
             document.getElementById('hidden-marcador-j1id').value = idJ1;
@@ -1075,7 +855,7 @@
             }
         }
 
-        // ================= APERTURA DE EXPEDIENTE =================
+        // ================= APERTURA DE EXPEDIENTE BLINDADO =================
         function abrirModalJugadorAdmin(jugadorId) {
             if(!jugadorId || isNaN(jugadorId)) return; 
             
