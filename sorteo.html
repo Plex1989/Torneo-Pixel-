@@ -484,7 +484,7 @@
                     </div>
                     
                     <!-- PISTAS Y BARRAS -->
-                    <div id="vip-gantt-tracks" style="position: relative; display: flex; flex-direction: column; gap: 35px;">
+                    <div id="vip-gantt-tracks" style="position: relative; display: flex; flex-direction: column; gap: 20px;">
                         <!-- Tracks inyectados -->
                     </div>
 
@@ -1461,6 +1461,7 @@
             btn.disabled = true; btn.innerText = "Guardando en Supabase...";
 
             try {
+                // Guardar preferencias de break
                 let breakVal = document.getElementById('rr-hora-break').value;
                 let breakDur = document.getElementById('rr-duracion-break').value;
                 localStorage.setItem(`break_val_${ORG_ID}_${idCategoria}`, breakVal);
@@ -1502,7 +1503,10 @@
 
         async function renderAndDownload(elementId, filename) {
             const container = document.getElementById(elementId);
+            
+            // Forzamos visibilidad momentánea para renderizar correctamente
             container.style.display = 'block';
+            
             try {
                 const canvas = await html2canvas(container, {
                     scale: 2, 
@@ -1519,6 +1523,7 @@
                 alert("Hubo un error al generar la imagen. Intenta de nuevo.");
                 console.error(err);
             } finally {
+                // Volvemos a ocultar
                 container.style.display = 'none';
             }
         }
@@ -1618,8 +1623,10 @@
             btn.disabled = true;
 
             try {
+                // 1. Buscamos la fecha configurada para las categorías
                 const { data: progData } = await clienteSupabase.from('programacion_categorias').select('categoria_id, fecha').eq('torneo_id', idTorneoActivo);
 
+                // 2. Buscamos TODOS los partidos del torneo en BD
                 const { data: allMatches } = await clienteSupabase.from('partidos')
                     .select('hora, categoria_id, categorias(nombre), grupo_nombre, ronda_fase')
                     .eq('torneo_id', idTorneoActivo)
@@ -1631,6 +1638,7 @@
                     return;
                 }
 
+                // 3. Agrupar la información por Categoría + Fase + Fecha
                 let blocksMap = new Map();
                 let fechasDisponibles = new Set();
 
@@ -1688,7 +1696,7 @@
                     .filter(b => b.fecha === fechaFiltro)
                     .map(b => {
                         let minTime = Math.min(...b.times);
-                        let maxTime = Math.max(...b.times) + 30; 
+                        let maxTime = Math.max(...b.times) + 30; // Simulamos +30mins al último partido de la fase
                         return { ...b, minTime, maxTime, isBreak: false };
                     }).sort((a,b) => a.minTime - b.minTime);
 
@@ -1721,15 +1729,18 @@
                     return;
                 }
 
+                // 6. Obtener el límite mínimo y máximo global del torneo
                 let absoluteMinTime = Math.min(...blocks.map(b => b.minTime));
                 let absoluteMaxTime = Math.max(...blocks.map(b => b.maxTime));
 
+                // Redondear para que el eje X se vea limpio
                 let startAxis = Math.floor(absoluteMinTime / 60) * 60;
                 let endAxis = Math.ceil(absoluteMaxTime / 60) * 60;
                 let totalDuration = endAxis - startAxis;
 
                 if (totalDuration <= 0) totalDuration = 60;
 
+                // 7. Dibujar EJE X (Las horas)
                 let axisHtml = '';
                 let gridHtml = '';
                 let numTicks = Math.ceil(totalDuration / 60);
@@ -1745,15 +1756,16 @@
 
                 document.getElementById('vip-gantt-axis').innerHTML = axisHtml;
 
+                // 8. Dibujar PISTAS y BARRAS
                 let tracksHtml = '';
                 let breaksHtml = '';
                 
                 const colors = [
-                    { bg: 'rgba(56, 189, 248, 0.15)', border: '#38bdf8', glow: 'rgba(56,189,248,0.4)' }, 
-                    { bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b', glow: 'rgba(245,158,11,0.4)' }, 
-                    { bg: 'rgba(168, 85, 247, 0.15)', border: '#a855f7', glow: 'rgba(168,85,247,0.4)' }, 
-                    { bg: 'rgba(16, 185, 129, 0.15)', border: '#10b981', glow: 'rgba(16,185,129,0.4)' }, 
-                    { bg: 'rgba(244, 63, 94, 0.15)', border: '#f43f5e', glow: 'rgba(244,63,94,0.4)' }  
+                    { bg: 'rgba(56, 189, 248, 0.15)', border: '#38bdf8', glow: 'rgba(56,189,248,0.4)' }, // Cyan
+                    { bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b', glow: 'rgba(245,158,11,0.4)' }, // Gold
+                    { bg: 'rgba(168, 85, 247, 0.15)', border: '#a855f7', glow: 'rgba(168,85,247,0.4)' }, // Purple
+                    { bg: 'rgba(16, 185, 129, 0.15)', border: '#10b981', glow: 'rgba(16,185,129,0.4)' }, // Emerald
+                    { bg: 'rgba(244, 63, 94, 0.15)', border: '#f43f5e', glow: 'rgba(244,63,94,0.4)' }  // Rose
                 ];
                 
                 let colorIdx = 0;
