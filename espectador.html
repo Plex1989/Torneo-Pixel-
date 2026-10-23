@@ -16,25 +16,22 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* ========================================================
-           PALETA PREMIUM: DARK & GOLD (Basado en ref. Gus Ortiz)
+           PALETA PREMIUM: DARK & GOLD
            ======================================================== */
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 15px; background-color: #0a0a0c; color: #f8fafc; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
         .font-digital { font-family: 'Orbitron', sans-serif; }
         
-        /* Luces de fondo sutiles (Glow Ambiental) */
+        /* Glow Ambiental */
         body::before { content: ""; position: fixed; top: -15%; left: -10%; width: 600px; height: 600px; background: #fbbf24; border-radius: 50%; filter: blur(200px); opacity: 0.08; pointer-events: none; z-index: -1; }
         body::after { content: ""; position: fixed; bottom: -10%; right: -10%; width: 700px; height: 700px; background: #f5a623; border-radius: 50%; filter: blur(200px); opacity: 0.05; pointer-events: none; z-index: -1; }
 
-        /* Encabezado VIP */
         .header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(251, 191, 36, 0.15); position: relative; }
         .header-tag { display: inline-block; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); color: #fbbf24; font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 6px 16px; border-radius: 9999px; letter-spacing: 3px; margin-bottom: 12px; box-shadow: 0 0 15px rgba(251, 191, 36, 0.1); }
         .header h1 { font-size: 26px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #ffffff; margin: 0; text-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
 
-        /* Barras de Scroll Ocultas */
         .scrolling-bar { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 15px; scrollbar-width: none; -ms-overflow-style: none; }
         .scrolling-bar::-webkit-scrollbar { display: none; }
 
-        /* Botones de Filtro (Pills) */
         .btn-filter-pill { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); color: #94a3b8; padding: 10px 20px; border-radius: 9999px; font-size: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; white-space: nowrap; flex-shrink: 0; transition: all 0.3s ease; letter-spacing: 1px; }
         .btn-filter-pill:hover { background: rgba(255, 255, 255, 0.08); color: #ffffff; }
         .btn-filter-pill.active { background: #fbbf24; color: #000000; border-color: #fbbf24; box-shadow: 0 0 20px rgba(251, 191, 36, 0.4); }
@@ -45,10 +42,9 @@
         .btn-cat-pill:hover { background: rgba(251, 191, 36, 0.1); color: #fcd34d; }
         .btn-cat-pill.active { background: #fbbf24; color: #000000; border-color: #fbbf24; box-shadow: 0 0 20px rgba(251, 191, 36, 0.5); }
 
-        /* Grid y Tarjetas de Partido (Glassmorphism Premium) */
         .grid-espectador { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; max-width: 1300px; margin: auto; }
 
-        .card-mesa { background: rgba(18, 18, 22, 0.7); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.05); border-bottom: 4px solid rgba(255, 255, 255, 0.1); padding: 22px; position: relative; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .card-mesa { background: rgba(18, 18, 22, 0.7); backdrop-filter: blur(25px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.05); border-bottom: 4px solid rgba(255, 255, 255, 0.1); padding: 22px; position: relative; transition: all 0.4s ease; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
         .card-mesa:hover { transform: translateY(-5px); border-color: rgba(251, 191, 36, 0.3); box-shadow: 0 15px 35px rgba(251, 191, 36, 0.15); }
         .card-mesa.vivo { border-bottom-color: #fbbf24 !important; box-shadow: 0 0 30px rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.2); }
         .card-mesa.finalizado { border-bottom-color: #475569 !important; opacity: 0.75; filter: grayscale(20%); }
@@ -65,11 +61,9 @@
 
         @keyframes pulse-border { 0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); } 70% { box-shadow: 0 0 0 6px rgba(251, 191, 36, 0); } 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); } }
 
-        /* Contenedor de Marcador Interior */
         .score-container { background: rgba(0,0,0,0.5); border-radius: 16px; padding: 16px 20px; margin-bottom: 15px; border: 1px inset rgba(255,255,255,0.02); }
         .jugador-box { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; }
         .jugador-nombre { font-size: 14px; font-weight: 800; color: #ffffff; letter-spacing: 0.5px; transition: color 0.2s; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .jugador-nombre:hover { color: #fbbf24; }
         
         .score-big { font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 900; color: #ffffff; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
         .score-big.p2 { color: #fbbf24; text-shadow: 0 0 15px rgba(251, 191, 36, 0.3); }
@@ -79,12 +73,10 @@
         .header-hora { grid-column: 1 / -1; font-size: 13px; color: #fbbf24; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid rgba(251, 191, 36, 0.2); padding-bottom: 8px; margin-top: 25px; margin-bottom: 10px; letter-spacing: 2px; display: flex; align-items: center; }
         .header-hora::before { content: ""; display: inline-block; width: 6px; height: 6px; background: #fbbf24; border-radius: 50%; margin-right: 10px; box-shadow: 0 0 8px #fbbf24; }
         
-        .seccion-llaves-footer { grid-column: 1 / -1; margin-top: 30px; background: rgba(15, 15, 18, 0.85); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 24px; padding: 30px; backdrop-filter: blur(20px); box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
-        
         .mensaje-vacio { text-align: center; color: #64748b; font-style: italic; font-weight: 600; grid-column: 1/-1; padding: 60px 20px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.05); }
 
         /* Botones de Acción en Tarjeta */
-        .btn-action-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 12px; padding: 12px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; text-align: center; text-decoration: none; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-action-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 12px; padding: 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; text-align: center; text-decoration: none; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
         .btn-action-card:hover { background: rgba(255,255,255,0.1); color: #fff; }
         .btn-live-yt { background: rgba(220, 38, 38, 0.15); border-color: rgba(220, 38, 38, 0.4); color: #ef4444; }
         .btn-live-yt:hover { background: #dc2626; color: white; box-shadow: 0 0 20px rgba(220, 38, 38, 0.5); }
@@ -92,7 +84,7 @@
         /* PANTALLA COMPLETA VIP */
         #modal-fullscreen-partido { background: radial-gradient(circle at center, #111115 0%, #04060a 100%); }
         .card-score-fs { background: rgba(20, 20, 24, 0.6); backdrop-filter: blur(25px); border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); box-shadow: inset 0 0 40px rgba(0,0,0,0.5); }
-        .fs-title-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); p-5; rounded-3xl; }
+        .fs-title-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 24px; }
 
         /* Reproductor Video */
         #modal-video { backdrop-filter: blur(20px); background: rgba(0,0,0,0.9); }
@@ -163,7 +155,7 @@
         <div class="flex-1 flex flex-col md:flex-row gap-6 my-6 min-h-0">
             <!-- P1 -->
             <div class="flex-1 flex flex-col min-h-0">
-                <div class="fs-title-box p-5 rounded-3xl mb-3 text-center">
+                <div class="fs-title-box mb-3 text-center">
                     <h2 id="fs-name-j1" class="text-2xl md:text-4xl font-black uppercase tracking-wider text-white truncate drop-shadow-lg">JUGADOR 1</h2>
                     <span id="fs-club-j1" class="text-xs text-zinc-500 font-bold block mt-1 uppercase tracking-widest">CLUB</span>
                     <div id="fs-ranking-j1" class="text-[11px] font-extrabold text-zinc-400 mt-2 bg-white/5 inline-block px-3 py-1 rounded-full">-- pts</div>
@@ -182,7 +174,7 @@
 
             <!-- P2 -->
             <div class="flex-1 flex flex-col min-h-0">
-                <div class="fs-title-box p-5 rounded-3xl mb-3 text-center border-amber-500/20 bg-amber-500/5">
+                <div class="fs-title-box mb-3 text-center border-amber-500/20 bg-amber-500/5">
                     <h2 id="fs-name-j2" class="text-2xl md:text-4xl font-black uppercase tracking-wider text-amber-400 truncate drop-shadow-[0_0_15px_rgba(251,191,36,0.4)]">JUGADOR 2</h2>
                     <span id="fs-club-j2" class="text-xs text-amber-500/50 font-bold block mt-1 uppercase tracking-widest">CLUB</span>
                     <div id="fs-ranking-j2" class="text-[11px] font-extrabold text-amber-200/70 mt-2 bg-amber-500/10 inline-block px-3 py-1 rounded-full border border-amber-500/20">-- pts</div>
@@ -241,11 +233,6 @@
         <button class="btn-filter-pill" id="tab-ranking" onclick="filtrarEstado('ranking')" style="color:#fbbf24; border-color:rgba(251,191,36,0.3);">🏆 Ranking Oficial</button>
     </div>
 
-    <div class="scrolling-bar no-print hidden" id="bar-mesas">
-        <!-- Oculto intencionalmente en vista VIP, no es tan relevante para el espectador filtrar por mesa individual -->
-        <button class="btn-filter-pill active" onclick="filtrarMesa('todas')">Todas las Mesas</button>
-    </div>
-
     <div class="grid-espectador" id="contenedor-espectador">
         <div class="mensaje-vacio"><i class="fa-solid fa-spinner fa-spin text-amber-500 text-2xl mb-3 block"></i> Conectando con la mesa de control...</div>
     </div>
@@ -287,7 +274,6 @@
         }
 
         function abrirVideo(url) {
-            event.stopPropagation();
             let videoId = extractYouTubeID(url);
             if(!videoId) { let liveMatch = url.match(/live\/([a-zA-Z0-9_-]{11})/); if(liveMatch) videoId = liveMatch[1]; }
             if(videoId) { document.getElementById('iframe-video').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`; document.getElementById('modal-video').classList.remove('hidden'); document.getElementById('modal-video').classList.add('flex'); } 
@@ -312,7 +298,6 @@
             let str = String(texto).toUpperCase(); let letra = '';
             if (str.includes('GPO A') || str.includes('GRUPO A') || str.includes('(A)')) letra = 'A'; else if (str.includes('GPO B') || str.includes('GRUPO B') || str.includes('(B)')) letra = 'B'; else if (str.includes('GPO C') || str.includes('GRUPO C') || str.includes('(C)')) letra = 'C'; else if (str.includes('GPO D') || str.includes('GRUPO D') || str.includes('(D)')) letra = 'D'; else if (str.includes('GPO E') || str.includes('GRUPO E') || str.includes('(E)')) letra = 'E'; else if (str.includes('GPO F') || str.includes('GRUPO F') || str.includes('(F)')) letra = 'F';
             
-            // Colores VIP para los grupos
             switch(letra) { 
                 case 'A': return { color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.1)', border: 'rgba(251, 191, 36, 0.3)' }; 
                 case 'B': return { color: '#f8fafc', bg: 'rgba(248, 250, 252, 0.1)', border: 'rgba(248, 250, 252, 0.3)' }; 
@@ -503,6 +488,7 @@
                         ganadoresFase[cat][`2_GPO_${g}_C3`] = c3[1] ? { id: c3[1].id, nombre: c3[1].nombre } : { nombre: `2° Gpo ${g} (C3)`, id: null };
 
                     } else {
+                        // Grupos INCOMPLETOS: Mandamos null para bloquear cruces anticipados
                         ganadoresFase[cat][`1_GPO_${g}`] = { nombre: `1° Gpo ${g}`, id: null };
                         ganadoresFase[cat][`2_GPO_${g}`] = { nombre: `2° Gpo ${g}`, id: null };
                         ganadoresFase[cat][`1_GPO_${g}_C1`] = { nombre: `1° Gpo ${g} (C1)`, id: null };
@@ -986,10 +972,12 @@
                     if (isVivo) { score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`; score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`; }
 
                     let cardClass = isVivo ? 'vivo' : (isFin ? 'finalizado' : '');
+                    
+                    // BOTÓN YOUTUBE PARA ESPECTADORES
                     let btnVideo = '';
                     if (p.video_url) {
-                        if (isVivo) btnVideo = `<button onclick="abrirVideo('${p.video_url}')" class="btn-live-yt mt-3"><i class="fa-brands fa-youtube text-sm"></i> VER TRANSMISIÓN EN DIRECTO</button>`;
-                        else if (isFin) btnVideo = `<button onclick="abrirVideo('${p.video_url}')" class="btn-action-card mt-3"><i class="fa-brands fa-youtube text-rose-500"></i> Ver Repetición (VOD)</button>`;
+                        if (isVivo) btnVideo = `<button onclick="event.stopPropagation(); abrirVideo('${p.video_url}')" class="btn-action-card btn-live-yt mt-3"><i class="fa-brands fa-youtube text-lg"></i> VER EN VIVO</button>`;
+                        else if (isFin) btnVideo = `<button onclick="event.stopPropagation(); abrirVideo('${p.video_url}')" class="btn-action-card mt-3"><i class="fa-brands fa-youtube text-rose-500 text-lg"></i> Ver Repetición (VOD)</button>`;
                     }
 
                     htmlContent += `
@@ -1008,9 +996,11 @@
                                     <div style="height:1px; background:rgba(255,255,255,0.05); margin: 6px 0;"></div>
                                     <div class="jugador-box"><div><span class="jugador-nombre">${iconJ2}${nomJ2}</span></div><div style="display:flex; align-items:center;">${score2}</div></div>
                                 </div>
-                                <div style="margin-top:auto;">
+                                <div style="margin-top:auto; display:flex; flex-direction:column; gap:8px;">
                                     ${btnVideo}
-                                    ${!p.video_url ? `<button onclick="abrirPartidoFullScreen(${p.id}); event.stopPropagation();" class="btn-action-card mt-3"><i class="fa-solid fa-expand text-fbbf24"></i> Pantalla Completa</button>` : ''}
+                                    <button onclick="event.stopPropagation(); abrirPartidoFullScreen(${p.id});" class="btn-action-card ${p.video_url ? '' : 'mt-3'}">
+                                        <i class="fa-solid fa-expand text-fbbf24"></i> Pantalla Completa
+                                    </button>
                                 </div>
                             </div>
                         </div>
