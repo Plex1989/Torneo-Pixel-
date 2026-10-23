@@ -91,7 +91,7 @@
 
         .sets-badge { font-size: 11px; font-weight: 900; color: #64748b; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 8px; margin-left: 10px; border: 1px solid rgba(255,255,255,0.02); }
 
-        /* Botones Acción (Panel Juez Interno) */
+        /* Botones Acción */
         .grid-botones-mesa { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
         .btn-mesa-action { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 12px; padding: 12px 10px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; text-decoration: none; }
         .btn-mesa-action:hover:not(:disabled) { background: rgba(255,255,255,0.1); color: #fff; }
@@ -200,17 +200,39 @@
         </div>
     </div>
 
-    <!-- MODAL LINK YOUTUBE -->
+    <!-- MODAL LINK YOUTUBE / API AVANZADO -->
     <div id="modal-youtube" class="modal-overlay" style="display: none;">
-        <div class="modal-card" style="max-width: 400px; padding: 30px; border: 1px solid rgba(239, 68, 68, 0.3); border-top: 4px solid #ef4444;">
+        <div class="modal-card" style="max-width: 450px; padding: 30px; border: 1px solid rgba(239, 68, 68, 0.3); border-top: 4px solid #ef4444;">
             <div style="display:flex; justify-content:space-between; align-items:start; margin-bottom:20px;">
-                <h3 style="color: #f87171; font-size: 16px; font-weight: 900; text-transform: uppercase; margin: 0; letter-spacing: 1px;"><i class="fa-brands fa-youtube mr-2"></i> Transmisión / VOD</h3>
+                <h3 style="color: #f87171; font-size: 16px; font-weight: 900; text-transform: uppercase; margin: 0; letter-spacing: 1px;"><i class="fa-solid fa-satellite-dish mr-2"></i> Transmisión API / VOD</h3>
                 <button onclick="cerrarModalYouTube()" style="background:transparent; border:none; color:#94a3b8; font-size:18px; cursor:pointer; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">✕</button>
             </div>
-            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 20px; text-align: left; line-height: 1.5;">Pega aquí el enlace del directo de YouTube para que los espectadores puedan ver el partido desde el portal público.</p>
-            <input type="text" id="input-youtube-link" class="input-tabla" style="width: 100%; padding: 14px !important; margin-bottom: 25px;" placeholder="Ej. https://youtu.be/abcd123">
+            
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 20px; text-align: left; line-height: 1.5;">Configura los datos de tu transmisión. El link es para el espectador, la URL y Clave son para tu software (PRISM/OBS).</p>
+            
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-size: 10px; color: #f87171; font-weight: 800; text-transform: uppercase;">1. Link Público / ID (Espectadores)</label>
+                <input type="text" id="input-youtube-link" class="input-tabla" style="width: 100%; padding: 12px !important; margin-top: 5px;" placeholder="Ej. https://youtu.be/abcd123">
+            </div>
+
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-size: 10px; color: #38bdf8; font-weight: 800; text-transform: uppercase;">2. URL del Servidor (RTMP)</label>
+                <input type="text" id="input-youtube-rtmp" class="input-tabla" style="width: 100%; padding: 12px !important; margin-top: 5px;" placeholder="Ej. rtmp://a.rtmp.youtube.com/live2">
+            </div>
+
+            <div style="text-align: left; margin-bottom: 25px;">
+                <label style="font-size: 10px; color: #fbbf24; font-weight: 800; text-transform: uppercase;">3. Clave de Transmisión (Stream Key)</label>
+                <input type="password" id="input-youtube-key" class="input-tabla" style="width: 100%; padding: 12px !important; margin-top: 5px;" placeholder="****-****-****-****">
+            </div>
+
             <input type="hidden" id="hidden-youtube-partidoid">
-            <button id="btn-guardar-youtube" onclick="guardarLinkYouTube()" class="btn-filter-pill" style="width: 100%; background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.4); padding: 14px; font-size: 12px;">💾 Guardar Enlace</button>
+            
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-generar-api" onclick="llamarMiAPI()" class="btn-filter-pill" style="flex: 1; background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border-color: rgba(56, 189, 248, 0.4); padding: 14px; font-size: 11px;"><i class="fa-solid fa-bolt mr-2"></i> Generar</button>
+                <button id="btn-guardar-youtube" onclick="guardarLinkYouTube()" class="btn-filter-pill" style="flex: 2; background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.4); padding: 14px; font-size: 11px;">💾 Guardar Datos</button>
+            </div>
+            
+            <p style="font-size: 9px; color: #64748b; margin-top: 15px; text-align: left; font-style: italic;">*Asegúrate de que las columnas "rtmp_url" y "stream_key" existan en tu tabla "partidos" de Supabase.</p>
         </div>
     </div>
 
@@ -874,10 +896,9 @@
                     let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
                     if (isVivo) { score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`; score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`; }
 
-                    // Se eliminó la restricción de `puedeArbitrar` o de si ha iniciado el partido
                     let btnYoutube = `
-                        <button class="btn-mesa-action btn-mesa-yt" onclick="abrirModalYouTube(${p.id}, '${p.video_url || ''}')">
-                            ${p.video_url ? '<i class="fa-brands fa-youtube"></i> Editar Link YT' : '<i class="fa-brands fa-youtube"></i> Añadir YouTube'}
+                        <button class="btn-mesa-action btn-mesa-yt" onclick="abrirModalYouTube(${p.id}, '${p.video_url || ''}', '${p.rtmp_url || ''}', '${p.stream_key || ''}')">
+                            ${p.video_url ? '<i class="fa-brands fa-youtube"></i> Editar Datos Trans.' : '<i class="fa-brands fa-youtube"></i> Añadir API/YouTube'}
                         </button>
                     `;
 
@@ -946,9 +967,11 @@
             navigator.clipboard.writeText(copyText.value).then(() => { alert("¡Link de Overlay copiado al portapapeles!"); });
         }
 
-        function abrirModalYouTube(partidoId, urlActual) {
+        function abrirModalYouTube(partidoId, urlActual, rtmpActual, keyActual) {
             document.getElementById('hidden-youtube-partidoid').value = partidoId;
             document.getElementById('input-youtube-link').value = (urlActual && urlActual !== 'null' && urlActual !== 'undefined') ? urlActual : '';
+            document.getElementById('input-youtube-rtmp').value = (rtmpActual && rtmpActual !== 'null' && rtmpActual !== 'undefined') ? rtmpActual : '';
+            document.getElementById('input-youtube-key').value = (keyActual && keyActual !== 'null' && keyActual !== 'undefined') ? keyActual : '';
             document.getElementById('modal-youtube').style.display = 'flex';
         }
 
@@ -957,21 +980,37 @@
         async function guardarLinkYouTube() {
             let partidoId = document.getElementById('hidden-youtube-partidoid').value;
             let link = document.getElementById('input-youtube-link').value.trim();
+            let rtmp = document.getElementById('input-youtube-rtmp').value.trim();
+            let key = document.getElementById('input-youtube-key').value.trim();
+            
             const btn = document.getElementById('btn-guardar-youtube');
             btn.disabled = true; btn.innerText = '⏳ Guardando...';
+            
             try {
-                const { error } = await clienteSupabase.from('partidos').update({ video_url: link }).eq('id', partidoId);
+                // Actualiza los 3 campos. Deben existir "rtmp_url" y "stream_key" en tu tabla "partidos".
+                const { error } = await clienteSupabase.from('partidos').update({ 
+                    video_url: link,
+                    rtmp_url: rtmp,
+                    stream_key: key
+                }).eq('id', partidoId);
+                
                 if (!error) { cerrarModalYouTube(); window.location.reload(); } 
-                else { alert("❌ Error al guardar el enlace: " + error.message); btn.disabled = false; btn.innerText = '💾 Guardar Enlace'; }
-            } catch (e) { alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Enlace'; }
+                else { alert("❌ Error al guardar: " + error.message); btn.disabled = false; btn.innerText = '💾 Guardar Datos'; }
+            } catch (e) { alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Datos'; }
+        }
+
+        function llamarMiAPI() {
+            alert("Aquí puedes integrar tu script de la API para llenar automáticamente los campos de RTMP, Stream Key y Código.");
         }
 
         function abrirModalMarcador(partidoId, nombreJ1, nombreJ2, idJ1, idJ2) {
             document.getElementById('hidden-marcador-partidoid').value = partidoId;
             document.getElementById('hidden-marcador-j1id').value = idJ1;
             document.getElementById('hidden-marcador-j2id').value = idJ2;
+            
             document.getElementById('lbl-marcador-j1').innerText = nombreJ1; 
             document.getElementById('lbl-marcador-j2').innerText = nombreJ2;
+            
             document.getElementById('input-sets-j1').value = ''; document.getElementById('input-sets-j2').value = '';
             document.getElementById('modal-marcador').style.display = 'flex';
         }
@@ -982,6 +1021,7 @@
             let partidoId = document.getElementById('hidden-marcador-partidoid').value;
             let idJ1 = document.getElementById('hidden-marcador-j1id').value;
             let idJ2 = document.getElementById('hidden-marcador-j2id').value;
+            
             let valJ1 = document.getElementById('input-sets-j1').value; let valJ2 = document.getElementById('input-sets-j2').value;
             if (valJ1 === '' || valJ2 === '') return;
             let setsJ1 = parseInt(valJ1); let setsJ2 = parseInt(valJ2);
@@ -989,29 +1029,45 @@
             
             const btn = document.getElementById('btn-guardar-marcador');
             if (setsJ1 === setsJ2) { btn.innerText = "❌ Empate no válido"; setTimeout(() => { btn.innerText = "💾 Guardar Resultado"; }, 2000); return; }
+            
             btn.disabled = true; btn.innerText = '⏳ Guardando...';
             
             try {
                 let ganador_id = setsJ1 > setsJ2 ? (idJ1 && idJ1 !== 'null' ? parseInt(idJ1) : null) : (idJ2 && idJ2 !== 'null' ? parseInt(idJ2) : null);
+                
                 let payload = { sets_j1: setsJ1, sets_j2: setsJ2, puntos_j1: setsJ1, puntos_j2: setsJ2, estado: 'finalizado', ganador_id: ganador_id };
+                
                 if (idJ1 && idJ1 !== 'null') payload.jugador1_id = parseInt(idJ1);
                 if (idJ2 && idJ2 !== 'null') payload.jugador2_id = parseInt(idJ2);
+                
                 const { error } = await clienteSupabase.from('partidos').update(payload).eq('id', partidoId);
-                if (!error) { cerrarModalMarcador(); window.location.reload(); } 
-                else { alert("❌ Error: " + error.message); btn.disabled = false; btn.innerText = '💾 Guardar Resultado'; }
-            } catch (e) { alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Resultado'; }
+                
+                if (!error) { 
+                    cerrarModalMarcador(); window.location.reload(); 
+                } else { 
+                    alert("❌ Error: " + error.message); btn.disabled = false; btn.innerText = '💾 Guardar Resultado'; 
+                }
+            } catch (e) { 
+                alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Resultado'; 
+            }
         }
 
+        // ================= APERTURA DE EXPEDIENTE BLINDADO =================
         function abrirModalJugadorAdmin(jugadorId) {
             if(!jugadorId || isNaN(jugadorId)) return; 
+            
             const modalList = document.getElementById('modal-jugador-partidos-list'); 
             modalList.innerHTML = '<div class="mensaje-vacio">Cargando expediente...</div>';
+            
             let jugMemoria = jugadoresMemoriaExpedientes[jugadorId];
             if (!jugMemoria) return;
 
             document.getElementById('modal-jugador-nombre').innerText = jugMemoria.nombre;
             document.getElementById('modal-jugador-club').innerText = jugMemoria.club;
-            let rInicial = jugMemoria.rankIni; let deltaTotal = jugMemoria.rankImpact; let rFinal = rInicial + deltaTotal;
+
+            let rInicial = jugMemoria.rankIni;
+            let deltaTotal = jugMemoria.rankImpact;
+            let rFinal = rInicial + deltaTotal;
             let partidosList = jugMemoria.historial || [];
 
             if (partidosList.length === 0) {
@@ -1019,20 +1075,54 @@
                 document.getElementById('modal-jugador-variacion').innerHTML = `<span style="color:#64748b;">(Sin partidos registrados aún)</span>`;
                 modalList.innerHTML = '<div class="mensaje-vacio">Este jugador no ha disputado partidos registrados aún.</div>';
             } else {
-                let tableHtml = `<div style="background:rgba(0,0,0,0.4); border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.05);"><table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left; margin:0;"><thead><tr style="background:rgba(255,255,255,0.05); color:#94a3b8; text-transform:uppercase; font-size:9px;"><th style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.1);">Fase / Mesa</th><th style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.1);">Rival</th><th style="padding:10px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.1);">Resultado</th><th style="padding:10px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.1);">+/- Pts Rank</th></tr></thead><tbody>`;
+                let tableHtml = `
+                <div style="background:rgba(0,0,0,0.4); border-radius:12px; overflow:hidden; border:1px solid rgba(255,255,255,0.05);">
+                    <table style="width:100%; border-collapse:collapse; font-size:11px; text-align:left; margin:0;">
+                        <thead>
+                            <tr style="background:rgba(255,255,255,0.05); color:#94a3b8; text-transform:uppercase; font-size:9px;">
+                                <th style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.1);">Fase / Mesa</th>
+                                <th style="padding:10px; border-bottom:1px solid rgba(255,255,255,0.1);">Rival</th>
+                                <th style="padding:10px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.1);">Resultado</th>
+                                <th style="padding:10px; text-align:center; border-bottom:1px solid rgba(255,255,255,0.1);">+/- Pts Rank</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
                 partidosList.forEach(p => {
-                    let rankBadge = p.delta > 0 ? `<span style="color:#34d399; font-weight:900;">+${p.delta}</span>` : (p.delta < 0 ? `<span style="color:#f87171; font-weight:900;">${p.delta}</span>` : `<span style="color:#94a3b8;">0</span>`);
-                    let resText = p.gano ? `<span style="color:#34d399; font-weight:800;">VICTORIA <span style="color:#fff; font-size:10px;">(${p.sFav}-${p.sRiv})</span></span>` : `<span style="color:#f87171; font-weight:800;">DERROTA <span style="color:#fff; font-size:10px;">(${p.sFav}-${p.sRiv})</span></span>`;
-                    tableHtml += `<tr style="border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'"><td style="padding:10px; color:#38bdf8; font-weight:800;">${p.fase}<br><span style="color:#64748b; font-size:9px;">Mesa ${p.mesa}</span></td><td style="padding:10px; color:#fff; font-weight:700;">vs ${p.rival}</td><td style="padding:10px; text-align:center;">${resText}</td><td style="padding:10px; text-align:center;">${rankBadge}</td></tr>`;
+                    let rankBadge = p.delta > 0 
+                        ? `<span style="color:#34d399; font-weight:900;">+${p.delta}</span>` 
+                        : (p.delta < 0 ? `<span style="color:#f87171; font-weight:900;">${p.delta}</span>` : `<span style="color:#94a3b8;">0</span>`);
+
+                    let resText = p.gano 
+                        ? `<span style="color:#34d399; font-weight:800;">VICTORIA <span style="color:#fff; font-size:10px;">(${p.sFav}-${p.sRiv})</span></span>` 
+                        : `<span style="color:#f87171; font-weight:800;">DERROTA <span style="color:#fff; font-size:10px;">(${p.sFav}-${p.sRiv})</span></span>`;
+
+                    tableHtml += `
+                        <tr style="border-bottom:1px solid rgba(255,255,255,0.05); transition:background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+                            <td style="padding:10px; color:#38bdf8; font-weight:800;">${p.fase}<br><span style="color:#64748b; font-size:9px;">Mesa ${p.mesa}</span></td>
+                            <td style="padding:10px; color:#fff; font-weight:700;">vs ${p.rival}</td>
+                            <td style="padding:10px; text-align:center;">${resText}</td>
+                            <td style="padding:10px; text-align:center;">${rankBadge}</td>
+                        </tr>
+                    `;
                 });
+                
                 tableHtml += `</tbody></table></div>`;
-                let difStr = deltaTotal >= 0 ? `<span style="color:#34d399;">+${deltaTotal} pts</span>` : `<span style="color:#f87171;">${deltaTotal} pts</span>`;
+
+                let difStr = deltaTotal >= 0 
+                    ? `<span style="color:#34d399;">+${deltaTotal} pts</span>` 
+                    : `<span style="color:#f87171;">${deltaTotal} pts</span>`;
+
                 document.getElementById('modal-jugador-ranking-header').innerText = `${rFinal} pts`;
                 document.getElementById('modal-jugador-variacion').innerHTML = `${rInicial} pts ➔ <strong>${rFinal} pts</strong> (${difStr})`;
+
                 modalList.innerHTML = tableHtml;
             }
+            
             document.getElementById('modal-jugador-admin').style.display = 'flex';
         }
+
         function cerrarModalJugadorAdmin() { document.getElementById('modal-jugador-admin').style.display = 'none'; }
 
         async function cargarDatosIniciales() { await inicializar(); }
