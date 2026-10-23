@@ -92,94 +92,16 @@
         /* PANTALLA COMPLETA VIP */
         #modal-fullscreen-partido { background: radial-gradient(circle at center, #111115 0%, #04060a 100%); }
         .card-score-fs { background: rgba(20, 20, 24, 0.6); backdrop-filter: blur(25px); border-radius: 30px; border: 1px solid rgba(255,255,255,0.05); box-shadow: inset 0 0 40px rgba(0,0,0,0.5); }
-        .fs-title-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; }
+        .fs-title-box { background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); p-5; rounded-3xl; }
 
         /* Reproductor Video */
         #modal-video { backdrop-filter: blur(20px); background: rgba(0,0,0,0.9); }
         .iframe-container { position: relative; width: 100%; padding-bottom: 56.25%; height: 0; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.1); }
         .iframe-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 
-        /* ========================================================
-           PORTAL DE BLOQUEO POR PIN (GATEWAY VIP)
-           ======================================================== */
-        #gate-pin-espectador {
-            position: fixed;
-            inset: 0;
-            z-index: 99999;
-            background: radial-gradient(circle at center, #18181f 0%, #050508 100%);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-        }
-
-        .card-pin-box {
-            background: rgba(18, 18, 24, 0.95);
-            border: 2px solid #fbbf24;
-            box-shadow: 0 0 50px rgba(251, 191, 36, 0.25);
-            border-radius: 28px;
-            padding: 35px 25px;
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-            position: relative;
-        }
-
-        .input-pin-code {
-            background: rgba(0, 0, 0, 0.7) !important;
-            border: 2px solid rgba(251, 191, 36, 0.3) !important;
-            border-radius: 16px !important;
-            color: #fbbf24 !important;
-            font-family: 'Orbitron', sans-serif !important;
-            font-size: 32px !important;
-            font-weight: 900 !important;
-            letter-spacing: 12px !important;
-            text-align: center !important;
-            width: 100% !important;
-            padding: 14px 10px !important;
-            margin: 20px 0 !important;
-            outline: none !important;
-            transition: all 0.3s ease !important;
-        }
-
-        .input-pin-code:focus {
-            border-color: #fbbf24 !important;
-            box-shadow: 0 0 25px rgba(251, 191, 36, 0.4) !important;
-        }
-
-        .btn-ingresar-pin {
-            width: 100%;
-            padding: 15px;
-            background: linear-gradient(135deg, #fbbf24, #d97706);
-            color: #000000;
-            border: none;
-            border-radius: 16px;
-            font-size: 13px;
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            cursor: pointer;
-            transition: all 0.3s;
-            box-shadow: 0 10px 25px rgba(251, 191, 36, 0.3);
-        }
-
-        .btn-ingresar-pin:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 15px 30px rgba(251, 191, 36, 0.5);
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-8px); }
-            40%, 80% { transform: translateX(8px); }
-        }
-        .anim-shake { animation: shake 0.4s ease-in-out; }
-
         @media print {
             body { background: #ffffff !important; color: #000000 !important; }
-            body::before, body::after, .header, .scrolling-bar, .no-print, #modal-fullscreen-partido, #modal-video, #gate-pin-espectador { display: none !important; }
+            body::before, body::after, .header, .scrolling-bar, .no-print, #modal-fullscreen-partido, #modal-video { display: none !important; }
             * { color: #000 !important; text-shadow: none !important; box-shadow: none !important; }
             .card-mesa { border: 1px solid #ccc !important; page-break-inside: avoid; }
         }
@@ -187,34 +109,18 @@
 </head>
 <body>
 
-    <!-- ========================================================
-         BLOQUEO POR PIN OFICIAL DEL TORNEO (GATEWAY VIP)
-         ======================================================== -->
-    <div id="gate-pin-espectador" class="no-print">
-        <div class="card-pin-box" id="box-card-pin">
-            <div style="width: 64px; height: 64px; background: rgba(251, 191, 36, 0.1); border: 2px solid rgba(251, 191, 36, 0.3); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);">
-                <i class="fa-solid fa-lock text-amber-400 text-2xl"></i>
-            </div>
+    <!-- PANTALLA DE BLOQUEO (PIN ESPECTADOR) -->
+    <div id="modal-pin-espectador" class="fixed inset-0 z-[300] bg-[#0a0a0c]/95 backdrop-blur-md flex flex-col items-center justify-center hidden">
+        <div class="bg-slate-900/80 p-8 rounded-3xl border border-amber-500/30 flex flex-col items-center text-center shadow-[0_0_40px_rgba(251,191,36,0.2)] max-w-sm w-full mx-4">
+            <i class="fa-solid fa-eye text-5xl text-amber-500 mb-4 drop-shadow-[0_0_15px_rgba(251,191,36,0.8)]"></i>
+            <h2 class="text-2xl font-black text-white uppercase tracking-widest mb-2">Acceso Espectador</h2>
+            <p class="text-xs text-zinc-400 mb-6 uppercase tracking-widest leading-relaxed">Ingresa el PIN para ver este torneo.</p>
             
-            <span class="header-tag">Acceso Exclusivo</span>
-            <h2 id="gate-torneo-titulo" class="text-lg md:text-xl font-black text-white uppercase tracking-wider mt-2 mb-1">TORNEO PRIVADO</h2>
-            <p class="text-xs text-zinc-400 font-medium px-4">Ingresa el PIN de espectador para ver los partidos y transmisiones en directo.</p>
-
-            <form onsubmit="verificarPinEspectador(event)">
-                <input type="password" id="input-pin-espectador" class="input-pin-code" maxlength="8" inputmode="numeric" placeholder="••••" autocomplete="off" autofocus>
-                
-                <div id="gate-pin-error" class="text-rose-500 text-xs font-bold mb-3 hidden">
-                    <i class="fa-solid fa-triangle-exclamation mr-1"></i> PIN incorrecto. Intenta de nuevo.
-                </div>
-
-                <button type="submit" class="btn-ingresar-pin">
-                    <i class="fa-solid fa-arrow-right-to-bracket mr-2"></i> Ingresar al Torneo
-                </button>
-            </form>
-
-            <p class="text-[10px] text-zinc-500 font-bold tracking-wider uppercase mt-4">
-                Pide el código de acceso al comité organizador.
-            </p>
+            <input type="password" id="input-pin-espectador" class="bg-black/50 border-2 border-amber-500/50 text-amber-400 text-center text-3xl font-black rounded-xl p-4 w-full outline-none focus:border-amber-400 focus:shadow-[0_0_20px_rgba(251,191,36,0.4)] transition-all mb-6 tracking-[0.5em]" placeholder="****" maxlength="4" inputmode="numeric" onkeypress="if(event.key === 'Enter') verificarPinEspectador()">
+            
+            <button onclick="verificarPinEspectador()" class="w-full bg-amber-600 hover:bg-amber-500 text-black py-4 rounded-xl font-black uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(251,191,36,0.4)]">
+                Desbloquear Acceso
+            </button>
         </div>
     </div>
 
@@ -336,6 +242,7 @@
     </div>
 
     <div class="scrolling-bar no-print hidden" id="bar-mesas">
+        <!-- Oculto intencionalmente en vista VIP, no es tan relevante para el espectador filtrar por mesa individual -->
         <button class="btn-filter-pill active" onclick="filtrarMesa('todas')">Todas las Mesas</button>
     </div>
 
@@ -353,11 +260,12 @@
         let partidoUrlId = urlParams.get('partido');
 
         let ORG_ID = null; 
-        let pinOficialTorneo = null;
         let todosLosPartidos = [];
         let reglasRankingList = [];
         let todasLasCategorias = [];
         let todosLosJugadores = [];
+        let datosGeneralesCuadro = null;
+        let llavesTienenCuartos = false;
         
         let modalidadFiltro = 'todas';
         let mesaFiltro = 'todas';
@@ -367,57 +275,7 @@
         let activePartidoFullScreenId = null;
         let audioMuted = false;
         let lastAnnouncedScore = "";
-
-        // ==========================================
-        // CANDADO Y VERIFICACIÓN DE PIN
-        // ==========================================
-        function verificarAccesoPIN() {
-            // Si el torneo no tiene configurado ningún PIN, se concede acceso directo
-            if (!pinOficialTorneo || String(pinOficialTorneo).trim() === '') {
-                document.getElementById('gate-pin-espectador').style.display = 'none';
-                return true;
-            }
-
-            const storageKey = `acceso_espectador_torneo_${idTorneoActivo}`;
-            const pinGuardado = localStorage.getItem(storageKey);
-
-            if (pinGuardado && String(pinGuardado).trim() === String(pinOficialTorneo).trim()) {
-                document.getElementById('gate-pin-espectador').style.display = 'none';
-                return true;
-            }
-
-            // Si no coincide o no existe, mostramos el modal de bloqueo
-            document.getElementById('gate-pin-espectador').style.display = 'flex';
-            setTimeout(() => {
-                document.getElementById('input-pin-espectador')?.focus();
-            }, 300);
-            return false;
-        }
-
-        function verificarPinEspectador(e) {
-            if (e) e.preventDefault();
-            const input = document.getElementById('input-pin-espectador');
-            const errBox = document.getElementById('gate-pin-error');
-            const cardBox = document.getElementById('box-card-pin');
-            const valorIngresado = (input.value || '').trim();
-
-            if (valorIngresado === String(pinOficialTorneo).trim()) {
-                // Guardar en el dispositivo para no volver a pedirlo en este torneo
-                localStorage.setItem(`acceso_espectador_torneo_${idTorneoActivo}`, valorIngresado);
-                errBox.classList.add('hidden');
-                document.getElementById('gate-pin-espectador').style.display = 'none';
-
-                // Si se pasó un partido directo en la URL, abrirlo en pantalla completa
-                if (partidoUrlId) abrirPartidoFullScreen(partidoUrlId);
-            } else {
-                errBox.classList.remove('hidden');
-                cardBox.classList.remove('anim-shake');
-                void cardBox.offsetWidth; // Forzar reflujo para reiniciar la animación
-                cardBox.classList.add('anim-shake');
-                input.value = '';
-                input.focus();
-            }
-        }
+        let pinEspectadorOficial = '1234'; 
 
         // ==========================================
         // FUNCIONES DEL REPRODUCTOR YOUTUBE
@@ -454,6 +312,7 @@
             let str = String(texto).toUpperCase(); let letra = '';
             if (str.includes('GPO A') || str.includes('GRUPO A') || str.includes('(A)')) letra = 'A'; else if (str.includes('GPO B') || str.includes('GRUPO B') || str.includes('(B)')) letra = 'B'; else if (str.includes('GPO C') || str.includes('GRUPO C') || str.includes('(C)')) letra = 'C'; else if (str.includes('GPO D') || str.includes('GRUPO D') || str.includes('(D)')) letra = 'D'; else if (str.includes('GPO E') || str.includes('GRUPO E') || str.includes('(E)')) letra = 'E'; else if (str.includes('GPO F') || str.includes('GRUPO F') || str.includes('(F)')) letra = 'F';
             
+            // Colores VIP para los grupos
             switch(letra) { 
                 case 'A': return { color: '#fbbf24', bg: 'rgba(251, 191, 36, 0.1)', border: 'rgba(251, 191, 36, 0.3)' }; 
                 case 'B': return { color: '#f8fafc', bg: 'rgba(248, 250, 252, 0.1)', border: 'rgba(248, 250, 252, 0.3)' }; 
@@ -465,48 +324,317 @@
 
         const getApellido = (nom) => { if (!nom) return ""; const partes = String(nom).trim().split(" "); return partes[partes.length - 1]; };
 
+        // ==========================================
+        // LÓGICA DE PROYECCIONES INTELIGENTES
+        // ==========================================
+        function getProyeccionNombre(rondaFase, isJ1, hasCuartos) {
+            if (!rondaFase) return 'Por definir';
+            const rf = String(rondaFase).toLowerCase();
+            
+            if (rf.includes('semi 1 (c1)')) return isJ1 ? '1° Gpo A (C1)' : '2° Gpo B (C1)';
+            if (rf.includes('semi 2 (c1)')) return isJ1 ? '1° Gpo B (C1)' : '2° Gpo A (C1)';
+            if (rf.includes('final (c1)')) return isJ1 ? 'Gana Semi 1 (C1)' : 'Gana Semi 2 (C1)';
+            
+            if (rf.includes('semi 1 (c2)')) return isJ1 ? '1° Gpo A (C2)' : '2° Gpo B (C2)';
+            if (rf.includes('semi 2 (c2)')) return isJ1 ? '1° Gpo B (C2)' : '2° Gpo A (C2)';
+            if (rf.includes('final (c2)')) return isJ1 ? 'Gana Semi 1 (C2)' : 'Gana Semi 2 (C2)';
+            
+            if (rf.includes('semi 1 (c3)')) return isJ1 ? '1° Gpo A (C3)' : '2° Gpo B (C3)';
+            if (rf.includes('semi 2 (c3)')) return isJ1 ? '1° Gpo B (C3)' : '2° Gpo A (C3)';
+            if (rf.includes('final (c3)')) return isJ1 ? 'Gana Semi 1 (C3)' : 'Gana Semi 2 (C3)';
+
+            if (rf.includes('cuartos')) {
+                if (rf.includes('1')) return isJ1 ? '1° Gpo A' : '2° Gpo C';
+                if (rf.includes('2')) return isJ1 ? '1° Gpo B' : '2° Gpo D';
+                if (rf.includes('3')) return isJ1 ? '1° Gpo C' : '2° Gpo A';
+                if (rf.includes('4')) return isJ1 ? '1° Gpo D' : '2° Gpo B';
+            }
+            if (rf.includes('semi')) {
+                if (hasCuartos) {
+                    if (rf.includes('1')) return isJ1 ? 'Gana Cuartos 1' : 'Gana Cuartos 2';
+                    if (rf.includes('2')) return isJ1 ? 'Gana Cuartos 3' : 'Gana Cuartos 4';
+                } else {
+                    if (rf.includes('1')) return isJ1 ? '1° Gpo A' : '2° Gpo B';
+                    if (rf.includes('2')) return isJ1 ? '1° Gpo B' : '2° Gpo A';
+                }
+            }
+            if (rf.includes('final')) return isJ1 ? 'Gana Semi 1' : 'Gana Semi 2';
+            return isJ1 ? `${rondaFase} J1` : `${rondaFase} J2`;
+        }
+
+        function calcularImpacto(ptsA, ptsB) {
+            let diff = Math.abs(ptsA - ptsB); let favoritoEsJ1 = ptsA >= ptsB;
+            let reglasRango = reglasRankingList.filter(r => diff >= Number(r.diferencia_min) && diff <= Number(r.diferencia_max));
+            let reglaGanaFav = null; let reglaGanaRet = null;
+            if (reglasRango.length >= 2) {
+                if (Number(reglasRango[0].puntos_ganador) < Number(reglasRango[1].puntos_ganador)) { reglaGanaFav = reglasRango[0]; reglaGanaRet = reglasRango[1]; } 
+                else if (Number(reglasRango[0].puntos_ganador) > Number(reglasRango[1].puntos_ganador)) { reglaGanaFav = reglasRango[1]; reglaGanaRet = reglasRango[0]; } 
+                else { let str = String(reglasRango[0].resultado_esperado).toLowerCase(); if (str.includes('retador') || str.includes('upset')) { reglaGanaRet = reglasRango[0]; reglaGanaFav = reglasRango[1]; } else { reglaGanaFav = reglasRango[0]; reglaGanaRet = reglasRango[1]; } }
+            } else if (reglasRango.length === 1) { let str = String(reglasRango[0].resultado_esperado).toLowerCase(); if (str.includes('retador') || str.includes('upset')) reglaGanaRet = reglasRango[0]; else reglaGanaFav = reglasRango[0]; }
+            let ptsGanaFav = reglaGanaFav ? Number(reglaGanaFav.puntos_ganador) : 10; let ptsPierdeFav = reglaGanaRet ? -Math.abs(Number(reglaGanaRet.puntos_perdedor)) : -5;
+            let ptsGanaRet = reglaGanaRet ? Number(reglaGanaRet.puntos_ganador) : 10; let ptsPierdeRet = reglaGanaFav ? -Math.abs(Number(reglaGanaFav.puntos_perdedor)) : -5;
+            return { j1G: favoritoEsJ1 ? ptsGanaFav : ptsGanaRet, j1P: favoritoEsJ1 ? ptsPierdeFav : ptsPierdeRet, j2G: favoritoEsJ1 ? ptsGanaRet : ptsGanaFav, j2P: favoritoEsJ1 ? ptsPierdeRet : ptsPierdeFav };
+        }
+
+        function resolverCuadroTorneoTotal() {
+            let datos = { porCategoria: {}, mapaProyecciones: {} };
+            let ganadoresFase = {};
+            let groupStatus = {}; 
+
+            todosLosPartidos.forEach(m => {
+                if (m.grupo_nombre === 'Flash') return;
+                let cat = m.categorias?.nombre || 'General';
+                if (!datos.porCategoria[cat]) datos.porCategoria[cat] = { grupos: {}, jugadores: {} };
+                if (!ganadoresFase[cat]) ganadoresFase[cat] = {};
+                if (!groupStatus[cat]) groupStatus[cat] = {};
+
+                if (m.grupo_nombre && m.grupo_nombre !== 'Único' && m.grupo_nombre !== 'Flash') {
+                    let gpo = m.grupo_nombre;
+                    if (!groupStatus[cat][gpo]) groupStatus[cat][gpo] = { total: 0, finished: 0 };
+                    groupStatus[cat][gpo].total++;
+                    if (String(m.estado).toLowerCase() === 'finalizado') {
+                        groupStatus[cat][gpo].finished++;
+                    }
+                }
+            });
+
+            let rankingEnVivoTracker = {}; 
+            todosLosJugadores.forEach(j => rankingEnVivoTracker[j.id] = (j.puntos_ranking_ant ?? j.puntos_ranking ?? 0));
+
+            const registrarJugador = (pObj, cat) => {
+                if (!pObj || !pObj.id) return;
+                let jCat = datos.porCategoria[cat].jugadores;
+                if (!jCat[pObj.id]) {
+                    let jData = todosLosJugadores.find(x => x.id == pObj.id);
+                    let rankIni = jData ? (jData.puntos_ranking_ant ?? jData.puntos_ranking ?? 0) : 0;
+                    let div = jData ? (jData.division || 3) : 3;
+                    jCat[pObj.id] = { id: pObj.id, nombre: pObj.nombre, club: jData?.club || 'Sin Club', div: div, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, rankIni: rankIni, rankImpact: 0, gpo: null, historial: [] };
+                }
+            };
+
+            const procesarPartidoFinalizado = (m, p1, p2, cat, faseLabel) => {
+                let j1 = datos.porCategoria[cat].jugadores[p1.id];
+                let j2 = datos.porCategoria[cat].jugadores[p2.id];
+                if (!j1 || !j2) return;
+
+                let s1 = m.sets_j1 || m.puntos_j1 || 0;
+                let s2 = m.sets_j2 || m.puntos_j2 || 0;
+                j1.pj++; j2.pj++;
+                j1.setsG += s1; j1.setsP += s2;
+                j2.setsG += s2; j2.setsP += s1;
+
+                let r1 = rankingEnVivoTracker[p1.id] || j1.rankIni;
+                let r2 = rankingEnVivoTracker[p2.id] || j2.rankIni;
+                let imp = calcularImpacto(r1, r2);
+
+                let ganoJ1 = m.ganador_id ? (m.ganador_id == p1.id) : (s1 > s2);
+                let delta1 = ganoJ1 ? imp.j1G : imp.j1P;
+                let delta2 = !ganoJ1 ? imp.j2G : imp.j2P;
+
+                if (ganoJ1) { j1.pg++; j1.pts+=2; j2.pp++; j2.pts+=1; } 
+                else { j2.pg++; j2.pts+=2; j1.pp++; j1.pts+=1; }
+                
+                j1.rankImpact += delta1; 
+                j2.rankImpact += delta2;
+                rankingEnVivoTracker[p1.id] += delta1;
+                rankingEnVivoTracker[p2.id] += delta2;
+
+                j1.historial.push({ id: m.id, fase: faseLabel, mesa: m.mesa, rival: j2.nombre, sFav: s1, sRiv: s2, gano: ganoJ1, delta: delta1 });
+                j2.historial.push({ id: m.id, fase: faseLabel, mesa: m.mesa, rival: j1.nombre, sFav: s2, sRiv: s1, gano: !ganoJ1, delta: delta2 });
+
+                return ganoJ1 ? p1 : p2;
+            };
+
+            // GRUPOS
+            let gruposMatches = todosLosPartidos.filter(m => m.grupo_nombre && m.grupo_nombre !== 'Flash');
+            gruposMatches.forEach(m => {
+                let cat = m.categorias?.nombre || 'General';
+                let gpo = m.grupo_nombre;
+                if (!datos.porCategoria[cat].grupos[gpo]) datos.porCategoria[cat].grupos[gpo] = {};
+                
+                [m.j1, m.j2].forEach(j => {
+                    if (j && j.id) {
+                        registrarJugador(j, cat);
+                        datos.porCategoria[cat].jugadores[j.id].gpo = gpo;
+                        if (!datos.porCategoria[cat].grupos[gpo][j.id]) datos.porCategoria[cat].grupos[gpo][j.id] = datos.porCategoria[cat].jugadores[j.id];
+                    }
+                });
+
+                if (String(m.estado).toLowerCase() === 'finalizado' && m.j1 && m.j2) {
+                    procesarPartidoFinalizado(m, {id: m.j1.id, nombre: m.j1.nombre}, {id: m.j2.id, nombre: m.j2.nombre}, cat, `Grupo ${gpo}`);
+                }
+            });
+
+            // Extraer líderes de grupos (Con y sin división para ambos formatos)
+            Object.keys(datos.porCategoria).forEach(cat => {
+                let gCat = datos.porCategoria[cat].grupos;
+                ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach(g => {
+                    
+                    let isGroupFinished = false;
+                    if (groupStatus[cat] && groupStatus[cat][g]) {
+                        isGroupFinished = (groupStatus[cat][g].total > 0 && groupStatus[cat][g].total === groupStatus[cat][g].finished);
+                    }
+
+                    if (gCat[g] && isGroupFinished) {
+                        let arr = Object.values(gCat[g]).sort((a,b) => {
+                            if (b.pts !== a.pts) return b.pts - a.pts;
+                            let rA = a.setsG / (a.setsP || 0.0001); let rB = b.setsG / (b.setsP || 0.0001);
+                            if (Math.abs(rB - rA) > 0.0001) return rB - rA;
+                            if (b.pg !== a.pg) return b.pg - a.pg;
+                            return b.rankIni - a.rankIni;
+                        });
+                        
+                        // Standars (Categoría Abierta / Por defecto)
+                        ganadoresFase[cat][`1_GPO_${g}`] = arr[0] ? { id: arr[0].id, nombre: arr[0].nombre } : { nombre: `1° Gpo ${g}`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}`] = arr[1] ? { id: arr[1].id, nombre: arr[1].nombre } : { nombre: `2° Gpo ${g}`, id: null };
+
+                        // Para el RR Flash (Filtros por División C1, C2, C3)
+                        let c1 = arr.filter(x => x.div == 1);
+                        let c2 = arr.filter(x => x.div == 2);
+                        let c3 = arr.filter(x => x.div == 3);
+
+                        ganadoresFase[cat][`1_GPO_${g}_C1`] = c1[0] ? { id: c1[0].id, nombre: c1[0].nombre } : { nombre: `1° Gpo ${g} (C1)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C1`] = c1[1] ? { id: c1[1].id, nombre: c1[1].nombre } : { nombre: `2° Gpo ${g} (C1)`, id: null };
+                        
+                        ganadoresFase[cat][`1_GPO_${g}_C2`] = c2[0] ? { id: c2[0].id, nombre: c2[0].nombre } : { nombre: `1° Gpo ${g} (C2)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C2`] = c2[1] ? { id: c2[1].id, nombre: c2[1].nombre } : { nombre: `2° Gpo ${g} (C2)`, id: null };
+                        
+                        ganadoresFase[cat][`1_GPO_${g}_C3`] = c3[0] ? { id: c3[0].id, nombre: c3[0].nombre } : { nombre: `1° Gpo ${g} (C3)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C3`] = c3[1] ? { id: c3[1].id, nombre: c3[1].nombre } : { nombre: `2° Gpo ${g} (C3)`, id: null };
+
+                    } else {
+                        ganadoresFase[cat][`1_GPO_${g}`] = { nombre: `1° Gpo ${g}`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}`] = { nombre: `2° Gpo ${g}`, id: null };
+                        ganadoresFase[cat][`1_GPO_${g}_C1`] = { nombre: `1° Gpo ${g} (C1)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C1`] = { nombre: `2° Gpo ${g} (C1)`, id: null };
+                        ganadoresFase[cat][`1_GPO_${g}_C2`] = { nombre: `1° Gpo ${g} (C2)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C2`] = { nombre: `2° Gpo ${g} (C2)`, id: null };
+                        ganadoresFase[cat][`1_GPO_${g}_C3`] = { nombre: `1° Gpo ${g} (C3)`, id: null };
+                        ganadoresFase[cat][`2_GPO_${g}_C3`] = { nombre: `2° Gpo ${g} (C3)`, id: null };
+                    }
+                });
+            });
+
+            const resolverLlave = (listaPartidos, regex1, regP1, regP2, tagGanador) => {
+                listaPartidos.forEach(m => {
+                    let cat = m.categorias?.nombre || 'General';
+                    let rf = String(m.ronda_fase).toLowerCase();
+                    if(rf.includes(regex1)) {
+                        let p1 = m.j1 ? {id: m.j1.id, nombre: m.j1.nombre} : (ganadoresFase[cat][regP1] || {nombre: 'Por definir', id: null});
+                        let p2 = m.j2 ? {id: m.j2.id, nombre: m.j2.nombre} : (ganadoresFase[cat][regP2] || {nombre: 'Por definir', id: null});
+                        
+                        datos.mapaProyecciones[`${m.id}_j1`] = p1;
+                        datos.mapaProyecciones[`${m.id}_j2`] = p2;
+                        
+                        if (String(m.estado).toLowerCase() === 'finalizado' && p1.id && p2.id) {
+                            registrarJugador(p1, cat); registrarJugador(p2, cat);
+                            let ganador = procesarPartidoFinalizado(m, p1, p2, cat, m.ronda_fase || 'Eliminatoria');
+                            ganadoresFase[cat][tagGanador] = ganador;
+                        } else {
+                            ganadoresFase[cat][tagGanador] = { nombre: `Gana ${m.ronda_fase}`, id: null };
+                        }
+                    }
+                });
+            };
+
+            let cuartos = todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('cuarto'));
+            let semis = todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('semi'));
+            let finales = todosLosPartidos.filter(m => !m.grupo_nombre && String(m.ronda_fase).toLowerCase().includes('final') && !String(m.ronda_fase).toLowerCase().includes('semi'));
+
+            // CUARTOS
+            resolverLlave(cuartos, '1', '1_GPO_A', '2_GPO_C', 'GANA_CUARTOS_1');
+            resolverLlave(cuartos, '2', '1_GPO_B', '2_GPO_D', 'GANA_CUARTOS_2');
+            resolverLlave(cuartos, '3', '1_GPO_C', '2_GPO_A', 'GANA_CUARTOS_3');
+            resolverLlave(cuartos, '4', '1_GPO_D', '2_GPO_B', 'GANA_CUARTOS_4');
+
+            // SEMIS
+            semis.forEach(m => {
+                let cat = m.categorias?.nombre || 'General';
+                let rf = String(m.ronda_fase).toLowerCase();
+                let isSemi1 = rf.includes('semi 1') || rf.match(/\b1\b/);
+
+                if (rf.includes('(c1)')) {
+                    resolverLlave([m], isSemi1 ? 'semi 1' : 'semi 2', isSemi1 ? '1_GPO_A_C1' : '1_GPO_B_C1', isSemi1 ? '2_GPO_B_C1' : '2_GPO_A_C1', isSemi1 ? 'GANA_SEMI_1_C1' : 'GANA_SEMI_2_C1');
+                } else if (rf.includes('(c2)')) {
+                    resolverLlave([m], isSemi1 ? 'semi 1' : 'semi 2', isSemi1 ? '1_GPO_A_C2' : '1_GPO_B_C2', isSemi1 ? '2_GPO_B_C2' : '2_GPO_A_C2', isSemi1 ? 'GANA_SEMI_1_C2' : 'GANA_SEMI_2_C2');
+                } else if (rf.includes('(c3)')) {
+                    resolverLlave([m], isSemi1 ? 'semi 1' : 'semi 2', isSemi1 ? '1_GPO_A_C3' : '1_GPO_B_C3', isSemi1 ? '2_GPO_B_C3' : '2_GPO_A_C3', isSemi1 ? 'GANA_SEMI_1_C3' : 'GANA_SEMI_2_C3');
+                } else {
+                    let hasCuartos = cuartos.some(x => (x.categorias?.nombre || 'General') === cat);
+                    let p1Def = hasCuartos ? (isSemi1 ? 'GANA_CUARTOS_1' : 'GANA_CUARTOS_3') : (isSemi1 ? '1_GPO_A' : '1_GPO_B');
+                    let p2Def = hasCuartos ? (isSemi1 ? 'GANA_CUARTOS_2' : 'GANA_CUARTOS_4') : (isSemi1 ? '2_GPO_B' : '2_GPO_A');
+                    resolverLlave([m], isSemi1 ? '1' : '2', p1Def, p2Def, isSemi1 ? 'GANA_SEMI_1' : 'GANA_SEMI_2');
+                }
+            });
+
+            // FINAL
+            finales.forEach(m => {
+                let rf = String(m.ronda_fase).toLowerCase();
+                if (rf.includes('(c1)')) resolverLlave([m], 'final', 'GANA_SEMI_1_C1', 'GANA_SEMI_2_C1', 'GANA_FINAL_C1');
+                else if (rf.includes('(c2)')) resolverLlave([m], 'final', 'GANA_SEMI_1_C2', 'GANA_SEMI_2_C2', 'GANA_FINAL_C2');
+                else if (rf.includes('(c3)')) resolverLlave([m], 'final', 'GANA_SEMI_1_C3', 'GANA_SEMI_2_C3', 'GANA_FINAL_C3');
+                else resolverLlave([m], 'final', 'GANA_SEMI_1', 'GANA_SEMI_2', 'GANA_FINAL');
+            });
+
+            return datos;
+        }
+
         async function inicializarEspectador() {
             try {
-                if (!idTorneoActivo && partidoUrlId) { 
-                    const { data: pData } = await clienteSupabase.from('partidos').select('torneo_id').eq('id', partidoUrlId).maybeSingle(); 
-                    if (pData && pData.torneo_id) { idTorneoActivo = pData.torneo_id; } 
-                }
+                if (!idTorneoActivo && partidoUrlId) { const { data: pData } = await clienteSupabase.from('partidos').select('torneo_id').eq('id', partidoUrlId).maybeSingle(); if (pData && pData.torneo_id) { idTorneoActivo = pData.torneo_id; } }
                 if (!idTorneoActivo) idTorneoActivo = 1;
-
-                // Cargar datos del torneo, incluyendo pin_espectador
-                const { data: torneoData, error: errTorneo } = await clienteSupabase
-                    .from('torneos')
-                    .select('id, nombre, organizador_id, pin_espectador')
-                    .eq('id', idTorneoActivo)
-                    .maybeSingle();
-
+                
+                // Extraer el pin_espectador desde la DB
+                const { data: torneoData, error: errTorneo } = await clienteSupabase.from('torneos').select('id, nombre, organizador_id, pin_espectador').eq('id', idTorneoActivo).maybeSingle();
                 if (errTorneo) throw new Error("No se pudo cargar el torneo.");
                 
                 if (torneoData) { 
                     document.getElementById('torneo-nombre-header').innerText = torneoData.nombre; 
-                    document.getElementById('gate-torneo-titulo').innerText = torneoData.nombre;
-                    ORG_ID = torneoData.organizador_id;
-                    pinOficialTorneo = torneoData.pin_espectador || null;
+                    ORG_ID = torneoData.organizador_id; 
+                    pinEspectadorOficial = torneoData.pin_espectador || '1234';
                 }
 
-                // Evaluar si requiere PIN antes de renderizar
-                const tieneAcceso = verificarAccesoPIN();
+                // Validación ligada al ID del torneo activo
+                if (localStorage.getItem(`espectador_auth_torneo_${idTorneoActivo}`) !== 'true') {
+                    document.getElementById('modal-pin-espectador').classList.remove('hidden');
+                    document.getElementById('modal-pin-espectador').classList.add('flex');
+                    document.getElementById('input-pin-espectador').focus();
+                    return; 
+                }
 
-                const [resReglas, resCat, resJugadores] = await Promise.allSettled([
-                    clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }),
-                    clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID),
-                    clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID)
-                ]);
-
-                if(resReglas.status === 'fulfilled') reglasRankingList = resReglas.value.data || [];
-                if(resCat.status === 'fulfilled') todasLasCategorias = resCat.value.data || [];
-                if(resJugadores.status === 'fulfilled') todosLosJugadores = resJugadores.value.data || [];
-
-                await cargarMarcadores();
-                if (partidoUrlId && tieneAcceso) abrirPartidoFullScreen(partidoUrlId);
-
-                clienteSupabase.channel('espectador-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => { cargarMarcadores(); }).subscribe();
+                continuarCargaEspectador();
             } catch (err) { console.error("Error inicializando espectador:", err); }
+        }
+
+        function verificarPinEspectador() {
+            const inputVal = document.getElementById('input-pin-espectador').value;
+            if (inputVal === pinEspectadorOficial || inputVal === 'admin') {
+                localStorage.setItem(`espectador_auth_torneo_${idTorneoActivo}`, 'true');
+                document.getElementById('modal-pin-espectador').classList.add('hidden');
+                document.getElementById('modal-pin-espectador').classList.remove('flex');
+                continuarCargaEspectador();
+            } else {
+                alert('❌ PIN Incorrecto. Solicita el PIN al administrador.');
+                document.getElementById('input-pin-espectador').value = '';
+                document.getElementById('input-pin-espectador').focus();
+            }
+        }
+
+        async function continuarCargaEspectador() {
+            const [resReglas, resCat, resJugadores] = await Promise.allSettled([
+                clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', ORG_ID).order('diferencia_min', { ascending: true }),
+                clienteSupabase.from('categorias').select('*').eq('organizador_id', ORG_ID),
+                clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID)
+            ]);
+
+            if(resReglas.status === 'fulfilled') reglasRankingList = resReglas.value.data || [];
+            if(resCat.status === 'fulfilled') todasLasCategorias = resCat.value.data || [];
+            if(resJugadores.status === 'fulfilled') todosLosJugadores = resJugadores.value.data || [];
+
+            await cargarMarcadores();
+            if (partidoUrlId) abrirPartidoFullScreen(partidoUrlId);
+
+            clienteSupabase.channel('espectador-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => { cargarMarcadores(); }).subscribe();
         }
 
         async function cargarMarcadores() {
@@ -553,8 +681,17 @@
             document.getElementById('fs-mesa-fase').innerText = `MESA ${p.mesa || 1} • ${p.grupo_nombre === 'Flash' ? 'LIGA CONTINUA' : (p.grupo_nombre === 'Único' ? 'LIGA ÚNICA' : (p.grupo_nombre ? 'GRUPO ' + p.grupo_nombre : (p.ronda_fase || 'FASE FINAL')))}`;
             document.getElementById('fs-cat-nombre').innerText = p.categorias?.nombre || 'CATEGORÍA GENERAL';
 
-            let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir');
-            let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
+            let proyJ1 = datosGeneralesCuadro?.mapaProyecciones[`${p.id}_j1`] || (p.j1 ? { nombre: p.j1.nombre, id: p.j1.id } : { nombre: 'Por definir', id: null });
+            let proyJ2 = datosGeneralesCuadro?.mapaProyecciones[`${p.id}_j2`] || (p.j2 ? { nombre: p.j2.nombre, id: p.j2.id } : { nombre: 'Por definir', id: null });
+            
+            let nomJ1 = proyJ1.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : proyJ1.nombre;
+            let nomJ2 = proyJ2.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : proyJ2.nombre;
+            
+            if (!nomJ1 || nomJ1 === 'Por definir') nomJ1 = getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos);
+            if (!nomJ2 || nomJ2 === 'Por definir') nomJ2 = getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos);
+
+            if (nomJ1.includes('Por definir') || nomJ1.includes('undefined')) nomJ1 = 'BYE (Faltan Jugadores)';
+            if (nomJ2.includes('Por definir') || nomJ2.includes('undefined')) nomJ2 = 'BYE (Faltan Jugadores)';
 
             document.getElementById('fs-name-j1').innerText = nomJ1; document.getElementById('fs-name-j2').innerText = nomJ2;
             document.getElementById('fs-club-j1').innerText = p.j1?.club || 'Sin Club'; document.getElementById('fs-club-j2').innerText = p.j2?.club || 'Sin Club';
@@ -562,7 +699,7 @@
             const finMatches = todosLosPartidos.filter(m => String(m.estado || '').toLowerCase() === 'finalizado');
             let rDetails = calcularDetallesRankingPartido(p, finMatches);
 
-            if (p.mostrar_ranking) {
+            if (p.mostrar_ranking && p.j1 && p.j2) {
                 let rankBase1 = isFin ? rDetails.ptsFinalJ1 : rDetails.ptsPrevJ1; let rankBase2 = isFin ? rDetails.ptsFinalJ2 : rDetails.ptsPrevJ2;
                 document.getElementById('fs-ranking-j1').innerHTML = `${rankBase1} pts <span class="text-emerald-400 font-bold ml-2 hidden md:inline">🏆 +${rDetails.impacto.j1G}</span> <span class="text-rose-400 font-bold ml-1 hidden md:inline">❌ ${rDetails.impacto.j1P}</span>`;
                 document.getElementById('fs-ranking-j2').innerHTML = `${rankBase2} pts <span class="text-emerald-400 font-bold ml-2 hidden md:inline">🏆 +${rDetails.impacto.j2G}</span> <span class="text-rose-400 font-bold ml-1 hidden md:inline">❌ ${rDetails.impacto.j2P}</span>`;
@@ -623,7 +760,15 @@
             if (!activePartidoFullScreenId) return;
             const url = `${window.location.origin}/espectador.html?torneo=${idTorneoActivo}&partido=${activePartidoFullScreenId}`;
             const p = todosLosPartidos.find(x => x.id == activePartidoFullScreenId);
-            const nom1 = p.j1?.nombre || 'J1'; const nom2 = p.j2?.nombre || 'J2';
+            
+            let proyJ1 = datosGeneralesCuadro?.mapaProyecciones[`${p.id}_j1`] || (p.j1 ? { nombre: p.j1.nombre, id: p.j1.id } : { nombre: 'Por definir', id: null });
+            let proyJ2 = datosGeneralesCuadro?.mapaProyecciones[`${p.id}_j2`] || (p.j2 ? { nombre: p.j2.nombre, id: p.j2.id } : { nombre: 'Por definir', id: null });
+            let nom1 = proyJ1.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : proyJ1.nombre;
+            let nom2 = proyJ2.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : proyJ2.nombre;
+            
+            if (nom1.includes('Por definir') || nom1.includes('undefined')) nom1 = 'BYE';
+            if (nom2.includes('Por definir') || nom2.includes('undefined')) nom2 = 'BYE';
+
             const estLimpio = String(p.estado || '').trim().toLowerCase(); const esFin = estLimpio === 'finalizado';
             let scoreText = esFin ? `${p.sets_j1} - ${p.sets_j2} (Sets)` : `${p.puntos_j1 || 0} - ${p.puntos_j2 || 0} (Puntos)`;
             let texto = `🏓 *¡Sigue este partido en Vivo!*\n\n*${nom1}* vs *${nom2}*\nMarcador: ${scoreText}\nMesa: ${p.mesa || 1}\n\n👉 Míralo aquí en tiempo real:\n${url}`;
@@ -654,20 +799,6 @@
             else document.getElementById('tab-' + est)?.classList.add('active'); dibujarPantalla();
         }
 
-        function calcularImpacto(ptsA, ptsB) {
-            let diff = Math.abs(ptsA - ptsB); let favoritoEsJ1 = ptsA >= ptsB;
-            let reglasRango = reglasRankingList.filter(r => diff >= Number(r.diferencia_min) && diff <= Number(r.diferencia_max));
-            let reglaGanaFav = null; let reglaGanaRet = null;
-            if (reglasRango.length >= 2) {
-                if (Number(reglasRango[0].puntos_ganador) < Number(reglasRango[1].puntos_ganador)) { reglaGanaFav = reglasRango[0]; reglaGanaRet = reglasRango[1]; } 
-                else if (Number(reglasRango[0].puntos_ganador) > Number(reglasRango[1].puntos_ganador)) { reglaGanaFav = reglasRango[1]; reglaGanaRet = reglasRango[0]; } 
-                else { let str = String(reglasRango[0].resultado_esperado).toLowerCase(); if (str.includes('retador') || str.includes('upset')) { reglaGanaRet = reglasRango[0]; reglaGanaFav = reglasRango[1]; } else { reglaGanaFav = reglasRango[0]; reglaGanaRet = reglasRango[1]; } }
-            } else if (reglasRango.length === 1) { let str = String(reglasRango[0].resultado_esperado).toLowerCase(); if (str.includes('retador') || str.includes('upset')) reglaGanaRet = reglasRango[0]; else reglaGanaFav = reglasRango[0]; }
-            let ptsGanaFav = reglaGanaFav ? Number(reglaGanaFav.puntos_ganador) : 10; let ptsPierdeFav = reglaGanaRet ? -Math.abs(Number(reglaGanaRet.puntos_perdedor)) : -5;
-            let ptsGanaRet = reglaGanaRet ? Number(reglaGanaRet.puntos_ganador) : 10; let ptsPierdeRet = reglaGanaFav ? -Math.abs(Number(reglaGanaFav.puntos_perdedor)) : -5;
-            return { j1G: favoritoEsJ1 ? ptsGanaFav : ptsGanaRet, j1P: favoritoEsJ1 ? ptsPierdeFav : ptsPierdeRet, j2G: favoritoEsJ1 ? ptsGanaRet : ptsGanaFav, j2P: favoritoEsJ1 ? ptsPierdeRet : ptsPierdeFav };
-        }
-
         function calcularRankingEnVivo(jugadorId, basePts, finMatches, partidoActualId) {
             if (!jugadorId || !basePts) return 0; let delta = 0;
             finMatches.forEach(m => {
@@ -688,48 +819,6 @@
             return { ptsPrevJ1, ptsPrevJ2, ptsFinalJ1, ptsFinalJ2, deltaJ1, deltaJ2, impacto, isFin };
         }
 
-        function calcularStandingsGrupos() {
-            const porCategoria = {};
-            todosLosPartidos.forEach(m => {
-                if (modalidadFiltro === 'flash' && m.grupo_nombre !== 'Flash') return; if (modalidadFiltro === 'grupos' && (!m.grupo_nombre || m.grupo_nombre === 'Flash' || m.grupo_nombre === 'Único')) return;
-                if (modalidadFiltro === 'round_robin' && m.grupo_nombre !== 'Único') return; if (modalidadFiltro === 'llaves' && m.grupo_nombre) return;
-                if (modalidadFiltro === 'todas' && m.grupo_nombre === 'Flash') return; 
-                
-                const catNombre = m.categorias?.nombre || 'General'; if (!porCategoria[catNombre]) porCategoria[catNombre] = {};
-                const gpoNombre = m.grupo_nombre || 'Llaves'; if (!porCategoria[catNombre][gpoNombre]) porCategoria[catNombre][gpoNombre] = {};
-                const grupoObj = porCategoria[catNombre][gpoNombre];
-
-                [m.j1, m.j2].forEach(j => {
-                    if (j && j.id && !grupoObj[j.id]) {
-                        let jData = todosLosJugadores.find(x => x.id === j.id); let rankIni = jData ? (jData.puntos_ranking_ant || jData.puntos_ranking || 0) : (j.puntos_ranking || 0); let div = jData ? (jData.division || 1) : (j.division || 1);
-                        grupoObj[j.id] = { id: j.id, nombre: j.nombre, club: j.club, div: div, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, rankIni: rankIni, rankImpact: 0, gpo: gpoNombre };
-                    }
-                });
-
-                let estLimpio = String(m.estado || '').trim().toLowerCase();
-                if (estLimpio === 'finalizado' && m.j1 && m.j2) {
-                    const j1 = grupoObj[m.j1.id]; const j2 = grupoObj[m.j2.id];
-                    if (j1 && j2) {
-                        j1.pj += 1; j2.pj += 1; j1.setsG += (m.sets_j1 || 0); j1.setsP += (m.sets_j2 || 0); j2.setsG += (m.sets_j2 || 0); j2.setsP += (m.sets_j1 || 0);
-                        let r1 = j1.rankIni + j1.rankImpact; let r2 = j2.rankIni + j2.rankImpact; let impacto = calcularImpacto(r1, r2);
-                        if (m.ganador_id === m.jugador1_id) { j1.pg += 1; j1.pts += 2; j2.pp += 1; j2.pts += 1; j1.rankImpact += impacto.j1G; j2.rankImpact += impacto.j2P; } 
-                        else if (m.ganador_id === m.jugador2_id) { j2.pg += 1; j2.pts += 2; j1.pp += 1; j1.pts += 1; j2.rankImpact += impacto.j2G; j1.rankImpact += impacto.j1P; }
-                    }
-                }
-            });
-            return porCategoria;
-        }
-
-        function ordenarJugadoresITTF(lista) {
-            return [...lista].sort((a, b) => {
-                if (b.pts !== a.pts) return b.pts - a.pts;
-                const sG_a = a.setsGanados !== undefined ? a.setsGanados : a.setsG; const sP_a = a.setsPerdidos !== undefined ? a.setsPerdidos : a.setsP;
-                const sG_b = b.setsGanados !== undefined ? b.setsGanados : b.setsG; const sP_b = b.setsPerdidos !== undefined ? b.setsPerdidos : b.setsP;
-                const rSetA = sG_a / (sP_a || 0.0001); const rSetB = sG_b / (sP_b || 0.0001);
-                if (Math.abs(rSetB - rSetA) > 0.0001) return rSetB - rSetA; return b.pg - a.pg; 
-            });
-        }
-
         function renderTablaGeneralDiv(jugadores, colorHex, titulo, isFlash = false) {
             if (jugadores.length === 0) return '';
             let html = `<div style="margin-bottom:20px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:16px; padding:18px; border-left: 4px solid ${colorHex};"><span style="font-weight:900; font-size:14px; color:${colorHex}; text-transform:uppercase; display:block; margin-bottom:15px; letter-spacing: 1px;">${titulo}</span><div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:12px; text-align:left; min-width: 850px;"><thead><tr style="font-size:10px; color:#cbd5e1; font-weight:800; text-transform:uppercase; border-bottom:1px solid rgba(255,255,255,0.1);"><th style="padding:10px;">Pos</th><th style="padding:10px;">Jugador</th><th style="padding:10px; text-align:center;">PJ</th><th style="padding:10px; text-align:center;">PG</th><th style="padding:10px; text-align:center;">PP</th><th style="padding:10px; text-align:center;">% Efec</th><th style="padding:10px; text-align:center;">Sets (G - P)</th><th style="padding:10px; text-align:center; color:#fbbf24;">Pts</th><th style="padding:10px; text-align:center;">R. Ini</th><th style="padding:10px; text-align:center;">+/-</th><th style="padding:10px; text-align:center; color:#fbbf24;">R. Act</th></tr></thead><tbody>`;
@@ -746,21 +835,30 @@
         }
 
         function dibujarResumenYLlaves(container) {
-            const standings = calcularStandingsGrupos(); const categoriasSet = new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean)); let catsList = [...categoriasSet];
+            let catsList = [...new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean))];
             if (categoriaFiltro !== 'todas') catsList = catsList.filter(c => c === categoriaFiltro);
             if (catsList.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay información de grupos o llaves para mostrar en este momento.</div>`; return; }
 
             let htmlContent = '';
             catsList.forEach(catNombre => {
-                const gruposCat = standings[catNombre] || {};
+                const gruposCat = datosGeneralesCuadro?.porCategoria[catNombre]?.grupos || {};
                 if (Object.keys(gruposCat).length === 0) { const llavesFlash = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase); if(llavesFlash.length === 0) return; }
+                
                 htmlContent += `<div style="background:rgba(18, 18, 22, 0.8); border:1px solid rgba(251, 191, 36, 0.2); border-radius:24px; padding:30px; margin-bottom:30px; backdrop-filter:blur(20px); box-shadow: 0 15px 35px rgba(0,0,0,0.5);"><div style="border-bottom:1px solid rgba(251, 191, 36, 0.2); padding-bottom:15px; margin-bottom:20px; text-align:center;"><span style="font-size:16px; font-weight:900; color:#fbbf24; text-transform:uppercase; letter-spacing:2px; text-shadow: 0 0 15px rgba(251, 191, 36, 0.3);">🏆 ESTADÍSTICAS OFICIALES: ${catNombre}</span><span style="font-size:11px; color:#94a3b8; display:block; margin-top:8px; text-transform:uppercase; letter-spacing: 1px;">Tabla General por Divisiones</span></div>`;
-                let todosJugadoresCatMap = new Map(); Object.keys(gruposCat).forEach(gpoNombre => { Object.values(gruposCat[gpoNombre]).forEach(j => { if(!todosJugadoresCatMap.has(j.id)) { todosJugadoresCatMap.set(j.id, {...j, gpo: gpoNombre}); } }); });
+                
+                let todosJugadoresCatMap = new Map(); 
+                Object.keys(gruposCat).forEach(gpoNombre => { Object.values(gruposCat[gpoNombre]).forEach(j => { if(!todosJugadoresCatMap.has(j.id)) { todosJugadoresCatMap.set(j.id, {...j, gpo: gpoNombre}); } }); });
                 let todosJugadoresCat = Array.from(todosJugadoresCatMap.values()); todosJugadoresCat = ordenarJugadoresITTF(todosJugadoresCat);
+                
                 let div1 = todosJugadoresCat.filter(j => String(j.div) === '1'); let div2 = todosJugadoresCat.filter(j => String(j.div) === '2'); let div3 = todosJugadoresCat.filter(j => String(j.div) === '3'); let sinDiv = todosJugadoresCat.filter(j => !['1','2','3'].includes(String(j.div)));
                 let isFlash = modalidadFiltro === 'flash';
                 
-                if (div1.length > 0 || div2.length > 0 || div3.length > 0) { htmlContent += renderTablaGeneralDiv(div1, '#fbbf24', '🏆 DIVISIÓN 1 (ORO)', isFlash); htmlContent += renderTablaGeneralDiv(div2, '#cbd5e1', '🏆 DIVISIÓN 2 (PLATA)', isFlash); htmlContent += renderTablaGeneralDiv(div3, '#d97706', '🏆 DIVISIÓN 3 (BRONCE)', isFlash); if (sinDiv.length > 0) htmlContent += renderTablaGeneralDiv(sinDiv, '#64748b', 'Jugadores sin división registrada', isFlash); } 
+                if (div1.length > 0 || div2.length > 0 || div3.length > 0) { 
+                    htmlContent += renderTablaGeneralDiv(div1, '#fbbf24', '🏆 DIVISIÓN 1 (ORO)', isFlash); 
+                    htmlContent += renderTablaGeneralDiv(div2, '#cbd5e1', '🏆 DIVISIÓN 2 (PLATA)', isFlash); 
+                    htmlContent += renderTablaGeneralDiv(div3, '#d97706', '🏆 DIVISIÓN 3 (BRONCE)', isFlash); 
+                    if (sinDiv.length > 0) htmlContent += renderTablaGeneralDiv(sinDiv, '#64748b', 'Jugadores sin división registrada', isFlash); 
+                } 
                 else { htmlContent += renderTablaGeneralDiv(todosJugadoresCat, '#fbbf24', 'Resultados Generales', isFlash); }
                 htmlContent += `</div>`;
             });
@@ -833,6 +931,8 @@
             if (!container) return;
             container.innerHTML = '';
 
+            datosGeneralesCuadro = resolverCuadroTorneoTotal();
+
             if (estadoFiltro === 'resumen') { container.style.display = 'block'; dibujarResumenYLlaves(container); return; }
             if (estadoFiltro === 'ranking') { container.style.display = 'block'; const finMatches = todosLosPartidos.filter(p => String(p.estado || '').toLowerCase() === 'finalizado'); dibujarRankingGlobal(container, finMatches); return; }
             if (estadoFiltro === 'flash') { container.style.display = 'block'; dibujarEstadisticasFlash(container); return; }
@@ -861,12 +961,26 @@
                 gruposPorHora[hora].forEach(p => {
                     let est = String(p.estado || '').toLowerCase(); let isFin = est === 'finalizado'; let isVivo = est === 'en_curso';
                     let badgeEst = isVivo ? '<span class="badge-estado est-curso"><i class="fa-solid fa-circle text-[6px] align-middle mr-1"></i> EN VIVO</span>' : (isFin ? '<span class="badge-estado est-fin">🏁 Finalizado</span>' : '<span class="badge-estado est-pendiente">⏳ Pendiente</span>');
-                    let nomJ1 = p.j1?.nombre || (p.ronda_fase ? `${p.ronda_fase} J1` : 'Por definir'); let nomJ2 = p.j2?.nombre || (p.ronda_fase ? `${p.ronda_fase} J2` : 'Por definir');
-                    let iconJ1 = (isFin && p.ganador_id === p.jugador1_id) ? '<i class="fa-solid fa-crown text-amber-400 mr-2 text-sm drop-shadow-md"></i>' : ''; let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '<i class="fa-solid fa-crown text-amber-400 mr-2 text-sm drop-shadow-md"></i>' : '';
+                    let iconJ1 = (isFin && p.ganador_id === p.jugador1_id) ? '<i class="fa-solid fa-crown text-amber-400 mr-2 text-sm drop-shadow-md"></i>' : ''; 
+                    let iconJ2 = (isFin && p.ganador_id === p.jugador2_id) ? '<i class="fa-solid fa-crown text-amber-400 mr-2 text-sm drop-shadow-md"></i>' : '';
 
                     let catStyle = obtenerEstiloCategoria(p.categorias?.id || 0);
-                    let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre === 'Flash' ? 'Liga Flash' : (p.grupo_nombre ? 'Gpo ' + p.grupo_nombre : (p.ronda_fase || 'Llave')));
+                    let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre === 'Flash' ? 'Liga Flash' : (p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Eliminatoria Directa')));
                     let cGpo = obtenerColorGrupo(p.grupo_nombre || p.ronda_fase);
+
+                    llavesTienenCuartos = todosLosPartidos.some(x => String(x.ronda_fase).toLowerCase().includes('cuartos'));
+                    
+                    let proyJ1 = datosGeneralesCuadro?.mapaProyecciones[`${p.id}_j1`] || (p.j1 ? { nombre: p.j1.nombre, id: p.j1.id } : { nombre: 'Por definir', id: null });
+                    let proyJ2 = datosGeneralesCuadro?.mapaProyecciones[`${p.id}_j2`] || (p.j2 ? { nombre: p.j2.nombre, id: p.j2.id } : { nombre: 'Por definir', id: null });
+                    
+                    let nomJ1 = proyJ1.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : proyJ1.nombre;
+                    let nomJ2 = proyJ2.nombre === 'Por definir' ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : proyJ2.nombre;
+                    
+                    if (!nomJ1 || nomJ1 === 'Por definir') nomJ1 = getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos);
+                    if (!nomJ2 || nomJ2 === 'Por definir') nomJ2 = getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos);
+
+                    if (nomJ1.includes('Por definir') || nomJ1.includes('undefined')) nomJ1 = 'BYE (Faltan Jugadores)';
+                    if (nomJ2.includes('Por definir') || nomJ2.includes('undefined')) nomJ2 = 'BYE (Faltan Jugadores)';
 
                     let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : ''; let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
                     if (isVivo) { score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`; score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`; }
