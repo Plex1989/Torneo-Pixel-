@@ -227,22 +227,40 @@
             }
         }
 
+        // ======================= SISTEMA INTELIGENTE DE HÁNDICAP =======================
         function calcularHandicapActual() {
             let hP1 = 0; let hP2 = 0;
-            let targetPlayer = 0; 
             
-            if (p1.div < p2.div) { hP1 = p1.handBase; targetPlayer = 1; } 
-            else if (p2.div < p1.div) { hP2 = p2.handBase; targetPlayer = 2; }
+            // 1. MODO LIGA CONTINUA FLASH (Ventaja dinámica que sube o baja según rachas)
+            if (partidoData && partidoData.grupo_nombre === 'Flash') {
+                let targetPlayer = 0; 
+                if (p1.div < p2.div) { hP1 = p1.handBase; targetPlayer = 1; } 
+                else if (p2.div < p1.div) { hP2 = p2.handBase; targetPlayer = 2; }
+                
+                if (targetPlayer === 1) {
+                    historialSets.forEach(set => {
+                        if (set.s1 > set.s2) hP1 = Math.max(0, hP1 - 1); else hP1 += 1; 
+                    });
+                } else if (targetPlayer === 2) {
+                    historialSets.forEach(set => {
+                        if (set.s2 > set.s1) hP2 = Math.max(0, hP2 - 1); else hP2 += 1; 
+                    });
+                }
+                return { hP1, hP2 };
+            } 
             
-            if (targetPlayer === 1) {
-                historialSets.forEach(set => {
-                    if (set.s1 > set.s2) hP1 = Math.max(0, hP1 - 1); else hP1 += 1; 
-                });
-            } else if (targetPlayer === 2) {
-                historialSets.forEach(set => {
-                    if (set.s2 > set.s1) hP2 = Math.max(0, hP2 - 1); else hP2 += 1; 
-                });
+            // 2. MODO ROUND ROBIN FLASH Y OTROS (Ventaja FIJA por Clases C1, C2, C3)
+            // Si el jugador tiene asignada una división, asume que es Clase C1, C2 o C3.
+            if (p1.div !== p2.div) {
+                let d1 = p1.div || 3; let d2 = p2.div || 3;
+                if(d1 == 1 && d2 == 2) { hP1 = 0; hP2 = 3; }
+                else if(d1 == 2 && d2 == 1) { hP1 = 3; hP2 = 0; }
+                else if(d1 == 1 && d2 == 3) { hP1 = 0; hP2 = 6; }
+                else if(d1 == 3 && d2 == 1) { hP1 = 6; hP2 = 0; }
+                else if(d1 == 2 && d2 == 3) { hP1 = 0; hP2 = 3; }
+                else if(d1 == 3 && d2 == 2) { hP1 = 3; hP2 = 0; }
             }
+            
             return { hP1, hP2 };
         }
 
@@ -307,44 +325,53 @@
                 handicapP1 = hActual.hP1;
                 handicapP2 = hActual.hP2;
 
+                // Validación de seguridad para que el marcador inicial cargue con el Handicap
+                if (historialSets.length === 0 && p1.sets === 0 && p2.sets === 0) {
+                    if (p1.score === 0 && p2.score === 0 && (handicapP1 > 0 || handicapP2 > 0)) {
+                        p1.score = handicapP1;
+                        p2.score = handicapP2;
+                        clienteSupabase.from('partidos').update({ puntos_j1: p1.score, puntos_j2: p2.score }).eq('id', partidoId);
+                    }
+                }
+
+                // Cálculo del Saque basado en la ventaja
                 firstServersBySet = [];
                 let givesHandicap = 0;
-                
                 if (p1.div < p2.div) givesHandicap = 1;
                 else if (p2.div < p1.div) givesHandicap = 2;
                 
                 for (let i = 0; i < numSetActual; i++) {
                     if (givesHandicap !== 0) {
-                        // Calcula el hándicap que había al INICIO del set "i"
                         let hP1_at_i = 0; let hP2_at_i = 0;
-                        if (p1.div < p2.div) hP1_at_i = p1.handBase;
-                        else if (p2.div < p1.div) hP2_at_i = p2.handBase;
                         
-                        for (let k = 0; k < i; k++) {
-                            let s = historialSets[k];
-                            if (p1.div < p2.div) {
-                                if (s.s1 > s.s2) hP1_at_i = Math.max(0, hP1_at_i - 1); else hP1_at_i += 1;
-                            } else if (p2.div < p1.div) {
-                                if (s.s2 > s.s1) hP2_at_i = Math.max(0, hP2_at_i - 1); else hP2_at_i += 1;
+                        if (partidoData.grupo_nombre === 'Flash') {
+                            if (p1.div < p2.div) hP1_at_i = p1.handBase;
+                            else if (p2.div < p1.div) hP2_at_i = p2.handBase;
+                            for (let k = 0; k < i; k++) {
+                                let s = historialSets[k];
+                                if (p1.div < p2.div) {
+                                    if (s.s1 > s.s2) hP1_at_i = Math.max(0, hP1_at_i - 1); else hP1_at_i += 1;
+                                } else if (p2.div < p1.div) {
+                                    if (s.s2 > s.s1) hP2_at_i = Math.max(0, hP2_at_i - 1); else hP2_at_i += 1;
+                                }
                             }
+                        } else {
+                            let d1 = p1.div || 3; let d2 = p2.div || 3;
+                            if(d1 == 1 && d2 == 2) hP2_at_i = 3;
+                            else if(d1 == 2 && d2 == 1) hP1_at_i = 3;
+                            else if(d1 == 1 && d2 == 3) hP2_at_i = 6;
+                            else if(d1 == 3 && d2 == 1) hP1_at_i = 6;
+                            else if(d1 == 2 && d2 == 3) hP2_at_i = 3;
+                            else if(d1 == 3 && d2 == 2) hP1_at_i = 3;
                         }
 
                         let initialTotal = hP1_at_i + hP2_at_i;
                         let initialBlock = Math.floor(initialTotal / 2);
-                        // Alinea el saque para que el jugador que da ventaja saque en este initialBlock
                         let serverAtBlockZero = (initialBlock % 2 === 0) ? givesHandicap : (givesHandicap === 1 ? 2 : 1);
                         firstServersBySet.push(serverAtBlockZero);
                     } else {
                         if (i === 0) firstServersBySet.push(1);
                         else firstServersBySet.push(firstServersBySet[i-1] === 1 ? 2 : 1);
-                    }
-                }
-
-                if (historialSets.length === 0 && p1.score === 0 && p2.score === 0 && p1.sets === 0 && p2.sets === 0) {
-                    if (handicapP1 > 0 || handicapP2 > 0) {
-                        p1.score = handicapP1;
-                        p2.score = handicapP2;
-                        clienteSupabase.from('partidos').update({ puntos_j1: p1.score, puntos_j2: p2.score }).eq('id', partidoId);
                     }
                 }
 
@@ -441,7 +468,6 @@
             };
         }
 
-        // ======================= CORRECCIÓN MATEMÁTICA DEFINITIVA DEL SAQUE =======================
         function getCurrentServer() {
             let currentSetIdx = numSetActual - 1; 
             if(currentSetIdx >= firstServersBySet.length) { 
@@ -457,7 +483,6 @@
                 let extra = total - (deuceThreshold * 2); 
                 return extra % 2 === 0 ? serverAtDeuceStart : (serverAtDeuceStart === 1 ? 2 : 1); 
             } else { 
-                // Se utiliza SIEMPRE el total del marcador para la rotación matemática natural.
                 let blocks = Math.floor(total / 2); 
                 return blocks % 2 === 0 ? firstSrv : (firstSrv === 1 ? 2 : 1); 
             }
