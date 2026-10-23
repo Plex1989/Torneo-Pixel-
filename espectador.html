@@ -16,18 +16,27 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         /* ========================================================
-           PALETA PREMIUM: DARK & GOLD
+           PALETA PREMIUM: DARK & GOLD (CON ENCABEZADO CARMESÍ PARA DIFERENCIAR)
            ======================================================== */
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 15px; background-color: #0a0a0c; color: #f8fafc; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
         .font-digital { font-family: 'Orbitron', sans-serif; }
         
-        /* Glow Ambiental */
-        body::before { content: ""; position: fixed; top: -15%; left: -10%; width: 600px; height: 600px; background: #fbbf24; border-radius: 50%; filter: blur(200px); opacity: 0.08; pointer-events: none; z-index: -1; }
-        body::after { content: ""; position: fixed; bottom: -10%; right: -10%; width: 700px; height: 700px; background: #f5a623; border-radius: 50%; filter: blur(200px); opacity: 0.05; pointer-events: none; z-index: -1; }
+        /* Glow Ambiental Diferenciado (Rojo arriba, Dorado abajo) */
+        body::before { content: ""; position: fixed; top: -15%; left: -10%; width: 600px; height: 600px; background: #e11d48; border-radius: 50%; filter: blur(200px); opacity: 0.12; pointer-events: none; z-index: -1; }
+        body::after { content: ""; position: fixed; bottom: -10%; right: -10%; width: 700px; height: 700px; background: #fbbf24; border-radius: 50%; filter: blur(200px); opacity: 0.05; pointer-events: none; z-index: -1; }
 
-        .header { text-align: center; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(251, 191, 36, 0.15); position: relative; }
-        .header-tag { display: inline-block; background: rgba(251, 191, 36, 0.1); border: 1px solid rgba(251, 191, 36, 0.3); color: #fbbf24; font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 6px 16px; border-radius: 9999px; letter-spacing: 3px; margin-bottom: 12px; box-shadow: 0 0 15px rgba(251, 191, 36, 0.1); }
-        .header h1 { font-size: 26px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #ffffff; margin: 0; text-shadow: 0 0 20px rgba(255, 255, 255, 0.2); }
+        /* ENCABEZADO DESTACADO PARA ESPECTADOR */
+        .header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            padding: 30px 20px; 
+            background: linear-gradient(180deg, rgba(225, 29, 72, 0.12) 0%, rgba(10, 10, 12, 0) 100%); 
+            border-top: 4px solid #e11d48; 
+            border-radius: 20px;
+            position: relative; 
+        }
+        .header-tag { display: inline-block; background: rgba(225, 29, 72, 0.2); border: 1px solid rgba(225, 29, 72, 0.4); color: #f43f5e; font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 6px 16px; border-radius: 9999px; letter-spacing: 3px; margin-bottom: 12px; box-shadow: 0 0 15px rgba(225, 29, 72, 0.2); }
+        .header h1 { font-size: 26px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #ffffff; margin: 0; text-shadow: 0 0 20px rgba(225, 29, 72, 0.4); }
 
         .scrolling-bar { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 15px; scrollbar-width: none; -ms-overflow-style: none; }
         .scrolling-bar::-webkit-scrollbar { display: none; }
@@ -73,8 +82,11 @@
         .header-hora { grid-column: 1 / -1; font-size: 13px; color: #fbbf24; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid rgba(251, 191, 36, 0.2); padding-bottom: 8px; margin-top: 25px; margin-bottom: 10px; letter-spacing: 2px; display: flex; align-items: center; }
         .header-hora::before { content: ""; display: inline-block; width: 6px; height: 6px; background: #fbbf24; border-radius: 50%; margin-right: 10px; box-shadow: 0 0 8px #fbbf24; }
         
+        .seccion-llaves-footer { grid-column: 1 / -1; margin-top: 30px; background: rgba(15, 15, 18, 0.85); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 24px; padding: 30px; backdrop-filter: blur(20px); box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+        
         .mensaje-vacio { text-align: center; color: #64748b; font-style: italic; font-weight: 600; grid-column: 1/-1; padding: 60px 20px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.05); }
 
+        /* Botones de Acción en Tarjeta */
         .btn-action-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 12px; padding: 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; text-align: center; text-decoration: none; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
         .btn-action-card:hover { background: rgba(255,255,255,0.1); color: #fff; }
         .btn-live-yt { background: rgba(220, 38, 38, 0.15); border-color: rgba(220, 38, 38, 0.4); color: #ef4444; }
@@ -197,14 +209,14 @@
         </div>
     </div>
 
-    <!-- HEADER GENERAL -->
+    <!-- ENCABEZADO DESTACADO PARA ESPECTADOR -->
     <div class="header no-print">
         <div class="header-tag"><i class="fa-solid fa-satellite-dish mr-2 animate-pulse"></i> SEÑAL EN DIRECTO</div>
         <h1 id="torneo-nombre-header">CENTRAL DEL ESPECTADOR</h1>
-        <p style="color:#94a3b8; font-size: 11px; font-weight: 600; margin-top: 8px; letter-spacing: 1px;">Sigue los marcadores y estadísticas en tiempo real.</p>
+        <p style="color:#e2e8f0; font-size: 11px; font-weight: 600; margin-top: 8px; letter-spacing: 1px;">Sigue los marcadores y estadísticas en tiempo real.</p>
     </div>
 
-    <!-- FILTROS POR MODALIDAD -->
+    <!-- FILTROS SEPARADOS POR MODALIDAD -->
     <div style="font-size:10px; font-weight:900; color:#cbd5e1; text-transform:uppercase; margin-bottom:8px; letter-spacing:2px; display:flex; align-items:center;"><i class="fa-solid fa-gamepad mr-2 text-amber-500"></i> Modalidad</div>
     <div class="scrolling-bar" id="bar-modalidad">
         <button class="btn-filter-pill active" onclick="filtrarModalidad('todas', this)">Todas</button>
@@ -214,13 +226,12 @@
         <button class="btn-filter-pill" style="color:#fbbf24; border-color:rgba(251,191,36,0.3);" onclick="filtrarModalidad('flash', this)">⚡ Liga Flash</button>
     </div>
 
-    <!-- FILTROS POR CATEGORÍA -->
     <div style="font-size:10px; font-weight:900; color:#cbd5e1; text-transform:uppercase; margin-bottom:8px; letter-spacing:2px; display:flex; align-items:center; margin-top:5px;"><i class="fa-solid fa-layer-group mr-2 text-amber-500"></i> Categoría</div>
     <div class="scrolling-bar no-print" id="bar-categorias">
         <button class="btn-filter-pill btn-cat-pill active" onclick="filtrarCategoria('todas')">Todas las Categorías</button>
     </div>
 
-    <!-- VISTA DE DATOS (AQUÍ ESTÁ EL BOTÓN DE ESTADÍSTICAS MOVIDO Y RENOMBRADO) -->
+    <!-- VISTA DE DATOS CON EL BOTÓN DE ESTADÍSTICAS MOVIDO Y RENOMBRADO -->
     <div style="font-size:10px; font-weight:900; color:#cbd5e1; text-transform:uppercase; margin-bottom:8px; letter-spacing:2px; display:flex; align-items:center; margin-top:5px;"><i class="fa-solid fa-eye mr-2 text-amber-500"></i> Vista de Datos</div>
     <div class="scrolling-bar no-print">
         <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Cartelera Completa</button>
@@ -824,21 +835,16 @@
             html += `</tbody></table></div></div>`; return html;
         }
 
-        function dibujarEstadisticas(container) {
+        function dibujarResumenYLlaves(container) {
             let catsList = [...new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean))];
             if (categoriaFiltro !== 'todas') catsList = catsList.filter(c => c === categoriaFiltro);
-            if (catsList.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay información de estadísticas para mostrar.</div>`; return; }
+            if (catsList.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay información de grupos o llaves para mostrar en este momento.</div>`; return; }
 
             let htmlContent = '';
             catsList.forEach(catNombre => {
                 const gruposCat = datosGeneralesCuadro?.porCategoria[catNombre]?.grupos || {};
+                if (Object.keys(gruposCat).length === 0) { const llavesFlash = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase); if(llavesFlash.length === 0) return; }
                 
-                // Si la categoría solo tiene modalidad flash, nos la saltamos en este resumen
-                if (Object.keys(gruposCat).length === 0) {
-                    const llavesFlash = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase);
-                    if(llavesFlash.length === 0) return;
-                }
-
                 htmlContent += `<div style="background:rgba(18, 18, 22, 0.8); border:1px solid rgba(251, 191, 36, 0.2); border-radius:24px; padding:30px; margin-bottom:30px; backdrop-filter:blur(20px); box-shadow: 0 15px 35px rgba(0,0,0,0.5);"><div style="border-bottom:1px solid rgba(251, 191, 36, 0.2); padding-bottom:15px; margin-bottom:20px; text-align:center;"><span style="font-size:16px; font-weight:900; color:#fbbf24; text-transform:uppercase; letter-spacing:2px; text-shadow: 0 0 15px rgba(251, 191, 36, 0.3);">🏆 ESTADÍSTICAS OFICIALES: ${catNombre}</span><span style="font-size:11px; color:#94a3b8; display:block; margin-top:8px; text-transform:uppercase; letter-spacing: 1px;">Tabla General por Divisiones</span></div>`;
                 
                 let todosJugadoresCatMap = new Map(); 
@@ -858,6 +864,41 @@
                 htmlContent += `</div>`;
             });
             container.innerHTML = htmlContent;
+        }
+
+        function dibujarEstadisticasFlash(container) {
+            let partidosFlash = todosLosPartidos.filter(p => p.grupo_nombre === 'Flash');
+            if (categoriaFiltro !== 'todas') partidosFlash = partidosFlash.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
+            if (partidosFlash.length === 0) { container.innerHTML = `<div class="mensaje-vacio">No hay datos registrados en la Modalidad Flash bajo este filtro.</div>`; return; }
+
+            let stats = {};
+            partidosFlash.forEach(m => {
+                let estLimpio = String(m.estado || '').trim().toLowerCase();
+                [m.j1, m.j2].forEach(j => {
+                    if (j && j.id && !stats[j.id]) {
+                        let jData = todosLosJugadores.find(x => x.id === j.id); let rankIni = jData ? (jData.puntos_ranking_ant || jData.puntos_ranking || 0) : (j.puntos_ranking || 0); let div = jData ? (jData.division || 1) : (j.division || 1);
+                        stats[j.id] = { id: j.id, nombre: j.nombre, club: j.club, div: div, pj: 0, pg: 0, pp: 0, pts: 0, setsG: 0, setsP: 0, rankIni: rankIni, rankImpact: 0 };
+                    }
+                });
+                if (estLimpio === 'finalizado' && m.j1 && m.j2) {
+                    if (stats[m.j1.id] && stats[m.j2.id]) {
+                        let j1 = stats[m.j1.id]; let j2 = stats[m.j2.id];
+                        j1.pj++; j2.pj++; j1.setsG += (m.sets_j1 || 0); j1.setsP += (m.sets_j2 || 0); j2.setsG += (m.sets_j2 || 0); j2.setsP += (m.sets_j1 || 0);
+                        let r1 = j1.rankIni + j1.rankImpact; let r2 = j2.rankIni + j2.rankImpact; let impacto = calcularImpacto(r1, r2);
+                        if (m.ganador_id === m.jugador1_id) { j1.pg++; j2.pp++; j1.pts += 2; j2.pts += 1; j1.rankImpact += impacto.j1G; j2.rankImpact += impacto.j2P; }
+                        else if (m.ganador_id === m.jugador2_id) { j2.pg++; j1.pp++; j2.pts += 2; j1.pts += 1; j2.rankImpact += impacto.j2G; j1.rankImpact += impacto.j1P; }
+                    }
+                }
+            });
+
+            let jugadoresArr = Object.values(stats);
+            if (jugadoresArr.length === 0) { container.innerHTML = `<div class="mensaje-vacio">Aún no hay partidos finalizados en la Liga Flash.</div>`; return; }
+            jugadoresArr = ordenarJugadoresITTF(jugadoresArr);
+
+            let div1 = jugadoresArr.filter(j => String(j.div) === '1'); let div2 = jugadoresArr.filter(j => String(j.div) === '2'); let div3 = jugadoresArr.filter(j => String(j.div) === '3'); let sinDiv = jugadoresArr.filter(j => !['1','2','3'].includes(String(j.div)));
+            let html = `<div style="background:rgba(18, 18, 22, 0.8); border:1px solid rgba(251, 191, 36, 0.2); border-radius:24px; padding:30px; margin-bottom:30px; backdrop-filter:blur(20px); box-shadow: 0 15px 35px rgba(0,0,0,0.5);"><div style="text-align:center; margin-bottom:25px;"><span style="font-size:16px; color:#fbbf24; font-weight:900; text-transform:uppercase; letter-spacing:2px; display:block; text-shadow: 0 0 15px rgba(251, 191, 36, 0.3);">⚡ CLASIFICACIÓN LIGA FLASH</span><span style="font-size:11px; color:#94a3b8; display:block; margin-top:8px; text-transform:uppercase; letter-spacing:1px;">Ordenados por Efectividad (Mínimo 5 partidos para clasificar)</span></div>`;
+            html += renderTablaGeneralDiv(div1, '#fbbf24', '🏆 DIVISIÓN 1 (ORO)', true); html += renderTablaGeneralDiv(div2, '#cbd5e1', '🏆 DIVISIÓN 2 (PLATA)', true); html += renderTablaGeneralDiv(div3, '#d97706', '🏆 DIVISIÓN 3 (BRONCE)', true); if (sinDiv.length > 0) { html += renderTablaGeneralDiv(sinDiv, '#64748b', 'Jugadores sin división', true); }
+            html += `</div>`; container.innerHTML = html;
         }
 
         function dibujarRankingGlobal(container, finMatches) {
@@ -893,8 +934,9 @@
 
             datosGeneralesCuadro = resolverCuadroTorneoTotal();
 
-            if (estadoFiltro === 'resumen') { container.style.display = 'block'; dibujarEstadisticas(container); return; }
+            if (estadoFiltro === 'resumen') { container.style.display = 'block'; dibujarResumenYLlaves(container); return; }
             if (estadoFiltro === 'ranking') { container.style.display = 'block'; const finMatches = todosLosPartidos.filter(p => String(p.estado || '').toLowerCase() === 'finalizado'); dibujarRankingGlobal(container, finMatches); return; }
+            if (estadoFiltro === 'flash') { container.style.display = 'block'; dibujarEstadisticasFlash(container); return; }
 
             container.style.display = 'grid';
             let filtrados = [...todosLosPartidos];
@@ -937,6 +979,10 @@
                     
                     if (!nomJ1 || nomJ1.includes('Por definir')) nomJ1 = getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos);
                     if (!nomJ2 || nomJ2.includes('Por definir')) nomJ2 = getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos);
+
+                    // Respetar la inyección visual del "BYE" si viene del cálculo de proyecciones
+                    if (nomJ1.includes('Por definir') || nomJ1.includes('undefined')) nomJ1 = 'BYE (Faltan Jugadores)';
+                    if (nomJ2.includes('Por definir') || nomJ2.includes('undefined')) nomJ2 = 'BYE (Faltan Jugadores)';
 
                     let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : ''; let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
                     if (isVivo) { score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`; score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`; }
