@@ -52,20 +52,8 @@
         .card-mesa-grupo { border-top: 4px solid #0e7490; border-left: 1px solid rgba(255,255,255,0.08); border-right: 1px solid rgba(255,255,255,0.08); border-bottom: 1px solid rgba(255,255,255,0.08); }
         .card-mesa-grupo:hover { border-color: rgba(6,182,212,0.4); transform: translateY(-2px); }
         
-        /* DISEÑO SUTIL VIP PARA FASE FINAL */
-        .card-mesa-llave { 
-            border-top: 4px solid #fbbf24 !important; 
-            background: linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, rgba(15, 23, 42, 0.75) 100%) !important; 
-            box-shadow: 0 8px 25px -5px rgba(245, 158, 11, 0.12) !important; 
-            border-left: 1px solid rgba(245,158,11,0.2) !important;
-            border-right: 1px solid rgba(245,158,11,0.2) !important;
-            border-bottom: 1px solid rgba(245,158,11,0.2) !important;
-        }
-        .card-mesa-llave:hover {
-            border-color: rgba(245,158,11,0.4) !important; 
-            box-shadow: 0 12px 30px -5px rgba(245,158,11,0.22) !important; 
-            transform: translateY(-3px);
-        }
+        .card-mesa-llave { border-top: 4px solid #fbbf24 !important; background: linear-gradient(180deg, rgba(245, 158, 11, 0.06) 0%, rgba(15, 23, 42, 0.75) 100%) !important; box-shadow: 0 8px 25px -5px rgba(245, 158, 11, 0.12) !important; border-left: 1px solid rgba(245,158,11,0.2) !important; border-right: 1px solid rgba(245,158,11,0.2) !important; border-bottom: 1px solid rgba(245,158,11,0.2) !important; }
+        .card-mesa-llave:hover { border-color: rgba(245,158,11,0.4) !important; box-shadow: 0 12px 30px -5px rgba(245,158,11,0.22) !important; transform: translateY(-3px); }
         
         .card-mesa.vivo { border-top-color: #34d399 !important; box-shadow: 0 0 25px rgba(52, 211, 153, 0.15) !important; }
         .card-mesa.finalizado { border-top-color: #64748b !important; opacity: 0.85; }
@@ -263,6 +251,8 @@
         let reglasRankingList = [];
         let todasLasCategorias = [];
         let todosLosJugadoresAdmin = [];
+        let mapaRankingOficial = new Map();
+        let jugadoresMemoriaExpedientes = {}; 
         let datosGeneralesCuadro = null; 
         
         let modalidadFiltro = 'todas';
@@ -335,12 +325,23 @@
         function resolverCuadroTorneoTotal() {
             let datos = { porCategoria: {}, mapaProyecciones: {} };
             let ganadoresFase = {};
+            let groupStatus = {}; // <--- NUEVO TRACKER para saber si el grupo ya concluyó 100%
 
             todosLosPartidos.forEach(m => {
                 if (m.grupo_nombre === 'Flash') return;
                 let cat = m.categorias?.nombre || 'General';
                 if (!datos.porCategoria[cat]) datos.porCategoria[cat] = { grupos: {}, jugadores: {} };
                 if (!ganadoresFase[cat]) ganadoresFase[cat] = {};
+                if (!groupStatus[cat]) groupStatus[cat] = {};
+
+                if (m.grupo_nombre && m.grupo_nombre !== 'Único' && m.grupo_nombre !== 'Flash') {
+                    let gpo = m.grupo_nombre;
+                    if (!groupStatus[cat][gpo]) groupStatus[cat][gpo] = { total: 0, finished: 0 };
+                    groupStatus[cat][gpo].total++;
+                    if (String(m.estado).toLowerCase() === 'finalizado') {
+                        groupStatus[cat][gpo].finished++;
+                    }
+                }
             });
 
             let rankingEnVivoTracker = {}; 
@@ -413,8 +414,15 @@
             // Extraer líderes de grupos (Con y sin división para ambos formatos)
             Object.keys(datos.porCategoria).forEach(cat => {
                 let gCat = datos.porCategoria[cat].grupos;
-                ['A', 'B', 'C', 'D'].forEach(g => {
-                    if (gCat[g]) {
+                ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach(g => {
+                    
+                    // Solo si el grupo YA ESTÁ 100% FINALIZADO se extraen los líderes a las llaves
+                    let isGroupFinished = false;
+                    if (groupStatus[cat] && groupStatus[cat][g]) {
+                        isGroupFinished = (groupStatus[cat][g].total > 0 && groupStatus[cat][g].total === groupStatus[cat][g].finished);
+                    }
+
+                    if (gCat[g] && isGroupFinished) {
                         let arr = Object.values(gCat[g]).sort((a,b) => {
                             if (b.pts !== a.pts) return b.pts - a.pts;
                             let rA = a.setsG / (a.setsP || 0.0001); let rB = b.setsG / (b.setsP || 0.0001);
@@ -442,6 +450,7 @@
                         ganadoresFase[cat][`2_GPO_${g}_C3`] = c3[1] ? { id: c3[1].id, nombre: c3[1].nombre } : { nombre: `2° Gpo ${g} (C3)`, id: null };
 
                     } else {
+                        // Grupos INCOMPLETOS: Mandamos null para bloquear cruces anticipados
                         ganadoresFase[cat][`1_GPO_${g}`] = { nombre: `1° Gpo ${g}`, id: null };
                         ganadoresFase[cat][`2_GPO_${g}`] = { nombre: `2° Gpo ${g}`, id: null };
                         ganadoresFase[cat][`1_GPO_${g}_C1`] = { nombre: `1° Gpo ${g} (C1)`, id: null };
@@ -517,50 +526,49 @@
                 else resolverLlave([m], 'final', 'GANA_SEMI_1', 'GANA_SEMI_2', 'GANA_FINAL');
             });
 
+            // Exportar expediente a global para el clic
+            jugadoresMemoriaExpedientes = {};
+            Object.keys(datos.porCategoria).forEach(cat => {
+                Object.values(datos.porCategoria[cat].jugadores).forEach(j => {
+                    jugadoresMemoriaExpedientes[j.id] = j;
+                });
+            });
+
             return datos;
         }
 
-        // MAQUETADO DE NOMBRES INTELIGENTES PARA EL FRONTEND Y TARJETAS
-        function getProyeccionNombre(rondaFase, isJ1, hasCuartos) {
-            if (!rondaFase) return 'Por definir';
-            const rf = String(rondaFase).toLowerCase();
-            
-            // RR Flash Especial (C1, C2, C3)
-            if (rf.includes('semi 1 (c1)')) return isJ1 ? '1° Gpo A (C1)' : '2° Gpo B (C1)';
-            if (rf.includes('semi 2 (c1)')) return isJ1 ? '1° Gpo B (C1)' : '2° Gpo A (C1)';
-            if (rf.includes('final (c1)')) return isJ1 ? 'Gana Semi 1 (C1)' : 'Gana Semi 2 (C1)';
-            
-            if (rf.includes('semi 1 (c2)')) return isJ1 ? '1° Gpo A (C2)' : '2° Gpo B (C2)';
-            if (rf.includes('semi 2 (c2)')) return isJ1 ? '1° Gpo B (C2)' : '2° Gpo A (C2)';
-            if (rf.includes('final (c2)')) return isJ1 ? 'Gana Semi 1 (C2)' : 'Gana Semi 2 (C2)';
-            
-            if (rf.includes('semi 1 (c3)')) return isJ1 ? '1° Gpo A (C3)' : '2° Gpo B (C3)';
-            if (rf.includes('semi 2 (c3)')) return isJ1 ? '1° Gpo B (C3)' : '2° Gpo A (C3)';
-            if (rf.includes('final (c3)')) return isJ1 ? 'Gana Semi 1 (C3)' : 'Gana Semi 2 (C3)';
-
-            if (rf.includes('cuartos')) {
-                if (rf.includes('1')) return isJ1 ? '1° Gpo A' : '2° Gpo C';
-                if (rf.includes('2')) return isJ1 ? '1° Gpo B' : '2° Gpo D';
-                if (rf.includes('3')) return isJ1 ? '1° Gpo C' : '2° Gpo A';
-                if (rf.includes('4')) return isJ1 ? '1° Gpo D' : '2° Gpo B';
+        async function irAJuez(partidoId, j1Id, j2Id) {
+            if (!j1Id || !j2Id || j1Id === 'null' || j2Id === 'null' || j1Id === 'undefined' || j2Id === 'undefined') {
+                alert('⚠️ NO PUEDES INICIAR ESTE PARTIDO.\n\nLos jugadores aún no están definidos porque faltan partidos por concluir en la fase anterior.');
+                return;
             }
-            if (rf.includes('semi')) {
-                if (hasCuartos) {
-                    if (rf.includes('1')) return isJ1 ? 'Gana Cuartos 1' : 'Gana Cuartos 2';
-                    if (rf.includes('2')) return isJ1 ? 'Gana Cuartos 3' : 'Gana Cuartos 4';
-                } else {
-                    if (rf.includes('1')) return isJ1 ? '1° Gpo A' : '2° Gpo B';
-                    if (rf.includes('2')) return isJ1 ? '1° Gpo B' : '2° Gpo A';
+            
+            const btn = document.getElementById(`btn-arbitrar-${partidoId}`);
+            if(btn) { btn.innerText = '⏳...'; btn.style.opacity = '0.5'; }
+            
+            try {
+                const { data } = await clienteSupabase.from('partidos').select('jugador1_id, jugador2_id').eq('id', partidoId).single();
+                if (data && (data.jugador1_id != j1Id || data.jugador2_id != j2Id)) {
+                    await clienteSupabase.from('partidos').update({
+                        jugador1_id: j1Id,
+                        jugador2_id: j2Id
+                    }).eq('id', partidoId);
                 }
+                window.open(`juez.html?partido=${partidoId}`, '_blank');
+            } catch (e) {
+                alert('Error al enlazar partido: ' + e.message);
+            } finally {
+                if(btn) { btn.innerHTML = '🏓 Juez'; btn.style.opacity = '1'; }
             }
-            if (rf.includes('final')) return isJ1 ? 'Gana Semi 1' : 'Gana Semi 2';
-            return isJ1 ? `${rondaFase} J1` : `${rondaFase} J2`;
         }
 
         async function inicializar() {
             try {
                 const resJug = await clienteSupabase.from('jugadores').select('*').eq('organizador_id', orgId);
-                if (resJug.data) todosLosJugadoresAdmin = resJug.data;
+                if (resJug.data) {
+                    todosLosJugadoresAdmin = resJug.data;
+                    todosLosJugadoresAdmin.forEach(j => mapaRankingOficial.set(j.id, j));
+                }
 
                 const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre').eq('id', idTorneoActivo).eq('organizador_id', orgId).single();
                 if (torneoData) document.getElementById('nombre-torneo').innerText = torneoData.nombre;
@@ -798,6 +806,12 @@
                         </button>
                     `;
 
+                    // Lógica para bloquear Arbitraje si faltan jugadores en la llave
+                    let puedeArbitrar = (idDinamicoJ1 && idDinamicoJ2);
+                    let onClickJuez = puedeArbitrar ? `irAJuez(${p.id}, ${idDinamicoJ1}, ${idDinamicoJ2})` : `alert('⚠️ Faltan partidos por concluir en la fase anterior para definir a los jugadores.')`;
+                    let arbitrarStyle = puedeArbitrar ? '' : 'opacity: 0.5; cursor: not-allowed;';
+                    let onClickMarcador = puedeArbitrar ? `abrirModalMarcador(${p.id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(nomJ2).replace(/'/g, "\\'")}', ${idDinamicoJ1}, ${idDinamicoJ2})` : `alert('⚠️ Faltan partidos por concluir en la fase anterior para definir a los jugadores.')`;
+
                     htmlContent += `
                         <div class="${cardClassStyle}">
                             <div class="top-bar">
@@ -817,7 +831,7 @@
                             </div>
                             
                             <div style="display:flex; gap:10px; flex-wrap: wrap;">
-                                <button class="btn-arbitrar ${isFin ? 'btn-reabrir' : ''}" style="flex:1; min-width: 120px;" onclick="window.location.href='juez.html?partido=${p.id}'">
+                                <button id="btn-arbitrar-${p.id}" class="btn-arbitrar ${isFin ? 'btn-reabrir' : ''}" style="flex:1; min-width: 120px; ${arbitrarStyle}" onclick="${onClickJuez}">
                                     ${isFin ? '🏁 REABRIR PARTIDO' : '🏓 Arbitrar'}
                                 </button>
                                 
@@ -825,7 +839,7 @@
                                     <i class="fa-solid fa-qrcode"></i> Transmitir
                                 </button>
                                 
-                                <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(168,85,247,0.15); border-color:#a855f7; color:#c084fc;" onclick="abrirModalMarcador(${p.id}, '${String(nomJ1).replace(/'/g, "\\'")}', '${String(nomJ2).replace(/'/g, "\\'")}', ${idDinamicoJ1 || 'null'}, ${idDinamicoJ2 || 'null'})">
+                                <button class="btn-arbitrar" style="flex:1; min-width: 120px; background:rgba(168,85,247,0.15); border-color:#a855f7; color:#c084fc; ${arbitrarStyle}" onclick="${onClickMarcador}">
                                     📝 Marcador
                                 </button>
                                 
