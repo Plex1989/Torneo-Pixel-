@@ -228,39 +228,42 @@
         }
 
         // ======================= SISTEMA INTELIGENTE DE HÁNDICAP =======================
-        function calcularHandicapActual() {
+        // Aplica Hándicap Dinámico si el partido es de Ligas con Clases Mixtas o RR Flash
+        function calcularHandicapActual(targetSetIndex = historialSets.length) {
             let hP1 = 0; let hP2 = 0;
-            
-            // 1. MODO LIGA CONTINUA FLASH (Ventaja dinámica que sube o baja según rachas)
-            if (partidoData && partidoData.grupo_nombre === 'Flash') {
-                let targetPlayer = 0; 
-                if (p1.div < p2.div) { hP1 = p1.handBase; targetPlayer = 1; } 
-                else if (p2.div < p1.div) { hP2 = p2.handBase; targetPlayer = 2; }
-                
-                if (targetPlayer === 1) {
-                    historialSets.forEach(set => {
-                        if (set.s1 > set.s2) hP1 = Math.max(0, hP1 - 1); else hP1 += 1; 
-                    });
-                } else if (targetPlayer === 2) {
-                    historialSets.forEach(set => {
-                        if (set.s2 > set.s1) hP2 = Math.max(0, hP2 - 1); else hP2 += 1; 
-                    });
-                }
-                return { hP1, hP2 };
-            } 
-            
-            // 2. MODO ROUND ROBIN FLASH Y OTROS (Ventaja FIJA por Clases C1, C2, C3)
-            // Si el jugador tiene asignada una división, asume que es Clase C1, C2 o C3.
-            if (p1.div !== p2.div) {
-                let d1 = p1.div || 3; let d2 = p2.div || 3;
-                if(d1 == 1 && d2 == 2) { hP1 = 0; hP2 = 3; }
-                else if(d1 == 2 && d2 == 1) { hP1 = 3; hP2 = 0; }
-                else if(d1 == 1 && d2 == 3) { hP1 = 0; hP2 = 6; }
-                else if(d1 == 3 && d2 == 1) { hP1 = 6; hP2 = 0; }
-                else if(d1 == 2 && d2 == 3) { hP1 = 0; hP2 = 3; }
-                else if(d1 == 3 && d2 == 2) { hP1 = 3; hP2 = 0; }
+            let targetPlayer = 0; 
+            let baseHandicap = 0;
+
+            let d1 = p1.div || 3; let d2 = p2.div || 3;
+            if (d1 < d2) { 
+                targetPlayer = 2; // P2 recibe ventaja
+                if (d1 == 1 && d2 == 2) baseHandicap = 3;
+                if (d1 == 1 && d2 == 3) baseHandicap = 6;
+                if (d1 == 2 && d2 == 3) baseHandicap = 3;
+                hP2 = baseHandicap;
+            } else if (d2 < d1) { 
+                targetPlayer = 1; // P1 recibe ventaja
+                if (d2 == 1 && d1 == 2) baseHandicap = 3;
+                if (d2 == 1 && d1 == 3) baseHandicap = 6;
+                if (d2 == 2 && d1 == 3) baseHandicap = 3;
+                hP1 = baseHandicap;
+            } else {
+                return { hP1: 0, hP2: 0 };
             }
             
+            // Aplicar histórico de sumas/restas de la regla dinámica hasta el targetSetIndex
+            for(let i=0; i<targetSetIndex; i++) {
+                let s = historialSets[i];
+                if (targetPlayer === 1) { // P1 recibe ventaja. Dador es P2.
+                    let ganoDador = (s.s2 > s.s1); 
+                    if (ganoDador) hP1 += 1; // Si dador gana, ventaja sube
+                    else hP1 = Math.max(0, hP1 - 1); // Si dador pierde, ventaja baja
+                } else if (targetPlayer === 2) { // P2 recibe ventaja. Dador es P1.
+                    let ganoDador = (s.s1 > s.s2);
+                    if (ganoDador) hP2 += 1;
+                    else hP2 = Math.max(0, hP2 - 1);
+                }
+            }
             return { hP1, hP2 };
         }
 
@@ -302,13 +305,13 @@
                 p1.id = data.jugador1_id; 
                 p1.nombre = data.j1 ? data.j1.nombre : 'Jugador 1'; 
                 p1.ptsBase = data.j1 ? data.j1.puntos_ranking || 0 : 0;
-                p1.div = data.j1 ? (data.j1.division || 1) : 1;
+                p1.div = data.j1 ? (data.j1.division || 3) : 3;
                 p1.handBase = data.j1 && data.j1.handicap !== undefined && data.j1.handicap !== null ? data.j1.handicap : 5;
 
                 p2.id = data.jugador2_id; 
                 p2.nombre = data.j2 ? data.j2.nombre : 'Jugador 2'; 
                 p2.ptsBase = data.j2 ? data.j2.puntos_ranking || 0 : 0;
-                p2.div = data.j2 ? (data.j2.division || 1) : 1;
+                p2.div = data.j2 ? (data.j2.division || 3) : 3;
                 p2.handBase = data.j2 && data.j2.handicap !== undefined && data.j2.handicap !== null ? data.j2.handicap : 5;
 
                 p1.score = parseInt(data.puntos_j1) || 0;
@@ -321,7 +324,7 @@
                 historialSets = Array.isArray(hs) ? hs : [];
                 numSetActual = historialSets.length + 1;
 
-                let hActual = calcularHandicapActual();
+                let hActual = calcularHandicapActual(historialSets.length);
                 handicapP1 = hActual.hP1;
                 handicapP2 = hActual.hP2;
 
@@ -342,33 +345,8 @@
                 
                 for (let i = 0; i < numSetActual; i++) {
                     if (givesHandicap !== 0) {
-                        let hP1_at_i = 0; let hP2_at_i = 0;
-                        
-                        if (partidoData.grupo_nombre === 'Flash') {
-                            if (p1.div < p2.div) hP1_at_i = p1.handBase;
-                            else if (p2.div < p1.div) hP2_at_i = p2.handBase;
-                            for (let k = 0; k < i; k++) {
-                                let s = historialSets[k];
-                                if (p1.div < p2.div) {
-                                    if (s.s1 > s.s2) hP1_at_i = Math.max(0, hP1_at_i - 1); else hP1_at_i += 1;
-                                } else if (p2.div < p1.div) {
-                                    if (s.s2 > s.s1) hP2_at_i = Math.max(0, hP2_at_i - 1); else hP2_at_i += 1;
-                                }
-                            }
-                        } else {
-                            let d1 = p1.div || 3; let d2 = p2.div || 3;
-                            if(d1 == 1 && d2 == 2) hP2_at_i = 3;
-                            else if(d1 == 2 && d2 == 1) hP1_at_i = 3;
-                            else if(d1 == 1 && d2 == 3) hP2_at_i = 6;
-                            else if(d1 == 3 && d2 == 1) hP1_at_i = 6;
-                            else if(d1 == 2 && d2 == 3) hP2_at_i = 3;
-                            else if(d1 == 3 && d2 == 2) hP1_at_i = 3;
-                        }
-
-                        let initialTotal = hP1_at_i + hP2_at_i;
-                        let initialBlock = Math.floor(initialTotal / 2);
-                        let serverAtBlockZero = (initialBlock % 2 === 0) ? givesHandicap : (givesHandicap === 1 ? 2 : 1);
-                        firstServersBySet.push(serverAtBlockZero);
+                        // El que Otorga Ventaja, siempre saca el primer punto en su set
+                        firstServersBySet.push(givesHandicap);
                     } else {
                         if (i === 0) firstServersBySet.push(1);
                         else firstServersBySet.push(firstServersBySet[i-1] === 1 ? 2 : 1);
@@ -468,6 +446,7 @@
             };
         }
 
+        // Calcula de manera natural el saque con base a la suma total de puntos (incluye el handicap)
         function getCurrentServer() {
             let currentSetIdx = numSetActual - 1; 
             if(currentSetIdx >= firstServersBySet.length) { 
@@ -622,7 +601,8 @@
                 else if (p2.sets >= setsParaGanar) { partidoGanado = true; ganadorId = p2.id; }
 
                 if (!partidoGanado) {
-                    let hActual = calcularHandicapActual();
+                    // Recalcula el nuevo handicap dinamico para el set entrante
+                    let hActual = calcularHandicapActual(historialSets.length);
                     handicapP1 = hActual.hP1;
                     handicapP2 = hActual.hP2;
 
@@ -635,10 +615,7 @@
                     else if (p2.div < p1.div) givesHandicap = 2;
 
                     if (givesHandicap !== 0) {
-                        let initialTotal = handicapP1 + handicapP2;
-                        let initialBlock = Math.floor(initialTotal / 2);
-                        let serverAtBlockZero = (initialBlock % 2 === 0) ? givesHandicap : (givesHandicap === 1 ? 2 : 1);
-                        firstServersBySet.push(serverAtBlockZero);
+                        firstServersBySet.push(givesHandicap);
                     } else {
                         let prevFirst = firstServersBySet[firstServersBySet.length - 1];
                         firstServersBySet.push(prevFirst === 1 ? 2 : 1);
@@ -722,7 +699,7 @@
                         numSetActual = Math.max(1, numSetActual - 1);
                         p1.score = lastSet.s1; p2.score = lastSet.s2;
                         
-                        let hActual = calcularHandicapActual();
+                        let hActual = calcularHandicapActual(historialSets.length);
                         handicapP1 = hActual.hP1;
                         handicapP2 = hActual.hP2;
 
@@ -737,7 +714,7 @@
                     numSetActual = Math.max(1, numSetActual - 1);
                     p1.score = lastSet.s1; p2.score = lastSet.s2;
                     
-                    let hActual = calcularHandicapActual();
+                    let hActual = calcularHandicapActual(historialSets.length);
                     handicapP1 = hActual.hP1;
                     handicapP2 = hActual.hP2;
 
