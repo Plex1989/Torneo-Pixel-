@@ -484,7 +484,7 @@
                     </div>
                     
                     <!-- PISTAS Y BARRAS -->
-                    <div id="vip-gantt-tracks" style="position: relative; display: flex; flex-direction: column; gap: 20px;">
+                    <div id="vip-gantt-tracks" style="position: relative; display: flex; flex-direction: column; gap: 35px;">
                         <!-- Tracks inyectados -->
                     </div>
 
@@ -514,6 +514,7 @@
         let maxJuecesFaltantesSistema = 0; 
         let isGuardando = false; 
         let todosLosJugadoresAdmin = [];
+        let mapaRankingOficial = new Map(); // Mapa de consulta rápida para el Gafete y Grupos
         
         let modoTorneoActual = 'normal'; 
         let seleccionFlash = []; 
@@ -535,6 +536,7 @@
             { border: '#06b6d4', bg: 'rgba(6, 182, 212, 0.1)', text: '#000', badge: '#06b6d4' }   
         ];
 
+        // Función Maestra: Asigna nombres proyectados para la llave
         function getProyeccionNombre(rondaFase, isJ1, hasCuartos) {
             if (!rondaFase) return 'Por definir';
             const rf = String(rondaFase).toLowerCase();
@@ -571,15 +573,21 @@
             return isJ1 ? `${rondaFase} J1` : `${rondaFase} J2`;
         }
 
+        // ==============================================================
+        // PARSER DE TIEMPOS BLINDADO (SOLUCIONA EL BUG DE LAS 12:00 AM)
+        // ==============================================================
         function timeToMinutes(timeStr) { 
             if (!timeStr) return 540; 
             let cleanStr = String(timeStr).trim().toLowerCase();
             let match = cleanStr.match(/^(\d+):(\d+)/);
             if (!match) return 540;
+            
             let hrs = parseInt(match[1], 10);
             let mins = parseInt(match[2], 10);
+            
             if (cleanStr.includes('p') && hrs < 12) hrs += 12;
             if (cleanStr.includes('a') && hrs === 12) hrs = 0;
+            
             return hrs * 60 + mins; 
         }
 
@@ -619,6 +627,7 @@
             cargarEstadoCategoria();
         }
 
+        // Calcula hándicap para RR FLASH (C1,C2,C3)
         function getHandicap(div1, div2) {
             let d1 = div1 || 3; let d2 = div2 || 3;
             if(d1 == d2) return { h1: 0, h2: 0 };
@@ -633,8 +642,14 @@
 
         async function inicializarSorteo() {
             try {
+                // Generamos la Base de Datos Maestra de Jugadores
                 const resJug = await clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID);
-                if (resJug.data) todosLosJugadoresAdmin = resJug.data;
+                if (resJug.data) {
+                    todosLosJugadoresAdmin = resJug.data;
+                    todosLosJugadoresAdmin.forEach(j => {
+                        mapaRankingOficial.set(j.id, j);
+                    });
+                }
 
                 const { data: torneoData } = await clienteSupabase.from('torneos').select('*').eq('id', idTorneoActivo).eq('organizador_id', ORG_ID).maybeSingle();
                 if (torneoData) {
@@ -747,7 +762,7 @@
                             bloqueLlaves.style.display = 'flex';
                         }
 
-                        // RECONSTRUYE LOS GRUPOS PARA LA IMAGEN DE GRUPOS VIP
+                        // RECONSTRUYE LOS GRUPOS PARA LA IMAGEN DE GRUPOS VIP (CON SEED Y RANKING ACTUALIZADO)
                         reconstruirGruposDesdePartidosBD(partidosBD);
                         poblarDropdownAgenda(partidosBD);
                         seccionPartidos.style.display = 'block';
@@ -1381,6 +1396,7 @@
             let mainHtml = '';
             gruposGlobal = []; 
 
+            // Para mapear los Rankings necesitamos extraer todos los jugadores de los partidos
             let todosLosJugadoresDeLaFase = new Map();
             partidosBD.forEach(p => {
                 if (p.j1 && p.jugador1_id) todosLosJugadoresDeLaFase.set(p.jugador1_id, p.j1);
@@ -1389,17 +1405,21 @@
             
             let jugadoresOrdenadosGlobal = Array.from(todosLosJugadoresDeLaFase.values());
             
+            // Recuperar rankings reales desde la base global (mapaRankingOficial) para mayor seguridad
             jugadoresOrdenadosGlobal.forEach(jObj => {
-                let jReal = todosLosJugadoresAdmin.find(tj => tj.id === jObj.id);
+                let jReal = mapaRankingOficial.get(jObj.id);
                 if(jReal) jObj.puntos_ranking = jReal.puntos_ranking;
             });
             
+            // Ordenamos la lista principal de forma descendente por Puntos para calcular el Seed Master
             jugadoresOrdenadosGlobal.sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
             
+            // Les asignamos el Seed que les corresponde
             jugadoresOrdenadosGlobal.forEach((jObj, idx) => {
                 jObj.seedOriginal = idx + 1;
             });
 
+            // Ahora sí agruparlos visualmente
             [...new Set(partidosBD.map(p => p.grupo_nombre).filter(Boolean))].sort().forEach((nombreGpo, idx) => {
                 let mapaJugadoresDelGrupo = new Map();
                 partidosBD.filter(p => p.grupo_nombre === nombreGpo).forEach(p => {
@@ -1672,6 +1692,7 @@
                         return { ...b, minTime, maxTime, isBreak: false };
                     }).sort((a,b) => a.minTime - b.minTime);
 
+                // Preguntar solo si NO hay un break guardado
                 if (!breakVal) {
                     let ask = prompt(`Cronograma del día: ${fechaFiltro}\nSi hubo un receso (Break), ingresa la hora de inicio (Ej. 13:00 o 01:00 PM). Deja en blanco si no hubo:`);
                     if (ask && ask.trim() !== '') {
@@ -1771,7 +1792,8 @@
 
                 document.getElementById('vip-gantt-tracks').innerHTML = gridHtml + tracksHtml + breaksHtml;
 
-                document.getElementById('vip-crono-torneo-name').innerText = torneoActivoObj ? `${torneoActivoObj.nombre} • ${fechaFiltro}` : `TORNEO OFICIAL • ${fechaFiltro}`;
+                let nombreTorneoVisual = torneoActivoObj ? torneoActivoObj.nombre : 'TORNEO OFICIAL';
+                document.getElementById('vip-crono-torneo-name').innerText = `${nombreTorneoVisual} • ${fechaFiltro}`;
 
                 await renderAndDownload('plantilla-cronograma', `Cronograma_${fechaFiltro}.png`);
 
