@@ -212,17 +212,26 @@
             
             <div style="text-align: left; margin-bottom: 15px;">
                 <label style="font-size: 10px; color: #f87171; font-weight: 800; text-transform: uppercase;">1. Link Público / ID (Espectadores)</label>
-                <input type="text" id="input-youtube-link" class="input-tabla" style="width: 100%; padding: 12px !important; margin-top: 5px;" placeholder="Ej. https://youtu.be/abcd123">
+                <div style="display: flex; gap: 8px; margin-top: 5px;">
+                    <input type="text" id="input-youtube-link" class="input-tabla" style="width: 100%; padding: 12px !important;" placeholder="Ej. https://youtu.be/abcd123">
+                    <button onclick="copiarDato(this, 'input-youtube-link')" class="btn-filter-pill" style="padding: 0 15px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #cbd5e1; border-color: rgba(255,255,255,0.1);" title="Copiar"><i class="fa-regular fa-copy"></i></button>
+                </div>
             </div>
 
             <div style="text-align: left; margin-bottom: 15px;">
                 <label style="font-size: 10px; color: #38bdf8; font-weight: 800; text-transform: uppercase;">2. URL del Servidor (RTMP)</label>
-                <input type="text" id="input-youtube-rtmp" class="input-tabla" style="width: 100%; padding: 12px !important; margin-top: 5px;" placeholder="Ej. rtmp://a.rtmp.youtube.com/live2">
+                <div style="display: flex; gap: 8px; margin-top: 5px;">
+                    <input type="text" id="input-youtube-rtmp" class="input-tabla" style="width: 100%; padding: 12px !important;" placeholder="Ej. rtmp://a.rtmp.youtube.com/live2">
+                    <button onclick="copiarDato(this, 'input-youtube-rtmp')" class="btn-filter-pill" style="padding: 0 15px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #cbd5e1; border-color: rgba(255,255,255,0.1);" title="Copiar"><i class="fa-regular fa-copy"></i></button>
+                </div>
             </div>
 
             <div style="text-align: left; margin-bottom: 25px;">
                 <label style="font-size: 10px; color: #fbbf24; font-weight: 800; text-transform: uppercase;">3. Clave de Transmisión (Stream Key)</label>
-                <input type="password" id="input-youtube-key" class="input-tabla" style="width: 100%; padding: 12px !important; margin-top: 5px;" placeholder="****-****-****-****">
+                <div style="display: flex; gap: 8px; margin-top: 5px;">
+                    <input type="password" id="input-youtube-key" class="input-tabla" style="width: 100%; padding: 12px !important;" placeholder="****-****-****-****">
+                    <button onclick="copiarDato(this, 'input-youtube-key')" class="btn-filter-pill" style="padding: 0 15px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #cbd5e1; border-color: rgba(255,255,255,0.1);" title="Copiar"><i class="fa-regular fa-copy"></i></button>
+                </div>
             </div>
 
             <input type="hidden" id="hidden-youtube-partidoid">
@@ -976,6 +985,36 @@
         }
 
         function cerrarModalYouTube() { document.getElementById('modal-youtube').style.display = 'none'; }
+
+        // Función individual para copiar los campos
+        function copiarDato(btnElement, inputId) {
+            let inputEl = document.getElementById(inputId);
+            if (!inputEl.value) {
+                alert("No hay ningún dato para copiar en este campo.");
+                return;
+            }
+            
+            // Si es password, cambiar momentáneamente a texto por compatibilidad en móviles viejos
+            let isPassword = inputEl.type === 'password';
+            if (isPassword) inputEl.type = 'text';
+
+            navigator.clipboard.writeText(inputEl.value).then(() => {
+                if (isPassword) inputEl.type = 'password';
+                let iconOriginal = btnElement.innerHTML;
+                btnElement.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i>';
+                setTimeout(() => { btnElement.innerHTML = iconOriginal; }, 1500);
+            }).catch(err => {
+                // Fallback clásico si clipboard falla en algún dispositivo
+                inputEl.select();
+                inputEl.setSelectionRange(0, 99999);
+                document.execCommand("copy");
+                if (isPassword) inputEl.type = 'password';
+                
+                let iconOriginal = btnElement.innerHTML;
+                btnElement.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i>';
+                setTimeout(() => { btnElement.innerHTML = iconOriginal; }, 1500);
+            });
+        }
 
         async function guardarLinkYouTube() {
             let partidoId = document.getElementById('hidden-youtube-partidoid').value;
