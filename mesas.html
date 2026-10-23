@@ -89,7 +89,6 @@
 
         .sets-badge { font-size: 11px; font-weight: 900; color: #64748b; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 8px; margin-left: 10px; border: 1px solid rgba(255,255,255,0.02); }
 
-        /* Botones Acción */
         .grid-botones-mesa { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
         .btn-mesa-action { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 12px; padding: 12px 10px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; text-decoration: none; }
         .btn-mesa-action:hover:not(:disabled) { background: rgba(255,255,255,0.1); color: #fff; }
@@ -432,14 +431,10 @@
                 let j1 = p1.id ? datos.porCategoria[cat].jugadores[p1.id] : null;
                 let j2 = p2.id ? datos.porCategoria[cat].jugadores[p2.id] : null;
                 
-                // Si ambos son null, retornar
                 if (!j1 && !j2) return { nombre: 'Por definir', id: null };
-                
-                // Si falta uno (es BYE), el otro avanza automáticamente sin afectar el ranking
                 if (j1 && !j2) return p1;
                 if (j2 && !j1) return p2;
 
-                // Si están los 2, calcular estadísticas completas
                 let s1 = m.sets_j1 || m.puntos_j1 || 0;
                 let s2 = m.sets_j2 || m.puntos_j2 || 0;
                 j1.pj++; j2.pj++;
@@ -468,7 +463,6 @@
                 return ganoJ1 ? p1 : p2;
             };
 
-            // GRUPOS
             let gruposMatches = todosLosPartidos.filter(m => m.grupo_nombre && m.grupo_nombre !== 'Flash');
             gruposMatches.forEach(m => {
                 let cat = m.categorias?.nombre || 'General';
@@ -488,16 +482,12 @@
                 }
             });
 
-            // Extraer líderes de grupos (Con y sin división para ambos formatos)
+            // Extraer líderes de grupos SIN candados. Proyección 100% en vivo
             Object.keys(datos.porCategoria).forEach(cat => {
                 let gCat = datos.porCategoria[cat].grupos;
                 ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach(g => {
                     
-                    let hasMatches = groupStatus[cat] && groupStatus[cat][g] && groupStatus[cat][g].total > 0;
-                    let isGroupFinished = hasMatches && (groupStatus[cat][g].total === groupStatus[cat][g].finished);
-
-                    if (hasMatches && isGroupFinished && gCat[g]) {
-                        // El grupo tiene jugadores y ya todos los partidos terminaron
+                    if (gCat[g] && Object.keys(gCat[g]).length > 0) {
                         let arr = Object.values(gCat[g]).sort((a,b) => {
                             if (b.pts !== a.pts) return b.pts - a.pts;
                             let rA = a.setsG / (a.setsP || 0.0001); let rB = b.setsG / (b.setsP || 0.0001);
@@ -506,11 +496,9 @@
                             return b.rankIni - a.rankIni;
                         });
                         
-                        // Standars (Categoría Abierta / Por defecto)
                         ganadoresFase[cat][`1_GPO_${g}`] = arr[0] ? { id: arr[0].id, nombre: arr[0].nombre } : { nombre: `BYE (Sin Rival)`, id: null };
                         ganadoresFase[cat][`2_GPO_${g}`] = arr[1] ? { id: arr[1].id, nombre: arr[1].nombre } : { nombre: `BYE (Sin Rival)`, id: null };
 
-                        // Para el RR Flash (Filtros por División C1, C2, C3)
                         let c1 = arr.filter(x => String(x.div) === '1');
                         let c2 = arr.filter(x => String(x.div) === '2');
                         let c3 = arr.filter(x => String(x.div) === '3');
@@ -524,29 +512,15 @@
                         ganadoresFase[cat][`1_GPO_${g}_C3`] = c3[0] ? { id: c3[0].id, nombre: c3[0].nombre } : { nombre: `BYE (Sin Rival)`, id: null };
                         ganadoresFase[cat][`2_GPO_${g}_C3`] = c3[1] ? { id: c3[1].id, nombre: c3[1].nombre } : { nombre: `BYE (Sin Rival)`, id: null };
 
-                    } else if (!hasMatches) {
-                        // El grupo NO EXISTE (Está vacío porque hay pocos jugadores). Proyectamos un BYE definitivo.
+                    } else {
                         ganadoresFase[cat][`1_GPO_${g}`] = { nombre: `BYE (Sin Rival)`, id: null };
                         ganadoresFase[cat][`2_GPO_${g}`] = { nombre: `BYE (Sin Rival)`, id: null };
-                        
                         ganadoresFase[cat][`1_GPO_${g}_C1`] = { nombre: `BYE (Sin Rival)`, id: null };
                         ganadoresFase[cat][`2_GPO_${g}_C1`] = { nombre: `BYE (Sin Rival)`, id: null };
-                        
                         ganadoresFase[cat][`1_GPO_${g}_C2`] = { nombre: `BYE (Sin Rival)`, id: null };
                         ganadoresFase[cat][`2_GPO_${g}_C2`] = { nombre: `BYE (Sin Rival)`, id: null };
-                        
                         ganadoresFase[cat][`1_GPO_${g}_C3`] = { nombre: `BYE (Sin Rival)`, id: null };
                         ganadoresFase[cat][`2_GPO_${g}_C3`] = { nombre: `BYE (Sin Rival)`, id: null };
-                    } else {
-                        // El grupo existe pero faltan partidos por jugar. Mostramos la proyección genérica.
-                        ganadoresFase[cat][`1_GPO_${g}`] = { nombre: `1° Gpo ${g}`, id: null };
-                        ganadoresFase[cat][`2_GPO_${g}`] = { nombre: `2° Gpo ${g}`, id: null };
-                        ganadoresFase[cat][`1_GPO_${g}_C1`] = { nombre: `1° Gpo ${g} (C1)`, id: null };
-                        ganadoresFase[cat][`2_GPO_${g}_C1`] = { nombre: `2° Gpo ${g} (C1)`, id: null };
-                        ganadoresFase[cat][`1_GPO_${g}_C2`] = { nombre: `1° Gpo ${g} (C2)`, id: null };
-                        ganadoresFase[cat][`2_GPO_${g}_C2`] = { nombre: `2° Gpo ${g} (C2)`, id: null };
-                        ganadoresFase[cat][`1_GPO_${g}_C3`] = { nombre: `1° Gpo ${g} (C3)`, id: null };
-                        ganadoresFase[cat][`2_GPO_${g}_C3`] = { nombre: `2° Gpo ${g} (C3)`, id: null };
                     }
                 });
             });
@@ -895,8 +869,7 @@
                     if (!nomJ1 || nomJ1.includes('Por definir')) nomJ1 = getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos);
                     if (!nomJ2 || nomJ2.includes('Por definir')) nomJ2 = getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos);
 
-                    // Dejamos que "BYE (Sin Rival)" se imprima tal cual en la tarjeta
-
+                    // AHORA PERMITIMOS QUE DIGA BYE Y MUESTRE EL MARCADOR MANUAL PARA AVANZAR
                     let idDinamicoJ1 = proyJ1.id;
                     let idDinamicoJ2 = proyJ2.id;
                     
