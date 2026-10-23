@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Overlay de Transmisión - Torneo Pixel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -23,7 +23,7 @@
             height: 100vh;
         }
 
-        /* CARÁTULA DE PORTADA / MINIATURA (PRIMEROS 5 SEGUNDOS) */
+        /* CARÁTULA DE PORTADA (SE AJUSTA AL CELULAR) */
         #caratula-portada {
             position: fixed;
             inset: 0;
@@ -33,19 +33,18 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 30px;
+            padding: 5vw;
             box-sizing: border-box;
             transition: opacity 0.8s ease, transform 0.8s ease;
         }
 
         .portada-box {
             width: 95%;
-            max-width: 1200px;
             background: rgba(15, 23, 42, 0.95);
-            border: 4px solid #38bdf8;
-            box-shadow: 0 0 60px rgba(56, 189, 248, 0.35);
-            border-radius: 36px;
-            padding: 40px 30px;
+            border: clamp(2px, 0.5vw, 4px) solid #38bdf8;
+            box-shadow: 0 0 4vw rgba(56, 189, 248, 0.35);
+            border-radius: clamp(16px, 4vw, 36px);
+            padding: clamp(20px, 5vw, 40px) clamp(15px, 3vw, 30px);
             text-align: center;
         }
 
@@ -54,92 +53,94 @@
             background: linear-gradient(90deg, #06b6d4, #3b82f6);
             color: #000;
             font-family: 'Orbitron', sans-serif;
-            font-size: 18px;
+            font-size: clamp(10px, 2.5vw, 18px);
             font-weight: 900;
-            letter-spacing: 3px;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            padding: 10px 24px;
+            padding: 1vw 3vw;
             border-radius: 9999px;
-            margin-bottom: 20px;
+            margin-bottom: 2vw;
         }
 
         .portada-info-partido {
-            font-size: 20px;
+            font-size: clamp(12px, 3vw, 20px);
             font-weight: 800;
             color: #fbbf24;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             text-transform: uppercase;
-            margin-bottom: 30px;
+            margin-bottom: 4vw;
         }
 
         .duelo-container {
             display: flex;
             align-items: center;
             justify-content: space-around;
-            gap: 25px;
-            margin: 20px 0;
+            gap: 2vw;
+            margin: 3vw 0;
+            width: 100%;
         }
 
         .jugador-portada {
             flex: 1;
-            padding: 15px;
+            padding: 1vw;
+            width: 40%;
         }
 
         .nombre-gigante {
             font-family: 'Montserrat', sans-serif;
-            font-size: 42px;
+            font-size: clamp(16px, 5vw, 42px);
             font-weight: 900;
             line-height: 1.1;
             text-transform: uppercase;
-            letter-spacing: 1px;
             word-break: break-word;
         }
 
         .club-subtitulo {
-            font-size: 18px;
+            font-size: clamp(10px, 2vw, 18px);
             color: #94a3b8;
             font-weight: 700;
-            margin-top: 10px;
+            margin-top: 1vw;
             text-transform: uppercase;
-            letter-spacing: 1px;
         }
 
         .vs-circulo {
-            width: 80px;
-            height: 80px;
+            width: clamp(40px, 10vw, 80px);
+            height: clamp(40px, 10vw, 80px);
             border-radius: 50%;
             background: rgba(239, 68, 68, 0.2);
-            border: 3px solid #ef4444;
+            border: clamp(2px, 0.4vw, 4px) solid #ef4444;
             color: #ef4444;
             font-family: 'Orbitron', sans-serif;
             font-weight: 900;
-            font-size: 24px;
+            font-size: clamp(12px, 3vw, 24px);
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
-            box-shadow: 0 0 25px rgba(239, 68, 68, 0.4);
+            box-shadow: 0 0 3vw rgba(239, 68, 68, 0.4);
         }
 
-        /* MARCADOR PERMANENTE (BARRA INFERIOR DEPORTIVA) ESCALADO PARA VMIX/OBS */
+        /* MARCADOR PERMANENTE FLUIDO (ESPECIAL PRISM LIVE) */
         #marcador-stream {
             position: fixed;
-            bottom: 50px;
+            bottom: clamp(10px, 5vh, 40px);
             left: 50%;
             transform: translateX(-50%);
             z-index: 100;
+            width: 96vw;
+            max-width: 1200px; /* Tope en pantallas horizontales muy grandes */
             background: linear-gradient(90deg, rgba(10, 15, 26, 0.95) 0%, rgba(15, 23, 42, 0.95) 50%, rgba(10, 15, 26, 0.95) 100%);
-            backdrop-filter: blur(15px);
-            border: 2px solid rgba(255, 255, 255, 0.15);
-            border-bottom: 6px solid #06b6d4;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-bottom: clamp(2px, 0.6vw, 6px) solid #06b6d4;
             border-radius: 100px;
-            padding: 15px 50px;
-            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
+            padding: clamp(8px, 1.5vw, 15px) clamp(10px, 3vw, 40px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
             display: flex;
             flex-direction: row;
             align-items: center;
             justify-content: space-between;
-            gap: 40px;
+            gap: 2vw;
             white-space: nowrap;
         }
 
@@ -149,48 +150,56 @@
             align-items: center;
             justify-content: center;
             border-right: 2px solid rgba(255,255,255,0.1);
-            padding-right: 40px;
+            padding-right: 2vw;
+            min-width: 15vw;
         }
 
         #score-mesa-label {
-            font-size: 24px;
+            font-size: clamp(12px, 2.5vw, 24px);
             font-weight: 900;
             color: #ffffff;
-            letter-spacing: 1px;
             text-transform: uppercase;
         }
 
         #score-fase-label {
             color: #fbbf24;
-            font-size: 15px;
+            font-size: clamp(8px, 1.5vw, 15px);
             font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
         .fila-jugador-marcador {
             display: flex;
             align-items: center;
-            gap: 25px;
+            gap: 1.5vw;
+            flex: 1;
+        }
+
+        .fila-jugador-marcador.left {
+            justify-content: flex-end;
+        }
+        
+        .fila-jugador-marcador.right {
+            justify-content: flex-start;
         }
 
         .marcador-nombre {
-            font-size: 30px;
+            font-size: clamp(12px, 3vw, 30px);
             font-weight: 900;
             color: #ffffff;
-            max-width: 400px;
+            width: 100%;
+            max-width: 25vw;
             overflow: hidden;
             text-overflow: ellipsis;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            text-shadow: 0 3px 6px rgba(0,0,0,0.6);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
         }
 
         .caja-puntos {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 1vw;
         }
 
         .badge-sets {
@@ -198,11 +207,10 @@
             color: #fbbf24;
             font-family: 'Orbitron', sans-serif;
             font-weight: 900;
-            font-size: 24px;
-            padding: 6px 18px;
-            border-radius: 12px;
-            border: 2px solid rgba(251, 191, 36, 0.3);
-            min-width: 35px;
+            font-size: clamp(12px, 2.5vw, 24px);
+            padding: clamp(2px, 0.5vw, 6px) clamp(6px, 1.5vw, 18px);
+            border-radius: clamp(4px, 1vw, 12px);
+            border: 1px solid rgba(251, 191, 36, 0.3);
             text-align: center;
         }
 
@@ -211,24 +219,25 @@
             color: #000;
             font-family: 'Orbitron', sans-serif;
             font-weight: 900;
-            font-size: 38px;
-            padding: 6px 25px;
-            border-radius: 12px;
-            min-width: 55px;
+            font-size: clamp(16px, 4vw, 38px);
+            padding: clamp(2px, 0.5vw, 6px) clamp(10px, 2vw, 25px);
+            border-radius: clamp(4px, 1vw, 12px);
+            min-width: clamp(35px, 6vw, 55px);
             text-align: center;
-            box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+            box-shadow: 0 0 1vw rgba(6, 182, 212, 0.5);
         }
 
         .badge-puntos.p2 {
             background: #d946ef;
-            box-shadow: 0 0 20px rgba(217, 70, 239, 0.5);
+            box-shadow: 0 0 1vw rgba(217, 70, 239, 0.5);
         }
 
         .vs-text {
-            font-size: 18px;
+            font-size: clamp(10px, 2vw, 18px);
             font-weight: 900;
             color: #64748b;
             font-style: italic;
+            padding: 0 1vw;
         }
     </style>
 </head>
@@ -256,14 +265,14 @@
         </div>
     </div>
 
-    <!-- 2. MARCADOR EN VIVO (BARRA INFERIOR ESTILO TV) -->
+    <!-- 2. MARCADOR EN VIVO (FLUIDO PARA MÓVIL) -->
     <div id="marcador-stream">
         <div class="mesa-info-bar">
             <span id="score-mesa-label"><i class="fa-solid fa-table-tennis-paddle-ball text-cyan-400 mr-1"></i> MESA 1</span>
             <span id="score-fase-label">FASE DE GRUPOS</span>
         </div>
 
-        <div class="fila-jugador-marcador">
+        <div class="fila-jugador-marcador left">
             <span id="score-j1-nombre" class="marcador-nombre" style="text-align: right;">Jugador 1</span>
             <div class="caja-puntos">
                 <span id="score-j1-sets" class="badge-sets">0</span>
@@ -273,7 +282,7 @@
 
         <div class="vs-text">VS</div>
 
-        <div class="fila-jugador-marcador">
+        <div class="fila-jugador-marcador right">
             <div class="caja-puntos">
                 <span id="score-j2-puntos" class="badge-puntos p2">0</span>
                 <span id="score-j2-sets" class="badge-sets">0</span>
