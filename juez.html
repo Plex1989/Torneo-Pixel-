@@ -251,7 +251,7 @@
                 return { hP1: 0, hP2: 0 };
             }
             
-            // Aplicar histórico de sumas/restas de la regla dinámica hasta el targetSetIndex
+            // Aplicar histórico dinámico (+1/-1) para TODOS los partidos con Hándicap
             for(let i=0; i<targetSetIndex; i++) {
                 let s = historialSets[i];
                 if (targetPlayer === 1) { // P1 recibe ventaja. Dador es P2.
@@ -337,7 +337,7 @@
                     }
                 }
 
-                // Cálculo del Saque basado en la ventaja
+                // Cálculo del Saque basado en la ventaja: El que da la ventaja saca SIEMPRE primero en el set
                 firstServersBySet = [];
                 let givesHandicap = 0;
                 if (p1.div < p2.div) givesHandicap = 1;
@@ -345,8 +345,13 @@
                 
                 for (let i = 0; i < numSetActual; i++) {
                     if (givesHandicap !== 0) {
-                        // El que Otorga Ventaja, siempre saca el primer punto en su set
-                        firstServersBySet.push(givesHandicap);
+                        let hInfo = calcularHandicapActual(i);
+                        let initTotal = hInfo.hP1 + hInfo.hP2;
+                        let initBlock = Math.floor(initTotal / 2);
+                        
+                        // Si el bloque de puntos matemático es par, el 'baseServer' (el que saca en 0-0) debe ser el dador.
+                        let baseServer = (initBlock % 2 === 0) ? givesHandicap : (givesHandicap === 1 ? 2 : 1);
+                        firstServersBySet.push(baseServer);
                     } else {
                         if (i === 0) firstServersBySet.push(1);
                         else firstServersBySet.push(firstServersBySet[i-1] === 1 ? 2 : 1);
@@ -446,7 +451,6 @@
             };
         }
 
-        // Calcula de manera natural el saque con base a la suma total de puntos (incluye el handicap)
         function getCurrentServer() {
             let currentSetIdx = numSetActual - 1; 
             if(currentSetIdx >= firstServersBySet.length) { 
@@ -615,7 +619,10 @@
                     else if (p2.div < p1.div) givesHandicap = 2;
 
                     if (givesHandicap !== 0) {
-                        firstServersBySet.push(givesHandicap);
+                        let initTotal = handicapP1 + handicapP2;
+                        let initBlock = Math.floor(initTotal / 2);
+                        let baseServer = (initBlock % 2 === 0) ? givesHandicap : (givesHandicap === 1 ? 2 : 1);
+                        firstServersBySet.push(baseServer);
                     } else {
                         let prevFirst = firstServersBySet[firstServersBySet.length - 1];
                         firstServersBySet.push(prevFirst === 1 ? 2 : 1);
