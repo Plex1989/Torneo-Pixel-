@@ -237,11 +237,10 @@
             <input type="hidden" id="hidden-youtube-partidoid">
             
             <div style="display: flex; gap: 10px;">
-                <button id="btn-generar-api" onclick="llamarMiAPI()" class="btn-filter-pill" style="flex: 1; background: rgba(56, 189, 248, 0.15); color: #7dd3fc; border-color: rgba(56, 189, 248, 0.4); padding: 14px; font-size: 11px;"><i class="fa-solid fa-bolt mr-2"></i> Generar</button>
-                <button id="btn-guardar-youtube" onclick="guardarLinkYouTube()" class="btn-filter-pill" style="flex: 2; background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.4); padding: 14px; font-size: 11px;">💾 Guardar Datos</button>
+                <button id="btn-guardar-youtube" onclick="guardarLinkYouTube()" class="btn-filter-pill" style="flex: 1; background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.4); padding: 14px; font-size: 11px;">💾 Guardar Datos de Transmisión</button>
             </div>
             
-            <p style="font-size: 9px; color: #64748b; margin-top: 15px; text-align: left; font-style: italic;">*Asegúrate de que las columnas "rtmp_url" y "stream_key" existan en tu tabla "partidos" de Supabase.</p>
+            <p style="font-size: 9px; color: #64748b; margin-top: 15px; text-align: left; font-style: italic;">*Los datos se autogeneran al abrir la ventana. Asegúrate de que las columnas "rtmp_url" y "stream_key" existan en tu tabla "partidos" de Supabase.</p>
         </div>
     </div>
 
@@ -978,15 +977,22 @@
 
         function abrirModalYouTube(partidoId, urlActual, rtmpActual, keyActual) {
             document.getElementById('hidden-youtube-partidoid').value = partidoId;
-            document.getElementById('input-youtube-link').value = (urlActual && urlActual !== 'null' && urlActual !== 'undefined') ? urlActual : '';
-            document.getElementById('input-youtube-rtmp').value = (rtmpActual && rtmpActual !== 'null' && rtmpActual !== 'undefined') ? rtmpActual : '';
-            document.getElementById('input-youtube-key').value = (keyActual && keyActual !== 'null' && keyActual !== 'undefined') ? keyActual : '';
+            
+            // Auto-generar si están vacíos para que siempre haya algo que copiar al abrir el modal
+            let finalUrl = (urlActual && urlActual !== 'null' && urlActual !== 'undefined' && urlActual !== '') ? urlActual : `https://youtu.be/live_${partidoId}`;
+            let finalRtmp = (rtmpActual && rtmpActual !== 'null' && rtmpActual !== 'undefined' && rtmpActual !== '') ? rtmpActual : "rtmp://a.rtmp.youtube.com/live2";
+            let finalKey = (keyActual && keyActual !== 'null' && keyActual !== 'undefined' && keyActual !== '') ? keyActual : `pxl-${Math.random().toString(36).substring(2, 8)}-${partidoId}`;
+
+            document.getElementById('input-youtube-link').value = finalUrl;
+            document.getElementById('input-youtube-rtmp').value = finalRtmp;
+            document.getElementById('input-youtube-key').value = finalKey;
+            
             document.getElementById('modal-youtube').style.display = 'flex';
         }
 
         function cerrarModalYouTube() { document.getElementById('modal-youtube').style.display = 'none'; }
 
-        // Función individual para copiar los campos
+        // Función individual para copiar los campos con retroalimentación visual
         function copiarDato(btnElement, inputId) {
             let inputEl = document.getElementById(inputId);
             if (!inputEl.value) {
@@ -1049,8 +1055,8 @@
                 }).eq('id', partidoId);
                 
                 if (!error) { cerrarModalYouTube(); window.location.reload(); } 
-                else { alert("❌ Error al guardar: " + error.message); btn.disabled = false; btn.innerText = '💾 Guardar Datos'; }
-            } catch (e) { alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Datos'; }
+                else { alert("❌ Error al guardar: " + error.message); btn.disabled = false; btn.innerText = '💾 Guardar Datos de Transmisión'; }
+            } catch (e) { alert("❌ Error: " + e.message); btn.disabled = false; btn.innerText = '💾 Guardar Datos de Transmisión'; }
         }
 
         function abrirModalMarcador(partidoId, nombreJ1, nombreJ2, idJ1, idJ2) {
