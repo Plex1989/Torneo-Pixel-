@@ -14,27 +14,21 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Librería para tomar foto de las llaves y descargarlas -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <style>
         /* ========================================================
-           PALETA PREMIUM: DARK & GOLD (CON ENCABEZADO CARMESÍ PARA DIFERENCIAR)
+           PALETA PREMIUM: DARK & GOLD (CON ENCABEZADO CARMESÍ)
            ======================================================== */
         body { font-family: 'Sora', sans-serif; margin: 0; padding: 15px; background-color: #0a0a0c; color: #f8fafc; min-height: 100vh; box-sizing: border-box; overflow-x: hidden; }
         .font-digital { font-family: 'Orbitron', sans-serif; }
         
-        /* Glow Ambiental Diferenciado (Rojo arriba, Dorado abajo) */
         body::before { content: ""; position: fixed; top: -15%; left: -10%; width: 600px; height: 600px; background: #e11d48; border-radius: 50%; filter: blur(200px); opacity: 0.12; pointer-events: none; z-index: -1; }
         body::after { content: ""; position: fixed; bottom: -10%; right: -10%; width: 700px; height: 700px; background: #fbbf24; border-radius: 50%; filter: blur(200px); opacity: 0.05; pointer-events: none; z-index: -1; }
 
-        /* ENCABEZADO DESTACADO PARA ESPECTADOR */
-        .header { 
-            text-align: center; 
-            margin-bottom: 30px; 
-            padding: 30px 20px; 
-            background: linear-gradient(180deg, rgba(225, 29, 72, 0.12) 0%, rgba(10, 10, 12, 0) 100%); 
-            border-top: 4px solid #e11d48; 
-            border-radius: 20px;
-            position: relative; 
-        }
+        .header { text-align: center; margin-bottom: 30px; padding: 30px 20px; background: linear-gradient(180deg, rgba(225, 29, 72, 0.12) 0%, rgba(10, 10, 12, 0) 100%); border-top: 4px solid #e11d48; border-radius: 20px; position: relative; }
         .header-tag { display: inline-block; background: rgba(225, 29, 72, 0.2); border: 1px solid rgba(225, 29, 72, 0.4); color: #f43f5e; font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 6px 16px; border-radius: 9999px; letter-spacing: 3px; margin-bottom: 12px; box-shadow: 0 0 15px rgba(225, 29, 72, 0.2); }
         .header h1 { font-size: 26px; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; color: #ffffff; margin: 0; text-shadow: 0 0 20px rgba(225, 29, 72, 0.4); }
 
@@ -53,7 +47,7 @@
 
         .grid-espectador { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; max-width: 1300px; margin: auto; }
 
-        .card-mesa { background: rgba(18, 18, 22, 0.7); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.05); border-bottom: 4px solid rgba(255, 255, 255, 0.1); padding: 22px; position: relative; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .card-mesa { background: rgba(18, 18, 22, 0.7); backdrop-filter: blur(25px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.05); border-bottom: 4px solid rgba(255, 255, 255, 0.1); padding: 22px; position: relative; transition: all 0.4s ease; cursor: pointer; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
         .card-mesa:hover { transform: translateY(-5px); border-color: rgba(251, 191, 36, 0.3); box-shadow: 0 15px 35px rgba(251, 191, 36, 0.15); }
         .card-mesa.vivo { border-bottom-color: #fbbf24 !important; box-shadow: 0 0 30px rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.2); }
         .card-mesa.finalizado { border-bottom-color: #475569 !important; opacity: 0.75; filter: grayscale(20%); }
@@ -76,21 +70,34 @@
         
         .score-big { font-family: 'Orbitron', sans-serif; font-size: 28px; font-weight: 900; color: #ffffff; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
         .score-big.p2 { color: #fbbf24; text-shadow: 0 0 15px rgba(251, 191, 36, 0.3); }
-
         .sets-badge { font-size: 11px; font-weight: 900; color: #64748b; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 8px; margin-left: 10px; border: 1px solid rgba(255,255,255,0.02); }
 
         .header-hora { grid-column: 1 / -1; font-size: 13px; color: #fbbf24; font-weight: 900; text-transform: uppercase; border-bottom: 1px solid rgba(251, 191, 36, 0.2); padding-bottom: 8px; margin-top: 25px; margin-bottom: 10px; letter-spacing: 2px; display: flex; align-items: center; }
         .header-hora::before { content: ""; display: inline-block; width: 6px; height: 6px; background: #fbbf24; border-radius: 50%; margin-right: 10px; box-shadow: 0 0 8px #fbbf24; }
         
-        .seccion-llaves-footer { grid-column: 1 / -1; margin-top: 30px; background: rgba(15, 15, 18, 0.85); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 24px; padding: 30px; backdrop-filter: blur(20px); box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
-        
         .mensaje-vacio { text-align: center; color: #64748b; font-style: italic; font-weight: 600; grid-column: 1/-1; padding: 60px 20px; background: rgba(255,255,255,0.02); border-radius: 20px; border: 1px dashed rgba(255,255,255,0.05); }
 
-        /* Botones de Acción en Tarjeta */
         .btn-action-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 12px; padding: 12px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; text-align: center; text-decoration: none; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; }
         .btn-action-card:hover { background: rgba(255,255,255,0.1); color: #fff; }
         .btn-live-yt { background: rgba(220, 38, 38, 0.15); border-color: rgba(220, 38, 38, 0.4); color: #ef4444; }
         .btn-live-yt:hover { background: #dc2626; color: white; box-shadow: 0 0 20px rgba(220, 38, 38, 0.5); }
+
+        /* ========================================================
+           DISEÑO DE ÁRBOL DE LLAVES (VISUAL BRACKET)
+           ======================================================== */
+        .seccion-llaves-footer { grid-column: 1 / -1; margin-top: 30px; background: rgba(15, 15, 18, 0.85); border: 1px solid rgba(251, 191, 36, 0.2); border-radius: 24px; padding: 30px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+        .bracket-container { display: flex; gap: 30px; padding: 30px; background: rgba(0,0,0,0.4); border-radius: 20px; overflow-x: auto; border: 1px solid rgba(255,255,255,0.05); justify-content: flex-start; align-items: stretch; min-width: max-content; margin-top: 20px; }
+        .bracket-col { display: flex; flex-direction: column; justify-content: space-around; gap: 20px; min-width: 260px; position: relative; }
+        .b-match { background: rgba(18, 18, 22, 0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 2; display: flex; flex-direction: column; }
+        .b-team { display: flex; justify-content: space-between; padding: 12px 15px; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; font-weight: 800; color: #cbd5e1; align-items: center; }
+        .b-team:last-child { border-bottom: none; }
+        .b-team.winner { color: #fbbf24; background: rgba(251,191,36,0.1); }
+        .b-score { font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; background: rgba(0,0,0,0.5); padding: 4px 12px; border-radius: 6px; }
+        
+        /* Conectores Visuales Horizontales */
+        .b-match::after { content: ""; position: absolute; right: -15px; top: 50%; width: 15px; border-top: 2px solid rgba(255,255,255,0.15); z-index: 1; }
+        .bracket-col:last-child .b-match::after { display: none; }
+        .bracket-col:not(:first-child) .b-match::before { content: ""; position: absolute; left: -15px; top: 50%; width: 15px; border-top: 2px solid rgba(255,255,255,0.15); z-index: 1; }
 
         /* PANTALLA COMPLETA VIP */
         #modal-fullscreen-partido { background: radial-gradient(circle at center, #111115 0%, #04060a 100%); }
@@ -106,7 +113,6 @@
             body { background: #ffffff !important; color: #000000 !important; }
             body::before, body::after, .header, .scrolling-bar, .no-print, #modal-fullscreen-partido, #modal-video { display: none !important; }
             * { color: #000 !important; text-shadow: none !important; box-shadow: none !important; }
-            .card-mesa { border: 1px solid #ccc !important; page-break-inside: avoid; }
         }
     </style>
 </head>
@@ -143,7 +149,6 @@
     <!-- MODAL PANTALLA COMPLETA PARTIDO ESPECTADOR -->
     <div id="modal-fullscreen-partido" class="fixed inset-0 z-[100] p-4 md:p-8 flex-col justify-between overflow-y-auto no-print" style="display: none;">
         
-        <!-- Top Bar FS -->
         <div class="flex justify-between items-center bg-black/40 p-4 rounded-3xl border border-white/5 shrink-0 backdrop-blur-md">
             <button onclick="cerrarPartidoFullScreen()" class="bg-white/5 hover:bg-white/10 px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest text-zinc-300 hover:text-white transition-all border border-white/5">
                 <i class="fa-solid fa-arrow-left mr-2"></i> Volver
@@ -162,7 +167,6 @@
             </div>
         </div>
 
-        <!-- Score Area FS -->
         <div class="flex-1 flex flex-col md:flex-row gap-6 my-6 min-h-0">
             <!-- P1 -->
             <div class="flex-1 flex flex-col min-h-0">
@@ -178,7 +182,6 @@
                 </div>
             </div>
 
-            <!-- VS Badge -->
             <div class="flex md:flex-col justify-center items-center shrink-0">
                 <div class="bg-black/50 border border-white/10 w-12 h-12 rounded-full flex items-center justify-center font-black text-sm text-zinc-500 uppercase">VS</div>
             </div>
@@ -198,7 +201,6 @@
             </div>
         </div>
 
-        <!-- Bottom Bar FS -->
         <div class="shrink-0 flex flex-col gap-3">
             <div id="fs-proyeccion-box" class="hidden bg-amber-500/10 border border-amber-500/30 text-amber-400 p-4 rounded-2xl text-center text-xs font-bold tracking-wide"></div>
             <div id="fs-video-btn-container" class="hidden w-full max-w-md mx-auto mb-2"></div>
@@ -216,7 +218,6 @@
         <p style="color:#e2e8f0; font-size: 11px; font-weight: 600; margin-top: 8px; letter-spacing: 1px;">Sigue los marcadores y estadísticas en tiempo real.</p>
     </div>
 
-    <!-- FILTROS SEPARADOS POR MODALIDAD -->
     <div style="font-size:10px; font-weight:900; color:#cbd5e1; text-transform:uppercase; margin-bottom:8px; letter-spacing:2px; display:flex; align-items:center;"><i class="fa-solid fa-gamepad mr-2 text-amber-500"></i> Modalidad</div>
     <div class="scrolling-bar" id="bar-modalidad">
         <button class="btn-filter-pill active" onclick="filtrarModalidad('todas', this)">Todas</button>
@@ -231,11 +232,10 @@
         <button class="btn-filter-pill btn-cat-pill active" onclick="filtrarCategoria('todas')">Todas las Categorías</button>
     </div>
 
-    <!-- VISTA DE DATOS CON EL BOTÓN DE ESTADÍSTICAS MOVIDO Y RENOMBRADO -->
     <div style="font-size:10px; font-weight:900; color:#cbd5e1; text-transform:uppercase; margin-bottom:8px; letter-spacing:2px; display:flex; align-items:center; margin-top:5px;"><i class="fa-solid fa-eye mr-2 text-amber-500"></i> Vista de Datos</div>
     <div class="scrolling-bar no-print">
         <button class="btn-filter-pill active" id="tab-todos" onclick="filtrarEstado('todos')">📋 Cartelera Completa</button>
-        <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')" style="color:#10b981; border-color:rgba(16,185,129,0.3);">📊 Estadísticas</button>
+        <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')" style="color:#10b981; border-color:rgba(16,185,129,0.3);">📊 Estadísticas y Llaves</button>
         <button class="btn-filter-pill" id="tab-vivo" onclick="filtrarEstado('en_curso')">🔴 Jugándose Ahora</button>
         <button class="btn-filter-pill" id="tab-pendientes" onclick="filtrarEstado('pendiente')">⏳ Por Jugar</button>
         <button class="btn-filter-pill" id="tab-finalizados" onclick="filtrarEstado('finalizado')">🏁 Resultados</button>
@@ -274,9 +274,6 @@
         let lastAnnouncedScore = "";
         let pinEspectadorOficial = '1234'; 
 
-        // ==========================================
-        // FUNCIONES DEL REPRODUCTOR YOUTUBE
-        // ==========================================
         function extractYouTubeID(url) {
             let regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
             let match = url.match(regExp);
@@ -318,9 +315,6 @@
 
         const getApellido = (nom) => { if (!nom) return ""; const partes = String(nom).trim().split(" "); return partes[partes.length - 1]; };
 
-        // ==========================================
-        // LÓGICA DE PROYECCIONES INTELIGENTES
-        // ==========================================
         function getProyeccionNombre(rondaFase, isJ1, hasCuartos) {
             if (!rondaFase) return 'Por definir';
             const rf = String(rondaFase).toLowerCase();
@@ -686,7 +680,6 @@
             if (!nomJ1 || nomJ1.includes('Por definir')) nomJ1 = getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos);
             if (!nomJ2 || nomJ2.includes('Por definir')) nomJ2 = getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos);
 
-            // Respetar la inyección visual del "BYE" si viene del cálculo de proyecciones
             if (nomJ1.includes('Por definir') || nomJ1.includes('undefined')) nomJ1 = 'BYE (Faltan Jugadores)';
             if (nomJ2.includes('Por definir') || nomJ2.includes('undefined')) nomJ2 = 'BYE (Faltan Jugadores)';
 
@@ -830,9 +823,61 @@
                 let rankAct = j.rankIni + j.rankImpact; let gpoInfo = (!isFlash && j.gpo && j.gpo !== 'Llaves') ? `<span style="font-size:9px; color:#fbbf24; font-weight:800; border:1px solid rgba(251, 191, 36, 0.4); background:rgba(251, 191, 36, 0.1); padding:3px 6px; border-radius:6px; margin-left:8px;">GPO ${j.gpo}</span>` : '';
                 let setsG = j.setsG !== undefined ? j.setsG : j.setsGanados; let setsP = j.setsP !== undefined ? j.setsP : j.setsPerdidos;
                 let dif = setsG - setsP; let difStr = dif >= 0 ? '+' + dif : dif; let colorDif = dif >= 0 ? '#fbbf24' : '#f87171';
-                html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.03); opacity: ${opacity}; transition:all 0.2s ease;" onmouseover="this.style.backgroundColor='rgba(255,255,255,0.03)'" onmouseout="this.style.backgroundColor='transparent'"><td style="padding:12px 10px; font-weight:900; font-size:15px;">${rankTrophy}</td><td style="padding:12px 10px;"><strong style="color:#ffffff; font-size:13px; display:inline-block; letter-spacing:0.5px;">${j.nombre}</strong> ${qualBadge} ${gpoInfo}<span style="font-size:10px; color:#94a3b8; font-weight:600; display:block; margin-top:2px;">${j.club || 'Sin Club'}</span></td><td style="padding:12px 10px; text-align:center; font-weight:800; color:#cbd5e1;">${j.pj}</td><td style="padding:12px 10px; text-align:center; font-weight:800; color:#10b981;">${j.pg}</td><td style="padding:12px 10px; text-align:center; font-weight:800; color:#f43f5e;">${j.pp}</td><td style="padding:12px 10px; text-align:center; font-weight:900; color:#fbbf24;">${efectividad}%</td><td style="padding:12px 10px; text-align:center;"><span style="color:#10b981; font-weight:900;">${setsG}</span><span style="color:#64748b; margin:0 4px;">:</span><span style="color:#f43f5e; font-weight:900;">${setsP}</span><span style="font-size:11px; font-weight:800; color:${colorDif}; margin-left:6px;">(${difStr})</span></td><td style="padding:12px 10px; text-align:center; font-weight:900; color:#fbbf24; font-size:16px;">${j.pts}</td><td style="padding:12px 10px; text-align:center; font-weight:700; color:#94a3b8; font-family:'Orbitron', sans-serif;">${j.rankIni}</td><td style="padding:12px 10px; text-align:center; font-weight:900; color:${rankDifColor};">${rankDifStr}</td><td style="padding:12px 10px; text-align:center; font-weight:900; color:#ffffff; font-family:'Orbitron', sans-serif; font-size:14px; text-shadow:0 0 10px rgba(255,255,255,0.3);">${rankAct}</td></tr>`;
+                html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.03); opacity: ${opacity}; transition:all 0.2s ease;"><td style="padding:12px 10px; font-weight:900; font-size:15px;">${rankTrophy}</td><td style="padding:12px 10px;"><strong style="color:#ffffff; font-size:13px; display:inline-block; letter-spacing:0.5px;">${j.nombre}</strong> ${qualBadge} ${gpoInfo}<span style="font-size:10px; color:#94a3b8; font-weight:600; display:block; margin-top:2px;">${j.club || 'Sin Club'}</span></td><td style="padding:12px 10px; text-align:center; font-weight:800; color:#cbd5e1;">${j.pj}</td><td style="padding:12px 10px; text-align:center; font-weight:800; color:#10b981;">${j.pg}</td><td style="padding:12px 10px; text-align:center; font-weight:800; color:#f43f5e;">${j.pp}</td><td style="padding:12px 10px; text-align:center; font-weight:900; color:#fbbf24;">${efectividad}%</td><td style="padding:12px 10px; text-align:center;"><span style="color:#10b981; font-weight:900;">${setsG}</span><span style="color:#64748b; margin:0 4px;">:</span><span style="color:#f43f5e; font-weight:900;">${setsP}</span><span style="font-size:11px; font-weight:800; color:${colorDif}; margin-left:6px;">(${difStr})</span></td><td style="padding:12px 10px; text-align:center; font-weight:900; color:#fbbf24; font-size:16px;">${j.pts}</td><td style="padding:12px 10px; text-align:center; font-weight:700; color:#94a3b8; font-family:'Orbitron', sans-serif;">${j.rankIni}</td><td style="padding:12px 10px; text-align:center; font-weight:900; color:${rankDifColor};">${rankDifStr}</td><td style="padding:12px 10px; text-align:center; font-weight:900; color:#ffffff; font-family:'Orbitron', sans-serif; font-size:14px; text-shadow:0 0 10px rgba(255,255,255,0.3);">${rankAct}</td></tr>`;
             });
             html += `</tbody></table></div></div>`; return html;
+        }
+
+        // ==========================================
+        // DIBUJADOR DE LA LLAVE (BRACKET VISUAL)
+        // ==========================================
+        function renderBMatch(p, n1, n2, titleDesc) {
+            if (!p) {
+                return `
+                <div class="b-match">
+                    <div class="text-[9px] text-zinc-500 text-center py-1 font-bold uppercase border-b border-white/5 tracking-widest">${titleDesc || 'Fase'}</div>
+                    <div class="b-team"><span>${n1 || 'Por definir'}</span> <span class="b-score">-</span></div>
+                    <div class="b-team"><span>${n2 || 'Por definir'}</span> <span class="b-score">-</span></div>
+                </div>`;
+            }
+            let isFin = String(p.estado || '').toLowerCase() === 'finalizado';
+            let s1 = isFin ? p.sets_j1 : (p.puntos_j1||0);
+            let s2 = isFin ? p.sets_j2 : (p.puntos_j2||0);
+            
+            let win1 = false; let win2 = false;
+            if (isFin && p.ganador_id !== null) {
+                if (p.ganador_id == p.jugador1_id) win1 = true;
+                if (p.ganador_id == p.jugador2_id) win2 = true;
+            } else if (isFin && p.ganador_id === null) {
+                if (s1 > s2) win1 = true; else if (s2 > s1) win2 = true;
+            }
+
+            let icon1 = win1 ? '🏆 ' : ''; let icon2 = win2 ? '🏆 ' : '';
+            let style1 = win1 ? 'winner' : (isFin ? 'text-zinc-500' : '');
+            let style2 = win2 ? 'winner' : (isFin ? 'text-zinc-500' : '');
+            
+            return `
+            <div class="b-match">
+                <div class="text-[9px] text-amber-400 text-center py-1 font-bold uppercase border-b border-white/5 tracking-widest bg-black/20">${p.ronda_fase || titleDesc || 'Fase'}</div>
+                <div class="b-team ${style1}"><span>${icon1}${n1}</span> <span class="b-score">${s1}</span></div>
+                <div class="b-team ${style2}"><span>${icon2}${n2}</span> <span class="b-score">${s2}</span></div>
+            </div>`;
+        }
+
+        function descargarLlave(catNombreLimpio) {
+            const el = document.getElementById('bracket-wrapper-' + catNombreLimpio);
+            if(!el) return;
+            
+            // Añadimos temporalmente un fondo oscuro para que la foto no salga transparente
+            el.style.backgroundColor = "#0a0a0c";
+            
+            html2canvas(el, { backgroundColor: '#0a0a0c', scale: 2 }).then(canvas => {
+                let link = document.createElement('a');
+                link.download = 'Llaves_' + catNombreLimpio + '.png';
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+                el.style.backgroundColor = ""; // Restauramos el fondo original
+            });
         }
 
         function dibujarResumenYLlaves(container) {
@@ -843,24 +888,152 @@
             let htmlContent = '';
             catsList.forEach(catNombre => {
                 const gruposCat = datosGeneralesCuadro?.porCategoria[catNombre]?.grupos || {};
-                if (Object.keys(gruposCat).length === 0) { const llavesFlash = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase); if(llavesFlash.length === 0) return; }
                 
-                htmlContent += `<div style="background:rgba(18, 18, 22, 0.8); border:1px solid rgba(251, 191, 36, 0.2); border-radius:24px; padding:30px; margin-bottom:30px; backdrop-filter:blur(20px); box-shadow: 0 15px 35px rgba(0,0,0,0.5);"><div style="border-bottom:1px solid rgba(251, 191, 36, 0.2); padding-bottom:15px; margin-bottom:20px; text-align:center;"><span style="font-size:16px; font-weight:900; color:#fbbf24; text-transform:uppercase; letter-spacing:2px; text-shadow: 0 0 15px rgba(251, 191, 36, 0.3);">🏆 ESTADÍSTICAS OFICIALES: ${catNombre}</span><span style="font-size:11px; color:#94a3b8; display:block; margin-top:8px; text-transform:uppercase; letter-spacing: 1px;">Tabla General por Divisiones</span></div>`;
+                // Si la categoría solo tiene modalidad flash, nos la saltamos
+                if (Object.keys(gruposCat).length === 0) {
+                    const llavesFlash = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase);
+                    if(llavesFlash.length === 0) return;
+                }
+
+                htmlContent += `<div style="background:rgba(18, 18, 22, 0.8); border:1px solid rgba(251, 191, 36, 0.2); border-radius:24px; padding:30px; margin-bottom:30px; backdrop-filter:blur(20px); box-shadow: 0 15px 35px rgba(0,0,0,0.5);"><div style="border-bottom:1px solid rgba(251, 191, 36, 0.2); padding-bottom:15px; margin-bottom:20px; text-align:center;"><span style="font-size:16px; font-weight:900; color:#fbbf24; text-transform:uppercase; letter-spacing:2px; text-shadow: 0 0 15px rgba(251, 191, 36, 0.3);">🏆 ESTADÍSTICAS OFICIALES: ${catNombre}</span><span style="font-size:11px; color:#94a3b8; display:block; margin-top:8px; text-transform:uppercase; letter-spacing: 1px;">Tabla General y Proyecciones en Vivo</span></div>`;
                 
                 let todosJugadoresCatMap = new Map(); 
                 Object.keys(gruposCat).forEach(gpoNombre => { Object.values(gruposCat[gpoNombre]).forEach(j => { if(!todosJugadoresCatMap.has(j.id)) { todosJugadoresCatMap.set(j.id, {...j, gpo: gpoNombre}); } }); });
                 let todosJugadoresCat = Array.from(todosJugadoresCatMap.values()); todosJugadoresCat = ordenarJugadoresITTF(todosJugadoresCat);
                 
                 let div1 = todosJugadoresCat.filter(j => String(j.div) === '1'); let div2 = todosJugadoresCat.filter(j => String(j.div) === '2'); let div3 = todosJugadoresCat.filter(j => String(j.div) === '3'); let sinDiv = todosJugadoresCat.filter(j => !['1','2','3'].includes(String(j.div)));
-                let isFlash = modalidadFiltro === 'flash';
                 
                 if (div1.length > 0 || div2.length > 0 || div3.length > 0) { 
-                    htmlContent += renderTablaGeneralDiv(div1, '#fbbf24', '🏆 DIVISIÓN 1 (ORO)', isFlash); 
-                    htmlContent += renderTablaGeneralDiv(div2, '#cbd5e1', '🏆 DIVISIÓN 2 (PLATA)', isFlash); 
-                    htmlContent += renderTablaGeneralDiv(div3, '#d97706', '🏆 DIVISIÓN 3 (BRONCE)', isFlash); 
-                    if (sinDiv.length > 0) htmlContent += renderTablaGeneralDiv(sinDiv, '#64748b', 'Jugadores sin división registrada', isFlash); 
+                    htmlContent += renderTablaGeneralDiv(div1, '#fbbf24', '🏆 DIVISIÓN 1 (ORO)', false); 
+                    htmlContent += renderTablaGeneralDiv(div2, '#cbd5e1', '🏆 DIVISIÓN 2 (PLATA)', false); 
+                    htmlContent += renderTablaGeneralDiv(div3, '#d97706', '🏆 DIVISIÓN 3 (BRONCE)', false); 
+                    if (sinDiv.length > 0) htmlContent += renderTablaGeneralDiv(sinDiv, '#64748b', 'Jugadores sin división registrada', false); 
                 } 
-                else { htmlContent += renderTablaGeneralDiv(todosJugadoresCat, '#fbbf24', 'Resultados Generales', isFlash); }
+                else { htmlContent += renderTablaGeneralDiv(todosJugadoresCat, '#fbbf24', 'Resultados Generales', false); }
+                
+                // ==========================================
+                // ÁRBOL DE LLAVES (BRACKET VISUAL)
+                // ==========================================
+                const catNombreLimpio = catNombre.replace(/\s+/g, '');
+                
+                const partidosLlaveBD = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && (!p.grupo_nombre || p.grupo_nombre !== 'Flash') && p.ronda_fase);
+                const pCuartos1 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('1'));
+                const pCuartos2 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('2'));
+                const pCuartos3 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('3'));
+                const pCuartos4 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('cuartos') && String(p.ronda_fase || '').includes('4'));
+                const pSemi1 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('1') || String(p.ronda_fase || '').toLowerCase().includes('cruce 1')));
+                const pSemi2 = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('semi') && (String(p.ronda_fase || '').includes('2') || String(p.ronda_fase || '').toLowerCase().includes('cruce 2')));
+                const pFinal = partidosLlaveBD.find(p => String(p.ronda_fase || '').toLowerCase().includes('final') && !String(p.ronda_fase || '').toLowerCase().includes('semi'));
+
+                let hayCuartos = pCuartos1 || pCuartos2 || pCuartos3 || pCuartos4;
+                let haySemis = pSemi1 || pSemi2;
+
+                if (hayCuartos || haySemis || pFinal) {
+                    
+                    const gFase = datosGeneralesCuadro.mapaProyecciones;
+                    
+                    let nC1_1 = gFase[`${pCuartos1?.id}_j1`]?.nombre || getProyeccionNombre('Cuartos 1', true, true);
+                    let nC1_2 = gFase[`${pCuartos1?.id}_j2`]?.nombre || getProyeccionNombre('Cuartos 1', false, true);
+                    
+                    let nC2_1 = gFase[`${pCuartos2?.id}_j1`]?.nombre || getProyeccionNombre('Cuartos 2', true, true);
+                    let nC2_2 = gFase[`${pCuartos2?.id}_j2`]?.nombre || getProyeccionNombre('Cuartos 2', false, true);
+                    
+                    let nC3_1 = gFase[`${pCuartos3?.id}_j1`]?.nombre || getProyeccionNombre('Cuartos 3', true, true);
+                    let nC3_2 = gFase[`${pCuartos3?.id}_j2`]?.nombre || getProyeccionNombre('Cuartos 3', false, true);
+                    
+                    let nC4_1 = gFase[`${pCuartos4?.id}_j1`]?.nombre || getProyeccionNombre('Cuartos 4', true, true);
+                    let nC4_2 = gFase[`${pCuartos4?.id}_j2`]?.nombre || getProyeccionNombre('Cuartos 4', false, true);
+
+                    let nS1_1 = gFase[`${pSemi1?.id}_j1`]?.nombre || getProyeccionNombre('Semi 1', true, hayCuartos);
+                    let nS1_2 = gFase[`${pSemi1?.id}_j2`]?.nombre || getProyeccionNombre('Semi 1', false, hayCuartos);
+                    
+                    let nS2_1 = gFase[`${pSemi2?.id}_j1`]?.nombre || getProyeccionNombre('Semi 2', true, hayCuartos);
+                    let nS2_2 = gFase[`${pSemi2?.id}_j2`]?.nombre || getProyeccionNombre('Semi 2', false, hayCuartos);
+
+                    let nF_1 = gFase[`${pFinal?.id}_j1`]?.nombre || getProyeccionNombre('Final', true, hayCuartos);
+                    let nF_2 = gFase[`${pFinal?.id}_j2`]?.nombre || getProyeccionNombre('Final', false, hayCuartos);
+
+                    // Reemplazos BYE visuales
+                    if (nC1_1.includes('Por definir')) nC1_1 = 'BYE'; if (nC1_2.includes('Por definir')) nC1_2 = 'BYE';
+                    if (nC2_1.includes('Por definir')) nC2_1 = 'BYE'; if (nC2_2.includes('Por definir')) nC2_2 = 'BYE';
+                    if (nC3_1.includes('Por definir')) nC3_1 = 'BYE'; if (nC3_2.includes('Por definir')) nC3_2 = 'BYE';
+                    if (nC4_1.includes('Por definir')) nC4_1 = 'BYE'; if (nC4_2.includes('Por definir')) nC4_2 = 'BYE';
+                    
+                    if (nS1_1.includes('Por definir')) nS1_1 = 'Gana Cuartos 1'; if (nS1_2.includes('Por definir')) nS1_2 = 'Gana Cuartos 2';
+                    if (nS2_1.includes('Por definir')) nS2_1 = 'Gana Cuartos 3'; if (nS2_2.includes('Por definir')) nS2_2 = 'Gana Cuartos 4';
+
+                    if (nF_1.includes('Por definir')) nF_1 = 'Gana Semi 1'; if (nF_2.includes('Por definir')) nF_2 = 'Gana Semi 2';
+
+                    let campeonText = '🏆 POR DEFINIR';
+                    if (pFinal && pFinal.estado === 'finalizado') {
+                        campeonText = (pFinal.ganador_id == pFinal.jugador1_id) ? `🏆 ${nF_1}` : `🏆 ${nF_2}`;
+                    }
+
+                    htmlContent += `
+                    <div class="mt-8 border-t border-white/10 pt-8">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 style="color:#fbbf24; font-weight:900; margin:0; text-transform:uppercase; font-size:14px; display:flex; align-items:center; gap:8px;">
+                                <i class="fa-solid fa-sitemap"></i> Cuadro Oficial del Torneo
+                            </h3>
+                            <button onclick="descargarLlave('${catNombreLimpio}')" class="bg-amber-500/20 hover:bg-amber-500 text-amber-400 hover:text-black border border-amber-500/50 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                                <i class="fa-solid fa-camera mr-2"></i> Descargar Imagen
+                            </button>
+                        </div>
+                        
+                        <div id="bracket-wrapper-${catNombreLimpio}" style="padding:20px; background:#0a0a0c; border-radius:16px;">
+                            <div class="text-center mb-6">
+                                <span style="font-size:16px; font-weight:900; color:#fbbf24; text-transform:uppercase; letter-spacing:2px; display:block;">LLAVES DE FASE FINAL</span>
+                                <span style="font-size:10px; color:#94a3b8; display:block; margin-top:4px; text-transform:uppercase;">${catNombre}</span>
+                            </div>
+                            <div class="bracket-container">
+                    `;
+
+                    // CUARTOS DE FINAL
+                    if (hayCuartos) {
+                        htmlContent += `
+                            <div class="bracket-col">
+                                ${renderBMatch(pCuartos1, nC1_1, nC1_2, 'Cuartos de Final 1')}
+                                ${renderBMatch(pCuartos2, nC2_1, nC2_2, 'Cuartos de Final 2')}
+                                ${renderBMatch(pCuartos3, nC3_1, nC3_2, 'Cuartos de Final 3')}
+                                ${renderBMatch(pCuartos4, nC4_1, nC4_2, 'Cuartos de Final 4')}
+                            </div>
+                        `;
+                    }
+
+                    // SEMIFINALES
+                    if (hayCuartos || haySemis) {
+                        htmlContent += `
+                            <div class="bracket-col">
+                                ${renderBMatch(pSemi1, nS1_1, nS1_2, 'Semifinal 1')}
+                                ${renderBMatch(pSemi2, nS2_1, nS2_2, 'Semifinal 2')}
+                            </div>
+                        `;
+                    }
+
+                    // FINAL
+                    htmlContent += `
+                        <div class="bracket-col">
+                            ${renderBMatch(pFinal, nF_1, nF_2, 'Gran Final')}
+                        </div>
+                    `;
+                    
+                    // CAMPEÓN
+                    htmlContent += `
+                        <div class="bracket-col" style="justify-content: center;">
+                            <div style="background:rgba(245,158,11,0.15); border: 2px solid #fbbf24; border-radius: 16px; padding: 20px; text-align: center; box-shadow: 0 0 30px rgba(251,191,36,0.3); z-index:2;">
+                                <div style="font-size:10px; color:#fbbf24; font-weight:900; text-transform:uppercase; margin-bottom:8px; letter-spacing:2px;">CAMPEÓN ABSOLUTO</div>
+                                <div style="font-size:18px; font-weight:900; color:#ffffff; text-transform:uppercase;">${campeonText}</div>
+                            </div>
+                        </div>
+                    `;
+
+                    htmlContent += `
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }
+
                 htmlContent += `</div>`;
             });
             container.innerHTML = htmlContent;
@@ -979,10 +1152,6 @@
                     
                     if (!nomJ1 || nomJ1.includes('Por definir')) nomJ1 = getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos);
                     if (!nomJ2 || nomJ2.includes('Por definir')) nomJ2 = getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos);
-
-                    // Respetar la inyección visual del "BYE" si viene del cálculo de proyecciones
-                    if (nomJ1.includes('Por definir') || nomJ1.includes('undefined')) nomJ1 = 'BYE (Faltan Jugadores)';
-                    if (nomJ2.includes('Por definir') || nomJ2.includes('undefined')) nomJ2 = 'BYE (Faltan Jugadores)';
 
                     let score1 = isFin || isVivo ? `<span class="score-big">${isFin ? p.sets_j1 : p.puntos_j1 || 0}</span>` : ''; let score2 = isFin || isVivo ? `<span class="score-big p2">${isFin ? p.sets_j2 : p.puntos_j2 || 0}</span>` : '';
                     if (isVivo) { score1 += `<span class="sets-badge">(${p.sets_j1 || 0})</span>`; score2 += `<span class="sets-badge">(${p.sets_j2 || 0})</span>`; }
