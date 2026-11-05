@@ -27,6 +27,34 @@
         .jugador-clic { cursor: pointer; transition: all 0.2s ease; border-bottom: 1px dashed rgba(255,255,255,0.3); }
         .jugador-clic:hover { color: #38bdf8 !important; border-bottom-color: #38bdf8; }
 
+        /* BRACKET LLAVES DINÁMICO (ROSA) */
+        .bracket-container { display: flex; gap: 40px; padding: 20px 0; justify-content: flex-start; align-items: stretch; min-width: max-content;}
+        .bracket-col { display: flex; flex-direction: column; justify-content: space-around; gap: 30px; min-width: 260px; position: relative; }
+        
+        .b-match-pair { position: relative; display: flex; flex-direction: column; justify-content: space-around; gap: 20px; flex: 1; }
+        .b-match { background: rgba(18, 18, 22, 0.95); border: 1px solid rgba(236,72,153,0.3); border-radius: 16px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 2; display: flex; flex-direction: column; flex-shrink: 0; min-height: 95px; }
+        
+        .b-team { display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center; gap: 15px; }
+        .b-team:last-child { border-bottom: none; }
+        .b-team.winner-pink { background: rgba(236,72,153,0.1); border-left: 4px solid #ec4899; }
+        .b-score { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900; background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 8px; color: #fff; }
+        .b-team.winner-pink .b-score { color: #f472b6; }
+        .b-team-info { display: flex; flex-direction: column; }
+        
+        /* LÍNEAS CONECTORAS PRECISAS */
+        .b-match::after { content: ""; position: absolute; right: -20px; top: 50%; width: 20px; border-top: 2px solid #ec4899; z-index: 1; }
+        .bracket-col:last-child .b-match::after { display: none; }
+        .bracket-col:not(:first-child) .b-match::before { content: ""; position: absolute; left: -20px; top: 50%; width: 20px; border-top: 2px solid #ec4899; z-index: 1; }
+        
+        .b-match-pair::after { content: ""; position: absolute; right: -20px; top: calc(25% + 10px); bottom: calc(25% + 10px); width: 2px; background: #ec4899; z-index: 0; }
+        
+        .b-match-pair.no-line::after { display: none !important; }
+        .b-match-pair.only-top::after { bottom: 50%; }
+        .b-match-pair.only-bottom::after { top: 50%; }
+        .b-match.no-left-line::before { display: none !important; }
+        .b-match.invisible-match::after { display: none !important; }
+        .b-match.invisible-match::before { display: none !important; }
+
         @media print {
             body { background: #ffffff !important; color: #000000 !important; }
             body::before, body::after, .sticky-nav-mobile { display: none !important; }
@@ -238,8 +266,8 @@
 
                     let faseNombre = p.grupo_nombre ? `Gpo ${p.grupo_nombre}` : (p.ronda_fase || 'Llave');
                     
-                    let arrSets1 = p.historial_sets ? p.historial_sets.map(s => `${s.s1}-${s.s2}`).join(', ') : 'S/D';
-                    let arrSets2 = p.historial_sets ? p.historial_sets.map(s => `${s.s2}-${s.s1}`).join(', ') : 'S/D';
+                    let arrSets1 = p.historial_sets ? (typeof p.historial_sets === 'string' ? JSON.parse(p.historial_sets) : p.historial_sets).map(s => `${s.s1}-${s.s2}`).join(', ') : 'S/D';
+                    let arrSets2 = p.historial_sets ? (typeof p.historial_sets === 'string' ? JSON.parse(p.historial_sets) : p.historial_sets).map(s => `${s.s2}-${s.s1}`).join(', ') : 'S/D';
 
                     exp1.partidos.push({ fase: faseNombre, mesa: p.mesa, rival: exp2.nombre, rivalClub: exp2.club, resSets: resSets, desc: desc1, parciales: arrSets1 });
                     exp2.partidos.push({ fase: faseNombre, mesa: p.mesa, rival: exp1.nombre, rivalClub: exp1.club, resSets: `${p.sets_j2} - ${p.sets_j1}`, desc: desc2, parciales: arrSets2 });
@@ -388,58 +416,87 @@
         function generarLlaveVisual(llavesArray) {
             if (llavesArray.length === 0) return '';
 
-            const pF = llavesArray.find(p => p.ronda_fase?.toLowerCase().includes('final') && !p.ronda_fase?.toLowerCase().includes('semi'));
-            const s1 = llavesArray.find(p => p.ronda_fase?.toLowerCase().includes('semi') && p.ronda_fase?.includes('1'));
-            const s2 = llavesArray.find(p => p.ronda_fase?.toLowerCase().includes('semi') && p.ronda_fase?.includes('2'));
+            let octavos = llavesArray.filter(m => String(m.ronda_fase).toLowerCase().includes('octavo'));
+            let cuartos = llavesArray.filter(m => String(m.ronda_fase).toLowerCase().includes('cuarto'));
+            let semis = llavesArray.filter(m => String(m.ronda_fase).toLowerCase().includes('semi'));
+            let final = llavesArray.filter(m => String(m.ronda_fase).toLowerCase().includes('final') && !String(m.ronda_fase).toLowerCase().includes('semi'));
 
-            if (!pF && !s1 && !s2) return '';
+            if (octavos.length === 0 && cuartos.length === 0 && semis.length === 0 && final.length === 0) return '';
 
-            const dibujarPartidoLigero = (p, titulo) => {
-                if(!p) return `<div class="glass-card p-4 rounded-xl border border-white/5 opacity-50"><div class="text-[9px] text-zinc-500 font-bold uppercase mb-2">${titulo}</div><div class="text-xs italic text-zinc-600 text-center">Por definir</div></div>`;
+            let htmlContent = `
+                <div class="mt-10 border-t border-white/10 pt-8">
+                    <h3 class="text-sm font-black text-white uppercase tracking-widest mb-4 border-l-4 border-fuchsia-500 pl-3">Fase Final Eliminatoria</h3>
+                    <div class="bracket-container" style="overflow-x: auto; padding-bottom: 20px;">
+            `;
+
+            const renderMatch = (m, noLeft = false) => {
+                if(!m) return `<div class="b-match invisible-match" style="visibility:hidden; height:95px;"></div>`;
                 
-                let win1 = p.ganador_id === p.jugador1_id;
-                let win2 = p.ganador_id === p.jugador2_id;
-                
+                let n1 = m.j1 ? m.j1.nombre : 'Por definir';
+                let n2 = m.j2 ? m.j2.nombre : 'Por definir';
+
+                // Usar marcadores con verificación estricta para que 0 sea válido y no se tome como falso
+                let s1 = (m.sets_j1 !== null && m.sets_j1 !== undefined) ? m.sets_j1 : (m.pts_j1 !== null && m.pts_j1 !== undefined ? m.pts_j1 : '-');
+                let s2 = (m.sets_j2 !== null && m.sets_j2 !== undefined) ? m.sets_j2 : (m.pts_j2 !== null && m.pts_j2 !== undefined ? m.pts_j2 : '-');
+
+                let win1 = m.estado === 'finalizado' && m.ganador_id == (m.j1?.id || m.jugador1_id);
+                let win2 = m.estado === 'finalizado' && m.ganador_id == (m.j2?.id || m.jugador2_id);
+
                 return `
-                    <div class="glass-card p-3 md:p-4 rounded-xl border ${p.ronda_fase.toLowerCase().includes('final') && !p.ronda_fase.toLowerCase().includes('semi') ? 'border-amber-500/30 bg-amber-500/5' : 'border-cyan-500/20'}">
-                        <div class="flex justify-between items-center border-b border-white/5 pb-2 mb-3">
-                            <span class="text-[9px] font-black uppercase tracking-widest ${p.ronda_fase.toLowerCase().includes('final') && !p.ronda_fase.toLowerCase().includes('semi') ? 'text-amber-400' : 'text-cyan-400'}">${titulo}</span>
-                            <span class="text-[9px] text-zinc-500 font-bold">Mesa ${p.mesa}</span>
+                <div class="b-match ${noLeft ? 'no-left-line' : ''}">
+                    <div style="text-align:center; font-size:9px; font-weight:900; color:#ec4899; padding:6px; border-bottom:1px solid rgba(255,255,255,0.05); background:rgba(0,0,0,0.4); text-transform:uppercase;">${m.ronda_fase} • Mesa ${m.mesa || '-'}</div>
+                    <div class="b-team ${win1 ? 'winner-pink' : ''}">
+                        <div class="b-team-info">
+                            <span style="font-size:12px; font-weight:800; color:${win1 ? '#fff' : '#cbd5e1'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;" class="jugador-clic" onclick="abrirModalJugador(${m.j1?.id || m.jugador1_id})">${win1 ? '🏆 ' : ''}${n1}</span>
                         </div>
-                        
-                        <div class="flex justify-between items-center mb-2">
-                            <div class="font-bold text-xs md:text-sm ${win1 ? 'text-white' : 'text-zinc-500'} cursor-pointer hover:text-cyan-300 transition-colors truncate pr-2" onclick="abrirModalJugador(${p.jugador1_id})">
-                                ${win1 ? '🏆 ' : ''}${p.j1.nombre}
-                            </div>
-                            <div class="font-digital text-sm ${win1 ? 'text-emerald-400' : 'text-zinc-600'} font-black">${p.sets_j1}</div>
-                        </div>
-                        
-                        <div class="flex justify-between items-center">
-                            <div class="font-bold text-xs md:text-sm ${win2 ? 'text-white' : 'text-zinc-500'} cursor-pointer hover:text-cyan-300 transition-colors truncate pr-2" onclick="abrirModalJugador(${p.jugador2_id})">
-                                ${win2 ? '🏆 ' : ''}${p.j2.nombre}
-                            </div>
-                            <div class="font-digital text-sm ${win2 ? 'text-emerald-400' : 'text-zinc-600'} font-black">${p.sets_j2}</div>
-                        </div>
+                        <span class="b-score">${s1}</span>
                     </div>
-                `;
+                    <div class="b-team ${win2 ? 'winner-pink' : ''}">
+                        <div class="b-team-info">
+                            <span style="font-size:12px; font-weight:800; color:${win2 ? '#fff' : '#cbd5e1'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:140px;" class="jugador-clic" onclick="abrirModalJugador(${m.j2?.id || m.jugador2_id})">${win2 ? '🏆 ' : ''}${n2}</span>
+                        </div>
+                        <span class="b-score">${s2}</span>
+                    </div>
+                </div>`;
             };
 
-            return `
-                <div class="mt-8">
-                    <h3 class="text-sm font-black text-white uppercase tracking-widest mb-4 border-l-4 border-fuchsia-500 pl-3">Fase Final Eliminatoria</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-8 items-center">
-                        <div class="flex flex-col gap-4">
-                            ${dibujarPartidoLigero(s1, 'Semifinal 1')}
-                            ${dibujarPartidoLigero(s2, 'Semifinal 2')}
-                        </div>
-                        <div class="flex flex-col justify-center border-l-0 md:border-l border-dashed border-white/20 pl-0 md:pl-8 mt-4 md:mt-0 relative">
-                            <div class="hidden md:block absolute w-8 h-[1px] border-t border-dashed border-white/20 -left-8 top-1/4"></div>
-                            <div class="hidden md:block absolute w-8 h-[1px] border-t border-dashed border-white/20 -left-8 top-3/4"></div>
-                            ${dibujarPartidoLigero(pF, '🏆 Gran Final')}
-                        </div>
-                    </div>
-                </div>
-            `;
+            const getMatch = (arr, i) => arr.find(x => String(x.ronda_fase).includes(i.toString()));
+
+            const renderCol = (count, currentArr, prevArr, isFinal = false) => {
+                if (currentArr.length === 0 && !isFinal) return '';
+                let colHtml = `<div class="bracket-col" ${isFinal ? 'style="justify-content: center;"' : ''}>`;
+                for (let i = 1; i <= count; i += 2) {
+                    let m1 = isFinal ? currentArr[0] : getMatch(currentArr, i);
+                    let m2 = isFinal ? null : getMatch(currentArr, i + 1);
+                    
+                    // Check feed from previous round
+                    let m1HasPrev = prevArr ? !!getMatch(prevArr, i * 2 - 1) || !!getMatch(prevArr, i * 2) : false;
+                    let m2HasPrev = prevArr ? !!getMatch(prevArr, (i + 1) * 2 - 1) || !!getMatch(prevArr, (i + 1) * 2) : false;
+
+                    if (isFinal) {
+                        if(m1) colHtml += `<div class="b-match-pair no-line">${renderMatch(m1, !m1HasPrev)}</div>`;
+                    } else {
+                        let htmlM1 = renderMatch(m1, !m1HasPrev);
+                        let htmlM2 = renderMatch(m2, !m2HasPrev);
+                        let pairClass = '';
+                        if (!m1 && !m2) pairClass = 'no-line';
+                        else if (m1 && !m2) pairClass = 'only-top';
+                        else if (!m1 && m2) pairClass = 'only-bottom';
+
+                        colHtml += `<div class="b-match-pair ${pairClass}">${htmlM1}${htmlM2}</div>`;
+                    }
+                }
+                colHtml += `</div>`;
+                return colHtml;
+            }
+
+            if(octavos.length > 0) htmlContent += renderCol(8, octavos, null);
+            if(cuartos.length > 0 || octavos.length > 0) htmlContent += renderCol(4, cuartos, octavos);
+            if(semis.length > 0 || cuartos.length > 0) htmlContent += renderCol(2, semis, cuartos);
+            if(final.length > 0) htmlContent += renderCol(1, final, semis, true);
+
+            htmlContent += `</div></div>`;
+            return htmlContent;
         }
 
         function renderizarMemoriaUI() {
