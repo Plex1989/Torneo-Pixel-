@@ -72,7 +72,6 @@
         .card-mesa:hover { border-color: rgba(56, 189, 248, 0.35); transform: translateY(-2px); }
         .card-mesa.vivo { border-bottom-color: #10b981 !important; border-top: 1px solid rgba(16, 185, 129, 0.3); }
         
-        /* ESTILO FINALIZADO DESTACADO */
         .card-mesa.finalizado { 
             border-color: rgba(245, 158, 11, 0.35) !important; 
             border-left: 4px solid #f59e0b !important;
@@ -93,7 +92,6 @@
         .jugador-nombre { font-size: 13px; font-weight: 700; color: #f8fafc; letter-spacing: 0.5px; }
         .score-big { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 800; color: #f8fafc; }
 
-        /* REJILLA DE 6 BOTONES POR TARJETA */
         .grid-botones-mesa { 
             display: grid; 
             grid-template-columns: repeat(2, 1fr); 
@@ -370,6 +368,7 @@
         let todosLosPartidos = [];
         let todasLasCategorias = [];
         let todosLosJugadoresAdmin = [];
+        let reglasRankingList = [];
         let estadoFiltro = 'todos';
         let categoriaFiltro = 'todas';
 
@@ -398,6 +397,26 @@
             return hrs * 60 + mins; 
         }
 
+        function calcularImpacto(ptsA, ptsB) {
+            let diff = Math.abs(ptsA - ptsB);
+            let favoritoEsJ1 = ptsA >= ptsB;
+            let reglasRango = reglasRankingList.filter(r => diff >= Number(r.diferencia_min) && diff <= Number(r.diferencia_max));
+            let reglaGanaFav = null; let reglaGanaRet = null;
+            if (reglasRango.length >= 2) {
+                if (Number(reglasRango[0].puntos_ganador) < Number(reglasRango[1].puntos_ganador)) { reglaGanaFav = reglasRango[0]; reglaGanaRet = reglasRango[1]; } 
+                else if (Number(reglasRango[0].puntos_ganador) > Number(reglasRango[1].puntos_ganador)) { reglaGanaFav = reglasRango[1]; reglaGanaRet = reglasRango[0]; } 
+                else { let str = String(reglasRango[0].resultado_esperado).toLowerCase(); if (str.includes('retador') || str.includes('upset')) { reglaGanaRet = reglasRango[0]; reglaGanaFav = reglasRango[1]; } else { reglaGanaFav = reglasRango[0]; reglaGanaRet = reglasRango[1]; } }
+            } else if (reglasRango.length === 1) {
+                let str = String(reglasRango[0].resultado_esperado).toLowerCase();
+                if (str.includes('retador') || str.includes('upset')) reglaGanaRet = reglasRango[0]; else reglaGanaFav = reglasRango[0];
+            }
+            let ptsGanaFav = reglaGanaFav ? Number(reglaGanaFav.puntos_ganador) : 10;
+            let ptsPierdeFav = reglaGanaRet ? -Math.abs(Number(reglaGanaRet.puntos_perdedor)) : -5;
+            let ptsGanaRet = reglaGanaRet ? Number(reglaGanaRet.puntos_ganador) : 10;
+            let ptsPierdeRet = reglaGanaFav ? -Math.abs(Number(reglaGanaFav.puntos_perdedor)) : -5;
+            return { j1G: favoritoEsJ1 ? ptsGanaFav : ptsGanaRet, j1P: favoritoEsJ1 ? ptsPierdeFav : ptsPierdeRet, j2G: favoritoEsJ1 ? ptsGanaRet : ptsGanaFav, j2P: favoritoEsJ1 ? ptsPierdeRet : ptsPierdeFav };
+        }
+
         async function inicializar() {
             try {
                 const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre, organizador_id').eq('id', idTorneoActivo).maybeSingle();
@@ -409,13 +428,15 @@
                     }
                 }
 
-                const [resCat, resJug] = await Promise.all([
+                const [resCat, resJug, resReglas] = await Promise.all([
                     clienteSupabase.from('categorias').select('*').eq('organizador_id', orgId),
-                    clienteSupabase.from('jugadores').select('*').eq('organizador_id', orgId)
+                    clienteSupabase.from('jugadores').select('*').eq('organizador_id', orgId),
+                    clienteSupabase.from('reglas_ranking').select('*').eq('organizador_id', orgId).order('diferencia_min', { ascending: true })
                 ]);
 
                 if (resCat.data) todasLasCategorias = resCat.data;
                 if (resJug.data) todosLosJugadoresAdmin = resJug.data;
+                if (resReglas.data) reglasRankingList = resReglas.data;
 
                 await cargarPartidos();
                 clienteSupabase.channel('mesas-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => { cargarPartidos(); }).subscribe();
@@ -425,7 +446,7 @@
         async function cargarPartidos() {
             try {
                 const { data } = await clienteSupabase.from('partidos')
-                    .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking, division), j2:jugador2_id(id, nombre, club, puntos_ranking, division), categorias(id, nombre)')
+                    .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking, puntos_ranking_ant, division), j2:jugador2_id(id, nombre, club, puntos_ranking, puntos_ranking_ant, division), categorias(id, nombre)')
                     .eq('torneo_id', idTorneoActivo).order('id', { ascending: true });
                 todosLosPartidos = data || [];
                 generarBotonesCategorias(); 
@@ -474,7 +495,6 @@
                 return; 
             }
 
-            // Agrupar cronológicamente por hora
             const gruposPorHora = {};
             const horasOrdenadas = [];
             filtrados.forEach(p => {
@@ -815,34 +835,84 @@
                 const partidosCat = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre);
                 const esEliminacion = partidosCat.some(p => p.grupo_nombre === 'Eliminacion');
                 
+                // Mapear participantes y su ranking inicial
                 let jugadoresMap = new Map();
                 partidosCat.forEach(p => {
-                    if (p.j1) jugadoresMap.set(p.j1.id, { ...p.j1, pj: 0, pg: 0, pp: 0, setsG: 0, setsP: 0 });
-                    if (p.j2) jugadoresMap.set(p.j2.id, { ...p.j2, pj: 0, pg: 0, pp: 0, setsG: 0, setsP: 0 });
+                    [p.j1, p.j2].forEach(jObj => {
+                        if (jObj && jObj.id && !jugadoresMap.has(jObj.id)) {
+                            let jBD = todosLosJugadoresAdmin.find(x => x.id === jObj.id) || jObj;
+                            let rIni = (jBD.puntos_ranking_ant !== undefined && jBD.puntos_ranking_ant !== null && jBD.puntos_ranking_ant > 0)
+                                ? jBD.puntos_ranking_ant 
+                                : (jBD.puntos_ranking || 0);
+
+                            jugadoresMap.set(jObj.id, { 
+                                id: jObj.id,
+                                nombre: jObj.nombre,
+                                club: jObj.club || jBD.club || 'Sin Club',
+                                pj: 0, 
+                                pg: 0, 
+                                pp: 0, 
+                                setsG: 0, 
+                                setsP: 0,
+                                rankIni: rIni,
+                                rankImpact: 0,
+                                rankAct: rIni
+                            });
+                        }
+                    });
                 });
 
+                // Calcular partidos, victorias, sets y variación de ranking en vivo
                 partidosCat.filter(p => (p.estado || '').toLowerCase() === 'finalizado').forEach(p => {
-                    if (p.j1 && jugadoresMap.has(p.j1.id)) {
-                        let j = jugadoresMap.get(p.j1.id);
-                        j.pj++;
-                        j.setsG += (p.sets_j1 || 0);
-                        j.setsP += (p.sets_j2 || 0);
-                        if (p.ganador_id === p.jugador1_id) j.pg++; else j.pp++;
-                    }
-                    if (p.j2 && jugadoresMap.has(p.j2.id)) {
-                        let j = jugadoresMap.get(p.j2.id);
-                        j.pj++;
-                        j.setsG += (p.sets_j2 || 0);
-                        j.setsP += (p.sets_j1 || 0);
-                        if (p.ganador_id === p.jugador2_id) j.pg++; else j.pp++;
+                    if (p.j1 && p.j2 && jugadoresMap.has(p.j1.id) && jugadoresMap.has(p.j2.id)) {
+                        let j1 = jugadoresMap.get(p.j1.id);
+                        let j2 = jugadoresMap.get(p.j2.id);
+
+                        let s1 = p.sets_j1 || 0;
+                        let s2 = p.sets_j2 || 0;
+                        j1.pj++;
+                        j2.pj++;
+                        j1.setsG += s1;
+                        j1.setsP += s2;
+                        j2.setsG += s2;
+                        j2.setsP += s1;
+
+                        let imp = calcularImpacto(j1.rankAct, j2.rankAct);
+                        let ganoJ1 = p.ganador_id === p.jugador1_id;
+                        let delta1 = ganoJ1 ? imp.j1G : imp.j1P;
+                        let delta2 = !ganoJ1 ? imp.j2G : imp.j2P;
+
+                        if (ganoJ1) {
+                            j1.pg++;
+                            j2.pp++;
+                        } else {
+                            j2.pg++;
+                            j1.pp++;
+                        }
+
+                        j1.rankImpact += delta1;
+                        j2.rankImpact += delta2;
+                        j1.rankAct += delta1;
+                        j2.rankAct += delta2;
                     }
                 });
 
-                let atletas = Array.from(jugadoresMap.values()).sort((a,b) => b.pg - a.pg || (b.setsG - b.setsP) - (a.setsG - a.setsP) || (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
+                // Orden ITTF: Ganadores primero, jugadores en espera por ranking, perdedores por diferencia
+                let atletas = Array.from(jugadoresMap.values()).sort((a, b) => {
+                    let statusA = a.pg > 0 ? 3 : (a.pj === 0 ? 2 : 1);
+                    let statusB = b.pg > 0 ? 3 : (b.pj === 0 ? 2 : 1);
+                    if (statusB !== statusA) return statusB - statusA;
+                    if (b.pg !== a.pg) return b.pg - a.pg;
+                    let diffA = a.setsG - a.setsP;
+                    let diffB = b.setsG - b.setsP;
+                    if (diffB !== diffA) return diffB - diffA;
+                    return b.rankAct - a.rankAct;
+                });
+
                 let catSlug = catNombre.replace(/\s+/g, '_');
 
                 htmlContent += `
-                    <div style="background: rgba(20, 27, 44, 0.85); border: 1px solid rgba(148, 163, 184, 0.12); border-radius: 16px; padding: 22px; margin-bottom: 25px;">
+                    <div class="panel-3d" style="margin-bottom: 25px;">
                         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(148, 163, 184, 0.1); padding-bottom:12px; margin-bottom:16px;">
                             <div>
                                 <h3 style="margin:0; border:none; color:#f8fafc; font-size:14px; font-weight:800; text-transform:uppercase;">🏆 ${catNombre}</h3>
@@ -850,35 +920,56 @@
                             </div>
                         </div>
 
-                        <!-- TABLA GENERAL SIN ETIQUETAS INVASIVAS -->
+                        <!-- TABLA GENERAL CON EFECTIVIDAD Y VARIACIÓN DE RANKING -->
                         <div style="overflow-x:auto;">
                             <table style="width:100%; border-collapse:collapse; font-size:12px;">
                                 <thead>
                                     <tr style="font-size:9px; color:#94a3b8; text-transform:uppercase; border-bottom:1px solid rgba(148, 163, 184, 0.1);">
-                                        <th style="padding:8px;">Pos</th>
-                                        <th style="padding:8px;">Jugador</th>
-                                        <th style="padding:8px; text-align:center;">PJ</th>
-                                        <th style="padding:8px; text-align:center;">PG</th>
-                                        <th style="padding:8px; text-align:center;">PP</th>
-                                        <th style="padding:8px; text-align:center;">Sets (G - P)</th>
-                                        <th style="padding:8px; text-align:center;">Pts Rank</th>
+                                        <th style="padding:10px 8px; width:45px;">Pos</th>
+                                        <th style="padding:10px 8px;">Jugador</th>
+                                        <th style="padding:10px 8px; text-align:center; width:45px;">PJ</th>
+                                        <th style="padding:10px 8px; text-align:center; width:45px;">PG</th>
+                                        <th style="padding:10px 8px; text-align:center; width:45px;">PP</th>
+                                        <th style="padding:10px 8px; text-align:center; width:65px; color:#fbbf24;">% Efec</th>
+                                        <th style="padding:10px 8px; text-align:center; width:95px;">Sets (G - P)</th>
+                                        <th style="padding:10px 8px; text-align:center; width:65px;">R. Ini</th>
+                                        <th style="padding:10px 8px; text-align:center; width:55px;">+/-</th>
+                                        <th style="padding:10px 8px; text-align:center; width:75px; color:#38bdf8;">Pts Rank</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${atletas.map((at, idx) => `
-                                        <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
-                                            <td style="padding:10px 8px; font-weight:800; color:#64748b;">#${idx+1}</td>
-                                            <td style="padding:10px 8px;">
-                                                <strong style="color:#ffffff;">${at.nombre}</strong>
-                                                <span style="font-size:9px; color:#64748b; display:block;">${at.club || 'Sin Club'}</span>
-                                            </td>
-                                            <td style="padding:10px 8px; text-align:center; color:#94a3b8;">${at.pj}</td>
-                                            <td style="padding:10px 8px; text-align:center; color:#34d399; font-weight:700;">${at.pg}</td>
-                                            <td style="padding:10px 8px; text-align:center; color:#f87171;">${at.pp}</td>
-                                            <td style="padding:10px 8px; text-align:center;"><span style="color:#34d399;">${at.setsG}</span> : <span style="color:#f87171;">${at.setsP}</span></td>
-                                            <td style="padding:10px 8px; text-align:center; font-family:'Orbitron',sans-serif; color:#38bdf8;">${at.puntos_ranking || 0}</td>
-                                        </tr>
-                                    `).join('')}
+                                    ${atletas.map((at, idx) => {
+                                        let efec = at.pj > 0 ? Math.round((at.pg / at.pj) * 100) : 0;
+                                        let diffHtml = at.rankImpact > 0 
+                                            ? `<span style="color:#34d399; font-weight:800;">+${at.rankImpact}</span>` 
+                                            : (at.rankImpact < 0 ? `<span style="color:#f87171; font-weight:800;">${at.rankImpact}</span>` : `<span style="color:#64748b; font-weight:800;">0</span>`);
+
+                                        return `
+                                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                                <td style="padding:10px 8px; font-weight:800; color:#64748b;">#${idx+1}</td>
+                                                <td style="padding:10px 8px;">
+                                                    <strong style="color:#ffffff;">${at.nombre}</strong>
+                                                    <span style="font-size:9px; color:#64748b; display:block;">${at.club || 'Sin Club'}</span>
+                                                </td>
+                                                <td style="padding:10px 8px; text-align:center; color:#94a3b8; font-weight:700;">${at.pj}</td>
+                                                <td style="padding:10px 8px; text-align:center; color:#34d399; font-weight:800;">${at.pg}</td>
+                                                <td style="padding:10px 8px; text-align:center; color:#f87171; font-weight:800;">${at.pp}</td>
+                                                <td style="padding:10px 8px; text-align:center; color:#fbbf24; font-weight:800;">${efec}%</td>
+                                                <td style="padding:10px 8px; text-align:center;">
+                                                    <span style="color:#34d399; font-weight:700;">${at.setsG}</span> : <span style="color:#f87171; font-weight:700;">${at.setsP}</span>
+                                                </td>
+                                                <td style="padding:10px 8px; text-align:center; font-family:'Orbitron',sans-serif; color:#94a3b8; font-size:11px;">
+                                                    ${at.rankIni}
+                                                </td>
+                                                <td style="padding:10px 8px; text-align:center; font-family:'Orbitron',sans-serif; font-size:11px;">
+                                                    ${diffHtml}
+                                                </td>
+                                                <td style="padding:10px 8px; text-align:center; font-family:'Orbitron',sans-serif; color:#38bdf8; font-weight:900; font-size:13px;">
+                                                    ${at.rankAct}
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
                                 </tbody>
                             </table>
                         </div>
