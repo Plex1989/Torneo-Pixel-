@@ -1563,4 +1563,136 @@
 
                 // INYECCIÓN DE HÁNDICAP PARA RR FLASH
                 partidosGeneradosRR.forEach(m => {
-                    if (m.j1 &&
+                    if (m.j1 && m.j2) {
+                        let div1 = m.j1.division || 3; let div2 = m.j2.division || 3;
+                        let hc = getHandicap(div1, div2); m.pts_j1 = hc.h1; m.pts_j2 = hc.h2;
+                    }
+                });
+
+            } else if (modoTorneoActual !== 'liga') {
+                let rondasLlaves = [];
+                llavesTienenCuartos = false;
+                
+                if (gruposGlobal.length > 2) {
+                    llavesTienenCuartos = true;
+                    rondasLlaves.push([
+                        { rondaFase: 'Cuartos 1', modoJuego, juez: 'Comité Oficial' }, { rondaFase: 'Cuartos 2', modoJuego, juez: 'Comité Oficial' },
+                        { rondaFase: 'Cuartos 3', modoJuego, juez: 'Comité Oficial' }, { rondaFase: 'Cuartos 4', modoJuego, juez: 'Comité Oficial' }
+                    ]);
+                    rondasLlaves.push([ { rondaFase: 'Semifinal 1', modoJuego, juez: 'Comité Oficial' }, { rondaFase: 'Semifinal 2', modoJuego, juez: 'Comité Oficial' } ]);
+                    rondasLlaves.push([ { rondaFase: 'Gran Final', modoJuego, juez: 'Comité Oficial' } ]);
+                } else {
+                    rondasLlaves.push([ { rondaFase: 'Semifinal 1', modoJuego, juez: 'Comité Oficial' }, { rondaFase: 'Semifinal 2', modoJuego, juez: 'Comité Oficial' } ]);
+                    rondasLlaves.push([ { rondaFase: 'Gran Final', modoJuego, juez: 'Comité Oficial' } ]);
+                }
+
+                rondasLlaves.forEach(ronda => {
+                    let matchesAsignadosRonda = 0;
+                    while(matchesAsignadosRonda < ronda.length) {
+                        if (minsBreak !== null && !breakApplied && currentTimeMins >= minsBreak) { 
+                            currentTimeMins += (parseInt(document.getElementById('rr-duracion-break').value) || 30); breakApplied = true; 
+                        }
+                        let horaStr = minutesToTimeStr(currentTimeMins);
+                        let tableCounter = 0;
+                        while (tableCounter < numMesasFinales && matchesAsignadosRonda < ronda.length) {
+                            let m = ronda[matchesAsignadosRonda]; m.mesa = mesaInicio + tableCounter; m.hora = horaStr;
+                            partidosGeneradosRR.push(m); matchesAsignadosRonda++; tableCounter++;
+                        }
+                        currentTimeMins += duracionFinales;
+                    }
+                });
+            }
+            
+            document.getElementById('seccion-partidos-rr').style.display = 'block';
+            dibujarTablaPartidosGenerados(partidosGeneradosRR);
+        }
+
+        function poblarDropdownAgenda(partidos) {
+            const select = document.getElementById('filtro-jugador-agenda'); if (!select) return; 
+            let html = '<option value="">-- Todos los Jugadores --</option>';
+            let jugadoresSet = new Set();
+            partidos.forEach(p => { if (p.j1 && p.j1.nombre) jugadoresSet.add(p.j1.nombre); if (p.j2 && p.j2.nombre) jugadoresSet.add(p.j2.nombre); });
+            [...jugadoresSet].sort().forEach(nombre => html += `<option value="${nombre}">${nombre}</option>`);
+            select.innerHTML = html;
+        }
+
+        function filtrarPartidosPorJugador() {
+            const nombre = document.getElementById('filtro-jugador-agenda') ? document.getElementById('filtro-jugador-agenda').value : '';
+            if (!nombre) { dibujarTablaPartidosBD(partidosCargadosGlobal); return; }
+            dibujarTablaPartidosBD(partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre) || (p.juez && typeof p.juez === 'string' && p.juez.includes(nombre))));
+        }
+
+        function compartirAgendaWhatsApp() {
+            const nombre = document.getElementById('filtro-jugador-agenda') ? document.getElementById('filtro-jugador-agenda').value : '';
+            let texto = `🏓 *ROL DE PARTIDOS - ${torneoActivoObj ? torneoActivoObj.nombre : ''}* 🏓\n📍 *Sede:* ${torneoActivoObj && torneoActivoObj.lugar_evento ? torneoActivoObj.lugar_evento : 'Sede Principal'}\n${(torneoActivoObj && torneoActivoObj.fecha_evento ? `📅 *Fecha:* ${torneoActivoObj.fecha_evento}\n` : '')}\n`;
+            let lista = partidosCargadosGlobal;
+            if (nombre) { texto += `👤 *Agenda Individual:* ${nombre}\n\n`; lista = partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre) || (p.juez && typeof p.juez === 'string' && p.juez.includes(nombre))); } 
+            else { texto += `📋 *Rol General (Todos los partidos)*\n\n`; }
+            if(lista.length === 0) { alert("No hay partidos para enviar."); return; }
+
+            lista.forEach(p => {
+                let rolText = (nombre && p.juez && typeof p.juez === 'string' && p.juez.includes(nombre)) ? "⚖️ ARBITRA" : "🏓 JUEGA";
+                let n1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : '1° Gpo A'); 
+                let n2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : '2° Gpo B');
+                texto += `⏰ ${p.hora || '09:00 AM'} | Mesa ${p.mesa} [${rolText}]\n   ${n1} vs ${n2}\n   ⚖️ Juez: ${p.juez || 'Comité'}\n\n`;
+            });
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
+        }
+
+        function imprimirAgenda() { window.print(); }
+
+        function exportarAgendaExcel() {
+            let csv = 'Hora,Mesa,Grupo/Ronda,Jugador 1,Jugador 2,Juez Asignado\n';
+            const nombre = document.getElementById('filtro-jugador-agenda') ? document.getElementById('filtro-jugador-agenda').value : '';
+            let lista = nombre ? partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombre) || (p.j2 && p.j2.nombre === nombre) || (p.juez && typeof p.juez === 'string' && p.juez.includes(nombre))) : partidosCargadosGlobal;
+
+            lista.forEach(p => {
+                let n1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : '1° Gpo A'); 
+                let n2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : '2° Gpo B');
+                let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre ? 'Gpo '+p.grupo_nombre : (p.ronda_fase||'Llave'));
+                csv += `"${p.hora || '09:00 AM'}","Mesa ${p.mesa}","${eqGrupo}","${n1}","${n2}","${p.juez || 'Comité'}"\n`;
+            });
+            const link = document.createElement("a"); link.setAttribute("href", URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }))); 
+            link.setAttribute("download", `Rol_Partidos_${nombre || 'General'}.csv`);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        function reconstruirGruposDesdePartidosBD(partidosBD) {
+            const contenedor = document.getElementById('contenedor-grupos'); if (!contenedor) return; 
+            let mainHtml = '';
+            gruposGlobal = []; 
+            let todosLosJugadoresDeLaFase = new Map();
+            partidosBD.forEach(p => {
+                if (p.j1 && p.jugador1_id) todosLosJugadoresDeLaFase.set(p.jugador1_id, p.j1);
+                if (p.j2 && p.jugador2_id) todosLosJugadoresDeLaFase.set(p.jugador2_id, p.j2);
+            });
+            let jugadoresOrdenadosGlobal = Array.from(todosLosJugadoresDeLaFase.values());
+            jugadoresOrdenadosGlobal.forEach(jObj => { let jReal = mapaRankingOficial.get(jObj.id); if(jReal) jObj.puntos_ranking = jReal.puntos_ranking; });
+            jugadoresOrdenadosGlobal.sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
+            jugadoresOrdenadosGlobal.forEach((jObj, idx) => { jObj.seedOriginal = idx + 1; });
+
+            [...new Set(partidosBD.map(p => p.grupo_nombre).filter(Boolean))].sort().forEach((nombreGpo, idx) => {
+                let mapaJugadoresDelGrupo = new Map();
+                partidosBD.filter(p => p.grupo_nombre === nombreGpo).forEach(p => {
+                    if (p.jugador1_id) mapaJugadoresDelGrupo.set(p.jugador1_id, jugadoresOrdenadosGlobal.find(j => j.id === p.jugador1_id));
+                    if (p.jugador2_id) mapaJugadoresDelGrupo.set(p.jugador2_id, jugadoresOrdenadosGlobal.find(j => j.id === p.jugador2_id));
+                });
+                
+                let titleName = nombreGpo === 'Único' ? 'Liga Única' : `Grupo ${nombreGpo}`;
+                let jugadoresOrdenadosGrupo = Array.from(mapaJugadoresDelGrupo.values()).sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
+
+                gruposGlobal.push({ nombre: nombreGpo, jugadores: jugadoresOrdenadosGrupo }); 
+
+                let html = `<div class="grupo-card ${clasesColoresGrupo[idx % clasesColoresGrupo.length]}"><div class="grupo-header">${titleName}</div>`;
+                jugadoresOrdenadosGrupo.forEach((jObj, i) => { 
+                    html += `<div class="jugador-item"><div class="jugador-info"><strong style="color:#ffffff;">${jObj.nombre || 'Desconocido'}</strong><div><span class="tag-club">${jObj.club || 'Sin Club'}</span></div><span style="font-size:10px; color:#94a3b8;">${jObj.puntos_ranking || 0} pts (Seed #${jObj.seedOriginal})</span></div></div>`; 
+                });
+                mainHtml += html + `</div>`;
+            });
+            contenedor.innerHTML = mainHtml;
+        }
+
+        window.onload = inicializarSorteo;
+    </script>
+</body>
+</html>
