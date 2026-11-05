@@ -14,6 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Orbitron:wght@700;900&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <script>
         const urlParamsConfig = new URLSearchParams(window.location.search);
@@ -76,7 +77,7 @@
         .score-big { font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 900; color: #ffffff; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
         .sets-badge { font-size: 11px; font-weight: 900; color: #64748b; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 8px; margin-left: 10px; border: 1px solid rgba(255,255,255,0.02); }
 
-        /* Botones Acción Mesas */
+        /* Botones de Acción en Mesas */
         .grid-botones-mesa { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
         .btn-mesa-action { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 12px; padding: 12px 10px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; text-decoration: none; }
         .btn-mesa-arbitrar { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); color: #34d399; }
@@ -118,7 +119,12 @@
         .bracket-col:last-child .b-match::after { display: none; }
         .bracket-col:not(:first-child) .b-match::before { content: ""; position: absolute; left: -20px; top: 50%; width: 20px; border-top: 2px solid #ec4899; z-index: 1; }
         .bracket-col:not(:last-child) .b-match-pair::after { content: ""; position: absolute; right: -20px; top: 25%; bottom: 25%; width: 2px; background: #ec4899; z-index: 0; }
-        .b-match-pair.no-line::after { display: none; }
+        
+        /* Clases para Ocultar conectores de BYES */
+        .b-match.no-left-line::before { display: none !important; }
+        .b-match.invisible-match::after { display: none !important; }
+        .b-match.invisible-match::before { display: none !important; }
+        .b-match-pair.no-line::after { display: none !important; }
         
         @media print {
             body { background: white !important; color: black !important; padding: 0; }
@@ -550,6 +556,48 @@
             return html;
         }
 
+        async function compartirLlaveWhatsApp(catNombre) {
+            const container = document.getElementById('bracket-cat-' + catNombre.replace(/\s+/g, ''));
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
+            btn.disabled = true;
+
+            try {
+                // Forzamos un fondo para que el Canvas lo capture bien
+                container.style.backgroundColor = "#0a0a0c";
+                const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#0a0a0c', useCORS: true });
+                
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], `Llaves_${catNombre.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
+                    
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                title: `Llaves ${catNombre}`,
+                                text: `🏆 Así van las llaves de la categoría ${catNombre}:`,
+                                files: [file]
+                            });
+                        } catch (e) {
+                            // Si el usuario cancela o falla, descargamos
+                            const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `Llaves_${catNombre.replace(/\s+/g, '_')}.png`; link.click();
+                        }
+                    } else {
+                        // Navegador no soporta navigator.share con archivos
+                        const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `Llaves_${catNombre.replace(/\s+/g, '_')}.png`; link.click();
+                        alert("Tu navegador no soporta compartir imágenes directamente a WhatsApp. La imagen ha sido descargada para que la envíes manualmente.");
+                    }
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    container.style.backgroundColor = "transparent";
+                }, 'image/png');
+            } catch (err) {
+                alert("Error al generar la imagen.");
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
+
         function dibujarEstadisticas(container) {
             let catsList = [...new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean))];
             if (categoriaFiltro !== 'todas') catsList = catsList.filter(c => c === categoriaFiltro);
@@ -577,12 +625,16 @@
 
                 htmlContent += `
                     <div style="background:rgba(18, 18, 22, 0.8); border:1px solid rgba(236, 72, 153, 0.3); border-radius:24px; padding:30px; margin-bottom:30px;">
-                        <h3 style="color:#f472b6; font-weight:900; margin-top:0; text-transform:uppercase;"><i class="fa-solid fa-sitemap"></i> LLAVES FINALES: ${catNombre}</h3>
-                        <div class="bracket-container">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <h3 style="color:#f472b6; font-weight:900; margin-top:0; text-transform:uppercase;"><i class="fa-solid fa-sitemap"></i> LLAVES FINALES: ${catNombre}</h3>
+                            <button onclick="compartirLlaveWhatsApp('${catNombre}')" class="btn-console" style="background: rgba(37, 211, 102, 0.15); color: #25d366; border-color: rgba(37, 211, 102, 0.4);"><i class="fa-brands fa-whatsapp"></i> Compartir Llaves</button>
+                        </div>
+                        <div class="bracket-container" id="bracket-cat-${catNombre.replace(/\s+/g, '')}">
                 `;
 
-                const renderMatch = (m) => {
-                    if(!m) return '';
+                // Renderizador de un solo partido
+                const renderMatch = (m, noLeft = false) => {
+                    if(!m) return `<div class="b-match invisible-match" style="visibility:hidden; height:70px;"></div>`;
                     let proyJ1 = datosGeneralesCuadro.mapaProyecciones[`${m.id}_j1`];
                     let proyJ2 = datosGeneralesCuadro.mapaProyecciones[`${m.id}_j2`];
                     let n1 = proyJ1?.nombre || 'Por definir';
@@ -594,7 +646,7 @@
                     let win2 = m.estado === 'finalizado' && m.ganador_id == (m.j2?.id || m.jugador2_id || proyJ2?.id);
                     
                     return `
-                    <div class="b-match">
+                    <div class="b-match ${noLeft ? 'no-left-line' : ''}">
                         <div style="text-align:center; font-size:9px; font-weight:900; color:#ec4899; padding:6px; border-bottom:1px solid rgba(255,255,255,0.05); background:rgba(0,0,0,0.4); text-transform:uppercase;">${m.ronda_fase}</div>
                         <div class="b-team ${win1 ? 'winner-pink' : ''}">
                             <div class="b-team-info"><span style="font-size:12px; font-weight:800; color:${win1 ? '#fff' : '#cbd5e1'};">${win1 ? '🏆 ' : ''}${n1}</span></div>
@@ -607,32 +659,37 @@
                     </div>`;
                 };
 
-                // Función auxiliar para dibujar columnas con líneas conectoras de a pares
-                const renderCol = (matchesArr) => {
-                    if(matchesArr.length === 0) return '';
-                    let col = `<div class="bracket-col">`;
-                    for(let i=0; i<matchesArr.length; i+=2) {
-                        let m1 = matchesArr[i];
-                        let m2 = matchesArr[i+1];
-                        if(m2) {
-                            col += `<div class="b-match-pair">${renderMatch(m1)}${renderMatch(m2)}</div>`;
+                // Helpers para buscar partidos en la lista
+                const getMatch = (arr, i) => arr.find(x => String(x.ronda_fase).includes(i.toString()));
+
+                const renderCol = (count, currentArr, prevArr, isFinal = false) => {
+                    if (currentArr.length === 0 && !isFinal) return '';
+                    let colHtml = `<div class="bracket-col" ${isFinal ? 'style="justify-content: center;"' : ''}>`;
+                    for (let i = 1; i <= count; i += 2) {
+                        let m1 = isFinal ? currentArr[0] : getMatch(currentArr, i);
+                        let m2 = isFinal ? null : getMatch(currentArr, i + 1);
+                        
+                        // Check feed from previous round
+                        let m1HasPrev = prevArr ? !!getMatch(prevArr, i * 2 - 1) || !!getMatch(prevArr, i * 2) : false;
+                        let m2HasPrev = prevArr ? !!getMatch(prevArr, (i + 1) * 2 - 1) || !!getMatch(prevArr, (i + 1) * 2) : false;
+
+                        if (isFinal) {
+                            if(m1) colHtml += `<div class="b-match-pair no-line">${renderMatch(m1, !m1HasPrev)}</div>`;
                         } else {
-                            col += `<div class="b-match-pair no-line">${renderMatch(m1)}</div>`; // Final u hojas sin par
+                            let htmlM1 = renderMatch(m1, !m1HasPrev);
+                            let htmlM2 = renderMatch(m2, !m2HasPrev);
+                            let bothEmpty = !m1 && !m2;
+                            colHtml += `<div class="b-match-pair ${bothEmpty ? 'no-line' : ''}">${htmlM1}${htmlM2}</div>`;
                         }
                     }
-                    col += `</div>`;
-                    return col;
-                };
-
-                htmlContent += renderCol(octavos);
-                htmlContent += renderCol(cuartos);
-                htmlContent += renderCol(semis);
-                
-                if (final.length > 0) {
-                    htmlContent += `<div class="bracket-col" style="justify-content: center;">`;
-                    htmlContent += `<div class="b-match-pair no-line">${renderMatch(final[0])}</div>`;
-                    htmlContent += `</div>`;
+                    colHtml += `</div>`;
+                    return colHtml;
                 }
+
+                if(octavos.length > 0) htmlContent += renderCol(8, octavos, null);
+                if(cuartos.length > 0 || octavos.length > 0) htmlContent += renderCol(4, cuartos, octavos);
+                if(semis.length > 0 || cuartos.length > 0) htmlContent += renderCol(2, semis, cuartos);
+                if(final.length > 0) htmlContent += renderCol(1, final, semis, true);
 
                 htmlContent += `</div></div>`;
             });
