@@ -26,6 +26,19 @@
             alert("🔒 Acceso Restringido: Faltan los parámetros del organizador. Pide el enlace de acceso correcto.");
             window.location.href = "torneos.html";
         }
+
+        function abrirVistaInteligente(destino) {
+            let idTorneo = parseInt(localStorage.getItem('torneo_activo_id')) || 1;
+            window.location.href = destino + ".html?torneo=" + idTorneo;
+        }
+
+        function enfocarPestanaEspectador() {
+            let idTorneo = parseInt(localStorage.getItem('torneo_activo_id')) || 1;
+            let url = "espectador.html?torneo=" + idTorneo;
+            let win = window.open(url, 'espectador_view');
+            if (win) win.focus();
+            else alert("Por favor, permite las ventanas emergentes (pop-ups).");
+        }
     </script>
     <style>
         /* ========================================================
@@ -36,6 +49,16 @@
         
         body::before { content: ""; position: fixed; top: -15%; left: -10%; width: 600px; height: 600px; background: #fbbf24; border-radius: 50%; filter: blur(200px); opacity: 0.08; pointer-events: none; z-index: -1; }
         body::after { content: ""; position: fixed; bottom: -10%; right: -10%; width: 700px; height: 700px; background: #06b6d4; border-radius: 50%; filter: blur(200px); opacity: 0.06; pointer-events: none; z-index: -1; }
+
+        /* NAVBAR STYLES */
+        .navbar { background: rgba(10, 15, 26, 0.65); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; position: sticky; top: 0; z-index: 50; margin: -15px -15px 20px -15px; }
+        .nav-title { font-weight: 800; font-size: 15px; color: #ffffff; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-links { display: flex; gap: 10px; flex-wrap: wrap; }
+        .nav-btn { color: #94a3b8; text-decoration: none; padding: 8px 18px; border-radius: 9999px; font-size: 11px; font-weight: 700; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .nav-btn:hover { color: #000000; background: #f5a623; border-color: #f5a623; box-shadow: 0 0 25px rgba(245, 166, 35, 0.8); transform: translateY(-2px); }
+        .nav-btn.active { color: #ffffff; border-color: #8b5cf6; background: rgba(139, 92, 246, 0.3); box-shadow: 0 0 15px rgba(139, 92, 246, 0.4); }
+        .nav-btn.public { color: #34d399; border-color: rgba(16, 185, 129, 0.5); }
+        .nav-btn.public:hover { color: #000000; background: #10b981; border-color: #10b981; box-shadow: 0 0 25px rgba(16, 185, 129, 0.8); }
 
         .header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 12px; }
         .header h1 { font-size: 20px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #ffffff; margin: 0; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
@@ -77,7 +100,7 @@
         .score-big { font-family: 'Orbitron', sans-serif; font-size: 26px; font-weight: 900; color: #ffffff; text-shadow: 0 0 15px rgba(255,255,255,0.2); }
         .sets-badge { font-size: 11px; font-weight: 900; color: #64748b; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 8px; margin-left: 10px; border: 1px solid rgba(255,255,255,0.02); }
 
-        /* Botones Acción Mesas */
+        /* Botones de Acción en Mesas */
         .grid-botones-mesa { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: auto; }
         .btn-mesa-action { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; border-radius: 12px; padding: 12px 10px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer; text-decoration: none; }
         .btn-mesa-arbitrar { background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); color: #34d399; }
@@ -137,6 +160,19 @@
     </style>
 </head>
 <body>
+
+    <!-- NAVBAR RESTAURADA CON NAVEGACIÓN COMPLETA -->
+    <nav class="navbar no-print">
+        <div class="nav-title">CENTRAL DE TORNEOS</div>
+        <div class="nav-links">
+            <a href="torneos.html" class="nav-btn">Mis Torneos</a>
+            <a href="#" onclick="abrirVistaInteligente('admin'); return false;" class="nav-btn">Administrador</a>
+            <a href="#" onclick="abrirVistaInteligente('sorteo'); return false;" class="nav-btn">Sorteo y Rol</a>
+            <a href="#" class="nav-btn active" style="border-color:#06b6d4; color:#38bdf8;">🏓 Mesas</a>
+            <a href="#" onclick="enfocarPestanaEspectador(); return false;" class="nav-btn" style="border-color:#d946ef; color:#f0abfc;">👁️ Espectador (Publico)</a>
+            <a href="index.html" class="nav-btn public">Portal Público</a>
+        </div>
+    </nav>
 
     <!-- MODAL QR DE TRANSMISIÓN -->
     <div id="modal-qr" class="modal-overlay" style="display: none;">
@@ -229,9 +265,6 @@
 
 
     <div class="header no-print">
-        <div style="display: inline-block; background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); color: #38bdf8; font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 6px 16px; border-radius: 9999px; letter-spacing: 3px; margin-bottom: 12px;">
-            <i class="fa-solid fa-gavel mr-2"></i> PORTAL DE ARBITRAJE OFICIAL
-        </div>
         <h1 id="nombre-torneo" class="m-0 mt-2">CENTRAL DE MESAS</h1>
     </div>
 
@@ -553,6 +586,7 @@
             btn.disabled = true;
 
             try {
+                // Forzamos un fondo para que el Canvas lo capture bien
                 container.style.backgroundColor = "#0a0a0c";
                 const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#0a0a0c', useCORS: true });
                 
@@ -567,9 +601,11 @@
                                 files: [file]
                             });
                         } catch (e) {
+                            // Si el usuario cancela o falla, descargamos
                             const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `Llaves_${catNombre.replace(/\s+/g, '_')}.png`; link.click();
                         }
                     } else {
+                        // Navegador no soporta navigator.share con archivos
                         const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `Llaves_${catNombre.replace(/\s+/g, '_')}.png`; link.click();
                         alert("Tu navegador no soporta compartir imágenes directamente a WhatsApp. La imagen ha sido descargada para que la envíes manualmente.");
                     }
