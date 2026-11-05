@@ -641,47 +641,62 @@
             document.getElementById('seccion-partidos-rr').style.display = 'none';
             partidosGeneradosRR = [];
             gruposGlobal = [];
-            document.getElementById('btn-img-llaves').style.display = 'none';
+            
+            let btnElimImg = document.getElementById('btn-img-eliminacion');
+            if (btnElimImg) btnElimImg.style.display = 'none';
         }
 
-        function cambiarModoTorneo(modo) {
+        function cambiarModoTorneo(modo, esAuto = false) {
             modoTorneoActual = modo;
             
-            // 1. Limpiar visualmente los botones
+            // 1. Limpiar clases
             document.querySelectorAll('.btn-mode-toggle').forEach(btn => {
                 btn.classList.remove('active', 'active-liga', 'active-rr-flash', 'active-eliminacion', 'active-flash');
             });
             
             const idTamano = document.getElementById('tamano-grupo');
             const idVueltas = document.getElementById('rr-vueltas');
-            const contSorteo = document.getElementById('controles-sorteo');
             const btnElimImg = document.getElementById('btn-img-eliminacion');
+            const contSorteo = document.getElementById('controles-sorteo');
             const panelFlash = document.getElementById('panel-modo-flash');
             
             if(idTamano) idTamano.style.display = 'none';
             if(idVueltas) idVueltas.style.display = 'none';
             if(btnElimImg) btnElimImg.style.display = 'none';
-            
-            limpiarUI();
 
-            // 2. Activar visual del modo seleccionado
+            // 2. Activar visual
             if (modo === 'normal') {
                 document.getElementById('btn-toggle-rr').classList.add('active');
-                idTamano.style.display = 'block';
-                contSorteo.style.display = 'flex';
+                if(idTamano) idTamano.style.display = 'block';
             } else if (modo === 'liga') {
                 document.getElementById('btn-toggle-liga').classList.add('active-liga');
-                idVueltas.style.display = 'block';
-                contSorteo.style.display = 'flex';
+                if(idVueltas) idVueltas.style.display = 'block';
             } else if (modo === 'rr_flash') {
                 document.getElementById('btn-toggle-rr-flash').classList.add('active-rr-flash');
-                contSorteo.style.display = 'flex';
             } else if (modo === 'eliminacion') {
                 document.getElementById('btn-toggle-eliminacion').classList.add('active-eliminacion');
-                contSorteo.style.display = 'flex';
+                if(btnElimImg && (partidosCargadosGlobal.length > 0 || partidosGeneradosRR.length > 0)) {
+                    btnElimImg.style.display = 'inline-flex';
+                }
             } else if (modo === 'flash') {
                 document.getElementById('btn-toggle-flash').classList.add('active-flash');
-                contSorteo.style.display = 'none';
+            }
+
+            // Si es un cambio manual, limpiamos lo generado anteriormente
+            if (!esAuto) limpiarUI();
+
+            // 3. Manejo de Paneles según Cat
+            const idCat = document.getElementById('filtro-categoria').value;
+            if (modo === 'flash') {
+                if(contSorteo) contSorteo.style.display = 'none';
+                if(panelFlash) panelFlash.style.display = 'block';
+                if (idCat && !esAuto) cargarDatosFlash(idCat);
+            } else {
+                if(panelFlash) panelFlash.style.display = 'none';
+                // Solo si el torneo no está cargado mostramos los controles normales
+                if (partidosCargadosGlobal.length === 0) {
+                    if(contSorteo) contSorteo.style.display = 'flex';
+                }
             }
         }
 
@@ -733,6 +748,12 @@
                     if (!isGuardando && document.getElementById('filtro-categoria').value) cargarEstadoCategoria();
                 }).subscribe();
 
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible' && !isGuardando && document.getElementById('filtro-categoria').value) {
+                        cargarEstadoCategoria();
+                    }
+                });
+
             } catch(e) { console.error("Error al iniciar:", e); }
         }
 
@@ -746,7 +767,6 @@
                 const seccionPartidos = document.getElementById('seccion-partidos-rr');
                 const panelFlash = document.getElementById('panel-modo-flash');
                 const bloqueLlaves = document.getElementById('bloque-llaves-config');
-                const btnElimImg = document.getElementById('btn-img-eliminacion');
 
                 limpiarUI();
 
@@ -789,30 +809,19 @@
                     if (partidosBD.some(p => String(p.ronda_fase).includes('(C1)'))) {
                         detectedMode = 'rr_flash';
                         bloqueLlaves.style.display = 'flex';
-                        if(btnElimImg) btnElimImg.style.display = 'none';
                     } else if (!hasLlaves && partidosBD.some(p => p.grupo_nombre === 'Único')) {
                         detectedMode = 'liga';
                         bloqueLlaves.style.display = 'none';
-                        if(btnElimImg) btnElimImg.style.display = 'none';
                     } else if (hasLlaves && partidosBD.every(p => !p.grupo_nombre)) {
                         detectedMode = 'eliminacion';
                         bloqueLlaves.style.display = 'none';
-                        if(btnElimImg) btnElimImg.style.display = 'inline-flex';
                     } else {
                         detectedMode = 'normal';
                         bloqueLlaves.style.display = 'flex';
-                        if(btnElimImg) btnElimImg.style.display = 'none';
                     }
 
                     // APLICAMOS LA UI SEGÚN LA BASE DE DATOS pero desactivamos el evento de recarga para que no entre en loop.
-                    modoTorneoActual = detectedMode;
-                    document.querySelectorAll('.btn-mode-toggle').forEach(btn => btn.classList.remove('active', 'active-liga', 'active-rr-flash', 'active-eliminacion', 'active-flash'));
-                    if (detectedMode === 'normal') document.getElementById('btn-toggle-rr').classList.add('active');
-                    else if (detectedMode === 'liga') document.getElementById('btn-toggle-liga').classList.add('active-liga');
-                    else if (detectedMode === 'rr_flash') document.getElementById('btn-toggle-rr-flash').classList.add('active-rr-flash');
-                    else if (detectedMode === 'eliminacion') {
-                        document.getElementById('btn-toggle-eliminacion').classList.add('active-eliminacion');
-                    }
+                    cambiarModoTorneo(detectedMode, true); // true = eviteRecarga
 
                     reconstruirGruposDesdePartidosBD(partidosBD);
                     poblarDropdownAgenda(partidosBD);
@@ -826,7 +835,10 @@
                     
                     if (modoTorneoActual === 'flash') await cargarDatosFlash(idCat);
                 }
-            } catch (err) { alert("Ocurrió un problema al leer la base de datos."); }
+            } catch (err) { 
+                console.error("Error en cargarEstadoCategoria:", err);
+                alert("Ocurrió un problema: " + err.message); 
+            }
         }
 
         async function reiniciarLigaFlash() {
@@ -1182,9 +1194,15 @@
             lista.forEach(p => {
                 let nomJ1 = getNombreParaTabla(p, true);
                 let nomJ2 = getNombreParaTabla(p, false);
-                tbody.innerHTML += `<tr><td><strong>⏰ ${p.hora}</strong></td><td>Mesa ${p.mesa}</td><td>${p.ronda_fase}</td><td><strong>${nomJ1}</strong></td><td style="text-align:center;">VS</td><td><strong>${nomJ2}</strong></td><td>⚖️ ${p.juez || 'Comité'}</td></tr>`;
+                
+                // INYECTAMOS EL ID PARA QUE EN BASE DE DATOS LLEGUE Y NO QUEDE COMO "UNDEFINED"
+                let id1 = p.j1 ? p.j1.id : null;
+                let id2 = p.j2 ? p.j2.id : null;
+
+                tbody.innerHTML += `<tr><td><strong>⏰ ${p.hora}</strong></td><td>Mesa ${p.mesa}</td><td>${p.ronda_fase}</td><td><strong>${nomJ1}</strong></td><td style="text-align:center;">VS</td><td><strong>${nomJ2}</strong></td><td>⚖️ ${p.juez || 'Comité'}</td><td class="no-print"><div style="display:flex; gap:6px; flex-wrap:wrap;"><a href="juez.html?partido=${p.id}" target="_blank" class="btn-console btn-ws-style" style="padding:4px 8px; font-size:9px; text-decoration:none;">🏓 Juez</a><a href="espectador.html?partido=${p.id}" class="btn-console btn-purple" style="padding:4px 8px; font-size:9px; text-decoration:none;">👁 Ver</a></div></td></tr>`;
             });
         }
+        
         function dibujarTablaPartidosGenerados(lista) {
             const tbody = document.getElementById('tabla-partidos-rr'); tbody.innerHTML = '';
             lista.forEach(p => {
@@ -1697,231 +1715,6 @@
                 mainHtml += html + `</div>`;
             });
             contenedor.innerHTML = mainHtml;
-        }
-
-        async function generarGafeteImagen() {
-            const nombreJugador = document.getElementById('filtro-jugador-agenda').value;
-            if (!nombreJugador) return alert("Para generar un Gafete VIP, primero selecciona el nombre de un jugador en la lista desplegable (-- Todos los Jugadores --).");
-
-            let partidosJugador = partidosCargadosGlobal.filter(p => (p.j1 && p.j1.nombre === nombreJugador) || (p.j2 && p.j2.nombre === nombreJugador) || (p.juez && typeof p.juez === 'string' && p.juez.includes(nombreJugador)));
-            if (partidosJugador.length === 0) return alert("Este jugador no tiene partidos ni arbitrajes asignados en esta categoría.");
-
-            let jugadorData = todosLosJugadoresAdmin.find(j => j.nombre === nombreJugador);
-            const catSelect = document.getElementById('filtro-categoria');
-            const catName = catSelect.options[catSelect.selectedIndex].text;
-
-            document.getElementById('gafete-pill').innerText = catName;
-            document.getElementById('gafete-nombre').innerHTML = nombreJugador;
-            document.getElementById('gafete-club').innerText = jugadorData ? (jugadorData.club || 'Sin Club') : 'Atleta';
-            document.getElementById('gafete-pts').innerText = jugadorData ? (jugadorData.puntos_ranking || 0) : '0';
-            document.getElementById('gafete-pj').innerText = partidosJugador.length;
-            
-            let primerP = partidosJugador[0];
-            document.getElementById('gafete-mesa').innerText = primerP ? `M-${primerP.mesa}` : '-';
-            let primerEsJuez = primerP && typeof primerP.juez === 'string' && primerP.juez.includes(nombreJugador);
-            document.getElementById('gafete-rol').innerText = primerEsJuez ? 'ARBITRA' : 'JUEGA';
-
-            document.getElementById('gafete-torneo-nombre').innerText = torneoActivoObj ? `${torneoActivoObj.nombre} • ${torneoActivoObj.fecha_evento || ''}` : 'TORNEO OFICIAL';
-
-            const tbody = document.getElementById('gafete-body'); tbody.innerHTML = '';
-            partidosJugador.forEach(p => {
-                let esJuez = p.juez && typeof p.juez === 'string' && p.juez.includes(nombreJugador);
-                let eqGrupo = p.grupo_nombre === 'Único' ? 'Liga Única' : (p.grupo_nombre ? 'Gpo '+p.grupo_nombre : (p.ronda_fase||'Llave'));
-                let oponente = '';
-                if (esJuez) {
-                    let n1 = p.j1 ? p.j1.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos) : 'J1'); 
-                    let n2 = p.j2 ? p.j2.nombre : (p.ronda_fase ? getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos) : 'J2');
-                    oponente = `<span class="badge-arbitra">ARBITRAR: ${n1} vs ${n2}</span>`;
-                } else {
-                    let esJ1 = p.j1 && p.j1.nombre === nombreJugador;
-                    oponente = esJ1 ? (p.j2 ? p.j2.nombre : getProyeccionNombre(p.ronda_fase, false, llavesTienenCuartos)) : (p.j1 ? p.j1.nombre : getProyeccionNombre(p.ronda_fase, true, llavesTienenCuartos));
-                }
-                tbody.innerHTML += `<tr class="${esJuez ? 'row-arbitra' : 'row-juega'}"><td>${p.hora || '09:00 AM'}</td><td>Mesa ${p.mesa}</td><td>${eqGrupo}</td><td>${oponente}</td></tr>`;
-            });
-
-            const btn = document.querySelector('button[onclick="generarGafeteImagen()"]');
-            const txtOr = btn.innerText; btn.innerText = "⏳ Generando..."; btn.disabled = true;
-            await renderAndDownload('plantilla-gafete', `Gafete_${nombreJugador.replace(/\s+/g, '_')}.png`);
-            btn.innerText = txtOr; btn.disabled = false;
-        }
-
-        async function generarGruposImagen() {
-            if(gruposGlobal.length === 0) return alert("No hay grupos generados en memoria. Por favor vuelve a seleccionar la categoría en el menú de arriba para cargarlos.");
-            
-            const catSelect = document.getElementById('filtro-categoria');
-            const catName = catSelect.options[catSelect.selectedIndex].text;
-            
-            document.getElementById('vip-grupos-cat').innerText = catName;
-            document.getElementById('vip-grupos-torneo').innerText = torneoActivoObj ? `${torneoActivoObj.nombre} • ${torneoActivoObj.fecha_evento || ''}` : 'TORNEO OFICIAL';
-            
-            const grid = document.getElementById('vip-grupos-grid');
-            grid.innerHTML = '';
-            
-            gruposGlobal.forEach(g => {
-                let html = `<div class="vip-gpo-card"><div class="vip-gpo-title">${g.nombre === 'Único' ? 'Liga Única' : 'Grupo ' + g.nombre}</div>`;
-                g.jugadores.forEach((j, idx) => {
-                    html += `
-                        <div class="vip-gpo-item">
-                            <div style="flex:1; overflow:hidden; padding-right:10px;">
-                                <div style="font-size: 13px; font-weight: 800; color: #fff; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; display: flex; align-items: baseline;">${idx+1}. ${j.nombre} <span style="font-size:10px; color:#38bdf8; margin-left:6px; font-family:'Sora', sans-serif;">(Seed #${j.seedOriginal})</span></div>
-                                <div class="vip-gpo-club">${j.club || 'S/C'}</div>
-                            </div>
-                            <div style="text-align:right; flex-shrink:0;">
-                                <div style="font-size:14px; font-weight:900; color:#fbbf24; font-family:'Orbitron', sans-serif;">${j.puntos_ranking || 0}</div>
-                                <div style="font-size:8px; color:#94a3b8; font-weight:700; text-transform:uppercase;">Pts</div>
-                            </div>
-                        </div>
-                    `;
-                });
-                html += `</div>`;
-                grid.innerHTML += html;
-            });
-
-            const btn = document.querySelector('button[onclick="generarGruposImagen()"]');
-            const txtOr = btn.innerText; btn.innerText = "⏳ Generando..."; btn.disabled = true;
-            await renderAndDownload('plantilla-grupos', `Grupos_${catName}.png`);
-            btn.innerText = txtOr; btn.disabled = false;
-        }
-
-        async function renderAndDownload(elementId, filename) {
-            const container = document.getElementById(elementId);
-            container.style.display = 'block';
-            try {
-                const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#0a0a0c', logging: false, useCORS: true });
-                const imgData = canvas.toDataURL('image/png');
-                const link = document.createElement('a');
-                link.download = filename; link.href = imgData; link.click();
-            } catch (err) { alert("Hubo un error al generar la imagen."); } 
-            finally { container.style.display = 'none'; }
-        }
-
-        async function generarCronogramaImagen() {
-            let idCat = document.getElementById('filtro-categoria').value;
-            let breakVal = document.getElementById('rr-hora-break').value || localStorage.getItem(`break_val_${ORG_ID}_${idCat}`);
-            let breakDur = parseInt(document.getElementById('rr-duracion-break').value || localStorage.getItem(`break_dur_${ORG_ID}_${idCat}`)) || 30;
-
-            const btn = document.querySelector('button[onclick="generarCronogramaImagen()"]');
-            const txtOr = btn.innerText; btn.innerText = "⏳ Generando..."; btn.disabled = true;
-
-            try {
-                const { data: progData } = await clienteSupabase.from('programacion_categorias').select('categoria_id, fecha').eq('torneo_id', idTorneoActivo);
-                const { data: allMatches } = await clienteSupabase.from('partidos').select('hora, categoria_id, categorias(nombre), grupo_nombre, ronda_fase').eq('torneo_id', idTorneoActivo).neq('estado', 'cancelado');
-
-                if(!allMatches || allMatches.length === 0) { alert("No hay partidos programados en el torneo."); btn.innerText = txtOr; btn.disabled = false; return; }
-
-                let blocksMap = new Map();
-                let fechasDisponibles = new Set();
-
-                allMatches.forEach(p => {
-                    if (!p.hora) return;
-                    let catName = p.categorias?.nombre || 'Categoría General';
-                    let isGroup = p.grupo_nombre && p.grupo_nombre !== 'Flash';
-                    let isLiga = p.grupo_nombre === 'Único';
-                    let isFlash = p.grupo_nombre === 'Flash';
-                    
-                    if(isFlash) return; 
-
-                    let faseType = isLiga ? 'LIGA ÚNICA' : (isGroup ? 'FASE DE GRUPOS' : 'FASE FINAL ELIMINATORIA');
-                    let prog = progData ? progData.find(pr => pr.categoria_id === p.categoria_id) : null;
-                    let fechaStr = prog && prog.fecha ? prog.fecha : (torneoActivoObj.fecha_evento || 'Sin Fecha');
-
-                    fechasDisponibles.add(fechaStr);
-
-                    let key = `${catName}|${faseType}|${fechaStr}`;
-                    if (!blocksMap.has(key)) { blocksMap.set(key, { catName, faseType, fecha: fechaStr, times: [] }); }
-                    blocksMap.get(key).times.push(timeToMinutes(p.hora));
-                });
-
-                let fechasArray = Array.from(fechasDisponibles).sort();
-                let fechaFiltro = fechasArray[0];
-
-                if (fechasArray.length > 1) {
-                    let msg = "Este torneo tiene partidos en varios días. ¿Qué cronograma deseas generar?\n\n";
-                    fechasArray.forEach((f, idx) => { msg += `[ ${idx + 1} ] - ${f}\n`; });
-                    msg += "\nIngresa el número correspondiente al día:";
-                    
-                    let seleccion = prompt(msg);
-                    if (!seleccion) { btn.innerText = txtOr; btn.disabled = false; return; }
-                    
-                    let indexSel = parseInt(seleccion) - 1;
-                    if (indexSel >= 0 && indexSel < fechasArray.length) { fechaFiltro = fechasArray[indexSel]; } 
-                    else { alert("Selección inválida. Operación cancelada."); btn.innerText = txtOr; btn.disabled = false; return; }
-                }
-
-                let blocks = Array.from(blocksMap.values()).filter(b => b.fecha === fechaFiltro).map(b => {
-                    let minTime = Math.min(...b.times); let maxTime = Math.max(...b.times) + 30; 
-                    return { ...b, minTime, maxTime, isBreak: false };
-                }).sort((a,b) => a.minTime - b.minTime);
-
-                if (!breakVal) {
-                    let ask = prompt(`Cronograma del día: ${fechaFiltro}\nSi hubo un receso (Break), ingresa la hora de inicio (Ej. 13:00 o 01:00 PM). Deja en blanco si no hubo:`);
-                    if (ask && ask.trim() !== '') {
-                        breakVal = ask.trim();
-                        let dur = prompt("¿Cuántos minutos duró el receso?", "30");
-                        breakDur = parseInt(dur) || 30;
-                    }
-                }
-
-                if (breakVal) {
-                    let breakMins = timeToMinutes(breakVal);
-                    blocks.push({ isBreak: true, minTime: breakMins, maxTime: breakMins + breakDur, catName: '☕ RECESO GENERAL', faseType: 'PAUSA DEL TORNEO', fecha: fechaFiltro });
-                    blocks.sort((a,b) => a.minTime - b.minTime);
-                }
-
-                if(blocks.length === 0) { alert("No hay datos calculables para el cronograma."); btn.innerText = txtOr; btn.disabled = false; return; }
-
-                let absoluteMinTime = Math.min(...blocks.map(b => b.minTime)); let absoluteMaxTime = Math.max(...blocks.map(b => b.maxTime));
-                let startAxis = Math.floor(absoluteMinTime / 60) * 60; let endAxis = Math.ceil(absoluteMaxTime / 60) * 60;
-                let totalDuration = endAxis - startAxis;
-                if (totalDuration <= 0) totalDuration = 60;
-
-                let axisHtml = ''; let gridHtml = ''; let numTicks = Math.ceil(totalDuration / 60);
-                
-                for(let i=0; i<=numTicks; i++) {
-                    let tickTime = startAxis + (i * 60); let pct = (i * 60 / totalDuration) * 100; let timeStr = minutesToTimeStr(tickTime);
-                    axisHtml += `<div style="position:absolute; left:${pct}%; transform:translateX(-50%); font-size:12px; font-weight:900; color:#94a3b8; font-family:'Orbitron', sans-serif; text-shadow: 1px 1px 2px black;">${timeStr}</div>`;
-                    gridHtml += `<div style="position:absolute; left:${pct}%; top:0; bottom:0; width:1px; background:rgba(255,255,255,0.08); z-index:1;"></div>`;
-                }
-                document.getElementById('vip-gantt-axis').innerHTML = axisHtml;
-
-                let tracksHtml = ''; let breaksHtml = '';
-                const colors = [
-                    { bg: 'rgba(56, 189, 248, 0.15)', border: '#38bdf8', glow: 'rgba(56,189,248,0.4)' }, { bg: 'rgba(245, 158, 11, 0.15)', border: '#f59e0b', glow: 'rgba(245,158,11,0.4)' },
-                    { bg: 'rgba(168, 85, 247, 0.15)', border: '#a855f7', glow: 'rgba(168,85,247,0.4)' }, { bg: 'rgba(16, 185, 129, 0.15)', border: '#10b981', glow: 'rgba(16,185,129,0.4)' },
-                    { bg: 'rgba(244, 63, 94, 0.15)', border: '#f43f5e', glow: 'rgba(244,63,94,0.4)' }
-                ];
-                let colorIdx = 0;
-
-                blocks.forEach((b) => {
-                    let leftPct = ((b.minTime - startAxis) / totalDuration) * 100; let widthPct = ((b.maxTime - b.minTime) / totalDuration) * 100;
-                    let startStr = minutesToTimeStr(b.minTime); let endStr = minutesToTimeStr(b.maxTime);
-                    
-                    if (b.isBreak) {
-                        breaksHtml += `
-                            <div style="position: absolute; left: ${leftPct}%; width: ${widthPct}%; top: -10px; bottom: -10px; background: rgba(4, 6, 10, 0.95); border-left: 2px dashed #ef4444; border-right: 2px dashed #ef4444; z-index: 20; display: flex; align-items: center; justify-content: center;">
-                                <div style="background: rgba(239,68,68,0.15); border: 1px solid #ef4444; padding: 10px 20px; border-radius: 12px; box-shadow: 0 0 20px rgba(239,68,68,0.4); text-align: center; white-space: nowrap; backdrop-filter: blur(5px);">
-                                    <div style="font-weight: 900; font-size: 14px; text-transform: uppercase; color: #fca5a5; letter-spacing: 1px; margin-bottom: 4px;">☕ Receso General</div>
-                                    <div style="font-weight: 800; font-size: 11px; color: #f87171;">⏰ ${startStr} a ${endStr}</div>
-                                </div>
-                            </div>`;
-                    } else {
-                        let color = colors[colorIdx % colors.length]; colorIdx++; let dateHtml = b.fecha ? `📅 ${b.fecha} &nbsp;•&nbsp; ` : '';
-                        tracksHtml += `
-                            <div style="position: relative; height: 50px; width: 100%; background: rgba(255,255,255,0.02); border-radius: 8px;">
-                                <div style="position: absolute; left: ${leftPct}%; width: ${widthPct}%; height: 100%; background: ${color.bg}; border: 1px solid ${color.border}; border-left: 4px solid ${color.border}; border-radius: 8px; box-shadow: 0 0 15px ${color.glow}; display: flex; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; z-index: 10;">
-                                    <div style="font-weight: 900; font-size: 12px; text-transform: uppercase; color: white; white-space: nowrap; text-shadow: 1px 1px 3px black;">${b.catName} - ${b.faseType}</div>
-                                    <div style="font-weight: 800; font-size: 9px; color: #cbd5e1; margin-top: 3px;">${dateHtml}⏰ ${startStr} a ${endStr}</div>
-                                </div>
-                            </div>`;
-                    }
-                });
-
-                document.getElementById('vip-gantt-tracks').innerHTML = gridHtml + tracksHtml + breaksHtml;
-                let nombreTorneoVisual = torneoActivoObj ? torneoActivoObj.nombre : 'TORNEO OFICIAL';
-                document.getElementById('vip-crono-torneo-name').innerText = `${nombreTorneoVisual} • ${fechaFiltro}`;
-
-                await renderAndDownload('plantilla-cronograma', `Cronograma_${fechaFiltro}.png`);
-            } catch(e) { console.error(e); alert("Error generando cronograma: " + e.message); } finally { btn.innerText = txtOr; btn.disabled = false; }
         }
 
         window.onload = inicializarSorteo;
