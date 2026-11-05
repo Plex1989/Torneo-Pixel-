@@ -90,21 +90,22 @@
         .bracket-col { display: flex; flex-direction: column; justify-content: space-around; gap: 30px; min-width: 260px; position: relative; }
         
         .b-match-pair { position: relative; display: flex; flex-direction: column; justify-content: space-around; gap: 20px; flex: 1; }
-        .b-match { background: rgba(18, 18, 22, 0.95); border: 1px solid rgba(251,191,36,0.3); border-radius: 16px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 2; display: flex; flex-direction: column; flex-shrink: 0; min-height: 95px; }
+        .b-match { background: rgba(18, 18, 22, 0.95); border: 1px solid rgba(236,72,153,0.3); border-radius: 16px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.5); z-index: 2; display: flex; flex-direction: column; flex-shrink: 0; min-height: 95px; }
         
         .b-team { display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); align-items: center; gap: 15px; }
         .b-team:last-child { border-bottom: none; }
-        .b-team.winner-gold { background: rgba(251,191,36,0.1); border-left: 4px solid #fbbf24; }
+        .b-team.winner-pink { background: rgba(236,72,153,0.1); border-left: 4px solid #ec4899; }
         .b-score { font-family: 'Orbitron', sans-serif; font-size: 18px; font-weight: 900; background: rgba(0,0,0,0.6); padding: 6px 12px; border-radius: 8px; color: #fff; }
-        .b-team.winner-gold .b-score { color: #fbbf24; }
+        .b-team.winner-pink .b-score { color: #f472b6; }
         .b-team-info { display: flex; flex-direction: column; }
         
-        /* Líneas conectoras Doradas */
-        .b-match::after { content: ""; position: absolute; right: -20px; top: 50%; width: 20px; border-top: 2px solid #fbbf24; z-index: 1; }
+        /* Líneas conectoras Rosas */
+        .b-match::after { content: ""; position: absolute; right: -20px; top: 50%; width: 20px; border-top: 2px solid #ec4899; z-index: 1; }
         .bracket-col:last-child .b-match::after { display: none; }
-        .bracket-col:not(:first-child) .b-match::before { content: ""; position: absolute; left: -20px; top: 50%; width: 20px; border-top: 2px solid #fbbf24; z-index: 1; }
-        .b-match-pair::after { content: ""; position: absolute; right: -20px; top: calc(25% + 10px); bottom: calc(25% + 10px); width: 2px; background: #fbbf24; z-index: 0; }
+        .bracket-col:not(:first-child) .b-match::before { content: ""; position: absolute; left: -20px; top: 50%; width: 20px; border-top: 2px solid #ec4899; z-index: 1; }
+        .b-match-pair::after { content: ""; position: absolute; right: -20px; top: calc(25% + 10px); bottom: calc(25% + 10px); width: 2px; background: #ec4899; z-index: 0; }
         
+        /* Clases ocultas para BYEs */
         .b-match-pair.no-line::after { display: none !important; }
         .b-match-pair.only-top::after { bottom: 50%; }
         .b-match-pair.only-bottom::after { top: 50%; }
@@ -215,7 +216,7 @@
         <button class="btn-filter-pill active" onclick="filtrarModalidad('todas', this)">Todas</button>
         <button class="btn-filter-pill" onclick="filtrarModalidad('grupos', this)">🎲 Grupos</button>
         <button class="btn-filter-pill" onclick="filtrarModalidad('round_robin', this)">🔄 Liga Única</button>
-        <button class="btn-filter-pill" onclick="filtrarModalidad('llaves', this)">🏆 Fase Final</button>
+        <button class="btn-filter-pill" onclick="filtrarModalidad('eliminacion', this)">⚔️ Eliminación Directa</button>
         <button class="btn-filter-pill" style="color:#fbbf24; border-color:rgba(251,191,36,0.3);" onclick="filtrarModalidad('flash', this)">⚡ Liga Flash</button>
     </div>
 
@@ -304,7 +305,8 @@
         function ordenarJugadoresITTF(lista) {
             return [...lista].sort((a, b) => {
                 if (b.pts !== a.pts) return b.pts - a.pts;
-                const rSetA = a.setsG / (a.setsP || 0.0001); const rSetB = b.setsG / (b.setsP || 0.0001);
+                const sG_a = a.setsG; const sP_a = a.setsP; const sG_b = b.setsG; const sP_b = b.setsP;
+                const rSetA = sG_a / (sP_a || 0.0001); const rSetB = sG_b / (sP_b || 0.0001);
                 if (Math.abs(rSetB - rSetA) > 0.0001) return rSetB - rSetA;
                 if (b.pg !== a.pg) return b.pg - a.pg;
                 return b.rankIni - a.rankIni; 
@@ -553,21 +555,26 @@
             document.getElementById('fs-mesa-fase').innerText = `MESA ${p.mesa || 1} • ${p.grupo_nombre === 'Flash' ? 'LIGA CONTINUA' : (p.grupo_nombre === 'Único' ? 'LIGA ÚNICA' : (p.grupo_nombre ? 'GRUPO ' + p.grupo_nombre : (p.ronda_fase || 'FASE FINAL')))}`;
             document.getElementById('fs-cat-nombre').innerText = p.categorias?.nombre || 'CATEGORÍA GENERAL';
 
-            let nomJ1 = p.j1?.nombre || 'Por definir';
-            let nomJ2 = p.j2?.nombre || 'Por definir';
+            let proyJ1 = datosGeneralesCuadro.mapaProyecciones[`${p.id}_j1`];
+            let proyJ2 = datosGeneralesCuadro.mapaProyecciones[`${p.id}_j2`];
+
+            let nomJ1 = proyJ1?.nombre || 'Por definir';
+            let nomJ2 = proyJ2?.nombre || 'Por definir';
 
             document.getElementById('fs-name-j1').innerText = nomJ1; document.getElementById('fs-name-j2').innerText = nomJ2;
-            document.getElementById('fs-club-j1').innerText = p.j1?.club || 'Sin Club'; document.getElementById('fs-club-j2').innerText = p.j2?.club || 'Sin Club';
+            document.getElementById('fs-club-j1').innerText = proyJ1?.club || 'Sin Club'; document.getElementById('fs-club-j2').innerText = proyJ2?.club || 'Sin Club';
 
-            const finMatches = todosLosPartidos.filter(m => String(m.estado || '').toLowerCase() === 'finalizado');
-            let ptsPrevJ1 = p.j1 ? p.j1.puntos_ranking : 0;
-            let ptsPrevJ2 = p.j2 ? p.j2.puntos_ranking : 0;
-            
-            if (p.mostrar_ranking && p.j1 && p.j2) {
-                document.getElementById('fs-ranking-j1').innerHTML = `${ptsPrevJ1} pts`;
-                document.getElementById('fs-ranking-j2').innerHTML = `${ptsPrevJ2} pts`;
-                const boxProy = document.getElementById('fs-proyeccion-box'); boxProy.classList.remove('hidden');
-                boxProy.innerHTML = `🏁 Partido Oficial Rankeado`;
+            if (p.mostrar_ranking && proyJ1 && proyJ2) {
+                let statsJ1 = datosGeneralesCuadro.porCategoria[p.categorias?.nombre]?.jugadores[proyJ1.id];
+                let statsJ2 = datosGeneralesCuadro.porCategoria[p.categorias?.nombre]?.jugadores[proyJ2.id];
+
+                let rnk1 = statsJ1 ? statsJ1.rankIni + statsJ1.rankImpact : (proyJ1.puntos_ranking || 0);
+                let rnk2 = statsJ2 ? statsJ2.rankIni + statsJ2.rankImpact : (proyJ2.puntos_ranking || 0);
+
+                document.getElementById('fs-ranking-j1').innerHTML = `${rnk1} pts`;
+                document.getElementById('fs-ranking-j2').innerHTML = `${rnk2} pts`;
+                document.getElementById('fs-proyeccion-box').classList.remove('hidden');
+                document.getElementById('fs-proyeccion-box').innerHTML = `🏁 Partido Oficial Rankeado`;
             } else {
                 document.getElementById('fs-ranking-j1').innerHTML = '-- pts'; document.getElementById('fs-ranking-j2').innerHTML = '-- pts';
                 document.getElementById('fs-proyeccion-box').classList.add('hidden');
@@ -587,8 +594,11 @@
             }
 
             let iconWin1 = document.getElementById('fs-winner-icon1'); let iconWin2 = document.getElementById('fs-winner-icon2');
-            if (isFin && p.ganador_id === p.jugador1_id && p.ganador_id !== null) { iconWin1.classList.remove('hidden'); iconWin2.classList.add('hidden'); }
-            else if (isFin && p.ganador_id === p.jugador2_id && p.ganador_id !== null) { iconWin2.classList.remove('hidden'); iconWin1.classList.add('hidden'); }
+            let j1Id = p.j1?.id || p.jugador1_id || proyJ1?.id;
+            let j2Id = p.j2?.id || p.jugador2_id || proyJ2?.id;
+
+            if (isFin && p.ganador_id == j1Id && p.ganador_id !== null) { iconWin1.classList.remove('hidden'); iconWin2.classList.add('hidden'); }
+            else if (isFin && p.ganador_id == j2Id && p.ganador_id !== null) { iconWin2.classList.remove('hidden'); iconWin1.classList.add('hidden'); }
             else { iconWin1.classList.add('hidden'); iconWin2.classList.add('hidden'); }
 
             let scoreText = `${p.puntos_j1 || 0} a ${p.puntos_j2 || 0}`;
@@ -607,38 +617,49 @@
             if (!activePartidoFullScreenId) return;
             const url = `${window.location.origin}/espectador.html?torneo=${idTorneoActivo}&partido=${activePartidoFullScreenId}`;
             const p = todosLosPartidos.find(x => x.id == activePartidoFullScreenId);
-            let nom1 = p.j1?.nombre || 'BYE'; let nom2 = p.j2?.nombre || 'BYE';
+            
+            let proyJ1 = datosGeneralesCuadro.mapaProyecciones[`${p.id}_j1`];
+            let proyJ2 = datosGeneralesCuadro.mapaProyecciones[`${p.id}_j2`];
+            
+            let nom1 = proyJ1?.nombre || 'BYE'; let nom2 = proyJ2?.nombre || 'BYE';
+
             const esFin = String(p.estado || '').trim().toLowerCase() === 'finalizado';
             let scoreText = esFin ? `${p.sets_j1!==null?p.sets_j1:'0'} - ${p.sets_j2!==null?p.sets_j2:'0'} (Sets)` : `${p.puntos_j1!==null?p.puntos_j1:'0'} - ${p.puntos_j2!==null?p.puntos_j2:'0'} (Puntos)`;
             let texto = `🏓 *¡Sigue este partido!*\n\n*${nom1}* vs *${nom2}*\nMarcador: ${scoreText}\nMesa: ${p.mesa || 1}\n\n👉 Míralo aquí:\n${url}`;
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(texto)}`, '_blank');
         }
 
-        // ==========================================
-        // DIBUJADO DE TABLAS Y RESOLUCIÓN NOMBRES
-        // ==========================================
-        function getNombreParaTabla(p, isJ1) {
-            if(isJ1 && p.j1) return p.j1.nombre;
-            if(!isJ1 && p.j2) return p.j2.nombre;
-
-            let rf = String(p.ronda_fase || p.rondaFase).toLowerCase();
-            let llavesTienenCuartos = todosLosPartidos.some(x => String(x.ronda_fase).toLowerCase().includes('cuartos') && x.categoria_id === p.categoria_id);
-            
-            if (rf.includes('cuartos')) {
-                let n = parseInt(rf.match(/\d+/)?.[0] || 1);
-                return isJ1 ? `Gana Octavos ${n*2 - 1}` : `Gana Octavos ${n*2}`;
-            }
-            if (rf.includes('semi')) {
-                let n = parseInt(rf.match(/\d+/)?.[0] || 1);
-                if (llavesTienenCuartos) return isJ1 ? `Gana Cuartos ${n*2 - 1}` : `Gana Cuartos ${n*2}`;
-                return isJ1 ? (n===1 ? '1° Gpo A' : '1° Gpo B') : (n===1 ? '2° Gpo B' : '2° Gpo A');
-            }
-            if (rf.includes('final') && !rf.includes('semi')) {
-                return isJ1 ? `Gana Semi 1` : `Gana Semi 2`;
-            }
-            return isJ1 ? `Clasificado A` : `Clasificado B`;
+        function generarBotonesCategorias() {
+            const bar = document.getElementById('bar-categorias');
+            const catsMap = new Map();
+            todosLosPartidos.forEach(p => { if (p.categorias && p.categorias.nombre) catsMap.set(p.categorias.nombre, p.categorias.id); });
+            let html = `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === 'todas' ? 'active' : ''}" onclick="filtrarCategoria('todas')">Todas las Categorías</button>`;
+            catsMap.forEach((id, nombre) => { html += `<button class="btn-filter-pill btn-cat-pill ${categoriaFiltro === nombre ? 'active' : ''}" onclick="filtrarCategoria('${nombre}')">🏆 ${nombre}</button>`; });
+            bar.innerHTML = html;
         }
 
+        function filtrarCategoria(catNombre) { categoriaFiltro = catNombre; dibujarPantalla(); }
+
+        function filtrarModalidad(mod, btn) {
+            modalidadFiltro = mod;
+            document.querySelectorAll('#bar-modalidad .btn-filter-pill').forEach(b => b.classList.remove('active', 'active-flash'));
+            if(mod === 'flash') btn.classList.add('active-flash');
+            else btn.classList.add('active');
+            dibujarPantalla();
+        }
+
+        function filtrarEstado(est) {
+            estadoFiltro = est;
+            document.querySelectorAll('#tab-todos, #tab-resumen, #tab-ranking, #tab-vivo, #tab-pendientes, #tab-finalizados').forEach(b => b.classList.remove('active', 'active-resumen'));
+            if (est === 'resumen') document.getElementById('tab-resumen')?.classList.add('active-resumen');
+            else document.getElementById('tab-' + est)?.classList.add('active');
+            dibujarPantalla();
+        }
+
+        // ==============================================================
+        // RENDERIZADO VISUAL
+        // ==============================================================
+        
         function renderTablaGeneralDiv(jugadores, colorHex, titulo) {
             if (jugadores.length === 0) return '';
             let html = `
@@ -686,45 +707,6 @@
             return html;
         }
 
-        async function compartirLlaveWhatsApp(catNombre) {
-            const container = document.getElementById('bracket-cat-' + catNombre.replace(/\s+/g, ''));
-            const btn = event.currentTarget;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Procesando...';
-            btn.disabled = true;
-
-            try {
-                container.style.backgroundColor = "#0a0a0c";
-                const canvas = await html2canvas(container, { scale: 2, backgroundColor: '#0a0a0c', useCORS: true });
-                
-                canvas.toBlob(async (blob) => {
-                    const file = new File([blob], `Llaves_${catNombre.replace(/\s+/g, '_')}.png`, { type: 'image/png' });
-                    
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        try {
-                            await navigator.share({
-                                title: `Llaves ${catNombre}`,
-                                text: `🏆 Así van las llaves de la categoría ${catNombre}:`,
-                                files: [file]
-                            });
-                        } catch (e) {
-                            const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `Llaves_${catNombre.replace(/\s+/g, '_')}.png`; link.click();
-                        }
-                    } else {
-                        const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = `Llaves_${catNombre.replace(/\s+/g, '_')}.png`; link.click();
-                        alert("Tu navegador no soporta compartir imágenes directamente a WhatsApp. La imagen ha sido descargada para que la envíes manualmente.");
-                    }
-                    btn.innerHTML = originalText;
-                    btn.disabled = false;
-                    container.style.backgroundColor = "transparent";
-                }, 'image/png');
-            } catch (err) {
-                alert("Error al generar la imagen.");
-                btn.innerHTML = originalText;
-                btn.disabled = false;
-            }
-        }
-
         function dibujarEstadisticas(container) {
             let catsList = [...new Set(todosLosPartidos.map(p => p.categorias?.nombre).filter(Boolean))];
             if (categoriaFiltro !== 'todas') catsList = catsList.filter(c => c === categoriaFiltro);
@@ -734,14 +716,14 @@
             let htmlContent = '';
             catsList.forEach(catNombre => {
                 
-                // 1. Mostrar Tabla General de Posiciones
+                // 1. Mostrar Tabla General de Posiciones (Estadísticas)
                 let todosJugadoresCat = Object.values(datosGeneralesCuadro.porCategoria[catNombre]?.jugadores || {});
                 if (todosJugadoresCat.length > 0) {
                     todosJugadoresCat = ordenarJugadoresITTF(todosJugadoresCat);
                     htmlContent += renderTablaGeneralDiv(todosJugadoresCat, '#06b6d4', `ESTADÍSTICAS OFICIALES: ${catNombre}`);
                 }
 
-                // 2. Mostrar Llaves de Eliminación
+                // 2. Mostrar Llaves de Eliminación (Bracket)
                 const knockouts = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre && !p.grupo_nombre && p.ronda_fase);
                 if (knockouts.length === 0) return; 
 
@@ -754,7 +736,6 @@
                     <div style="background:rgba(18, 18, 22, 0.8); border:1px solid rgba(236, 72, 153, 0.3); border-radius:24px; padding:30px; margin-bottom:30px;">
                         <div style="display:flex; justify-content:space-between; align-items:center;">
                             <h3 style="color:#f472b6; font-weight:900; margin-top:0; text-transform:uppercase;"><i class="fa-solid fa-sitemap"></i> LLAVES FINALES: ${catNombre}</h3>
-                            <button onclick="compartirLlaveWhatsApp('${catNombre}')" class="btn-filter-pill" style="background: rgba(37, 211, 102, 0.15); color: #25d366; border-color: rgba(37, 211, 102, 0.4);"><i class="fa-brands fa-whatsapp"></i> Compartir Llaves</button>
                         </div>
                         <div class="bracket-container" id="bracket-cat-${catNombre.replace(/\s+/g, '')}">
                 `;
@@ -810,6 +791,7 @@
                     </div>`;
                 };
 
+                // Helpers para buscar partidos en la lista
                 const getMatch = (arr, i) => arr.find(x => String(x.ronda_fase).includes(i.toString()));
 
                 const renderCol = (count, currentArr, prevArr, isFinal = false) => {
@@ -819,6 +801,7 @@
                         let m1 = isFinal ? currentArr[0] : getMatch(currentArr, i);
                         let m2 = isFinal ? null : getMatch(currentArr, i + 1);
                         
+                        // Check feed from previous round
                         let m1HasPrev = prevArr ? !!getMatch(prevArr, i * 2 - 1) || !!getMatch(prevArr, i * 2) : false;
                         let m2HasPrev = prevArr ? !!getMatch(prevArr, (i + 1) * 2 - 1) || !!getMatch(prevArr, (i + 1) * 2) : false;
 
@@ -851,6 +834,7 @@
 
         function dibujarPantalla() {
             const container = document.getElementById('contenedor-espectador');
+            
             datosGeneralesCuadro = resolverCuadroTorneoTotal();
 
             if (estadoFiltro === 'resumen') { container.style.display = 'block'; dibujarEstadisticas(container); return; }
@@ -861,7 +845,7 @@
             if (modalidadFiltro === 'flash') filtrados = filtrados.filter(p => p.grupo_nombre === 'Flash');
             else if (modalidadFiltro === 'grupos') filtrados = filtrados.filter(p => p.grupo_nombre && p.grupo_nombre !== 'Flash' && p.grupo_nombre !== 'Único');
             else if (modalidadFiltro === 'round_robin') filtrados = filtrados.filter(p => p.grupo_nombre === 'Único');
-            else if (modalidadFiltro === 'llaves') filtrados = filtrados.filter(p => !p.grupo_nombre);
+            else if (modalidadFiltro === 'llaves' || modalidadFiltro === 'eliminacion') filtrados = filtrados.filter(p => !p.grupo_nombre);
 
             if (categoriaFiltro !== 'todas') filtrados = filtrados.filter(p => p.categorias && p.categorias.nombre === categoriaFiltro);
             
