@@ -293,7 +293,6 @@
                     <button type="button" id="btn-toggle-liga" class="btn-mode-toggle" onclick="cambiarModoTorneo('liga')">🏆 Modo Liga (RR Puro)</button>
                     <!-- NUEVO BOTON RR FLASH -->
                     <button type="button" id="btn-toggle-rr-flash" class="btn-mode-toggle" onclick="cambiarModoTorneo('rr_flash')">🎾 RR Flash (C1, C2, C3)</button>
-                    <!-- NUEVO BOTON ELIMINACION DIRECTA -->
                     <button type="button" id="btn-toggle-eliminacion" class="btn-mode-toggle" onclick="cambiarModoTorneo('eliminacion')">⚔️ Eliminación Directa</button>
                     <button type="button" id="btn-toggle-flash" class="btn-mode-toggle" onclick="cambiarModoTorneo('flash')">⚡ Modo Flash Continua</button>
                 </div>
@@ -306,11 +305,17 @@
 
                 <div id="controles-sorteo" style="display:flex; gap:10px; align-items:center;">
                     <select id="tamano-grupo" style="max-width: 200px;">
-                        <option value="3">Grupos de 3 jug.</option><option value="4">Grupos de 4 jug.</option><option value="5" selected>Grupos de 5 jug.</option><option value="6">Grupos de 6 jug.</option>
+                        <option value="3">Grupos de 3 jugadores</option>
+                        <option value="4">Grupos de 4 jugadores</option>
+                        <option value="5" selected>Grupos de 5 jugadores</option>
+                        <option value="6">Grupos de 6 jugadores</option>
                     </select>
                     <!-- SELECT DE VUELTAS (Para modo Liga) -->
                     <select id="rr-vueltas" style="display:none; max-width: 150px;">
-                        <option value="1" selected>1 Vuelta (Ida)</option><option value="2">2 Vueltas (Ida/Vuelta)</option>
+                        <option value="1" selected>1 Vuelta (Ida)</option>
+                        <option value="2">2 Vueltas (Ida y Vuelta)</option>
+                        <option value="3">3 Vueltas</option>
+                        <option value="4">4 Vueltas</option>
                     </select>
                     <button type="button" class="btn-console btn-gold" id="btn-ejecutar-sorteo" onclick="prepararSorteo()">🎲 Generar Acomodo</button>
                 </div>
@@ -545,13 +550,13 @@
         
         let torneoActivoObj = null;
         let jugadoresListos = [];
-        let gruposGlobal = []; // <--- SE RECONSTRUYE CORRECTAMENTE AQUÍ PARA LA IMAGEN
+        let gruposGlobal = []; 
         let partidosGeneradosRR = [];
         let partidosCargadosGlobal = [];
         let maxJuecesFaltantesSistema = 0; 
         let isGuardando = false; 
         let todosLosJugadoresAdmin = [];
-        let mapaRankingOficial = new Map(); // Mapa de consulta rápida para el Gafete y Grupos
+        let mapaRankingOficial = new Map(); 
         
         let modoTorneoActual = 'normal'; 
         let seleccionFlash = []; 
@@ -639,7 +644,7 @@
 
         function quitarAcentos(str) { return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : ""; }
 
-        function cambiarModoTorneo(modo, eviteRecarga = false) {
+        function cambiarModoTorneo(modo) {
             modoTorneoActual = modo;
             
             // 1. Limpiar clases
@@ -650,13 +655,21 @@
             const idTamano = document.getElementById('tamano-grupo');
             const idVueltas = document.getElementById('rr-vueltas');
             const btnElimImg = document.getElementById('btn-img-eliminacion');
+            const contSorteo = document.getElementById('controles-sorteo');
             const panelFlash = document.getElementById('panel-modo-flash');
+            const panelHorarios = document.getElementById('panel-config-horarios');
+            const btnGuardar = document.getElementById('btn-guardar-grupos');
             
             if(idTamano) idTamano.style.display = 'none';
             if(idVueltas) idVueltas.style.display = 'none';
             if(btnElimImg) btnElimImg.style.display = 'none';
+            
+            // 2. Ocultar los resultados previos al cambiar de modo
+            if(panelHorarios) panelHorarios.style.display = 'none';
+            if(btnGuardar) btnGuardar.style.display = 'none';
+            document.getElementById('contenedor-grupos').innerHTML = '';
 
-            // 2. Activar visual
+            // 3. Activar visual
             if (modo === 'normal') {
                 document.getElementById('btn-toggle-rr').classList.add('active');
                 if(idTamano) idTamano.style.display = 'block';
@@ -667,30 +680,21 @@
                 document.getElementById('btn-toggle-rr-flash').classList.add('active-rr-flash');
             } else if (modo === 'eliminacion') {
                 document.getElementById('btn-toggle-eliminacion').classList.add('active-eliminacion');
-                if(btnElimImg && (partidosCargadosGlobal.length > 0 || partidosGeneradosRR.length > 0)) {
-                    btnElimImg.style.display = 'inline-flex';
-                }
+                if(btnElimImg) btnElimImg.style.display = 'inline-flex';
             } else if (modo === 'flash') {
                 document.getElementById('btn-toggle-flash').classList.add('active-flash');
             }
 
-            // Manejo de paneles (Flash vs Normal) sin forzar recarga destructiva
-            const idCat = document.getElementById('filtro-categoria').value;
+            // 4. Manejo de Paneles según Cat sin forzar recarga destructiva
             if (modo === 'flash') {
-                if(document.getElementById('controles-sorteo')) document.getElementById('controles-sorteo').style.display = 'none';
-                if(document.getElementById('panel-config-horarios')) document.getElementById('panel-config-horarios').style.display = 'none';
-                if(document.getElementById('seccion-partidos-rr')) document.getElementById('seccion-partidos-rr').style.display = 'none';
-                if(document.getElementById('contenedor-grupos')) document.getElementById('contenedor-grupos').style.display = 'none';
-                
+                if(contSorteo) contSorteo.style.display = 'none';
                 if(panelFlash) panelFlash.style.display = 'block';
-                if (idCat && !eviteRecarga) cargarDatosFlash(idCat);
+                if (document.getElementById('filtro-categoria').value) {
+                    cargarDatosFlash(document.getElementById('filtro-categoria').value);
+                }
             } else {
                 if(panelFlash) panelFlash.style.display = 'none';
-                // Solo si el torneo no está cargado mostramos los controles normales
-                if (partidosCargadosGlobal.length === 0) {
-                    if(document.getElementById('controles-sorteo')) document.getElementById('controles-sorteo').style.display = 'flex';
-                    if(document.getElementById('contenedor-grupos')) document.getElementById('contenedor-grupos').style.display = 'grid'; 
-                }
+                if(contSorteo) contSorteo.style.display = 'flex';
             }
         }
 
@@ -709,7 +713,6 @@
 
         async function inicializarSorteo() {
             try {
-                // Generamos la Base de Datos Maestra de Jugadores
                 const resJug = await clienteSupabase.from('jugadores').select('*').eq('organizador_id', ORG_ID);
                 if (resJug.data) {
                     todosLosJugadoresAdmin = resJug.data;
@@ -741,12 +744,6 @@
                 clienteSupabase.channel('sorteo-partidos-realtime').on('postgres_changes', { event: '*', schema: 'public', table: 'partidos' }, () => {
                     if (!isGuardando && document.getElementById('filtro-categoria').value) cargarEstadoCategoria();
                 }).subscribe();
-
-                document.addEventListener('visibilitychange', () => {
-                    if (document.visibilityState === 'visible' && !isGuardando && document.getElementById('filtro-categoria').value) {
-                        cargarEstadoCategoria();
-                    }
-                });
 
             } catch(e) { console.error("Error al iniciar:", e); }
         }
@@ -783,68 +780,76 @@
                 contador.innerText = count || 0;
                 jugadoresListos = inscripcionesData ? inscripcionesData.map(ins => ins.jugadores).sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0)) : [];
 
-                // Cargar valores guardados del break
                 let bVal = localStorage.getItem(`break_val_${ORG_ID}_${idCat}`);
                 let bDur = localStorage.getItem(`break_dur_${ORG_ID}_${idCat}`);
                 if (bVal) document.getElementById('rr-hora-break').value = bVal;
                 if (bDur) document.getElementById('rr-duracion-break').value = bDur;
 
-                if (modoTorneoActual === 'flash') {
-                    contSorteo.style.display = 'none'; btnRehacer.style.display = 'none'; contenedorGrupos.innerHTML = ''; panelHorarios.style.display = 'none'; btnGuardar.style.display = 'none'; seccionPartidos.style.display = 'none';
-                    panelFlash.style.display = 'block';
-                    await cargarDatosFlash(idCat);
-                } else {
+                // Verificamos si la base de datos ya tiene partidos guardados para auto-detectar el modo
+                const { data: partidosBD, error } = await clienteSupabase
+                    .from('partidos')
+                    .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking, division), j2:jugador2_id(id, nombre, club, puntos_ranking, division)')
+                    .eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID)
+                    .or('grupo_nombre.neq.Flash,grupo_nombre.is.null') 
+                    .order('id', { ascending: true });
+
+                if (partidosBD && partidosBD.length > 0) {
+                    partidosCargadosGlobal = partidosBD;
+                    contSorteo.style.display = 'none'; 
+                    btnRehacer.style.display = 'inline-flex'; 
+                    panelHorarios.style.display = 'none'; 
+                    btnGuardar.style.display = 'none';
                     panelFlash.style.display = 'none';
-                    seleccionFlash = []; 
+                    
+                    let hasLlaves = partidosBD.some(p => p.ronda_fase && (p.ronda_fase.toLowerCase().includes('semi') || p.ronda_fase.toLowerCase().includes('final') || p.ronda_fase.toLowerCase().includes('cuarto') || p.ronda_fase.toLowerCase().includes('octavo')));
+                    llavesTienenCuartos = partidosBD.some(p => String(p.ronda_fase).toLowerCase().includes('cuartos'));
 
-                    const { data: partidosBD, error } = await clienteSupabase
-                        .from('partidos')
-                        .select('*, j1:jugador1_id(id, nombre, club, puntos_ranking, division), j2:jugador2_id(id, nombre, club, puntos_ranking, division)')
-                        .eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID)
-                        .or('grupo_nombre.neq.Flash,grupo_nombre.is.null') 
-                        .order('id', { ascending: true });
-
-                    if (partidosBD && partidosBD.length > 0) {
-                        partidosCargadosGlobal = partidosBD;
-                        contSorteo.style.display = 'none'; 
-                        btnRehacer.style.display = 'inline-flex'; 
-                        panelHorarios.style.display = 'none'; 
-                        btnGuardar.style.display = 'none';
-                        
-                        let hasLlaves = partidosBD.some(p => p.ronda_fase && (p.ronda_fase.toLowerCase().includes('semi') || p.ronda_fase.toLowerCase().includes('final') || p.ronda_fase.toLowerCase().includes('cuarto') || p.ronda_fase.toLowerCase().includes('octavo')));
-                        llavesTienenCuartos = partidosBD.some(p => String(p.ronda_fase).toLowerCase().includes('cuartos'));
-
-                        let detectedMode = 'normal';
-                        if (partidosBD.some(p => String(p.ronda_fase).includes('(C1)'))) {
-                            detectedMode = 'rr_flash';
-                            bloqueLlaves.style.display = 'flex';
-                        } else if (!hasLlaves && partidosBD.some(p => p.grupo_nombre === 'Único')) {
-                            detectedMode = 'liga';
-                            bloqueLlaves.style.display = 'none';
-                        } else if (hasLlaves && partidosBD.every(p => !p.grupo_nombre)) {
-                            detectedMode = 'eliminacion';
-                            bloqueLlaves.style.display = 'none';
-                        } else {
-                            detectedMode = 'normal';
-                            bloqueLlaves.style.display = 'flex';
-                        }
-
-                        cambiarModoTorneo(detectedMode, true); // true = eviteRecarga
-
-                        reconstruirGruposDesdePartidosBD(partidosBD);
-                        poblarDropdownAgenda(partidosBD);
-                        seccionPartidos.style.display = 'block';
-                        dibujarTablaPartidosBD(partidosBD);
+                    let detectedMode = 'normal';
+                    if (partidosBD.some(p => String(p.ronda_fase).includes('(C1)'))) {
+                        detectedMode = 'rr_flash';
+                        bloqueLlaves.style.display = 'flex';
+                    } else if (!hasLlaves && partidosBD.some(p => p.grupo_nombre === 'Único')) {
+                        detectedMode = 'liga';
+                        bloqueLlaves.style.display = 'none';
+                    } else if (hasLlaves && partidosBD.every(p => !p.grupo_nombre)) {
+                        detectedMode = 'eliminacion';
+                        bloqueLlaves.style.display = 'none';
                     } else {
-                        partidosCargadosGlobal = [];
+                        detectedMode = 'normal';
+                        bloqueLlaves.style.display = 'flex';
+                    }
+
+                    // APLICAMOS LA UI SEGÚN LA BASE DE DATOS pero desactivamos el evento de recarga para que no entre en loop.
+                    modoTorneoActual = detectedMode;
+                    document.querySelectorAll('.btn-mode-toggle').forEach(btn => btn.classList.remove('active', 'active-liga', 'active-rr-flash', 'active-eliminacion', 'active-flash'));
+                    if (detectedMode === 'normal') document.getElementById('btn-toggle-rr').classList.add('active');
+                    else if (detectedMode === 'liga') document.getElementById('btn-toggle-liga').classList.add('active-liga');
+                    else if (detectedMode === 'rr_flash') document.getElementById('btn-toggle-rr-flash').classList.add('active-rr-flash');
+                    else if (detectedMode === 'eliminacion') {
+                        document.getElementById('btn-toggle-eliminacion').classList.add('active-eliminacion');
+                        document.getElementById('btn-img-eliminacion').style.display = 'inline-flex';
+                    }
+
+                    reconstruirGruposDesdePartidosBD(partidosBD);
+                    poblarDropdownAgenda(partidosBD);
+                    seccionPartidos.style.display = 'block';
+                    dibujarTablaPartidosBD(partidosBD);
+                } 
+                else {
+                    partidosCargadosGlobal = [];
+                    btnRehacer.style.display = 'none'; 
+                    contenedorGrupos.innerHTML = ''; 
+                    panelHorarios.style.display = 'none'; 
+                    btnGuardar.style.display = 'none'; 
+                    seccionPartidos.style.display = 'none';
+                    
+                    if (modoTorneoActual === 'flash') {
+                        contSorteo.style.display = 'none';
+                        panelFlash.style.display = 'block';
+                        await cargarDatosFlash(idCat);
+                    } else {
+                        panelFlash.style.display = 'none';
                         contSorteo.style.display = 'flex'; 
-                        btnRehacer.style.display = 'none'; 
-                        contenedorGrupos.innerHTML = ''; 
-                        panelHorarios.style.display = 'none'; 
-                        btnGuardar.style.display = 'none'; 
-                        seccionPartidos.style.display = 'none';
-                        
-                        cambiarModoTorneo(modoTorneoActual, true); // Aplica UI sin recargar destructivamente
                     }
                 }
             } catch (err) { alert("Ocurrió un problema al leer la base de datos."); }
@@ -1072,10 +1077,6 @@
             
             jugadoresListos = data.map(ins => ins.jugadores).sort((a, b) => (b.puntos_ranking || 0) - (a.puntos_ranking || 0));
             
-            // Limpieza visual previa (Garantiza que no se empalmen los grupos si antes tenías otra modalidad)
-            document.getElementById('contenedor-grupos').innerHTML = '';
-            document.getElementById('tabla-partidos-rr').innerHTML = '<tr><td colspan="8" class="mensaje-vacio">Calculando...</td></tr>';
-
             if (modoTorneoActual === 'liga') {
                 const vueltas = parseInt(document.getElementById('rr-vueltas').value) || 1;
                 ejecutarLiga(vueltas);
@@ -1317,7 +1318,7 @@
             const txtOr = btn.innerText; btn.innerText = "⏳ Generando..."; btn.disabled = true;
             
             try {
-                const canvas = await html2canvas(template, { scale: 2, backgroundColor: '#0a0a0c' });
+                const canvas = await html2canvas(template, { scale: 2, backgroundColor: '#0a0a0c', useCORS: true });
                 const link = document.createElement('a');
                 link.download = `Eliminacion_${catName.replace(/\s+/g, '_')}.png`;
                 link.href = canvas.toDataURL("image/png");
@@ -1691,6 +1692,15 @@
                 mainHtml += html + `</div>`;
             });
             contenedor.innerHTML = mainHtml;
+        }
+
+        async function rehacerSorteo() {
+            const idCat = document.getElementById('filtro-categoria').value;
+            if (!confirm("⚠️ ¿Deseas ELIMINAR el sorteo guardado de esta categoría y generar uno nuevo?")) return;
+            try {
+                await clienteSupabase.from('partidos').delete().eq('categoria_id', idCat).eq('torneo_id', idTorneoActivo).eq('organizador_id', ORG_ID).or('grupo_nombre.neq.Flash,grupo_nombre.is.null');
+                await cargarEstadoCategoria();
+            } catch(e) { alert("Error al borrar: " + e.message); }
         }
 
         window.onload = inicializarSorteo;
