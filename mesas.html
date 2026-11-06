@@ -201,20 +201,57 @@
 
         .mensaje-vacio { text-align: center; color: #64748b; font-style: italic; font-weight: 600; grid-column: 1/-1; padding: 50px 20px; background: rgba(15, 23, 42, 0.4); border-radius: 14px; }
 
-        /* ================= ÁRBOL DE LLAVES SVG CONTINUO ================= */
-        .bracket-tree-container { display: flex; gap: 45px; padding: 30px 20px; background: rgba(15, 23, 42, 0.4); border-radius: 16px; overflow-x: auto; border: 1px solid rgba(148, 163, 184, 0.1); justify-content: flex-start; align-items: stretch; margin-top: 18px; min-width: max-content; position: relative; }
-        .bracket-svg-overlay { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 1; }
-        .bracket-col-stage { display: flex; flex-direction: column; justify-content: space-around; gap: 22px; min-width: 260px; position: relative; z-index: 2; }
+        /* ================= CONTENEDOR DESLIZABLE TÁCTIL (MÓVIL FLUIDO) ================= */
+        .bracket-scroll-wrapper {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: auto !important;
+            -webkit-overflow-scrolling: touch !important;
+            touch-action: pan-x pan-y !important;
+            border-radius: 16px;
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            background: rgba(15, 23, 42, 0.55);
+            padding-bottom: 10px;
+            margin-top: 15px;
+        }
+
+        .bracket-tree-container { 
+            display: inline-flex !important; 
+            min-width: max-content !important;
+            gap: 45px; 
+            padding: 30px 25px; 
+            justify-content: flex-start; 
+            align-items: stretch; 
+            position: relative; 
+        }
+
+        .bracket-svg-overlay { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            pointer-events: none; 
+            z-index: 1; 
+        }
+
+        .bracket-col-stage { 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-around; 
+            gap: 22px; 
+            min-width: 260px; 
+            position: relative; 
+            z-index: 2; 
+        }
         
-        .b-match-card { background: rgba(20, 27, 44, 0.85); border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.4); position: relative; display: flex; flex-direction: column; overflow: hidden; }
-        .b-match-header { font-size: 9px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 1.5px; padding: 6px 12px; text-align: center; border-bottom: 1px solid rgba(148, 163, 184, 0.1); background: rgba(30, 41, 59, 0.4); }
+        .b-match-card { background: rgba(20, 27, 44, 0.95); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.5); position: relative; display: flex; flex-direction: column; overflow: hidden; }
+        .b-match-header { font-size: 9px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 1.5px; padding: 6px 12px; text-align: center; border-bottom: 1px solid rgba(148, 163, 184, 0.1); background: rgba(30, 41, 59, 0.45); }
         .b-player-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03); gap: 10px; }
         .b-player-row:last-child { border-bottom: none; }
         .b-player-info { flex: 1; min-width: 0; }
         .b-player-name { font-size: 12px; font-weight: 700; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
         .b-player-name.winner { color: #34d399; font-weight: 800; }
         .b-player-club { font-size: 9px; color: #64748b; font-weight: 600; display: block; margin-top: 1px; }
-        .b-score-box { font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 800; background: rgba(15, 23, 42, 0.8); padding: 3px 8px; border-radius: 5px; color: #cbd5e1; min-width: 24px; text-align: center; border: 1px solid rgba(148, 163, 184, 0.15); }
+        .b-score-box { font-family: 'Orbitron', sans-serif; font-size: 14px; font-weight: 800; background: rgba(15, 23, 42, 0.85); padding: 3px 8px; border-radius: 5px; color: #cbd5e1; min-width: 24px; text-align: center; border: 1px solid rgba(148, 163, 184, 0.15); }
         .b-score-box.winner { color: #34d399; border-color: rgba(52, 211, 153, 0.4); }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(11, 15, 25, 0.85); backdrop-filter: blur(10px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -352,7 +389,6 @@
         <button class="btn-filter-pill" id="tab-resumen" onclick="filtrarEstado('resumen')" style="color:#34d399; border-color:rgba(16,185,129,0.3);">📊 Estadísticas y Llaves</button>
     </div>
 
-    <!-- CONTENEDOR DE PARTIDOS SEPARADOS POR HORARIO -->
     <div class="grid-espectador" id="contenedor-partidos">
         <div class="mensaje-vacio"><i class="fa-solid fa-spinner fa-spin text-sky-400 text-xl mb-2 block"></i> Conectando con las mesas...</div>
     </div>
@@ -365,6 +401,7 @@
         let idTorneoActivo = parseInt(new URLSearchParams(window.location.search).get('torneo')) || parseInt(localStorage.getItem('torneo_activo_id')) || 1;
         let orgId = localStorage.getItem('organizador_id') || 1; 
 
+        let torneoActivoObj = null;
         let todosLosPartidos = [];
         let todasLasCategorias = [];
         let todosLosJugadoresAdmin = [];
@@ -565,7 +602,6 @@
                             </div>
 
                             <div class="grid-botones-mesa">
-                                <!-- 1. Arbitrar o Reabrir -->
                                 ${isFin ? `
                                     <button class="btn-mesa-action btn-mesa-finalizado" onclick="irAJuez(${p.id})">
                                         🏁 FINALIZADO (REABRIR)
@@ -576,27 +612,22 @@
                                     </button>
                                 `}
 
-                                <!-- 2. Marcador Manual -->
                                 <button class="btn-mesa-action btn-mesa-marcador" onclick="abrirModalMarcador(${p.id})">
                                     <i class="fa-solid fa-pen-to-square"></i> Marcador
                                 </button>
 
-                                <!-- 3. Transmitir (QR Overlay) -->
                                 <button class="btn-mesa-action btn-mesa-qr" onclick="abrirModalTransmisionSegura(${p.id})">
                                     <i class="fa-solid fa-qrcode"></i> Transmitir
                                 </button>
 
-                                <!-- 4. Grabar con Cámara -->
                                 <a href="grabar.html?partido=${p.id}" target="_blank" class="btn-mesa-action btn-mesa-grabar">
                                     <i class="fa-solid fa-video"></i> Grabar
                                 </a>
 
-                                <!-- 5. YouTube / RTMP -->
                                 <button class="btn-mesa-action btn-mesa-yt" onclick="abrirModalYouTube(${p.id}, '${p.video_url || ''}', '${p.rtmp_url || ''}', '${p.stream_key || ''}')">
                                     <i class="fa-brands fa-youtube"></i> YouTube
                                 </button>
 
-                                <!-- 6. Ver Público -->
                                 <a href="espectador.html?partido=${p.id}" target="_blank" class="btn-mesa-action">
                                     <i class="fa-solid fa-eye"></i> Ver
                                 </a>
@@ -791,16 +822,16 @@
                 const r1 = card.getBoundingClientRect();
                 const r2 = targetEl.getBoundingClientRect();
 
-                const x1 = (r1.right - cRect.left) + container.scrollLeft;
-                const y1 = (r1.top + r1.height / 2 - cRect.top) + container.scrollTop;
+                const x1 = (r1.right - cRect.left);
+                const y1 = (r1.top + r1.height / 2 - cRect.top);
 
-                const x2 = (r2.left - cRect.left) + container.scrollLeft;
-                let y2 = (r2.top + r2.height / 2 - cRect.top) + container.scrollTop;
+                const x2 = (r2.left - cRect.left);
+                let y2 = (r2.top + r2.height / 2 - cRect.top);
 
                 if (slot === 'top') {
-                    y2 = (r2.top + r2.height * 0.35 - cRect.top) + container.scrollTop;
+                    y2 = (r2.top + r2.height * 0.35 - cRect.top);
                 } else if (slot === 'bottom') {
-                    y2 = (r2.top + r2.height * 0.72 - cRect.top) + container.scrollTop;
+                    y2 = (r2.top + r2.height * 0.72 - cRect.top);
                 }
 
                 const xMid = Math.round((x1 + x2) / 2);
@@ -833,9 +864,13 @@
             let htmlContent = '';
             catsList.forEach(catNombre => {
                 const partidosCat = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre);
-                const esEliminacion = partidosCat.some(p => p.grupo_nombre === 'Eliminacion');
+                const esEliminacionPura = partidosCat.some(p => p.grupo_nombre === 'Eliminacion');
                 
-                // Mapear participantes y su ranking inicial
+                // Extraer grupos activos
+                const groupNames = [...new Set(partidosCat.map(p => p.grupo_nombre).filter(g => g && g !== 'Flash' && g !== 'Eliminacion'))].sort();
+                const tieneGrupos = groupNames.length > 0;
+
+                // Mapear participantes y estadísticas generales
                 let jugadoresMap = new Map();
                 partidosCat.forEach(p => {
                     [p.j1, p.j2].forEach(jObj => {
@@ -854,6 +889,8 @@
                                 pp: 0, 
                                 setsG: 0, 
                                 setsP: 0,
+                                ptsGrupo: 0,
+                                grupoPertenece: null,
                                 rankIni: rIni,
                                 rankImpact: 0,
                                 rankAct: rIni
@@ -862,7 +899,15 @@
                     });
                 });
 
-                // Calcular partidos, victorias, sets y variación de ranking en vivo
+                // Asignar pertenencia de grupo
+                partidosCat.forEach(p => {
+                    if (p.grupo_nombre && p.grupo_nombre !== 'Flash' && p.grupo_nombre !== 'Eliminacion') {
+                        if (p.j1 && jugadoresMap.has(p.j1.id)) jugadoresMap.get(p.j1.id).grupoPertenece = p.grupo_nombre;
+                        if (p.j2 && jugadoresMap.has(p.j2.id)) jugadoresMap.get(p.j2.id).grupoPertenece = p.grupo_nombre;
+                    }
+                });
+
+                // Calcular partidos y sets
                 partidosCat.filter(p => (p.estado || '').toLowerCase() === 'finalizado').forEach(p => {
                     if (p.j1 && p.j2 && jugadoresMap.has(p.j1.id) && jugadoresMap.has(p.j2.id)) {
                         let j1 = jugadoresMap.get(p.j1.id);
@@ -884,10 +929,14 @@
 
                         if (ganoJ1) {
                             j1.pg++;
+                            j1.ptsGrupo += 2;
                             j2.pp++;
+                            j2.ptsGrupo += 1;
                         } else {
                             j2.pg++;
+                            j2.ptsGrupo += 2;
                             j1.pp++;
+                            j1.ptsGrupo += 1;
                         }
 
                         j1.rankImpact += delta1;
@@ -897,86 +946,115 @@
                     }
                 });
 
-                // Orden ITTF: Ganadores primero, jugadores en espera por ranking, perdedores por diferencia
-                let atletas = Array.from(jugadoresMap.values()).sort((a, b) => {
-                    let statusA = a.pg > 0 ? 3 : (a.pj === 0 ? 2 : 1);
-                    let statusB = b.pg > 0 ? 3 : (b.pj === 0 ? 2 : 1);
-                    if (statusB !== statusA) return statusB - statusA;
-                    if (b.pg !== a.pg) return b.pg - a.pg;
-                    let diffA = a.setsG - a.setsP;
-                    let diffB = b.setsG - b.setsP;
-                    if (diffB !== diffA) return diffB - diffA;
-                    return b.rankAct - a.rankAct;
-                });
+                const ordenarAtletas = (lista) => {
+                    return [...lista].sort((a, b) => {
+                        if (tieneGrupos) {
+                            if (b.ptsGrupo !== a.ptsGrupo) return b.ptsGrupo - a.ptsGrupo;
+                        }
+                        let statusA = a.pg > 0 ? 3 : (a.pj === 0 ? 2 : 1);
+                        let statusB = b.pg > 0 ? 3 : (b.pj === 0 ? 2 : 1);
+                        if (statusB !== statusA) return statusB - statusA;
+                        if (b.pg !== a.pg) return b.pg - a.pg;
+                        let diffA = a.setsG - a.setsP;
+                        let diffB = b.setsG - b.setsP;
+                        if (diffB !== diffA) return diffB - diffA;
+                        return b.rankAct - a.rankAct;
+                    });
+                };
 
                 let catSlug = catNombre.replace(/\s+/g, '_');
 
+                const renderTablaAtletas = (lista) => `
+                    <div style="overflow-x:auto;">
+                        <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                            <thead>
+                                <tr style="font-size:9px; color:#94a3b8; text-transform:uppercase; border-bottom:1px solid rgba(148, 163, 184, 0.1);">
+                                    <th style="padding:10px 8px; width:45px;">Pos</th>
+                                    <th style="padding:10px 8px;">Jugador</th>
+                                    <th style="padding:10px 8px; text-align:center; width:45px;">PJ</th>
+                                    <th style="padding:10px 8px; text-align:center; width:45px;">PG</th>
+                                    <th style="padding:10px 8px; text-align:center; width:45px;">PP</th>
+                                    <th style="padding:10px 8px; text-align:center; width:65px; color:#fbbf24;">% Efec</th>
+                                    <th style="padding:10px 8px; text-align:center; width:95px;">Sets (G - P)</th>
+                                    <th style="padding:10px 8px; text-align:center; width:65px;">R. Ini</th>
+                                    <th style="padding:10px 8px; text-align:center; width:55px;">+/-</th>
+                                    <th style="padding:10px 8px; text-align:center; width:75px; color:#38bdf8;">Pts Rank</th>
+                                    ${tieneGrupos ? '<th style="padding:10px 8px; text-align:center; width:65px; color:#fbbf24;">PTS</th>' : ''}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${lista.map((at, idx) => {
+                                    let efec = at.pj > 0 ? Math.round((at.pg / at.pj) * 100) : 0;
+                                    let diffHtml = at.rankImpact > 0 
+                                        ? `<span style="color:#34d399; font-weight:800;">+${at.rankImpact}</span>` 
+                                        : (at.rankImpact < 0 ? `<span style="color:#f87171; font-weight:800;">${at.rankImpact}</span>` : `<span style="color:#64748b; font-weight:800;">0</span>`);
+
+                                    return `
+                                        <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
+                                            <td style="padding:10px 8px; font-weight:800; color:#64748b;">#${idx+1}</td>
+                                            <td style="padding:10px 8px;">
+                                                <strong style="color:#ffffff;">${at.nombre}</strong>
+                                                <span style="font-size:9px; color:#64748b; display:block;">${at.club || 'Sin Club'}</span>
+                                            </td>
+                                            <td style="padding:10px 8px; text-align:center; color:#94a3b8; font-weight:700;">${at.pj}</td>
+                                            <td style="padding:10px 8px; text-align:center; color:#34d399; font-weight:800;">${at.pg}</td>
+                                            <td style="padding:10px 8px; text-align:center; color:#f87171; font-weight:800;">${at.pp}</td>
+                                            <td style="padding:10px 8px; text-align:center; color:#fbbf24; font-weight:800;">${efec}%</td>
+                                            <td style="padding:10px 8px; text-align:center;">
+                                                <span style="color:#34d399; font-weight:700;">${at.setsG}</span> : <span style="color:#f87171; font-weight:700;">${at.setsP}</span>
+                                            </td>
+                                            <td style="padding:10px 8px; text-align:center; font-family:'Orbitron',sans-serif; color:#94a3b8; font-size:11px;">
+                                                ${at.rankIni}
+                                            </td>
+                                            <td style="padding:10px 8px; text-align:center; font-family:'Orbitron',sans-serif; font-size:11px;">
+                                                ${diffHtml}
+                                            </td>
+                                            <td style="padding:10px 8px; text-align:center; font-family:'Orbitron',sans-serif; color:#38bdf8; font-weight:900; font-size:13px;">
+                                                ${at.rankAct}
+                                            </td>
+                                            ${tieneGrupos ? `<td style="padding:10px 8px; text-align:center; font-family:'Orbitron',sans-serif; color:#fbbf24; font-weight:900; font-size:14px;">${at.ptsGrupo}</td>` : ''}
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                let tablasHTML = '';
+                if (tieneGrupos) {
+                    groupNames.forEach(gName => {
+                        let atletasGpo = ordenarAtletas(Array.from(jugadoresMap.values()).filter(j => j.grupoPertenece === gName));
+                        tablasHTML += `
+                            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+                                <div style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px;">
+                                    <i class="fa-solid fa-users mr-1"></i> Grupo ${gName}
+                                </div>
+                                ${renderTablaAtletas(atletasGpo)}
+                            </div>
+                        `;
+                    });
+                } else {
+                    tablasHTML = renderTablaAtletas(ordenarAtletas(Array.from(jugadoresMap.values())));
+                }
+
                 htmlContent += `
                     <div class="panel-3d" style="margin-bottom: 25px;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(148, 163, 184, 0.1); padding-bottom:12px; margin-bottom:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(148, 163, 184, 0.1); padding-bottom:12px; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                             <div>
                                 <h3 style="margin:0; border:none; color:#f8fafc; font-size:14px; font-weight:800; text-transform:uppercase;">🏆 ${catNombre}</h3>
-                                <span style="font-size:10px; color:#38bdf8; font-weight:700;">${esEliminacion ? 'Modalidad: Eliminación Directa' : 'Fase de Torneo'}</span>
+                                <span style="font-size:10px; color:#38bdf8; font-weight:700;">${tieneGrupos ? 'Fase de Grupos y Cuadro Clasificatorio' : (esEliminacionPura ? 'Modalidad: Eliminación Directa' : 'Fase de Torneo')}</span>
                             </div>
+                            <button id="btn-share-wa-${catSlug}" onclick="compartirLlaveWhatsApp('${catSlug}', '${catNombre}')" class="btn-ws-header" style="font-size:10px; padding:7px 14px;">
+                                <i class="fa-brands fa-whatsapp text-emerald-400 text-sm"></i> Compartir Llaves por WhatsApp
+                            </button>
                         </div>
 
-                        <!-- TABLA GENERAL CON EFECTIVIDAD Y VARIACIÓN DE RANKING -->
-                        <div style="overflow-x:auto;">
-                            <table style="width:100%; border-collapse:collapse; font-size:12px;">
-                                <thead>
-                                    <tr style="font-size:9px; color:#94a3b8; text-transform:uppercase; border-bottom:1px solid rgba(148, 163, 184, 0.1);">
-                                        <th style="padding:10px 8px; width:45px;">Pos</th>
-                                        <th style="padding:10px 8px;">Jugador</th>
-                                        <th style="padding:10px 8px; text-align:center; width:45px;">PJ</th>
-                                        <th style="padding:10px 8px; text-align:center; width:45px;">PG</th>
-                                        <th style="padding:10px 8px; text-align:center; width:45px;">PP</th>
-                                        <th style="padding:10px 8px; text-align:center; width:65px; color:#fbbf24;">% Efec</th>
-                                        <th style="padding:10px 8px; text-align:center; width:95px;">Sets (G - P)</th>
-                                        <th style="padding:10px 8px; text-align:center; width:65px;">R. Ini</th>
-                                        <th style="padding:10px 8px; text-align:center; width:55px;">+/-</th>
-                                        <th style="padding:10px 8px; text-align:center; width:75px; color:#38bdf8;">Pts Rank</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${atletas.map((at, idx) => {
-                                        let efec = at.pj > 0 ? Math.round((at.pg / at.pj) * 100) : 0;
-                                        let diffHtml = at.rankImpact > 0 
-                                            ? `<span style="color:#34d399; font-weight:800;">+${at.rankImpact}</span>` 
-                                            : (at.rankImpact < 0 ? `<span style="color:#f87171; font-weight:800;">${at.rankImpact}</span>` : `<span style="color:#64748b; font-weight:800;">0</span>`);
-
-                                        return `
-                                            <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
-                                                <td style="padding:10px 8px; font-weight:800; color:#64748b;">#${idx+1}</td>
-                                                <td style="padding:10px 8px;">
-                                                    <strong style="color:#ffffff;">${at.nombre}</strong>
-                                                    <span style="font-size:9px; color:#64748b; display:block;">${at.club || 'Sin Club'}</span>
-                                                </td>
-                                                <td style="padding:10px 8px; text-align:center; color:#94a3b8; font-weight:700;">${at.pj}</td>
-                                                <td style="padding:10px 8px; text-align:center; color:#34d399; font-weight:800;">${at.pg}</td>
-                                                <td style="padding:10px 8px; text-align:center; color:#f87171; font-weight:800;">${at.pp}</td>
-                                                <td style="padding:10px 8px; text-align:center; color:#fbbf24; font-weight:800;">${efec}%</td>
-                                                <td style="padding:10px 8px; text-align:center;">
-                                                    <span style="color:#34d399; font-weight:700;">${at.setsG}</span> : <span style="color:#f87171; font-weight:700;">${at.setsP}</span>
-                                                </td>
-                                                <td style="padding:10px 8px; text-align:center; font-family:'Orbitron',sans-serif; color:#94a3b8; font-size:11px;">
-                                                    ${at.rankIni}
-                                                </td>
-                                                <td style="padding:10px 8px; text-align:center; font-family:'Orbitron',sans-serif; font-size:11px;">
-                                                    ${diffHtml}
-                                                </td>
-                                                <td style="padding:10px 8px; text-align:center; font-family:'Orbitron',sans-serif; color:#38bdf8; font-weight:900; font-size:13px;">
-                                                    ${at.rankAct}
-                                                </td>
-                                            </tr>
-                                        `;
-                                    }).join('')}
-                                </tbody>
-                            </table>
-                        </div>
+                        ${tablasHTML}
 
                         <!-- PROYECCIÓN Y CUADRO DE LLAVES EN TIEMPO REAL -->
-                        <div style="margin-top: 25px; border-top: 1px solid rgba(148, 163, 184, 0.1); padding-top: 20px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+                        <div id="seccion-captura-${catSlug}" style="margin-top: 25px; border-top: 1px solid rgba(148, 163, 184, 0.1); padding-top: 20px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 8px;">
                                 <span style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 1.5px;">
                                     <i class="fa-solid fa-sitemap mr-1"></i> Proyección y Cuadro de Llaves en Tiempo Real
                                 </span>
@@ -984,10 +1062,16 @@
                                     🔴 Actualización en Vivo
                                 </span>
                             </div>
+
+                            <div class="md:hidden text-center text-[10px] text-sky-400 font-bold mb-3 bg-sky-950/40 p-2 rounded-lg border border-sky-500/20">
+                                <i class="fa-solid fa-arrows-left-right mr-1 animate-pulse"></i> Desliza con tu dedo hacia los lados para ver todas las llaves
+                            </div>
                             
-                            <div id="bracket-mesas-${catSlug}" class="bracket-tree-container">
-                                <svg id="bracket-svg-${catSlug}" class="bracket-svg-overlay"></svg>
-                                ${generarCuadroEnVivoHTML(partidosCat, catSlug)}
+                            <div class="bracket-scroll-wrapper">
+                                <div id="bracket-mesas-${catSlug}" class="bracket-tree-container">
+                                    <svg id="bracket-svg-${catSlug}" class="bracket-svg-overlay"></svg>
+                                    ${generarCuadroEnVivoHTML(partidosCat, catSlug, jugadoresMap, groupNames)}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1004,7 +1088,8 @@
             }, 80);
         }
 
-        function generarCuadroEnVivoHTML(partidosCat, catSlug) {
+        // ================= CONSTRUCCIÓN DEL ÁRBOL EN VIVO Y PROYECCIÓN =================
+        function generarCuadroEnVivoHTML(partidosCat, catSlug, jugadoresMap, groupNames) {
             let colOctavos = partidosCat.filter(p => String(p.ronda_fase).toLowerCase().includes('octavo'));
             let colCuartos = partidosCat.filter(p => String(p.ronda_fase).toLowerCase().includes('cuarto'));
             let colSemis = partidosCat.filter(p => String(p.ronda_fase).toLowerCase().includes('semi'));
@@ -1013,6 +1098,131 @@
                 return rf.includes('final') && !rf.includes('semi') && !rf.includes('cuarto') && !rf.includes('octavo');
             });
 
+            const tieneGrupos = groupNames && groupNames.length >= 2;
+
+            // PROYECCIÓN AUTOMÁTICA SI ESTAMOS EN MODO GRUPOS
+            if (tieneGrupos) {
+                // Calcular orden actual de cada grupo
+                let standingsGpo = {};
+                groupNames.forEach(g => {
+                    let arr = Array.from(jugadoresMap.values()).filter(j => j.grupoPertenece === g);
+                    arr.sort((a,b) => {
+                        if (b.ptsGrupo !== a.ptsGrupo) return b.ptsGrupo - a.ptsGrupo;
+                        let diffA = a.setsG - a.setsP;
+                        let diffB = b.setsG - b.setsP;
+                        if (diffB !== diffA) return diffB - diffA;
+                        if (b.pg !== a.pg) return b.pg - a.pg;
+                        return b.rankAct - a.rankAct;
+                    });
+                    standingsGpo[g] = arr;
+                });
+
+                if (groupNames.length === 2) {
+                    // Semifinales proyectadas (1°A vs 2°B, 1°B vs 2°A)
+                    let j1_A = standingsGpo['A']?.[0]?.nombre || '1° Grupo A';
+                    let j2_A = standingsGpo['A']?.[1]?.nombre || '2° Grupo A';
+                    let j1_B = standingsGpo['B']?.[0]?.nombre || '1° Grupo B';
+                    let j2_B = standingsGpo['B']?.[1]?.nombre || '2° Grupo B';
+
+                    let pSemi1 = colSemis.find(p => String(p.ronda_fase).includes('1')) || colSemis[0] || null;
+                    let pSemi2 = colSemis.find(p => String(p.ronda_fase).includes('2')) || colSemis[1] || null;
+                    let pFin = colFinal[0] || null;
+
+                    let s1_n1 = pSemi1?.j1?.nombre || j1_A;
+                    let s1_n2 = pSemi1?.j2?.nombre || j2_B;
+                    let s2_n1 = pSemi2?.j1?.nombre || j1_B;
+                    let s2_n2 = pSemi2?.j2?.nombre || j2_A;
+
+                    let isFinS1 = (pSemi1?.estado || '').toLowerCase() === 'finalizado';
+                    let isFinS2 = (pSemi2?.estado || '').toLowerCase() === 'finalizado';
+                    let isFinF = (pFin?.estado || '').toLowerCase() === 'finalizado';
+
+                    let winS1 = isFinS1 ? (pSemi1.ganador_id === pSemi1.jugador1_id ? s1_n1 : s1_n2) : null;
+                    let winS2 = isFinS2 ? (pSemi2.ganador_id === pSemi2.jugador1_id ? s2_n1 : s2_n2) : null;
+
+                    let f_n1 = pFin?.j1?.nombre || winS1 || 'Ganador Semi 1';
+                    let f_n2 = pFin?.j2?.nombre || winS2 || 'Ganador Semi 2';
+
+                    let s1_w1 = isFinS1 && pSemi1.ganador_id === pSemi1.jugador1_id;
+                    let s1_w2 = isFinS1 && pSemi1.ganador_id === pSemi1.jugador2_id;
+                    let s2_w1 = isFinS2 && pSemi2.ganador_id === pSemi2.jugador1_id;
+                    let s2_w2 = isFinS2 && pSemi2.ganador_id === pSemi2.jugador2_id;
+                    let f_w1 = isFinF && pFin.ganador_id === pFin.jugador1_id;
+                    let f_w2 = isFinF && pFin.ganador_id === pFin.jugador2_id;
+
+                    return `
+                        <!-- COLUMNA SEMIFINALES -->
+                        <div class="bracket-col-stage">
+                            <div style="text-align:center; font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:-10px;">
+                                Semifinales
+                            </div>
+
+                            <div class="b-match-card" id="mcard_${catSlug}_SEM_1" data-target="mcard_${catSlug}_FIN_1" data-target-slot="top">
+                                <div class="b-match-header">Semifinal 1 ${pSemi1 ? `• MESA ${pSemi1.mesa}` : ''}</div>
+                                <div class="b-player-row">
+                                    <div class="b-player-info">
+                                        <span class="b-player-name ${s1_w1 ? 'winner' : ''}">${s1_w1 ? '🏆 ' : ''}${s1_n1}</span>
+                                        <span class="b-player-club">1° Grupo A</span>
+                                    </div>
+                                    <span class="b-score-box ${s1_w1 ? 'winner' : ''}">${pSemi1?.sets_j1 || 0}</span>
+                                </div>
+                                <div class="b-player-row">
+                                    <div class="b-player-info">
+                                        <span class="b-player-name ${s1_w2 ? 'winner' : ''}">${s1_w2 ? '🏆 ' : ''}${s1_n2}</span>
+                                        <span class="b-player-club">2° Grupo B</span>
+                                    </div>
+                                    <span class="b-score-box ${s1_w2 ? 'winner' : ''}">${pSemi1?.sets_j2 || 0}</span>
+                                </div>
+                            </div>
+
+                            <div class="b-match-card" id="mcard_${catSlug}_SEM_2" data-target="mcard_${catSlug}_FIN_1" data-target-slot="bottom">
+                                <div class="b-match-header">Semifinal 2 ${pSemi2 ? `• MESA ${pSemi2.mesa}` : ''}</div>
+                                <div class="b-player-row">
+                                    <div class="b-player-info">
+                                        <span class="b-player-name ${s2_w1 ? 'winner' : ''}">${s2_w1 ? '🏆 ' : ''}${s2_n1}</span>
+                                        <span class="b-player-club">1° Grupo B</span>
+                                    </div>
+                                    <span class="b-score-box ${s2_w1 ? 'winner' : ''}">${pSemi2?.sets_j1 || 0}</span>
+                                </div>
+                                <div class="b-player-row">
+                                    <div class="b-player-info">
+                                        <span class="b-player-name ${s2_w2 ? 'winner' : ''}">${s2_w2 ? '🏆 ' : ''}${s2_n2}</span>
+                                        <span class="b-player-club">2° Grupo A</span>
+                                    </div>
+                                    <span class="b-score-box ${s2_w2 ? 'winner' : ''}">${pSemi2?.sets_j2 || 0}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- COLUMNA GRAN FINAL -->
+                        <div class="bracket-col-stage">
+                            <div style="text-align:center; font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:-10px;">
+                                Gran Final
+                            </div>
+
+                            <div class="b-match-card" id="mcard_${catSlug}_FIN_1">
+                                <div class="b-match-header">Gran Final ${pFin ? `• MESA ${pFin.mesa}` : ''}</div>
+                                <div class="b-player-row">
+                                    <div class="b-player-info">
+                                        <span class="b-player-name ${f_w1 ? 'winner' : ''}">${f_w1 ? '🏆 ' : ''}${f_n1}</span>
+                                        <span class="b-player-club">Gana Semi 1</span>
+                                    </div>
+                                    <span class="b-score-box ${f_w1 ? 'winner' : ''}">${pFin?.sets_j1 || 0}</span>
+                                </div>
+                                <div class="b-player-row">
+                                    <div class="b-player-info">
+                                        <span class="b-player-name ${f_w2 ? 'winner' : ''}">${f_w2 ? '🏆 ' : ''}${f_n2}</span>
+                                        <span class="b-player-club">Gana Semi 2</span>
+                                    </div>
+                                    <span class="b-score-box ${f_w2 ? 'winner' : ''}">${pFin?.sets_j2 || 0}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+            // MODO ELIMINACIÓN DIRECTA PURA O CUANDO YA HAY PARTIDOS GUARDADOS EN BD
             let columnas = [];
             if (colOctavos.length > 0) columnas.push({ name: 'Octavos de Final', matches: colOctavos, stageKey: 'OCT' });
             if (colCuartos.length > 0) columnas.push({ name: 'Cuartos de Final', matches: colCuartos, stageKey: 'CUA' });
@@ -1087,6 +1297,96 @@
                 htmlCols += `</div>`;
             });
             return htmlCols;
+        }
+
+        // ================= COMPARTIR IMAGEN POR WHATSAPP =================
+        async function compartirLlaveWhatsApp(catSlug, catNombre) {
+            const btn = document.getElementById(`btn-share-wa-${catSlug}`);
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin mr-1"></i> Generando imagen...';
+
+            try {
+                const targetEl = document.getElementById(`seccion-captura-${catSlug}`);
+                if (!targetEl) throw new Error("No se encontró el cuadro de llaves.");
+
+                const canvas = await html2canvas(targetEl, {
+                    backgroundColor: '#0b0f19',
+                    scale: 2,
+                    logging: false,
+                    useCORS: true
+                });
+
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        alert("Error al generar la imagen.");
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                        return;
+                    }
+
+                    const fileName = `Resultados_Llaves_${catNombre.replace(/\s+/g, '_')}.png`;
+                    const file = new File([blob], fileName, { type: 'image/png' });
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({
+                                title: `🏆 Resultados y Llaves - ${catNombre}`,
+                                text: `🏓 *Resultados y Llaves en Vivo - ${catNombre}*\nTorneo: *${torneoActivoObj?.nombre || 'Torneo'}*`,
+                                files: [file]
+                            });
+                            btn.disabled = false;
+                            btn.innerHTML = originalText;
+                            return;
+                        } catch (shareErr) {
+                            if (shareErr.name === 'AbortError') {
+                                btn.disabled = false;
+                                btn.innerHTML = originalText;
+                                return;
+                            }
+                        }
+                    }
+
+                    let copiado = false;
+                    try {
+                        if (navigator.clipboard && window.ClipboardItem) {
+                            await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': blob })
+                            ]);
+                            copiado = true;
+                        }
+                    } catch (clipErr) {
+                        console.warn("No se pudo copiar directamente:", clipErr);
+                    }
+
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    const mensajeWS = `🏓 *CUADRO DE LLAVES Y RESULTADOS EN VIVO*\n🏆 Categoría: *${catNombre}*\nTorneo: *${torneoActivoObj?.nombre || 'Torneo'}*`;
+                    const urlWS = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensajeWS)}`;
+
+                    if (copiado) {
+                        alert("📋 ¡Imagen copiada al portapapeles y descargada!\n\nSe abrirá WhatsApp para que solo presiones 'Pegar' (Ctrl + V) en tu grupo.");
+                    } else {
+                        alert("📥 Imagen generada. Se abrirá WhatsApp para que la adjuntes a tu grupo.");
+                    }
+
+                    window.open(urlWS, '_blank');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }, 'image/png');
+
+            } catch (e) {
+                alert("Error al compartir: " + e.message);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
         }
 
         window.addEventListener('resize', () => {
