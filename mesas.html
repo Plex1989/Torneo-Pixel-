@@ -460,7 +460,6 @@
             try {
                 const { data: torneoData } = await clienteSupabase.from('torneos').select('nombre, organizador_id').eq('id', idTorneoActivo).maybeSingle();
                 if (torneoData) {
-                    torneoActivoObj = torneoData;
                     document.getElementById('nombre-torneo').innerText = torneoData.nombre;
                     if (torneoData.organizador_id) {
                         orgId = torneoData.organizador_id;
@@ -869,12 +868,13 @@
                 const partidosCat = todosLosPartidos.filter(p => p.categorias?.nombre === catNombre);
                 const esEliminacionPura = partidosCat.some(p => p.grupo_nombre === 'Eliminacion');
                 
-                // DETECCIÓN INTELIGENTE DE RR FLASH
+                // DETECCIÓN INTELIGENTE DE MODALIDADES
                 const esRRFlash = partidosCat.some(p => {
                     let rf = String(p.ronda_fase || '').toLowerCase();
                     return rf.includes('(c1)') || rf.includes('(c2)') || rf.includes('(c3)');
                 });
 
+                const esModoLiga = partidosCat.some(p => p.grupo_nombre === 'Único');
                 const groupNames = [...new Set(partidosCat.map(p => p.grupo_nombre).filter(g => g && g !== 'Flash' && g !== 'Eliminacion'))].sort();
                 const tieneGrupos = groupNames.length > 0;
 
@@ -959,16 +959,11 @@
 
                 const ordenarAtletas = (lista) => {
                     return [...lista].sort((a, b) => {
-                        if (tieneGrupos) {
-                            if (b.ptsGrupo !== a.ptsGrupo) return b.ptsGrupo - a.ptsGrupo;
-                        }
-                        let statusA = a.pg > 0 ? 3 : (a.pj === 0 ? 2 : 1);
-                        let statusB = b.pg > 0 ? 3 : (b.pj === 0 ? 2 : 1);
-                        if (statusB !== statusA) return statusB - statusA;
-                        if (b.pg !== a.pg) return b.pg - a.pg;
+                        if (b.ptsGrupo !== a.ptsGrupo) return b.ptsGrupo - a.ptsGrupo;
                         let diffA = a.setsG - a.setsP;
                         let diffB = b.setsG - b.setsP;
                         if (diffB !== diffA) return diffB - diffA;
+                        if (b.pg !== a.pg) return b.pg - a.pg;
                         return b.rankAct - a.rankAct;
                     });
                 };
@@ -990,7 +985,7 @@
                                     <th style="padding:10px 8px; text-align:center; width:65px;">R. Ini</th>
                                     <th style="padding:10px 8px; text-align:center; width:55px;">+/-</th>
                                     <th style="padding:10px 8px; text-align:center; width:75px; color:#38bdf8;">Pts Rank</th>
-                                    ${tieneGrupos ? '<th style="padding:10px 8px; text-align:center; width:65px; color:#fbbf24;">PTS</th>' : ''}
+                                    <th style="padding:10px 8px; text-align:center; width:65px; color:#fbbf24;">PTS</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1000,7 +995,7 @@
                                         ? `<span style="color:#34d399; font-weight:800;">+${at.rankImpact}</span>` 
                                         : (at.rankImpact < 0 ? `<span style="color:#f87171; font-weight:800;">${at.rankImpact}</span>` : `<span style="color:#64748b; font-weight:800;">0</span>`);
 
-                                    let badgeDiv = esRRFlash ? `<span style="background:rgba(236,72,153,0.15); color:#f472b6; border:1px solid rgba(236,72,153,0.3); padding:1px 5px; border-radius:4px; font-size:9px; font-weight:800; margin-left:6px;">Div ${at.division}</span>` : '';
+                                    let badgeDiv = (!esModoLiga && esRRFlash) ? `<span style="background:rgba(236,72,153,0.15); color:#f472b6; border:1px solid rgba(236,72,153,0.3); padding:1px 5px; border-radius:4px; font-size:9px; font-weight:800; margin-left:6px;">Div ${at.division}</span>` : '';
 
                                     return `
                                         <tr style="border-bottom:1px solid rgba(255,255,255,0.03);">
@@ -1025,7 +1020,7 @@
                                             <td style="padding:10px 8px; text-align:center; font-family:'Orbitron',sans-serif; color:#38bdf8; font-weight:900; font-size:13px;">
                                                 ${at.rankAct}
                                             </td>
-                                            ${tieneGrupos ? `<td style="padding:10px 8px; text-align:center; font-family:'Orbitron',sans-serif; color:#fbbf24; font-weight:900; font-size:14px;">${at.ptsGrupo}</td>` : ''}
+                                            <td style="padding:10px 8px; text-align:center; font-family:'Orbitron',sans-serif; color:#fbbf24; font-weight:900; font-size:14px;">${at.ptsGrupo}</td>
                                         </tr>
                                     `;
                                 }).join('')}
@@ -1035,7 +1030,41 @@
                 `;
 
                 let tablasHTML = '';
-                if (tieneGrupos) {
+
+                // CASO ROUND ROBIN PURO / MODO LIGA: DIVISIÓN EN 3 SECCIONES (DIVISIÓN 1, 2 Y 3)
+                if (esModoLiga) {
+                    let todosLosAtletas = Array.from(jugadoresMap.values());
+                    let div1 = ordenarAtletas(todosLosAtletas.filter(j => j.division === 1));
+                    let div2 = ordenarAtletas(todosLosAtletas.filter(j => j.division === 2));
+                    let div3 = ordenarAtletas(todosLosAtletas.filter(j => j.division === 3 || (!j.division && j.division !== 1 && j.division !== 2)));
+
+                    const renderSeccionDiv = (listaDiv, titulo, badge, color, borderCol) => {
+                        if (listaDiv.length === 0) return '';
+                        return `
+                            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(148, 163, 184, 0.1); border-left: 4px solid ${borderCol}; border-radius: 12px; padding: 14px; margin-bottom: 18px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+                                    <div style="font-size: 13px; font-weight: 800; color: ${color}; text-transform: uppercase; letter-spacing: 0.5px;">
+                                        ${badge} ${titulo}
+                                    </div>
+                                    <span style="font-size: 10px; color: #94a3b8; font-weight: 700; background: rgba(0,0,0,0.3); padding: 3px 8px; border-radius: 6px;">
+                                        ${listaDiv.length} Atletas
+                                    </span>
+                                </div>
+                                ${renderTablaAtletas(listaDiv)}
+                            </div>
+                        `;
+                    };
+
+                    tablasHTML += renderSeccionDiv(div1, 'División 1 (Oro)', '🥇', '#fbbf24', '#f59e0b');
+                    tablasHTML += renderSeccionDiv(div2, 'División 2 (Plata)', '🥈', '#cbd5e1', '#94a3b8');
+                    tablasHTML += renderSeccionDiv(div3, 'División 3 (Bronce)', '🥉', '#f43f5e', '#e11d48');
+
+                    if (tablasHTML === '') {
+                        tablasHTML = renderTablaAtletas(ordenarAtletas(todosLosAtletas));
+                    }
+
+                } else if (tieneGrupos) {
+                    // MODO GRUPOS TRADICIONALES (GRUPO A, GRUPO B, ETC.)
                     groupNames.forEach(gName => {
                         let atletasGpo = ordenarAtletas(Array.from(jugadoresMap.values()).filter(j => j.grupoPertenece === gName));
                         tablasHTML += `
@@ -1056,10 +1085,10 @@
                         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(148, 163, 184, 0.1); padding-bottom:12px; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
                             <div>
                                 <h3 style="margin:0; border:none; color:#f8fafc; font-size:14px; font-weight:800; text-transform:uppercase;">🏆 ${catNombre}</h3>
-                                <span style="font-size:10px; color:#38bdf8; font-weight:700;">${esRRFlash ? 'Modalidad: RR Flash (Cruces por División C1, C2 y C3)' : (tieneGrupos ? 'Fase de Grupos y Cuadro Clasificatorio' : (esEliminacionPura ? 'Modalidad: Eliminación Directa' : 'Fase de Torneo'))}</span>
+                                <span style="font-size:10px; color:#38bdf8; font-weight:700;">${esModoLiga ? 'Modalidad: Liga Round Robin Puro (Clasificación por Divisiones 1, 2 y 3)' : (esRRFlash ? 'Modalidad: RR Flash (Cruces por División C1, C2 y C3)' : (tieneGrupos ? 'Fase de Grupos y Cuadro Clasificatorio' : (esEliminacionPura ? 'Modalidad: Eliminación Directa' : 'Fase de Torneo')))}</span>
                             </div>
                             <button id="btn-share-wa-${catSlug}" onclick="compartirLlaveWhatsApp('${catSlug}', '${catNombre}')" class="btn-ws-header" style="font-size:10px; padding:7px 14px;">
-                                <i class="fa-brands fa-whatsapp text-emerald-400 text-sm"></i> Compartir Llaves por WhatsApp
+                                <i class="fa-brands fa-whatsapp text-emerald-400 text-sm"></i> Compartir por WhatsApp
                             </button>
                         </div>
 
@@ -1080,7 +1109,7 @@
                                 <i class="fa-solid fa-arrows-left-right mr-1 animate-pulse"></i> Desliza con tu dedo hacia los lados para ver todas las llaves
                             </div>
                             
-                            ${generarBloqueLlavesCompletoHTML(partidosCat, catSlug, jugadoresMap, groupNames, esRRFlash)}
+                            ${generarBloqueLlavesCompletoHTML(partidosCat, catSlug, jugadoresMap, groupNames, esRRFlash, esModoLiga)}
                         </div>
                     </div>
                 `;
@@ -1096,12 +1125,13 @@
                         let rf = String(p.ronda_fase || '').toLowerCase();
                         return rf.includes('(c1)') || rf.includes('(c2)') || rf.includes('(c3)');
                     });
+                    const esModoLiga = partidosCat.some(p => p.grupo_nombre === 'Único');
 
                     if (esRRFlash) {
                         ['c1', 'c2', 'c3'].forEach(dKey => {
                             actualizarLineasConectorasSVG(`bracket-mesas-${catSlug}-${dKey}`, `bracket-svg-${catSlug}-${dKey}`);
                         });
-                    } else {
+                    } else if (!esModoLiga) {
                         actualizarLineasConectorasSVG(`bracket-mesas-${catSlug}`, `bracket-svg-${catSlug}`);
                     }
                 });
@@ -1109,8 +1139,22 @@
         }
 
         // ================= CONSTRUCCIÓN DEL BLOQUE DE LLAVES =================
-        function generarBloqueLlavesCompletoHTML(partidosCat, catSlug, jugadoresMap, groupNames, esRRFlash) {
-            // CASO 1: RR FLASH (3 LLAVES SEPARADAS POR DIVISIÓN C1, C2, C3)
+        function generarBloqueLlavesCompletoHTML(partidosCat, catSlug, jugadoresMap, groupNames, esRRFlash, esModoLiga) {
+            // CASO MODO LIGA: EN LIGA NO HAY PLAYOFFS, SE DEFINE POR PUNTOS
+            if (esModoLiga) {
+                return `
+                    <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 18px; text-align: center; margin-top: 10px; margin-bottom: 20px;">
+                        <div style="font-size: 13px; font-weight: 800; color: #34d399; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">
+                            🏆 Modalidad Liga (Round Robin Puro)
+                        </div>
+                        <div style="font-size: 11px; color: #94a3b8; line-height: 1.5;">
+                            Todos los competidores disputan partidos entre sí. Los ganadores y podios se definen directamente por el puntaje acumulado en cada tabla de división superior (🥇 División 1, 🥈 División 2 y 🥉 División 3).
+                        </div>
+                    </div>
+                `;
+            }
+
+            // CASO RR FLASH: 3 LLAVES SEPARADAS POR DIVISIÓN (C1, C2, C3)
             if (esRRFlash) {
                 const divisionesInfo = [
                     { key: 'C1', divNum: 1, title: 'División 1 (Oro)', color: '#fbbf24', border: '#f59e0b', badge: '🥇' },
@@ -1124,7 +1168,6 @@
                     let dKey = divObj.key.toLowerCase();
                     let dNum = divObj.divNum;
 
-                    // Posiciones de Grupo A y Grupo B filtradas por esta división
                     let standingsDivGpo = {};
                     ['A', 'B'].forEach(g => {
                         let arr = Array.from(jugadoresMap.values()).filter(j => j.grupoPertenece === g && j.division === dNum);
@@ -1139,13 +1182,11 @@
                         standingsDivGpo[g] = arr;
                     });
 
-                    // Proyección teórica de clasificados
                     let p1_A = standingsDivGpo['A']?.[0]?.nombre || `1° Gpo A (${divObj.key})`;
                     let p2_A = standingsDivGpo['A']?.[1]?.nombre || `2° Gpo A (${divObj.key})`;
                     let p1_B = standingsDivGpo['B']?.[0]?.nombre || `1° Gpo B (${divObj.key})`;
                     let p2_B = standingsDivGpo['B']?.[1]?.nombre || `2° Gpo B (${divObj.key})`;
 
-                    // Partidos reales de la base de datos para esta división
                     let pSemi1 = partidosCat.find(p => {
                         let rf = String(p.ronda_fase || '').toLowerCase();
                         return rf.includes('semi') && (rf.includes('1') || rf.includes('cruce 1')) && rf.includes(`(${dKey})`);
@@ -1161,7 +1202,6 @@
                         return rf.includes('final') && !rf.includes('semi') && rf.includes(`(${dKey})`);
                     }) || null;
 
-                    // Asignación de nombres (si el partido ya tiene atletas asignados en BD, usa los de BD; si no, la proyección)
                     let s1_n1 = pSemi1?.j1 ? pSemi1.j1.nombre : p1_A;
                     let s1_n2 = pSemi1?.j2 ? pSemi1.j2.nombre : p2_B;
                     let s2_n1 = pSemi2?.j1 ? pSemi2.j1.nombre : p1_B;
@@ -1197,7 +1237,6 @@
                                 <div id="bracket-mesas-${catSlug}-${dKey}" class="bracket-tree-container">
                                     <svg id="bracket-svg-${catSlug}-${dKey}" class="bracket-svg-overlay"></svg>
                                     
-                                    <!-- COLUMNA SEMIFINALES -->
                                     <div class="bracket-col-stage">
                                         <div style="text-align:center; font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:-10px;">
                                             Semifinales (${divObj.key})
@@ -1240,7 +1279,6 @@
                                         </div>
                                     </div>
 
-                                    <!-- COLUMNA GRAN FINAL -->
                                     <div class="bracket-col-stage">
                                         <div style="text-align:center; font-size:10px; font-weight:800; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; margin-bottom:-10px;">
                                             Gran Final (${divObj.key})
@@ -1274,7 +1312,7 @@
                 return html3Llaves;
             }
 
-            // CASO 2: GRUPOS TRADICIONALES O ELIMINACIÓN DIRECTA (1 SOLA LLAVE GENERAL)
+            // CASO GRUPOS TRADICIONALES O ELIMINACIÓN DIRECTA (1 SOLA LLAVE GENERAL)
             return `
                 <div class="bracket-scroll-wrapper">
                     <div id="bracket-mesas-${catSlug}" class="bracket-tree-container">
@@ -1321,10 +1359,10 @@
                 let pSemi2 = colSemis.find(p => String(p.ronda_fase).includes('2')) || colSemis[1] || null;
                 let pFin = colFinal[0] || null;
 
-                let s1_n1 = pSemi1?.j1?.nombre || j1_A;
-                let s1_n2 = pSemi1?.j2?.nombre || j2_B;
-                let s2_n1 = pSemi2?.j1?.nombre || j1_B;
-                let s2_n2 = pSemi2?.j2?.nombre || j2_A;
+                let s1_n1 = pSemi1?.j1 ? pSemi1.j1.nombre : j1_A;
+                let s1_n2 = pSemi1?.j2 ? pSemi1.j2.nombre : j2_B;
+                let s2_n1 = pSemi2?.j1 ? pSemi2.j1.nombre : j1_B;
+                let s2_n2 = pSemi2?.j2 ? pSemi2.j2.nombre : j2_A;
 
                 let isFinS1 = (pSemi1?.estado || '').toLowerCase() === 'finalizado';
                 let isFinS2 = (pSemi2?.estado || '').toLowerCase() === 'finalizado';
@@ -1333,8 +1371,8 @@
                 let winS1 = isFinS1 ? (pSemi1.ganador_id === pSemi1.jugador1_id ? s1_n1 : s1_n2) : null;
                 let winS2 = isFinS2 ? (pSemi2.ganador_id === pSemi2.jugador1_id ? s2_n1 : s2_n2) : null;
 
-                let f_n1 = pFin?.j1?.nombre || winS1 || 'Ganador Semi 1';
-                let f_n2 = pFin?.j2?.nombre || winS2 || 'Ganador Semi 2';
+                let f_n1 = pFin?.j1 ? pFin.j1.nombre : (winS1 || 'Ganador Semi 1');
+                let f_n2 = pFin?.j2 ? pFin.j2.nombre : (winS2 || 'Ganador Semi 2');
 
                 let s1_w1 = isFinS1 && pSemi1.ganador_id === pSemi1.jugador1_id;
                 let s1_w2 = isFinS1 && pSemi1.ganador_id === pSemi1.jugador2_id;
@@ -1498,7 +1536,7 @@
 
             try {
                 const targetEl = document.getElementById(`seccion-captura-${catSlug}`);
-                if (!targetEl) throw new Error("No se encontró el cuadro de llaves.");
+                if (!targetEl) throw new Error("No se encontró el cuadro.");
 
                 const canvas = await html2canvas(targetEl, {
                     backgroundColor: '#0b0f19',
@@ -1515,14 +1553,14 @@
                         return;
                     }
 
-                    const fileName = `Resultados_Llaves_${catNombre.replace(/\s+/g, '_')}.png`;
+                    const fileName = `Resultados_${catNombre.replace(/\s+/g, '_')}.png`;
                     const file = new File([blob], fileName, { type: 'image/png' });
 
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         try {
                             await navigator.share({
-                                title: `🏆 Llaves Oficiales - ${catNombre}`,
-                                text: `🏓 *Resultados y Llaves en Vivo - ${catNombre}*\nTorneo: *${torneoActivoObj?.nombre || 'Torneo'}*`,
+                                title: `🏆 Resultados y Posiciones - ${catNombre}`,
+                                text: `🏓 *Posiciones y Resultados en Vivo - ${catNombre}*\nTorneo: *${torneoActivoObj?.nombre || 'Torneo'}*`,
                                 files: [file]
                             });
                             btn.disabled = false;
@@ -1558,7 +1596,7 @@
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
 
-                    const mensajeWS = `🏓 *CUADRO DE LLAVES Y RESULTADOS EN VIVO*\n🏆 Categoría: *${catNombre}*\nTorneo: *${torneoActivoObj?.nombre || 'Torneo'}*`;
+                    const mensajeWS = `🏓 *RESULTADOS Y POSICIONES OFICIALES*\n🏆 Categoría: *${catNombre}*\nTorneo: *${torneoActivoObj?.nombre || 'Torneo'}*`;
                     const urlWS = `https://api.whatsapp.com/send?text=${encodeURIComponent(mensajeWS)}`;
 
                     if (copiado) {
@@ -1589,12 +1627,13 @@
                         let rf = String(p.ronda_fase || '').toLowerCase();
                         return rf.includes('(c1)') || rf.includes('(c2)') || rf.includes('(c3)');
                     });
+                    const esModoLiga = partidosCat.some(p => p.grupo_nombre === 'Único');
 
                     if (esRRFlash) {
                         ['c1', 'c2', 'c3'].forEach(dKey => {
                             actualizarLineasConectorasSVG(`bracket-mesas-${catSlug}-${dKey}`, `bracket-svg-${catSlug}-${dKey}`);
                         });
-                    } else {
+                    } else if (!esModoLiga) {
                         actualizarLineasConectorasSVG(`bracket-mesas-${catSlug}`, `bracket-svg-${catSlug}`);
                     }
                 });
